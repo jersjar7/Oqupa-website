@@ -148,9 +148,9 @@ function setupAppBanner(propertyId) {
 /**
  * Render property details on the page
  */
-function renderProperty(listing, propertyId) {
-  // Update page title and meta tags
-  const title = listing.title || 'Propiedad en Oqupa';
+function renderProperty(listing, property, propertyId) {
+  // Title from listing description
+  const title = listing.description || 'Propiedad en Oqupa';
   document.getElementById('page-title').textContent = title;
   document.getElementById('og-title').setAttribute('content', title);
   document.getElementById('twitter-title').setAttribute('content', title);
@@ -160,9 +160,9 @@ function renderProperty(listing, propertyId) {
   document.getElementById('og-description').setAttribute('content', description);
   document.getElementById('twitter-description').setAttribute('content', description);
   
-  // Update Open Graph image
-  if (listing.images && listing.images.length > 0) {
-    const imageUrl = listing.images[0];
+  // Images from property.media
+  if (property.media?.propertyPhotoUrls?.length > 0) {
+    const imageUrl = property.media.propertyPhotoUrls[0];
     document.getElementById('og-image').setAttribute('content', imageUrl);
     document.getElementById('twitter-image').setAttribute('content', imageUrl);
     document.getElementById('property-image').src = imageUrl;
@@ -170,73 +170,72 @@ function renderProperty(listing, propertyId) {
   }
   
   // Update URL
-  const currentUrl = window.location.href;
-  document.getElementById('og-url').setAttribute('content', currentUrl);
+  document.getElementById('og-url').setAttribute('content', window.location.href);
   
-  // Price
-  document.getElementById('property-price').textContent = formatPrice(listing.price);
+  // Price from listing
+  document.getElementById('property-price').textContent = formatPrice(listing.price?.amount);
   
   // Title
   document.getElementById('property-title').textContent = title;
   
-  // Location
+  // Location from property
   const locationSpan = document.querySelector('#property-location span');
-  locationSpan.textContent = formatLocation(listing);
+  locationSpan.textContent = `${property.location?.distrito || ''}, ${property.location?.ciudad || ''}`;
   
-  // Features
+  // Features from property.specs
   const featuresContainer = document.getElementById('property-features');
   featuresContainer.innerHTML = '';
   
-  if (listing.bedrooms) {
+  if (property.specs?.bedroomCount) {
     featuresContainer.innerHTML += `
       <div class="feature">
-        🛏️ ${listing.bedrooms} ${listing.bedrooms === 1 ? 'Dormitorio' : 'Dormitorios'}
+        🛏️ ${property.specs.bedroomCount} ${property.specs.bedroomCount === 1 ? 'Dormitorio' : 'Dormitorios'}
       </div>
     `;
   }
   
-  if (listing.bathrooms) {
+  if (property.specs?.bathroomCount) {
     featuresContainer.innerHTML += `
       <div class="feature">
-        🚿 ${listing.bathrooms} ${listing.bathrooms === 1 ? 'Baño' : 'Baños'}
+        🚿 ${property.specs.bathroomCount} ${property.specs.bathroomCount === 1 ? 'Baño' : 'Baños'}
       </div>
     `;
   }
   
-  if (listing.area) {
+  if (property.specs?.totalAreaInSquareMeters) {
     featuresContainer.innerHTML += `
       <div class="feature">
-        📏 ${listing.area} m²
+        📏 ${property.specs.totalAreaInSquareMeters} m²
       </div>
     `;
   }
   
-  if (listing.propertyType) {
-    const typeLabels = {
-      house: 'Casa',
-      apartment: 'Departamento',
-      land: 'Terreno',
-      commercial: 'Local Comercial',
-      office: 'Oficina'
-    };
-    const typeLabel = typeLabels[listing.propertyType] || listing.propertyType;
-    
-    featuresContainer.innerHTML += `
-      <div class="feature">
-        🏠 ${typeLabel}
-      </div>
-    `;
-  }
+  // Property type
+  const typeLabels = {
+    casa: 'Casa',
+    departamento: 'Departamento',
+    terreno: 'Terreno',
+    oficina: 'Oficina',
+    local: 'Local Comercial'
+  };
+  const typeLabel = typeLabels[property.propertyType] || property.propertyType;
+  
+  featuresContainer.innerHTML += `
+    <div class="feature">
+      🏠 ${typeLabel}
+    </div>
+  `;
   
   // Description
   document.getElementById('property-description').textContent = listing.description || 'Sin descripción disponible.';
   
   // Contact button (WhatsApp)
   const contactButton = document.getElementById('contact-button');
-  if (listing.contactPhone) {
-    const phone = listing.contactPhone.replace(/\D/g, ''); // Remove non-digits
+  const phone = listing.contactInfo?.whatsappPhoneNumber?.phoneNumberWithCountryCode;
+  if (phone) {
+    const cleanPhone = phone.replace(/\D/g, '');
     const message = encodeURIComponent(`Hola, me interesa la propiedad: ${title}`);
-    contactButton.href = `https://wa.me/${phone}?text=${message}`;
+    contactButton.href = `https://wa.me/${cleanPhone}?text=${message}`;
   } else {
     contactButton.style.display = 'none';
   }
@@ -266,33 +265,39 @@ async function loadProperty(propertyId) {
   try {
     console.log('Loading property:', propertyId);
     
-    // Fetch from Firestore
-    const docRef = db.collection('listings').doc(propertyId);
-    const doc = await docRef.get();
+    // Fetch listing
+    const listingRef = db.collection('listings').doc(propertyId);
+    const listingDoc = await listingRef.get();
     
-    if (!doc.exists) {
+    if (!listingDoc.exists) {
+      console.error('Listing not found');
+      showError();
+      return;
+    }
+    
+    const listing = listingDoc.data();
+    
+    // Fetch property using propertyId from listing
+    const propertyRef = db.collection('properties').doc(listing.propertyId);
+    const propertyDoc = await propertyRef.get();
+    
+    if (!propertyDoc.exists) {
       console.error('Property not found');
       showError();
       return;
     }
     
-    const listing = doc.data();
-    console.log('Property loaded:', listing);
+    const property = propertyDoc.data();
     
-    // Check if listing is active (not deleted/expired)
+    // Check if listing is active
     if (listing.status === 'deleted' || listing.status === 'inactive') {
       console.error('Property is not active');
       showError();
       return;
     }
     
-    // Render the property
-    renderProperty(listing, propertyId);
-    
-    // Track view (optional - increment view count)
-    // await docRef.update({
-    //   viewCount: firebase.firestore.FieldValue.increment(1)
-    // });
+    // Render with both listing and property data
+    renderProperty(listing, property, propertyId);
     
   } catch (error) {
     console.error('Error loading property:', error);
