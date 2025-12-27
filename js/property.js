@@ -263,11 +263,9 @@ function showError() {
  */
 async function loadProperty(propertyId) {
   try {
-    console.log('Loading property:', propertyId);
+    console.log('Loading listing:', propertyId);
     
-    // Fetch listing
-    const listingRef = db.collection('listings').doc(propertyId);
-    const listingDoc = await listingRef.get();
+    const listingDoc = await db.collection('listings').doc(propertyId).get();
     
     if (!listingDoc.exists) {
       console.error('Listing not found');
@@ -276,10 +274,10 @@ async function loadProperty(propertyId) {
     }
     
     const listing = listingDoc.data();
+    console.log('Listing loaded:', listing);
+    console.log('PropertyId from listing:', listing.propertyId);
     
-    // Fetch property using propertyId from listing
-    const propertyRef = db.collection('properties').doc(listing.propertyId);
-    const propertyDoc = await propertyRef.get();
+    const propertyDoc = await db.collection('properties').doc(listing.propertyId).get();
     
     if (!propertyDoc.exists) {
       console.error('Property not found');
@@ -288,19 +286,13 @@ async function loadProperty(propertyId) {
     }
     
     const property = propertyDoc.data();
+    console.log('Property loaded:', property);
+    console.log('Property images:', property.media?.propertyPhotoUrls);
     
-    // Check if listing is active
-    if (listing.status === 'deleted' || listing.status === 'inactive') {
-      console.error('Property is not active');
-      showError();
-      return;
-    }
-    
-    // Render with both listing and property data
     renderProperty(listing, property, propertyId);
     
   } catch (error) {
-    console.error('Error loading property:', error);
+    console.error('Error:', error);
     showError();
   }
 }
