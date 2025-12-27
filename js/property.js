@@ -143,6 +143,53 @@ function setupAppBanner(propertyId) {
   });
 }
 
+// ====== GALLERY FUNCTIONS ======
+let currentSlide = 0;
+let totalSlides = 0;
+
+function initGallery(images) {
+  const track = document.getElementById('gallery-track');
+  const dots = document.getElementById('gallery-dots');
+  const counter = document.getElementById('gallery-counter');
+  
+  totalSlides = images.length;
+  
+  track.innerHTML = images.map(url => 
+    `<div class="gallery-slide"><img src="${url}" alt="Propiedad"></div>`
+  ).join('');
+  
+  dots.innerHTML = images.map((_, i) => 
+    `<button class="gallery-dot ${i === 0 ? 'active' : ''}"></button>`
+  ).join('');
+  
+  counter.textContent = `1 / ${totalSlides}`;
+  
+  document.getElementById('gallery-prev').onclick = () => changeSlide(-1);
+  document.getElementById('gallery-next').onclick = () => changeSlide(1);
+  
+  document.querySelectorAll('.gallery-dot').forEach((dot, i) => {
+    dot.onclick = () => goToSlide(i);
+  });
+}
+
+function changeSlide(dir) {
+  currentSlide = (currentSlide + dir + totalSlides) % totalSlides;
+  updateGallery();
+}
+
+function goToSlide(i) {
+  currentSlide = i;
+  updateGallery();
+}
+
+function updateGallery() {
+  document.getElementById('gallery-track').style.transform = `translateX(-${currentSlide * 100}%)`;
+  document.getElementById('gallery-counter').textContent = `${currentSlide + 1} / ${totalSlides}`;
+  document.querySelectorAll('.gallery-dot').forEach((dot, i) => {
+    dot.className = `gallery-dot ${i === currentSlide ? 'active' : ''}`;
+  });
+}
+
 // ====== RENDER PROPERTY DATA ======
 
 /**
@@ -162,11 +209,10 @@ function renderProperty(listing, property, propertyId) {
   
   // Images from property.media
   if (property.media?.propertyPhotoUrls?.length > 0) {
+    initGallery(property.media.propertyPhotoUrls);
     const imageUrl = property.media.propertyPhotoUrls[0];
     document.getElementById('og-image').setAttribute('content', imageUrl);
     document.getElementById('twitter-image').setAttribute('content', imageUrl);
-    document.getElementById('property-image').src = imageUrl;
-    document.getElementById('property-image').alt = title;
   }
   
   // Update URL
@@ -263,9 +309,11 @@ function showError() {
  */
 async function loadProperty(propertyId) {
   try {
-    console.log('Loading listing:', propertyId);
+    console.log('Loading property:', propertyId);
     
-    const listingDoc = await db.collection('listings').doc(propertyId).get();
+    // Fetch listing
+    const listingRef = db.collection('listings').doc(propertyId);
+    const listingDoc = await listingRef.get();
     
     if (!listingDoc.exists) {
       console.error('Listing not found');
@@ -274,10 +322,10 @@ async function loadProperty(propertyId) {
     }
     
     const listing = listingDoc.data();
-    console.log('Listing loaded:', listing);
-    console.log('PropertyId from listing:', listing.propertyId);
     
-    const propertyDoc = await db.collection('properties').doc(listing.propertyId).get();
+    // Fetch property using propertyId from listing
+    const propertyRef = db.collection('properties').doc(listing.propertyId);
+    const propertyDoc = await propertyRef.get();
     
     if (!propertyDoc.exists) {
       console.error('Property not found');
@@ -286,13 +334,19 @@ async function loadProperty(propertyId) {
     }
     
     const property = propertyDoc.data();
-    console.log('Property loaded:', property);
-    console.log('Property images:', property.media?.propertyPhotoUrls);
     
+    // Check if listing is active
+    if (listing.status === 'deleted' || listing.status === 'inactive') {
+      console.error('Property is not active');
+      showError();
+      return;
+    }
+    
+    // Render with both listing and property data
     renderProperty(listing, property, propertyId);
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error loading property:', error);
     showError();
   }
 }
