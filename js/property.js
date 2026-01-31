@@ -4,12 +4,12 @@
 // ====== CONFIGURATION ======
 // TODO: Replace with your actual Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyCTKqOzIxyvD7mLGIefVDb79VTO0oHi1M8",
-  authDomain: "ubiqa-production.firebaseapp.com",
-  projectId: "ubiqa-production",
-  storageBucket: "ubiqa-production.firebasestorage.app",
-  messagingSenderId: "533701055644",
-  appId: "1:533701055644:web:f10d7369a51bca08108959"
+  apiKey: "AIzaSyBBdwf8ClZyPbW2BigyCk5impOReVYRVfY",
+  authDomain: "oqupa-production.firebaseapp.com",
+  projectId: "oqupa-production",
+  storageBucket: "oqupa-production.firebasestorage.app",
+  messagingSenderId: "109922131848",
+  appId: "1:109922131848:web:bb2f23f49a1f3d378fe43d"
 };
 
 // TODO: Update these with actual app store URLs when ready
