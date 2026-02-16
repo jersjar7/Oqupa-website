@@ -1,0 +1,62 @@
+import { useEffect } from 'react'
+import { useOutletContext } from 'react-router-dom'
+import HeroSection from '@/components/landing/HeroSection'
+import TrustStrip from '@/components/landing/TrustStrip'
+import SolutionSection from '@/components/landing/SolutionSection'
+import ShowcaseSection from '@/components/landing/ShowcaseSection'
+import PricingSection from '@/components/landing/PricingSection'
+import SocialProofSection from '@/components/landing/SocialProofSection'
+import WaitlistSection from '@/components/landing/WaitlistSection'
+
+interface LayoutContext {
+  heroRef: React.RefObject<HTMLElement | null>
+}
+
+export default function LandingPage() {
+  const { heroRef } = useOutletContext<LayoutContext>()
+
+  useEffect(() => {
+    document.title = 'Oqupa - Todas las propiedades de Piura en un solo lugar'
+
+    const script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Oqupa',
+      url: 'https://oqupa.com',
+      logo: 'https://oqupa.com/favicon.png',
+      description:
+        'Oqupa centraliza los avisos inmobiliarios de Piura, elimina fraudes y conecta a usuarios con propietarios y agentes verificados.',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Piura',
+        addressCountry: 'PE',
+      },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: 'admin@oqupa.com',
+        contactType: 'customer service',
+      },
+      sameAs: [],
+    })
+
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [])
+
+  return (
+    <>
+      <HeroSection heroRef={heroRef} />
+      <TrustStrip />
+      <SolutionSection />
+      <ShowcaseSection />
+      <PricingSection />
+      <SocialProofSection />
+      <WaitlistSection />
+    </>
+  )
+}
