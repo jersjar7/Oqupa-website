@@ -11,7 +11,7 @@ interface HeaderProps {
 
 const NAV_LINKS = [
   { label: 'Lista de Espera', href: '#lista-espera' },
-  { label: 'Precios', href: '#precios' },
+  { label: 'Publica Gratis', href: '#precios' },
   { label: 'Contacto', href: '#contacto' },
 ] as const
 

@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "oqupa-production"
+  },
+  "targets": {},
+  "etags": {
+    "oqupa-production": {
+      "extensionInstances": {
+        "firestore-send-email": "39add276381c8e7ac90d6910d0c5825a03bd5d6f43d55bcbb618369a4a6095ee"
+      }
+    }
+  }
+}

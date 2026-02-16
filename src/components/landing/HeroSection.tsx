@@ -49,9 +49,9 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
             <a
               href="#lista-espera"
               onClick={handleScrollToWaitlist}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:w-auto sm:px-8 sm:text-lg"
             >
-              Unete a la Lista de Espera
+              Lista de Espera
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -85,7 +85,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
         <div className="flex flex-col items-center gap-2 animate-scroll-indicator">
           <span className="text-xs font-medium text-text-secondary">
             Descubre mas

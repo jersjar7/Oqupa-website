@@ -7,10 +7,31 @@ export async function addWaitlistEntry(
   entry: Omit<WaitlistEntry, 'createdAt'>
 ) {
   const waitlistRef = collection(db, 'waitlist')
-  return addDoc(waitlistRef, {
+  const docRef = await addDoc(waitlistRef, {
     ...entry,
     createdAt: serverTimestamp(),
   })
+
+  // Queue notification email via Firebase Trigger Email extension.
+  // Requires installing "Trigger Email from Firestore" extension in Firebase console
+  // and configuring it to watch the "mail" collection with an SMTP transport.
+  const mailRef = collection(db, 'mail')
+  await addDoc(mailRef, {
+    to: 'admin@oqupa.com',
+    message: {
+      subject: `Nueva inscripcion en lista de espera: ${entry.name}`,
+      html: `
+        <h2>Nueva inscripcion en la lista de espera</h2>
+        <table style="border-collapse:collapse;font-family:sans-serif;">
+          <tr><td style="padding:8px;font-weight:bold;">Nombre:</td><td style="padding:8px;">${entry.name}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${entry.email}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;">Interes:</td><td style="padding:8px;">${entry.intent}</td></tr>
+        </table>
+      `,
+    },
+  })
+
+  return docRef
 }
 
 export async function getListingById(

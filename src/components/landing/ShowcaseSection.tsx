@@ -156,9 +156,9 @@ export default function ShowcaseSection() {
             <a
               href="#lista-espera"
               onClick={handleScrollToWaitlist}
-              className="inline-flex w-fit items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:w-auto sm:px-8 sm:text-lg"
             >
-              Obtener Acceso Anticipado
+              Acceso Anticipado
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
