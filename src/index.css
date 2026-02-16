@@ -1,29 +1,101 @@
 @import "tailwindcss";
 
+/* ===== Font Faces ===== */
+@font-face {
+  font-family: 'Gotham';
+  src: url('@/assets/fonts/GothamBook.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('@/assets/fonts/GothamMedium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('@/assets/fonts/GothamBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('@/assets/fonts/RobotoSerif-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('@/assets/fonts/RobotoSerif-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('@/assets/fonts/RobotoSerif-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('@/assets/fonts/RobotoSerif-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('@/assets/fonts/RobotoSerif-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --color-primary: #007AFF;
-  --color-primary-hover: #0051D5;
-  --color-secondary: #5AC8FA;
-  --color-accent: #FF9500;
-  --color-accent-hover: #E6851A;
-  --color-success: #30D158;
-  --color-warning: #FF9500;
-  --color-error: #FF3B30;
-  --color-background: #FFFFFF;
-  --color-background-secondary: #F2F2F7;
-  --color-text-primary: #000000;
-  --color-text-secondary: #8E8E93;
-  --color-text-tertiary: #C7C7CC;
-  --color-border: #E5E5EA;
-  --color-separator: #C6C6C8;
-  --color-footer-bg: #1C1C1E;
+  /* Brand Colors */
+  --color-primary: #F47843;
+  --color-primary-hover: #E0632E;
+  --color-secondary: #3A6A55;
+  --color-secondary-hover: #2E5544;
+  --color-accent: #FFCD60;
+  --color-accent-hover: #F0BD4A;
+  --color-cream: #FFF9F0;
+  --color-success: #3A6A55;
+  --color-warning: #FFCD60;
+  --color-error: #D94035;
+  --color-background: #FFF9F0;
+  --color-background-secondary: #FFF4E6;
+  --color-text-primary: #1C1C1E;
+  --color-text-secondary: #636366;
+  --color-text-tertiary: #8E8E93;
+  --color-border: #E8E0D6;
+  --color-separator: #D4CCC2;
+  --color-footer-bg: #3A6A55;
 
-  --font-family-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  /* Typography */
+  --font-family-sans: 'Gotham', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-serif: 'Roboto Serif', Georgia, 'Times New Roman', serif;
 
-  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --shadow-medium: 0 4px 24px rgba(0, 0, 0, 0.12);
-  --shadow-large: 0 12px 48px rgba(0, 0, 0, 0.15);
+  /* Shadows */
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 24px rgba(0, 0, 0, 0.10);
+  --shadow-large: 0 12px 48px rgba(0, 0, 0, 0.12);
 
+  /* Animations */
   --animate-fade-in-up: fade-in-up 0.8s ease-out both;
   --animate-fade-in-right: fade-in-right 0.8s ease-out both;
   --animate-fade-in-left: fade-in-left 0.8s ease-out both;

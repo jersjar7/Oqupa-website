@@ -8,7 +8,7 @@ const TRUST_SIGNALS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-primary"
+        className="h-8 w-8 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -50,7 +50,7 @@ const TRUST_SIGNALS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-primary"
+        className="h-8 w-8 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -81,7 +81,7 @@ export default function SocialProofSection() {
           }`}
         >
           {/* Heading */}
-          <h2 className="mx-auto max-w-2xl text-center text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+          <h2 className="font-serif mx-auto max-w-2xl text-center text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
             La plataforma que Piura necesita
           </h2>
 
@@ -92,7 +92,7 @@ export default function SocialProofSection() {
                 key={signal.title}
                 className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-8 shadow-light transition-shadow duration-300 hover:shadow-medium"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
                   {signal.icon}
                 </div>
                 <h3 className="text-lg font-semibold text-text-primary">

@@ -24,7 +24,7 @@ export default function SolutionSection() {
         >
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
               Encuentra tu propiedad ideal sin perder tiempo en avisos
               incompletos
             </h2>
@@ -34,7 +34,7 @@ export default function SolutionSection() {
                 <li key={benefit} className="flex items-start gap-3">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="mt-0.5 h-6 w-6 shrink-0 text-success"
+                    className="mt-0.5 h-6 w-6 shrink-0 text-secondary"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -63,7 +63,7 @@ export default function SolutionSection() {
                 loading="lazy"
               />
               <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-4">
-                <span className="rounded-lg bg-error/90 px-3 py-1.5 text-xs font-semibold text-white">
+                <span className="rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-semibold text-white">
                   Metodos tradicionales
                 </span>
               </div>
@@ -78,7 +78,7 @@ export default function SolutionSection() {
                 loading="lazy"
               />
               <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-4">
-                <span className="rounded-lg bg-success/90 px-3 py-1.5 text-xs font-semibold text-white">
+                <span className="rounded-lg bg-secondary/90 px-3 py-1.5 text-xs font-semibold text-white">
                   Con Oqupa
                 </span>
               </div>

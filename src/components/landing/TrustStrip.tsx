@@ -8,7 +8,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-primary"
+        className="h-8 w-8 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -29,7 +29,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-primary"
+        className="h-8 w-8 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -55,7 +55,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-primary"
+        className="h-8 w-8 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -91,10 +91,10 @@ export default function TrustStrip() {
               }`}
               style={{ transitionDelay: `${index * 100}ms` }}
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
                 {card.icon}
               </div>
-              <h3 className="text-lg font-semibold text-text-primary">
+              <h3 className="font-sans text-lg font-medium uppercase tracking-wider text-text-primary">
                 {card.title}
               </h3>
               <p className="text-sm leading-relaxed text-text-secondary">

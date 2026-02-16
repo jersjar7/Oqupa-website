@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import logo from '@/assets/images/oqupa-h-nobg.png'
+import logo from '@/assets/images/Oqupa_FullLogo_white.webp'
 
 export default function Footer() {
   return (
@@ -12,10 +12,10 @@ export default function Footer() {
               <img
                 src={logo}
                 alt="Oqupa"
-                className="h-10 brightness-0 invert"
+                className="h-10"
               />
             </Link>
-            <p className="mt-4 text-sm text-text-secondary">
+            <p className="mt-4 text-sm text-white/80">
               El portal inmobiliario de confianza en Peru.
             </p>
           </div>
@@ -24,14 +24,14 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-8">
             {/* Proximamente */}
             <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-secondary">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
                 Proximamente
               </h3>
               <ul className="space-y-3">
                 <li>
                   <a
                     href="/#lista-espera"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Lista de Espera
                   </a>
@@ -39,7 +39,7 @@ export default function Footer() {
                 <li>
                   <a
                     href="/#precios"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Precios
                   </a>
@@ -47,7 +47,7 @@ export default function Footer() {
                 <li>
                   <a
                     href="/#caracteristicas"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Caracteristicas
                   </a>
@@ -57,14 +57,14 @@ export default function Footer() {
 
             {/* Informacion */}
             <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-secondary">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
                 Informacion
               </h3>
               <ul className="space-y-3">
                 <li>
                   <a
                     href="mailto:admin@oqupa.com"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Contacto
                   </a>
@@ -72,7 +72,7 @@ export default function Footer() {
                 <li>
                   <Link
                     to="/privacy"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Politica de Privacidad
                   </Link>
@@ -80,7 +80,7 @@ export default function Footer() {
                 <li>
                   <Link
                     to="/terms"
-                    className="text-sm text-gray-300 transition-colors duration-200 hover:text-white"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Terminos de Servicio
                   </Link>
@@ -93,10 +93,10 @@ export default function Footer() {
           <div className="flex flex-col items-start md:items-end">
             {/* Trust badges */}
             <div className="mb-6 flex flex-wrap gap-3">
-              <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-gray-300">
+              <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
                 Proximamente 2026
               </span>
-              <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-gray-300">
+              <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
                 Hecho en Piura
               </span>
             </div>
@@ -107,7 +107,7 @@ export default function Footer() {
               <a
                 href="#"
                 aria-label="Facebook"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-gray-400 transition-colors duration-200 hover:border-white/40 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/60 transition-colors duration-200 hover:border-white/40 hover:text-white"
               >
                 <svg
                   className="h-5 w-5"
@@ -123,7 +123,7 @@ export default function Footer() {
               <a
                 href="#"
                 aria-label="Instagram"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-gray-400 transition-colors duration-200 hover:border-white/40 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/60 transition-colors duration-200 hover:border-white/40 hover:text-white"
               >
                 <svg
                   className="h-5 w-5"
@@ -139,7 +139,7 @@ export default function Footer() {
               <a
                 href="#"
                 aria-label="LinkedIn"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-gray-400 transition-colors duration-200 hover:border-white/40 hover:text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/60 transition-colors duration-200 hover:border-white/40 hover:text-white"
               >
                 <svg
                   className="h-5 w-5"
@@ -156,7 +156,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 border-t border-white/10 pt-8">
-          <p className="text-center text-sm text-text-secondary">
+          <p className="text-center text-sm text-white/60">
             &copy; 2026 Oqupa LLC - El portal inmobiliario de confianza en Peru
           </p>
         </div>

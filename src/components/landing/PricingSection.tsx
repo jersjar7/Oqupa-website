@@ -80,7 +80,7 @@ export default function PricingSection() {
   return (
     <section
       id="precios"
-      className="bg-gradient-to-b from-white via-blue-50/30 to-white py-20 lg:py-28"
+      className="bg-gradient-to-b from-cream via-white to-cream py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -93,10 +93,10 @@ export default function PricingSection() {
         >
           {/* Heading */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
               Publica tu propiedad con precios justos
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-text-secondary">
+            <p className="mt-4 font-sans font-medium uppercase tracking-wider text-secondary">
               En Oqupa creemos en la transparencia. Conoce nuestro modelo de
               precios simple y accesible para propietarios y agentes.
             </p>
@@ -109,7 +109,7 @@ export default function PricingSection() {
                 key={feature.title}
                 className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 text-center shadow-light transition-shadow duration-300 hover:shadow-medium"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
                   {feature.icon}
                 </div>
                 <h3 className="text-lg font-semibold text-text-primary">
@@ -123,7 +123,7 @@ export default function PricingSection() {
           </div>
 
           {/* Price Callout */}
-          <div className="mt-14 flex flex-col items-center gap-4 rounded-3xl border-2 border-primary/20 bg-white px-12 py-10 shadow-medium">
+          <div className="mt-14 flex flex-col items-center gap-4 rounded-3xl border-2 border-primary/30 bg-white px-12 py-10 shadow-medium">
             <div className="flex items-baseline gap-1">
               <span className="text-5xl font-extrabold text-primary sm:text-6xl">
                 S/ 19
@@ -138,7 +138,7 @@ export default function PricingSection() {
             <a
               href="#lista-espera"
               onClick={handleScrollToWaitlist}
-              className="mt-2 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+              className="mt-2 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
             >
               Conocer Mas
             </a>

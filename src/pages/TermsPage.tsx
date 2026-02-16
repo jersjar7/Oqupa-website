@@ -7,17 +7,17 @@ export default function TermsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-2xl font-bold text-text-primary">
         Términos de Servicio
       </h1>
-      <p className="mt-2 text-sm text-text-secondary">
+      <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
         Última actualización: 15 de febrero de 2026
       </p>
 
       <div className="mt-8 space-y-8">
         {/* 1 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             1. Introducción
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -31,7 +31,7 @@ export default function TermsPage() {
 
         {/* 2 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             2. Descripción del Servicio
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -44,7 +44,7 @@ export default function TermsPage() {
 
         {/* 3 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             3. Elegibilidad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -55,7 +55,7 @@ export default function TermsPage() {
 
         {/* 4 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             4. Registro de Cuenta
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -72,7 +72,7 @@ export default function TermsPage() {
               de tu cuenta enviando un correo a{' '}
               <a
                 href="mailto:admin@oqupa.com"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 admin@oqupa.com
               </a>
@@ -83,7 +83,7 @@ export default function TermsPage() {
 
         {/* 5 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             5. Contenido del Usuario y Anuncios
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -110,7 +110,7 @@ export default function TermsPage() {
 
         {/* 6 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             6. Uso Aceptable
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -135,7 +135,7 @@ export default function TermsPage() {
 
         {/* 7 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             7. Tarifas y Pagos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -148,7 +148,7 @@ export default function TermsPage() {
 
         {/* 8 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             8. Propiedad Intelectual
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -161,7 +161,7 @@ export default function TermsPage() {
 
         {/* 9 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             9. Descargo de Responsabilidad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -174,7 +174,7 @@ export default function TermsPage() {
 
         {/* 10 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             10. Limitación de Responsabilidad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -188,7 +188,7 @@ export default function TermsPage() {
 
         {/* 11 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             11. Terminación de Cuenta
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -198,7 +198,7 @@ export default function TermsPage() {
             electrónico a{' '}
             <a
               href="mailto:admin@oqupa.com"
-              className="text-primary hover:underline"
+              className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>
@@ -208,7 +208,7 @@ export default function TermsPage() {
 
         {/* 12 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             12. Ley Aplicable
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -221,7 +221,7 @@ export default function TermsPage() {
 
         {/* 13 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             13. Cambios a estos Términos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -235,7 +235,7 @@ export default function TermsPage() {
 
         {/* 14 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             14. Contáctanos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -243,7 +243,7 @@ export default function TermsPage() {
             contactarnos en{' '}
             <a
               href="mailto:admin@oqupa.com"
-              className="text-primary hover:underline"
+              className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>

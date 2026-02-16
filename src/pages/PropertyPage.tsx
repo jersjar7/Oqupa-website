@@ -146,7 +146,7 @@ export default function PropertyPage() {
   if (error || !listing || !property) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="text-2xl font-bold text-text-primary">
+        <h1 className="font-serif text-2xl font-bold text-text-primary">
           Propiedad no encontrada
         </h1>
         <p className="text-text-secondary">
@@ -154,7 +154,7 @@ export default function PropertyPage() {
         </p>
         <Link
           to="/"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
         >
           Volver al inicio
         </Link>
@@ -187,7 +187,7 @@ export default function PropertyPage() {
         </p>
 
         {/* Title */}
-        <h1 className="mt-2 text-xl font-semibold text-text-primary">
+        <h1 className="font-serif mt-2 text-xl font-semibold text-text-primary">
           {listing.description ?? 'Propiedad en venta'}
         </h1>
 
@@ -220,24 +220,24 @@ export default function PropertyPage() {
         {/* Feature badges */}
         <div className="mt-4 flex flex-wrap gap-2">
           {property.specs?.bedroomCount != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-background-secondary px-3 py-1.5 text-sm font-medium text-text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
               {property.specs.bedroomCount} hab.
             </span>
           )}
           {property.specs?.bathroomCount != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-background-secondary px-3 py-1.5 text-sm font-medium text-text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6BF;</span>
               {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
             </span>
           )}
           {property.specs?.totalAreaInSquareMeters != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-background-secondary px-3 py-1.5 text-sm font-medium text-text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F4CF;</span>
               {property.specs.totalAreaInSquareMeters} m²
             </span>
           )}
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-background-secondary px-3 py-1.5 text-sm font-medium text-text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
             <span aria-hidden="true">&#x1F3E0;</span>
             {propertyTypeLabel}
           </span>
@@ -246,7 +246,7 @@ export default function PropertyPage() {
         {/* Description */}
         {listing.description && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold text-text-primary">
+            <h2 className="font-serif text-lg font-semibold text-text-primary">
               Descripción
             </h2>
             <p className="mt-2 whitespace-pre-line text-gray-600 leading-relaxed">
@@ -261,7 +261,7 @@ export default function PropertyPage() {
             href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#1DA851]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-lg font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1DA851]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -276,7 +276,7 @@ export default function PropertyPage() {
         )}
 
         {/* App download banner */}
-        <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white">
+        <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">
           <h3 className="text-lg font-bold">
             Descarga la app de Oqupa
           </h3>
@@ -287,7 +287,7 @@ export default function PropertyPage() {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-white/90"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
             >
               Abrir en la App
             </Link>
@@ -295,7 +295,7 @@ export default function PropertyPage() {
               href={PLAY_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/10"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

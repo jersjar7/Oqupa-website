@@ -9,7 +9,7 @@ export default function WaitlistSection() {
   return (
     <section
       id="lista-espera"
-      className="bg-gradient-to-br from-primary to-[#0051D5] py-20 lg:py-28"
+      className="bg-gradient-to-br from-secondary to-[#2E5544] py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -22,7 +22,7 @@ export default function WaitlistSection() {
         >
           {/* Heading */}
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold text-white sm:text-4xl">
               Unete a la lista de espera
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
@@ -39,7 +39,7 @@ export default function WaitlistSection() {
           >
             {isSuccess ? (
               <div className="flex flex-col items-center gap-4 py-8 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8 text-white"
@@ -173,7 +173,7 @@ export default function WaitlistSection() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? (
                     <>

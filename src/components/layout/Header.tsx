@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
-import logo from '@/assets/images/oqupa-h-nobg.png'
+import logo from '@/assets/images/Oqupa_FullLogo_black.webp'
 
 interface HeaderProps {
   variant?: 'full' | 'minimal'
@@ -83,7 +83,7 @@ export default function Header({
                   href={link.href}
                   onClick={(e) => handleSmoothScroll(e, link.href)}
                   className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
-                    isScrolled ? 'text-text-primary' : 'text-white'
+                    isScrolled ? 'text-text-primary' : 'text-text-primary'
                   }`}
                 >
                   {link.label}
@@ -106,27 +106,21 @@ export default function Header({
                   className={`block h-0.5 w-full transition-all duration-300 ${
                     isOpen
                       ? 'translate-y-2 rotate-45 bg-text-primary'
-                      : isScrolled
-                        ? 'bg-text-primary'
-                        : 'bg-white'
+                      : 'bg-text-primary'
                   }`}
                 />
                 <span
                   className={`block h-0.5 w-full transition-all duration-300 ${
                     isOpen
                       ? 'scale-x-0 opacity-0'
-                      : isScrolled
-                        ? 'bg-text-primary'
-                        : 'bg-white'
+                      : 'bg-text-primary'
                   }`}
                 />
                 <span
                   className={`block h-0.5 w-full transition-all duration-300 ${
                     isOpen
                       ? '-translate-y-2 -rotate-45 bg-text-primary'
-                      : isScrolled
-                        ? 'bg-text-primary'
-                        : 'bg-white'
+                      : 'bg-text-primary'
                   }`}
                 />
               </div>

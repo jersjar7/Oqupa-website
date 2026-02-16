@@ -7,17 +7,17 @@ export default function PrivacyPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-2xl font-bold text-text-primary">
         Política de Privacidad
       </h1>
-      <p className="mt-2 text-sm text-text-secondary">
+      <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
         Última actualización: 13 de febrero de 2026
       </p>
 
       <div className="mt-8 space-y-8">
         {/* 1 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             1. Información que Recopilamos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
 
         {/* 2 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             2. Uso de la Cámara
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
 
         {/* 3 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             3. Uso de la Ubicación
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
 
         {/* 4 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             4. Cómo Usamos tu Información
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
 
         {/* 5 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             5. Almacenamiento y Seguridad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
 
         {/* 6 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             6. Servicios de Terceros
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
                 href="https://firebase.google.com/support/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 Política de privacidad de Firebase
               </a>
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
                 href="https://firebase.google.com/support/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 Política de privacidad de Firebase
               </a>
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
                 href="https://firebase.google.com/support/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 Política de privacidad de Firebase
               </a>
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
                 href="https://policies.google.com/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 Política de privacidad de Google
               </a>
@@ -174,7 +174,7 @@ export default function PrivacyPage() {
                 href="https://www.apple.com/legal/privacy/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:text-primary-hover hover:underline"
               >
                 Política de privacidad de Apple
               </a>
@@ -184,7 +184,7 @@ export default function PrivacyPage() {
 
         {/* 7 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             7. Compartición de Datos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -197,7 +197,7 @@ export default function PrivacyPage() {
 
         {/* 8 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             8. Eliminación de Cuenta y Datos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
             enviar un correo electrónico a{' '}
             <a
               href="mailto:admin@oqupa.com"
-              className="text-primary hover:underline"
+              className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>{' '}
@@ -216,7 +216,7 @@ export default function PrivacyPage() {
 
         {/* 9 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             9. Privacidad de los Niños
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -229,7 +229,7 @@ export default function PrivacyPage() {
 
         {/* 10 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             10. Cambios a esta Política
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -242,7 +242,7 @@ export default function PrivacyPage() {
 
         {/* 11 */}
         <section>
-          <h2 className="text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
             11. Contáctanos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
@@ -250,7 +250,7 @@ export default function PrivacyPage() {
             puedes contactarnos en{' '}
             <a
               href="mailto:admin@oqupa.com"
-              className="text-primary hover:underline"
+              className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>

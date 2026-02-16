@@ -11,7 +11,7 @@ const FEATURES = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-primary"
+        className="h-6 w-6 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -32,7 +32,7 @@ const FEATURES = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-primary"
+        className="h-6 w-6 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -53,7 +53,7 @@ const FEATURES = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-primary"
+        className="h-6 w-6 text-secondary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -126,7 +126,7 @@ export default function ShowcaseSection() {
 
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+            <h2 className="font-serif text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
               La nueva forma de encontrar propiedades llega pronto
             </h2>
 
@@ -138,11 +138,11 @@ export default function ShowcaseSection() {
             <div className="flex flex-col gap-6">
               {FEATURES.map((feature) => (
                 <div key={feature.title} className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
                     {feature.icon}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-text-primary">
+                    <h3 className="font-sans font-medium text-text-primary">
                       {feature.title}
                     </h3>
                     <p className="mt-1 text-sm leading-relaxed text-text-secondary">
@@ -156,7 +156,7 @@ export default function ShowcaseSection() {
             <a
               href="#lista-espera"
               onClick={handleScrollToWaitlist}
-              className="inline-flex w-fit items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-semibold text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+              className="inline-flex w-fit items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
             >
               Obtener Acceso Anticipado
               <svg

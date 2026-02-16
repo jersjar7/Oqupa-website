@@ -19,7 +19,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen bg-gradient-to-b from-white to-blue-50 overflow-hidden"
+      className="relative min-h-screen bg-cream overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16 lg:pt-36 lg:pb-24">
         <div
@@ -32,12 +32,12 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         >
           {/* Text Column */}
           <div className="flex flex-col items-start gap-6">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary animate-pulse-badge">
+            <span className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-text-primary animate-pulse-badge">
               <span className="h-2 w-2 rounded-full bg-primary" />
               Proximamente 2026
             </span>
 
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
+            <h1 className="font-serif text-4xl font-normal leading-tight tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
               Todas las propiedades de Piura, en un solo lugar confiable.
             </h1>
 
@@ -49,7 +49,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
             <a
               href="#lista-espera"
               onClick={handleScrollToWaitlist}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-semibold text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-lg font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
             >
               Unete a la Lista de Espera
               <svg
