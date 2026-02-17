@@ -81,7 +81,7 @@ export default function ShowcaseSection() {
   }
 
   return (
-    <section className="bg-background-secondary py-20 lg:py-28">
+    <section id="caracteristicas" className="bg-background-secondary py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}

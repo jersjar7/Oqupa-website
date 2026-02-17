@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import { useWaitlistForm } from '@/hooks/useWaitlistForm'
 
@@ -153,12 +154,12 @@ export default function WaitlistSection() {
                     />
                     <span className="text-sm leading-relaxed text-text-secondary">
                       Acepto la{' '}
-                      <a
-                        href="/#/privacy"
+                      <Link
+                        to="/privacy"
                         className="font-medium text-primary underline transition-colors duration-200 hover:text-primary-hover"
                       >
                         politica de privacidad
-                      </a>{' '}
+                      </Link>{' '}
                       y el tratamiento de mis datos personales.
                     </span>
                   </label>
