@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
-import logo from '@/assets/images/Oqupa_FullLogo_black.webp'
+import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 
 interface HeaderProps {
   variant?: 'full' | 'minimal'
