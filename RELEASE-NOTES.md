@@ -4,6 +4,16 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-02-23 — Hero Section Brand Refresh
+
+- Updated page background color to `#FFFAF5`
+- Swapped header logo from black monochrome to multicolor variant
+- Changed "Proximamente 2026" badge to Pacific Green background with white text
+- Updated hero heading color to Pacific Green (`#3A6A55`)
+- Simplified CTA button: auto-width, removed arrow icon
+
+---
+
 ## 2026-02-16 — Firebase Email Extension & Landing Page Updates
 
 - Added Firebase Trigger Email extension for waitlist notification emails to `admin@oqupa.com`
