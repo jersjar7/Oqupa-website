@@ -1,34 +1,76 @@
-export interface Listing {
-  id: string
-  propertyId: string
-  description?: string
-  price?: {
-    amount: number
-    currency?: string
-  }
-  contactInfo?: {
-    whatsappPhoneNumber?: {
-      phoneNumberWithCountryCode: string
-    }
-  }
-  status: 'active' | 'inactive' | 'deleted'
-}
+import type { Currency, OperationType, PropertyType } from './enums'
 
 export interface PropertySpecs {
-  bedroomCount?: number
-  bathroomCount?: number
-  totalAreaInSquareMeters?: number
+  totalAreaInSquareMeters: number
+  bedroomCount?: number // null for commercial/land
+  bathroomCount?: number // null for land
+  availableParkingSpaces: number
+  propertyAmenities: string[]
 }
 
+export interface PropertyLocation {
+  latitude: number
+  longitude: number
+  calle: string
+  distrito: string
+  provincia: string
+  departamento: string
+  countryIsoCode: string // 'PE'
+}
+
+export interface PropertyMedia {
+  propertyPhotoUrls: string[]
+}
+
+export interface PropertyPrice {
+  amount: number
+  currency: Currency
+}
+
+// Matches Firestore `properties/{id}` document schema
 export interface Property {
   id: string
+  listedByUserId: string
+  propertyType: PropertyType
+  operationType: OperationType
+  specs: PropertySpecs
+  location: PropertyLocation
+  currentPrice: PropertyPrice
+  normalizedAddress: string
+  media: PropertyMedia
+  updatedAt: Date
+  isAvailable: boolean
+}
+
+// Firestore document shape
+export interface PropertyFirestoreDoc {
+  listedByUserId: string
   propertyType: string
-  location?: {
-    distrito?: string
-    ciudad?: string
+  operationType: string
+  specs: {
+    totalAreaInSquareMeters: number
+    bedroomCount?: number
+    bathroomCount?: number
+    availableParkingSpaces: number
+    propertyAmenities: string[]
   }
-  specs?: PropertySpecs
-  media?: {
-    propertyPhotoUrls?: string[]
+  location: {
+    latitude: number
+    longitude: number
+    calle: string
+    distrito: string
+    provincia: string
+    departamento: string
+    countryIsoCode: string
   }
+  currentPrice: {
+    amount: number
+    currency: string
+  }
+  normalizedAddress: string
+  media: {
+    propertyPhotoUrls: string[]
+  }
+  updatedAt: unknown // Firestore Timestamp
+  isAvailable: boolean
 }

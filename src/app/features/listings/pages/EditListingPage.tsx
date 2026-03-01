@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useListingFormStore } from '@/stores/listingFormStore'
+import { useListingDetails } from '@/hooks/useListings'
+import { Spinner } from '@/app/components/ui'
+import WizardProgress from '../components/WizardProgress'
+import WizardStep1 from '../components/WizardStep1'
+import WizardStep2 from '../components/WizardStep2'
+import WizardStep3 from '../components/WizardStep3'
+import WizardStep4 from '../components/WizardStep4'
+
+export default function EditListingPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { data: result, isLoading, error } = useListingDetails(id)
+  const { step, updateData, setStep, setEditMode, reset } =
+    useListingFormStore()
+  const [initialized, setInitialized] = useState(false)
+
+  // Pre-fill form with existing data
+  useEffect(() => {
+    if (!result || initialized) return
+
+    const { listing, property } = result
+
+    reset()
+    setEditMode(listing.id, property.id)
+    updateData({
+      propertyType: property.propertyType,
+      operationType: property.operationType,
+      role: listing.role,
+      description: listing.description,
+      totalAreaInSquareMeters: property.specs.totalAreaInSquareMeters,
+      bedroomCount: property.specs.bedroomCount ?? null,
+      bathroomCount: property.specs.bathroomCount ?? null,
+      availableParkingSpaces: property.specs.availableParkingSpaces,
+      propertyAmenities: property.specs.propertyAmenities,
+      latitude: property.location.latitude,
+      longitude: property.location.longitude,
+      calle: property.location.calle,
+      distrito: property.location.distrito,
+      provincia: property.location.provincia,
+      departamento: property.location.departamento,
+      existingPhotoUrls: property.media.propertyPhotoUrls,
+      photos: [],
+      amount: listing.price.amount,
+      currency: listing.price.currency,
+      wantsRealtorHelp: listing.wantsRealtorHelp,
+      maxRealtors: listing.maxRealtors,
+    })
+    setStep(1)
+    setInitialized(true)
+  }, [result, initialized]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (error || !result) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <p className="text-error">No se pudo cargar la publicacion</p>
+        <button
+          onClick={() => navigate('/app')}
+          className="text-sm text-primary hover:text-primary-hover"
+        >
+          Volver al dashboard
+        </button>
+      </div>
+    )
+  }
+
+  if (!initialized) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+      <h1 className="font-serif text-2xl font-bold text-text-primary">
+        Editar Publicacion
+      </h1>
+      <p className="mt-1 text-sm text-text-secondary">
+        Modifica los datos de tu propiedad
+      </p>
+
+      <div className="mt-8">
+        <WizardProgress currentStep={step} />
+
+        {step === 1 && <WizardStep1 />}
+        {step === 2 && <WizardStep2 />}
+        {step === 3 && <WizardStep3 />}
+        {step === 4 && <WizardStep4 />}
+      </div>
+    </div>
+  )
+}

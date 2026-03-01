@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getListingById, getPropertyById } from '@/lib/firestore'
-import type { Listing, Property } from '@/types/property'
+import type { ListingDoc, PropertyDoc } from '@/lib/firestore'
 
 export function useProperty(propertyId: string | undefined) {
-  const [listing, setListing] = useState<Listing | null>(null)
-  const [property, setProperty] = useState<Property | null>(null)
+  const [listing, setListing] = useState<ListingDoc | null>(null)
+  const [property, setProperty] = useState<PropertyDoc | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,11 +22,7 @@ export function useProperty(propertyId: string | undefined) {
         const listingData = await getListingById(propertyId!)
         if (cancelled) return
 
-        if (
-          !listingData ||
-          listingData.status === 'deleted' ||
-          listingData.status === 'inactive'
-        ) {
+        if (!listingData || listingData.status === 'deactivated') {
           setError('Propiedad no encontrada')
           setIsLoading(false)
           return

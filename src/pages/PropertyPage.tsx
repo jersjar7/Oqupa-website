@@ -163,13 +163,12 @@ export default function PropertyPage() {
   }
 
   const images = property.media?.propertyPhotoUrls ?? []
-  const location = [property.location?.distrito, property.location?.ciudad]
+  const location = [property.location?.distrito, property.location?.departamento]
     .filter(Boolean)
     .join(', ')
   const propertyTypeLabel =
     PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
-  const whatsappNumber =
-    listing.contactInfo?.whatsappPhoneNumber?.phoneNumberWithCountryCode
+  const whatsappNumber = listing.contactInfo?.whatsappPhoneNumber
   const whatsappMessage = encodeURIComponent(
     `Hola, me interesa la propiedad: ${listing.description ?? ''}`
   )

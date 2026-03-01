@@ -89,6 +89,12 @@ export default function Header({
                   {link.label}
                 </a>
               ))}
+              <Link
+                to="/app/login"
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+              >
+                Iniciar Sesion
+              </Link>
             </nav>
           )}
 
@@ -159,6 +165,13 @@ export default function Header({
                   {link.label}
                 </a>
               ))}
+              <Link
+                to="/app/login"
+                onClick={close}
+                className="mt-4 block w-full rounded-xl bg-primary px-6 py-3 text-center text-base font-medium text-white transition-colors hover:bg-primary-hover"
+              >
+                Iniciar Sesion
+              </Link>
             </nav>
           </div>
         </>

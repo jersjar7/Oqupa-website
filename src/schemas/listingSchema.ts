@@ -1,0 +1,111 @@
+import { z } from 'zod'
+import { PropertyType } from '@/types/enums'
+
+// Step 1: Basics
+export const step1Schema = z.object({
+  propertyType: z.enum(['casa', 'departamento', 'terreno', 'oficina', 'local'], {
+    message: 'Selecciona el tipo de propiedad',
+  }),
+  operationType: z.enum(['venta', 'alquiler'], {
+    message: 'Selecciona el tipo de operacion',
+  }),
+  role: z.enum(['owner', 'realtor', 'relative'], {
+    message: 'Selecciona tu relacion con la propiedad',
+  }),
+})
+export type Step1Data = z.infer<typeof step1Schema>
+
+// Step 2: Details — conditional bedrooms/bathrooms
+export const step2Schema = z
+  .object({
+    propertyType: z.string(), // passed through for conditional validation
+    description: z
+      .string()
+      .min(20, 'La descripcion debe tener al menos 20 caracteres')
+      .max(2000, 'La descripcion no puede exceder 2000 caracteres'),
+    totalAreaInSquareMeters: z
+      .number({ message: 'Ingresa un numero valido' })
+      .positive('El area debe ser mayor a 0')
+      .max(50000, 'El area no puede exceder 50,000 m²'),
+    bedroomCount: z.number().int().min(1).max(20).optional().nullable(),
+    bathroomCount: z.number().int().min(1).max(15).optional().nullable(),
+    availableParkingSpaces: z.number().int().min(0).max(50),
+    propertyAmenities: z.array(z.string().max(50)).max(30),
+  })
+  .superRefine((data, ctx) => {
+    const hasRooms =
+      data.propertyType === PropertyType.casa ||
+      data.propertyType === PropertyType.departamento
+
+    if (hasRooms) {
+      if (data.bedroomCount == null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['bedroomCount'],
+          message: 'Ingresa cantidad de dormitorios',
+        })
+      }
+      if (data.bathroomCount == null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['bathroomCount'],
+          message: 'Ingresa cantidad de banos',
+        })
+      }
+    }
+  })
+export type Step2Data = z.infer<typeof step2Schema>
+
+// Step 3: Location + Photos
+export const step3Schema = z.object({
+  latitude: z
+    .number({ message: 'Selecciona una ubicacion en el mapa' })
+    .min(-90)
+    .max(90),
+  longitude: z
+    .number({ message: 'Selecciona una ubicacion en el mapa' })
+    .min(-180)
+    .max(180),
+  calle: z.string().min(1, 'Ingresa la calle y numero'),
+  distrito: z.string().min(1, 'Ingresa el distrito'),
+  provincia: z.string().min(1, 'Ingresa la provincia'),
+  departamento: z.string().min(1, 'Ingresa el departamento'),
+})
+export type Step3Data = z.infer<typeof step3Schema>
+
+// Step 4: Price
+export const step4Schema = z
+  .object({
+    operationType: z.string(), // passed through for price validation
+    amount: z
+      .number({ message: 'Ingresa un precio valido' })
+      .positive('El precio debe ser mayor a 0'),
+    currency: z.enum(['PEN', 'USD']),
+    wantsRealtorHelp: z.boolean(),
+    maxRealtors: z.number().int(),
+  })
+  .superRefine((data, ctx) => {
+    const isVenta = data.operationType === 'venta'
+    const isPEN = data.currency === 'PEN'
+
+    if (isVenta) {
+      const max = isPEN ? 5_000_000 : 2_000_000
+      if (data.amount > max) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['amount'],
+          message: `El precio no puede exceder ${isPEN ? 'S/' : 'US$'} ${max.toLocaleString()}`,
+        })
+      }
+    } else {
+      const max = isPEN ? 50_000 : 15_000
+      if (data.amount > max) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['amount'],
+          message: `El precio mensual no puede exceder ${isPEN ? 'S/' : 'US$'} ${max.toLocaleString()}`,
+        })
+      }
+    }
+  })
+export type Step4Data = z.infer<typeof step4Schema>
