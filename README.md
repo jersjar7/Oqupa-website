@@ -1,22 +1,26 @@
 # Oqupa Website
 
-Marketing landing page and property listing platform for [Oqupa](https://oqupa.com), a real estate marketplace launching in Piura, Peru.
+Marketing landing page and publisher web app for [Oqupa](https://oqupa.com), a real estate marketplace launching in Piura, Peru.
 
-Built with React + Vite + TypeScript + Tailwind CSS. Deployed to GitHub Pages via GitHub Actions.
+Built with React + Vite + TypeScript + Tailwind CSS. Deployed to Firebase Hosting.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Framework | React 19 |
-| Routing | React Router DOM 7 (HashRouter) |
+| Routing | React Router DOM 7 (BrowserRouter) |
 | Language | TypeScript 5.9 (strict mode) |
 | Styling | Tailwind CSS 4 + custom theme |
 | Build | Vite 6 |
+| State | Zustand (client), TanStack Query (server) |
+| Forms | React Hook Form + Zod v4 |
 | Database | Cloud Firestore |
+| Auth | Firebase Auth (email + phone SMS) |
+| Storage | Firebase Storage (property photos) |
 | Email | Firebase Trigger Email extension |
-| Hosting | GitHub Pages |
-| CI/CD | GitHub Actions |
+| Hosting | Firebase Hosting |
+| Domain | oqupa.com + www.oqupa.com |
 
 ## Getting Started
 
@@ -27,54 +31,96 @@ npm run build    # TypeScript check + Vite build → dist/
 npm run preview  # Preview production build
 ```
 
+## Deployment
+
+Deployed to **Firebase Hosting** under the `oqupa-production` project.
+
+### Manual deploy (current workflow)
+
+```bash
+npm run build
+firebase deploy --only hosting --project oqupa-production
+```
+
+Requires Firebase CLI (`npm i -g firebase-tools`) and login (`firebase login` with `admin@oqupa.com`).
+
+### Deploy checklist
+
+1. Ensure you're on `master` with latest changes
+2. Run `npm run build` — verify no TypeScript errors
+3. Run `firebase deploy --only hosting --project oqupa-production`
+4. Verify at https://oqupa.com and https://oqupa.com/app/login
+5. Update `RELEASE-NOTES.md` if this is a notable release
+
+### Firebase Hosting config
+
+- **Config file:** `firebase.json`
+- **Public directory:** `dist/`
+- **SPA rewrite:** All routes → `index.html`
+- **Asset caching:** `Cache-Control: public, max-age=31536000, immutable` for `/assets/**`
+- **Custom domains:** `oqupa.com` (A record → `199.36.158.100`), `www.oqupa.com` (CNAME → `oqupa-production.web.app`)
+- **DNS provider:** GoDaddy
+
 ## Project Structure
 
 ```
 src/
-├── main.tsx                    # React DOM entry
-├── App.tsx                     # HashRouter + routes
+├── main.tsx                    # React DOM entry + QueryClientProvider
+├── App.tsx                     # BrowserRouter + all routes
 ├── index.css                   # Tailwind + theme variables + animations
 ├── assets/
 │   ├── fonts/                  # Gotham, Roboto Serif
 │   └── images/                 # Hero images, mockups, logos
+├── app/                        # Publisher app module (/app/*)
+│   ├── components/
+│   │   ├── ui/                 # Button, Input, Card, Modal, Badge, Spinner, Select
+│   │   ├── guards/             # AuthGuard, VerifiedGuard
+│   │   └── ErrorBoundary.tsx   # Catches unhandled exceptions
+│   ├── features/
+│   │   ├── auth/pages/         # LoginPage, RegisterPage, ForgotPasswordPage, AuthPipelinePage
+│   │   ├── dashboard/          # DashboardPage, ListingCard, EmptyState
+│   │   ├── listings/           # CreateListingPage, EditListingPage, WizardStep1-4
+│   │   └── profile/            # ProfilePage
+│   └── layouts/
+│       └── AppLayout.tsx       # Publisher app shell (topbar, auth-aware nav)
 ├── components/
-│   ├── layout/
-│   │   ├── Layout.tsx          # Page wrapper (Header + Footer + scroll management)
-│   │   ├── Header.tsx          # Nav with mobile menu, scroll-aware styling
-│   │   └── Footer.tsx          # Links, social icons, trust badges
-│   ├── landing/
-│   │   ├── HeroSection.tsx     # Hero banner + CTA
-│   │   ├── TrustStrip.tsx      # 3 trust signal cards
-│   │   ├── SolutionSection.tsx # Before/after comparison
-│   │   ├── ShowcaseSection.tsx # Device mockups + feature highlights
-│   │   ├── PricingSection.tsx  # Free pricing (S/ 0) highlight
-│   │   ├── SocialProofSection.tsx # Verification/support benefits
-│   │   └── WaitlistSection.tsx # Signup form with validation
+│   ├── layout/                 # Header, Footer, Layout (landing page)
+│   ├── landing/                # Hero, Trust, Pricing, Waitlist sections
 │   └── property/               # Property detail components
-├── pages/
-│   ├── LandingPage.tsx         # / — main marketing page (all sections)
-│   ├── PropertyPage.tsx        # /property/:id — property detail + gallery
+├── pages/                      # Landing page routes
+│   ├── LandingPage.tsx         # / — marketing page
+│   ├── PropertyPage.tsx        # /property/:id — property detail
 │   ├── PrivacyPage.tsx         # /privacy
 │   ├── TermsPage.tsx           # /terms
 │   └── NotFoundPage.tsx        # 404
-├── hooks/
-│   ├── useAnimateOnScroll.ts   # IntersectionObserver animation trigger
-│   ├── useGallery.ts           # Image carousel with touch swipe
-│   ├── useMobileMenu.ts       # Menu state + body scroll lock + escape key
-│   ├── useProperty.ts         # Fetch listing + property from Firestore
-│   ├── useScrollHeader.ts     # Detect scroll past hero for header styling
-│   └── useWaitlistForm.ts     # Form state, validation, Firebase submission
+├── hooks/                      # Custom React hooks
+├── stores/
+│   ├── authStore.ts            # Zustand: auth state, user, session
+│   └── listingFormStore.ts     # Zustand: multi-step wizard form state
+├── services/
+│   ├── authService.ts          # Firebase Auth wrapper
+│   ├── firestoreService.ts     # All Firestore CRUD operations
+│   └── storageService.ts       # Firebase Storage upload + compression
+├── schemas/                    # Zod validation schemas
+│   ├── authSchema.ts           # Login, register, phone, verification
+│   ├── listingSchema.ts        # Wizard steps 1-4
+│   └── profileSchema.ts       # Profile, password change
 ├── lib/
-│   ├── firebase.ts            # Firebase app init + Firestore export
-│   ├── firestore.ts           # Firestore operations (waitlist, listings, properties)
-│   ├── constants.ts           # URLs, email, property type labels
-│   └── utils.ts               # formatPrice(), getPlatform()
+│   ├── firebase.ts             # Firebase app init + auth + storage + firestore
+│   ├── firestore.ts            # Legacy Firestore operations (waitlist, public listings)
+│   ├── constants.ts            # URLs, email, property type labels
+│   └── utils.ts                # formatPrice(), getPlatform()
 └── types/
-    ├── property.ts            # Listing, Property, PropertySpecs interfaces
-    └── waitlist.ts            # WaitlistEntry interface
+    ├── user.ts                 # User, ContactInfo interfaces
+    ├── listing.ts              # Listing, Price, Media interfaces
+    ├── property.ts             # Property, Specs, Location interfaces
+    ├── enums.ts                # PropertyType, OperationType, ListingStatus, etc.
+    └── waitlist.ts             # WaitlistEntry interface
 ```
 
 ## Routes
+
+### Landing page (public)
 
 | Path | Page | Description |
 |------|------|-------------|
@@ -84,7 +130,18 @@ src/
 | `/terms` | TermsPage | Terms of service |
 | `*` | NotFoundPage | 404 page |
 
-Uses HashRouter for GitHub Pages compatibility.
+### Publisher app (`/app/*`)
+
+| Path | Page | Guard | Description |
+|------|------|-------|-------------|
+| `/app/login` | LoginPage | — | Email/password login |
+| `/app/register` | RegisterPage | — | Create account |
+| `/app/forgot-password` | ForgotPasswordPage | — | Password reset |
+| `/app/verify` | AuthPipelinePage | AuthGuard | Name + phone + SMS verification |
+| `/app` | DashboardPage | AuthGuard + VerifiedGuard | Listing management dashboard |
+| `/app/listings/new` | CreateListingPage | AuthGuard + VerifiedGuard | 4-step listing wizard |
+| `/app/listings/:id/edit` | EditListingPage | AuthGuard + VerifiedGuard | Edit existing listing |
+| `/app/profile` | ProfilePage | AuthGuard | User profile settings |
 
 ## Firebase
 
@@ -95,36 +152,18 @@ Uses HashRouter for GitHub Pages compatibility.
 
 | Collection | Purpose | Access |
 |------------|---------|--------|
+| `users` | User profiles with contact info and verification status | Owner read/write |
+| `listings` | Property listings with price/contact/status | Owner write, authenticated read |
+| `properties` | Property details (specs, photos, location) | Owner write, authenticated read |
 | `waitlist` | Waitlist signups from landing page | Public create, no read |
 | `mail` | Email queue for Trigger Email extension | Public create, no read |
-| `listings` | Property listings with price/contact | Public read |
-| `properties` | Property details (specs, photos, location) | Public read |
 
-### Trigger Email Extension
+### Auth
 
-Installed as `firebase/firestore-send-email@0.2.4`. Watches the `mail` collection and sends emails via Gmail SMTP (`admin@oqupa.com`). Configured with Google Workspace App Password stored in Secret Manager.
-
-**Config:** `extensions/firestore-send-email.env`
-
-### Waitlist Flow
-
-1. User fills form (name, email, intent, privacy consent)
-2. Frontend validation runs
-3. On submit: creates doc in `waitlist` + doc in `mail`
-4. Trigger Email extension sends notification to `admin@oqupa.com`
-5. Success state shown, form resets
-
-## Deployment
-
-Push to `master` triggers GitHub Actions → builds → deploys to GitHub Pages.
-
-```bash
-git push origin master
-```
-
-The workflow (`.github/workflows/deploy.yml`) runs `npm ci && npm run build` on Node 20, then deploys `dist/` to GitHub Pages.
-
-**Domain:** `oqupa.com` (configured via `public/CNAME`)
+- Email/password authentication
+- Phone SMS verification (Peru +51, via Firebase RecaptchaVerifier)
+- Auth state persisted via `onAuthStateChanged` listener
+- Authorized domain: `oqupa.com`
 
 ## Theme
 
@@ -135,11 +174,3 @@ Brand colors, typography, and shadows are defined as CSS custom properties in `s
 - **Accent:** `#FFCD60` (yellow) — badges, highlights
 - **Background:** `#FFF9F0` (cream)
 - **Fonts:** Gotham (sans), Roboto Serif (serif)
-
-## Public Files
-
-- `public/CNAME` — Custom domain for GitHub Pages
-- `public/privacy.html` / `public/terms.html` — Static fallback pages
-- `public/property.html` — Deep link redirect to mobile app
-- `public/.well-known/assetlinks.json` — Android app linking
-- `public/.nojekyll` — Prevents Jekyll processing on GitHub Pages

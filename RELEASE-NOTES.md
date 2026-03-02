@@ -4,6 +4,47 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-01 — Publisher Web App & Firebase Hosting Migration
+
+### New Features
+- Full publisher web app at `/app/*` for property owners to manage listings
+- Authentication: login, register, forgot password, phone SMS verification pipeline
+- Dashboard: responsive listing grid with status badges, activate/deactivate
+- Create Listing: 4-step wizard (basics, details, location + photos, price)
+- Edit Listing: pre-fills wizard with existing data, handles photo add/remove
+- Profile page: edit name, contact preferences, view verification status
+- Auth guards (AuthGuard, VerifiedGuard) protect publisher routes
+- Error boundary catches unhandled exceptions in publisher app
+- "Iniciar Sesion" button added to landing page header
+
+### Infrastructure
+- Migrated hosting from GitHub Pages to Firebase Hosting
+- Custom domains: `oqupa.com` and `www.oqupa.com` on Firebase Hosting
+- Switched from HashRouter to BrowserRouter (clean URLs, SPA rewrite)
+- Firebase Auth and Storage initialized alongside Firestore
+- Added `oqupa.com` to Firebase Auth authorized domains
+
+### Technical
+- State management: Zustand (authStore, listingFormStore)
+- Server state: TanStack Query with QueryClientProvider
+- Forms: React Hook Form + Zod v4 validation
+- Image compression: browser-image-compression before Firebase Storage upload
+- 7 reusable UI components: Button, Input, Select, Card, Badge, Modal, Spinner
+- TypeScript types matching Flutter app Firestore schemas exactly
+- SMS rate limiting (60s cooldown) on phone verification
+- Firestore `stripUndefined()` utility converts undefined to null before writes
+
+### Bug Fixes
+- Fixed PropertyPage using wrong contactInfo structure
+- Fixed PropertyPage using `ciudad` instead of `departamento`
+- Fixed Firestore rejecting undefined values on listing edit
+
+### Dependencies Added
+- zustand, @tanstack/react-query, react-hook-form, @hookform/resolvers, zod
+- browser-image-compression, lucide-react
+
+---
+
 ## 2026-02-23 — Hero Section Brand Refresh
 
 - Updated page background color to `#FFFAF5`
