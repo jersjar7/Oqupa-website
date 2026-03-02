@@ -1,8 +1,10 @@
 name: Deploy to Firebase Hosting
 
 on:
-  push:
-    branches: [master]
+  # Auto-deploy disabled until FIREBASE_SERVICE_ACCOUNT_OQUPA_PRODUCTION secret is configured.
+  # Deploy manually: npm run build && firebase deploy --only hosting --project oqupa-production
+  # push:
+  #   branches: [master]
   workflow_dispatch:
 
 jobs:
