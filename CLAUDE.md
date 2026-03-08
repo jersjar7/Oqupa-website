@@ -6,14 +6,14 @@ Reference for Claude Code when working on this project.
 
 - **Build:** `npm run build` (runs `tsc -b && vite build`)
 - **Dev:** `npm run dev` (Vite dev server at localhost:5173)
-- **Deploy:** Push to `master` → GitHub Actions → GitHub Pages
+- **Deploy:** `npm run build && firebase deploy --only hosting` (manual)
 - **Firebase project:** `oqupa-production` (region: `southamerica-east1`)
 - **Firebase account:** `admin@oqupa.com`
 - **Domain:** oqupa.com
 
 ## Architecture
 
-React 19 + Vite 6 + TypeScript 5.9 (strict) + Tailwind CSS 4. Single-page app using HashRouter for GitHub Pages compatibility. No SSR, no backend server — Firestore is the database, accessed directly from the client.
+React 19 + Vite 6 + TypeScript 5.9 (strict) + Tailwind CSS 4. Single-page app using BrowserRouter on Firebase Hosting (SPA rewrite). No SSR, no backend server — Firestore is the database, accessed directly from the client.
 
 ### Path alias
 
@@ -59,10 +59,13 @@ Extension config: `extensions/firestore-send-email.env`
 
 ## Deployment
 
-**Do NOT use Firebase Hosting.** The site is deployed to GitHub Pages (free) via GitHub Actions on push to master. The workflow is at `.github/workflows/deploy.yml`.
+The site is deployed to Firebase Hosting via GitHub Actions on push to master. Custom domains: `oqupa.com` and `www.oqupa.com`.
 
-Firebase is only used for:
+Firebase is used for:
+- Firebase Hosting (website deployment)
 - Firestore (database)
+- Firebase Auth (authentication)
+- Firebase Storage (listing images)
 - Trigger Email extension
 - Secret Manager (SMTP password)
 

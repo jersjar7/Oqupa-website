@@ -17,7 +17,8 @@ export default function AppLayout() {
 
   const isAuthPage =
     location.pathname === '/app/login' ||
-    location.pathname === '/app/register' ||
+    location.pathname === '/app/login/password' ||
+    location.pathname === '/app/auth/complete' ||
     location.pathname === '/app/forgot-password'
 
   if (!isInitialized) {
@@ -46,20 +47,12 @@ export default function AppLayout() {
                 // Logged in but no Firestore doc yet (mid-registration)
                 <UserMenu userName="..." />
               ) : (
-                <>
-                  <Link
-                    to="/app/login"
-                    className="text-base text-secondary transition-colors hover:text-secondary-hover"
-                  >
-                    Iniciar Sesion
-                  </Link>
-                  <Link
-                    to="/app/register"
-                    className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
-                  >
-                    Crear Cuenta
-                  </Link>
-                </>
+                <Link
+                  to="/app/login"
+                  className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+                >
+                  Ingresar
+                </Link>
               )}
             </nav>
           )}

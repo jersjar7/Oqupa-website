@@ -30,6 +30,14 @@ export const registerSchema = z
   })
 export type RegisterFormData = z.infer<typeof registerSchema>
 
+export const magicLinkSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'El correo es requerido')
+    .email('Ingresa un correo valido'),
+})
+export type MagicLinkFormData = z.infer<typeof magicLinkSchema>
+
 export const forgotPasswordSchema = z.object({
   email: z
     .string()

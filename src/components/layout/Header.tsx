@@ -93,7 +93,7 @@ export default function Header({
                 to="/app/login"
                 className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
               >
-                Iniciar Sesion
+                Ingresar
               </Link>
             </nav>
           )}
@@ -170,7 +170,7 @@ export default function Header({
                 onClick={close}
                 className="mt-4 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
               >
-                Iniciar Sesion
+                Ingresar
               </Link>
             </nav>
           </div>

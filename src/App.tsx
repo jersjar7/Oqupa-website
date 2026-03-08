@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import LandingPage from '@/pages/LandingPage'
 import PrivacyPage from '@/pages/PrivacyPage'
@@ -7,8 +7,9 @@ import PropertyPage from '@/pages/PropertyPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
-import LoginPage from '@/app/features/auth/pages/LoginPage'
-import RegisterPage from '@/app/features/auth/pages/RegisterPage'
+import MagicLinkPage from '@/app/features/auth/pages/MagicLinkPage'
+import PasswordLoginPage from '@/app/features/auth/pages/PasswordLoginPage'
+import CompleteSignInPage from '@/app/features/auth/pages/CompleteSignInPage'
 import ForgotPasswordPage from '@/app/features/auth/pages/ForgotPasswordPage'
 import AuthPipelinePage from '@/app/features/auth/pages/AuthPipelinePage'
 import AuthGuard from '@/app/components/guards/AuthGuard'
@@ -33,8 +34,10 @@ export default function App() {
         {/* Publisher app routes (own layout) */}
         <Route path="/app" element={<ErrorBoundary><AppLayout /></ErrorBoundary>}>
           {/* Public auth pages */}
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
+          <Route path="login" element={<MagicLinkPage />} />
+          <Route path="login/password" element={<PasswordLoginPage />} />
+          <Route path="auth/complete" element={<CompleteSignInPage />} />
+          <Route path="register" element={<Navigate to="/app/login" replace />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Auth required: verification pipeline */}

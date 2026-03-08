@@ -7,7 +7,7 @@ import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 import { Button, Input } from '@/app/components/ui'
 
-export default function LoginPage() {
+export default function PasswordLoginPage() {
   const navigate = useNavigate()
   const { firebaseUser, user, isInitialized } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +50,7 @@ export default function LoginPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Iniciar Sesion
+          Iniciar con Contrasena
         </h1>
         <p className="mt-2 text-center text-base text-text-secondary">
           Ingresa a tu cuenta de Oqupa
@@ -98,15 +98,12 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 border-t border-border pt-6 text-center">
-          <p className="text-base text-text-secondary">
-            No tienes cuenta?{' '}
-            <Link
-              to="/app/register"
-              className="font-medium text-secondary hover:text-secondary-hover"
-            >
-              Crear Cuenta
-            </Link>
-          </p>
+          <Link
+            to="/app/login"
+            className="text-base text-text-tertiary hover:text-text-secondary"
+          >
+            Usar enlace magico
+          </Link>
         </div>
       </div>
     </div>

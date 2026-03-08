@@ -3,6 +3,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  isSignInWithEmailLink,
   RecaptchaVerifier,
   PhoneAuthProvider,
   signInWithCredential,
@@ -134,6 +137,48 @@ export const authService = {
         updatedAt: serverTimestamp(),
       })
     }
+  },
+
+  async sendMagicLink(email: string) {
+    const actionCodeSettings = {
+      url: 'https://oqupa.com/app/auth/complete',
+      handleCodeInApp: true,
+      linkDomain: 'oqupa.com',
+    }
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings)
+    localStorage.setItem('oqupa_signInEmail', email)
+  },
+
+  isSignInLink(url: string) {
+    return isSignInWithEmailLink(auth, url)
+  },
+
+  async completeMagicLinkSignIn(email: string, url: string) {
+    const credential = await signInWithEmailLink(auth, email, url)
+    const user = credential.user
+
+    // Check if Firestore doc exists; create if new user
+    const existingDoc = await getDoc(doc(db, 'users', user.uid))
+    if (!existingDoc.exists()) {
+      const now = new Date()
+      const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isActive: true,
+        isPhoneVerified: false,
+        isIdentityVerified: false,
+        isVerifiedRealtor: false,
+        claimsThisMonth: 0,
+        claimMonth,
+        authProvider: 'emailLink',
+      })
+    }
+
+    localStorage.removeItem('oqupa_signInEmail')
+    return user
   },
 
   async getUserDoc(uid: string) {

@@ -4,6 +4,32 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-08 — Magic Link (Passwordless) Authentication
+
+### New Features
+- Magic link sign-in as primary auth method — users enter email, receive a sign-in link
+- Merged Login + Register into unified "Ingresar" page (MagicLinkPage)
+- Password login available as fallback at `/app/login/password`
+- Cross-device magic link support (prompts for email if opened on different device)
+- New user accounts auto-created on first magic link sign-in
+- `/app/register` now redirects to `/app/login`
+
+### Infrastructure
+- Enabled Firebase Email Link (passwordless) sign-in method
+- Activated DKIM authentication for `oqupa.com` in Google Workspace
+
+### Technical
+- Added `sendMagicLink`, `completeMagicLinkSignIn`, `isSignInLink` to authService
+- New pages: MagicLinkPage, CompleteSignInPage, PasswordLoginPage
+- New route: `/app/auth/complete` handles magic link redirect
+- Added `magicLinkSchema` (email-only Zod schema)
+- Removed LoginPage and RegisterPage
+- Updated AppLayout nav: single "Ingresar" button (removed "Crear Cuenta")
+- Updated Header nav text to "Ingresar"
+- ForgotPasswordPage back-link now points to `/app/login/password`
+
+---
+
 ## 2026-03-01 — Publisher Web App & Firebase Hosting Migration
 
 ### New Features

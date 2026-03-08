@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
             Revisa tu bandeja de entrada para restablecer tu contrasena.
           </p>
           <Link
-            to="/app/login"
+            to="/app/login/password"
             className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
 
         <div className="mt-4 text-center">
           <Link
-            to="/app/login"
+            to="/app/login/password"
             className="text-base text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
