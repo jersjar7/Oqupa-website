@@ -8,7 +8,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -29,7 +29,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -55,7 +55,7 @@ const TRUST_CARDS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -75,7 +75,7 @@ export default function TrustStrip() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="bg-background-secondary py-16 lg:py-20">
+    <section className="bg-[#FFFAF5] py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
@@ -84,17 +84,17 @@ export default function TrustStrip() {
           {TRUST_CARDS.map((card, index) => (
             <div
               key={card.title}
-              className={`flex flex-col items-center gap-4 rounded-2xl bg-white p-8 text-center shadow-light transition-all duration-700 ease-out hover:shadow-medium ${
+              className={`flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-light transition-all duration-700 ease-out hover:shadow-medium ${
                 isVisible
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-8'
               }`}
               style={{ transitionDelay: `${index * 100}ms` }}
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 {card.icon}
               </div>
-              <h3 className="font-sans text-lg font-medium uppercase tracking-wider text-text-primary">
+              <h3 className="text-lg font-medium uppercase text-secondary">
                 {card.title}
               </h3>
               <p className="text-sm leading-relaxed text-text-secondary">

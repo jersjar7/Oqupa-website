@@ -49,10 +49,10 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+        <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
           Crear Cuenta
         </h1>
-        <p className="mt-2 text-center text-sm text-text-secondary">
+        <p className="mt-2 text-center text-base text-text-secondary">
           Registrate para publicar propiedades en Oqupa
         </p>
 
@@ -92,18 +92,17 @@ export default function RegisterPage() {
             type="submit"
             isLoading={isSubmitting}
             className="w-full"
-            size="lg"
           >
             Crear Cuenta
           </Button>
         </form>
 
         <div className="mt-6 border-t border-border pt-6 text-center">
-          <p className="text-sm text-text-secondary">
+          <p className="text-base text-text-secondary">
             Ya tienes cuenta?{' '}
             <Link
               to="/app/login"
-              className="font-medium text-primary hover:text-primary-hover"
+              className="font-medium text-secondary hover:text-secondary-hover"
             >
               Iniciar Sesion
             </Link>

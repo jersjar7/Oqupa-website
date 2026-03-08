@@ -66,7 +66,7 @@ export default function EditListingPage() {
         <p className="text-error">No se pudo cargar la publicacion</p>
         <button
           onClick={() => navigate('/app')}
-          className="text-sm text-primary hover:text-primary-hover"
+          className="text-base text-secondary hover:text-secondary-hover"
         >
           Volver al dashboard
         </button>
@@ -84,10 +84,10 @@ export default function EditListingPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-serif text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Editar Publicacion
       </h1>
-      <p className="mt-1 text-sm text-text-secondary">
+      <p className="mt-1 text-base text-text-secondary">
         Modifica los datos de tu propiedad
       </p>
 

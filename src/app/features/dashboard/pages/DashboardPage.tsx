@@ -60,11 +60,11 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-text-primary">
+          <h1 className="font-serif text-[28px] font-normal text-text-primary">
             Mis Publicaciones
           </h1>
           {user?.name && (
-            <p className="mt-1 text-sm text-text-secondary">
+            <p className="mt-1 text-base text-text-secondary">
               Hola, {user.name}
             </p>
           )}
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           <p className="text-error">Error al cargar tus publicaciones</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-primary hover:text-primary-hover"
+            className="mt-2 text-base text-secondary hover:text-secondary-hover"
           >
             Reintentar
           </button>

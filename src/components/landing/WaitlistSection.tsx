@@ -10,7 +10,7 @@ export default function WaitlistSection() {
   return (
     <section
       id="lista-espera"
-      className="bg-gradient-to-br from-secondary to-[#2E5544] py-20 lg:py-28"
+      className="bg-[#FFFAF5] py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -23,10 +23,10 @@ export default function WaitlistSection() {
         >
           {/* Heading */}
           <div className="text-center">
-            <h2 className="font-serif text-3xl font-bold text-white sm:text-4xl">
+            <h2 className="text-3xl font-medium text-secondary sm:text-4xl">
               Unete a la lista de espera
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-white/80">
+            <p className="mt-4 text-lg leading-relaxed text-text-secondary">
               Se de los primeros en acceder a Oqupa cuando lancemos en Piura.
               Registrate y te avisaremos cuando estemos listos.
             </p>
@@ -69,7 +69,7 @@ export default function WaitlistSection() {
                 <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor="name"
-                    className="text-sm font-medium text-text-primary"
+                    className="text-sm font-medium uppercase text-text-primary"
                   >
                     Nombre completo
                   </label>
@@ -93,7 +93,7 @@ export default function WaitlistSection() {
                 <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor="email"
-                    className="text-sm font-medium text-text-primary"
+                    className="text-sm font-medium uppercase text-text-primary"
                   >
                     Correo electronico
                   </label>
@@ -117,7 +117,7 @@ export default function WaitlistSection() {
                 <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor="intent"
-                    className="text-sm font-medium text-text-primary"
+                    className="text-sm font-medium uppercase text-text-primary"
                   >
                     Que te interesa mas?
                   </label>
@@ -209,7 +209,7 @@ export default function WaitlistSection() {
           </form>
 
           {/* Disclaimer */}
-          <p className="mt-6 text-center text-xs leading-relaxed text-white/60">
+          <p className="mt-6 text-center text-xs leading-relaxed text-text-tertiary">
             No compartiremos tu informacion con terceros. Solo te contactaremos
             para informarte sobre el lanzamiento de Oqupa.
           </p>

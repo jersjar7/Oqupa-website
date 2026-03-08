@@ -200,10 +200,10 @@ function NameStep({
 
   return (
     <>
-      <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+      <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         Como te llamas?
       </h1>
-      <p className="mt-2 text-center text-sm text-text-secondary">
+      <p className="mt-2 text-center text-base text-text-secondary">
         Tu nombre aparecera en tus publicaciones
       </p>
 
@@ -223,7 +223,6 @@ function NameStep({
           type="submit"
           isLoading={isSubmitting}
           className="w-full"
-          size="lg"
         >
           Continuar
         </Button>
@@ -253,16 +252,16 @@ function PhoneStep({
 
   return (
     <>
-      <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+      <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         Tu numero de telefono
       </h1>
-      <p className="mt-2 text-center text-sm text-text-secondary">
+      <p className="mt-2 text-center text-base text-text-secondary">
         Te enviaremos un codigo SMS para verificar tu numero
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <div className="flex gap-2">
-          <div className="flex h-[42px] items-center rounded-xl border border-border bg-gray-50 px-3 text-sm text-text-secondary">
+          <div className="flex h-[42px] items-center rounded-xl border border-border bg-gray-50 px-3 text-base text-text-secondary">
             +51
           </div>
           <Input
@@ -282,7 +281,6 @@ function PhoneStep({
           isLoading={isSubmitting}
           disabled={cooldown > 0}
           className="w-full"
-          size="lg"
         >
           {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar codigo'}
         </Button>
@@ -314,10 +312,10 @@ function VerifyCodeStep({
 
   return (
     <>
-      <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+      <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         Ingresa el codigo
       </h1>
-      <p className="mt-2 text-center text-sm text-text-secondary">
+      <p className="mt-2 text-center text-base text-text-secondary">
         Enviamos un codigo de 6 digitos a tu telefono
       </p>
 
@@ -340,7 +338,6 @@ function VerifyCodeStep({
           type="submit"
           isLoading={isSubmitting}
           className="w-full"
-          size="lg"
         >
           Verificar
         </Button>
@@ -351,7 +348,7 @@ function VerifyCodeStep({
           type="button"
           onClick={onResend}
           disabled={cooldown > 0}
-          className={`text-sm ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-primary hover:text-primary-hover'}`}
+          className={`text-base ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-secondary hover:text-secondary-hover'}`}
         >
           {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar codigo'}
         </button>

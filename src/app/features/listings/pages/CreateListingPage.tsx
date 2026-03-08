@@ -16,10 +16,10 @@ export default function CreateListingPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-serif text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Crear Publicacion
       </h1>
-      <p className="mt-1 text-sm text-text-secondary">
+      <p className="mt-1 text-base text-text-secondary">
         Completa los datos de tu propiedad
       </p>
 

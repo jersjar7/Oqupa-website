@@ -38,7 +38,7 @@ export default function Header({
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/95 shadow-light backdrop-blur-xl py-3'
+          ? 'bg-[#FFFAF5]/95 shadow-light backdrop-blur-xl py-3'
           : 'bg-transparent py-5'
       }`}
     >
@@ -51,7 +51,7 @@ export default function Header({
                 src={logo}
                 alt="Oqupa"
                 className={`transition-all duration-300 ${
-                  isScrolled ? 'h-8' : 'h-10'
+                  isScrolled ? 'h-12' : 'h-[60px]'
                 }`}
               />
             </Link>
@@ -68,7 +68,7 @@ export default function Header({
                 src={logo}
                 alt="Oqupa"
                 className={`transition-all duration-300 ${
-                  isScrolled ? 'h-8' : 'h-10'
+                  isScrolled ? 'h-12' : 'h-[60px]'
                 }`}
               />
             </a>
@@ -82,7 +82,7 @@ export default function Header({
                   key={link.href}
                   href={link.href}
                   onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
+                  className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
                     isScrolled ? 'text-text-primary' : 'text-text-primary'
                   }`}
                 >
@@ -91,7 +91,7 @@ export default function Header({
               ))}
               <Link
                 to="/app/login"
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+                className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
               >
                 Iniciar Sesion
               </Link>
@@ -150,7 +150,7 @@ export default function Header({
           {/* Slide-down menu */}
           <div
             ref={menuRef}
-            className={`fixed top-0 right-0 left-0 z-40 transform bg-white pt-20 shadow-medium transition-transform duration-300 ease-in-out md:hidden ${
+            className={`fixed top-0 right-0 left-0 z-40 transform bg-[#FFFAF5] pt-20 shadow-medium transition-transform duration-300 ease-in-out md:hidden ${
               isOpen ? 'translate-y-0' : '-translate-y-full'
             }`}
           >
@@ -160,7 +160,7 @@ export default function Header({
                   key={link.href}
                   href={link.href}
                   onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className="block border-b border-border py-4 text-base font-medium text-text-primary transition-colors duration-200 hover:text-primary"
+                  className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
                 >
                   {link.label}
                 </a>
@@ -168,7 +168,7 @@ export default function Header({
               <Link
                 to="/app/login"
                 onClick={close}
-                className="mt-4 block w-full rounded-xl bg-primary px-6 py-3 text-center text-base font-medium text-white transition-colors hover:bg-primary-hover"
+                className="mt-4 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
               >
                 Iniciar Sesion
               </Link>

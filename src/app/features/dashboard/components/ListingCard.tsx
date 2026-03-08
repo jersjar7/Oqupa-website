@@ -100,15 +100,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {/* Actions */}
         <div className="mt-4 flex gap-2">
           <Link to={`/app/listings/${listing.id}/edit`} className="flex-1">
-            <Button variant="ghost" size="sm" className="w-full">
+            <Button variant="text" className="w-full">
               <Pencil className="h-4 w-4" />
               Editar
             </Button>
           </Link>
           {canToggle && (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="text"
               isLoading={toggleStatus.isPending}
               onClick={() =>
                 toggleStatus.mutate({

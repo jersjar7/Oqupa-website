@@ -1,17 +1,15 @@
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
-import macbookImage from '@/assets/images/macbook-ubiqa-interface.webp'
-import iphoneImage from '@/assets/images/iphone-ubiqa-app.webp'
-import familyImage from '@/assets/images/family-kitchen-laptop.webp'
+import showcaseImage from '@/assets/images/Showcase-image.webp'
 
 const FEATURES = [
   {
-    title: 'Busqueda inteligente',
+    title: 'Búsqueda inteligente',
     description:
       'Filtra por ubicacion, precio, tipo de propiedad y mas para encontrar exactamente lo que necesitas.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-secondary"
+        className="h-6 w-6 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -32,7 +30,7 @@ const FEATURES = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-secondary"
+        className="h-6 w-6 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -47,13 +45,13 @@ const FEATURES = [
     ),
   },
   {
-    title: 'Informacion completa',
+    title: 'Información completa',
     description:
       'Cada aviso incluye fotos, ubicacion exacta, caracteristicas y datos de contacto verificados.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6 text-secondary"
+        className="h-6 w-6 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -81,7 +79,7 @@ export default function ShowcaseSection() {
   }
 
   return (
-    <section id="caracteristicas" className="bg-background-secondary py-20 lg:py-28">
+    <section id="caracteristicas" className="bg-[#FFFAF5] py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
@@ -91,42 +89,19 @@ export default function ShowcaseSection() {
               : 'opacity-0 translate-y-8'
           }`}
         >
-          {/* Device Mockups Column */}
-          <div className="relative flex items-center justify-center">
-            {/* Lifestyle accent image */}
-            <div className="absolute -top-6 -right-4 z-0 hidden w-40 overflow-hidden rounded-2xl opacity-60 lg:block">
-              <img
-                src={familyImage}
-                alt="Familia usando laptop en su cocina"
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Macbook */}
-            <div className="relative z-10 w-full max-w-md lg:max-w-lg">
-              <img
-                src={macbookImage}
-                alt="Interfaz de Oqupa en MacBook"
-                className="w-full rounded-lg shadow-large"
-                loading="lazy"
-              />
-
-              {/* iPhone overlapping */}
-              <div className="absolute -bottom-6 -right-4 z-20 w-24 sm:w-32 lg:-right-8 lg:w-36">
-                <img
-                  src={iphoneImage}
-                  alt="App de Oqupa en iPhone"
-                  className="w-full rounded-2xl shadow-large"
-                  loading="lazy"
-                />
-              </div>
-            </div>
+          {/* Image Column */}
+          <div className="flex items-center justify-center">
+            <img
+              src={showcaseImage}
+              alt="Oqupa showcase"
+              className="w-full rounded-2xl object-cover shadow-large"
+              loading="lazy"
+            />
           </div>
 
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="font-serif text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+            <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
               La nueva forma de encontrar propiedades llega pronto
             </h2>
 
@@ -138,11 +113,11 @@ export default function ShowcaseSection() {
             <div className="flex flex-col gap-6">
               {FEATURES.map((feature) => (
                 <div key={feature.title} className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                     {feature.icon}
                   </div>
                   <div>
-                    <h3 className="font-sans font-medium text-text-primary">
+                    <h3 className="font-sans font-medium uppercase text-secondary">
                       {feature.title}
                     </h3>
                     <p className="mt-1 text-sm leading-relaxed text-text-secondary">
@@ -158,7 +133,7 @@ export default function ShowcaseSection() {
               onClick={handleScrollToWaitlist}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:w-auto sm:px-8 sm:text-lg"
             >
-              Acceso Anticipado
+              Se el primero en probarlo
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"

@@ -49,7 +49,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
         {/* Header */}
         <div className="flex items-center justify-between">
           {title && (
-            <h2 className="text-lg font-bold text-text-primary">{title}</h2>
+            <h2 className="text-[28px] font-medium text-text-primary">{title}</h2>
           )}
           <button
             onClick={onClose}

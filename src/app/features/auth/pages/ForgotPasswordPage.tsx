@@ -50,15 +50,15 @@ export default function ForgotPasswordPage() {
               />
             </svg>
           </div>
-          <h1 className="mt-4 font-serif text-2xl font-bold text-text-primary">
+          <h1 className="mt-4 font-serif text-[28px] font-normal text-text-primary">
             Correo enviado
           </h1>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-base text-text-secondary">
             Revisa tu bandeja de entrada para restablecer tu contrasena.
           </p>
           <Link
             to="/app/login"
-            className="mt-6 inline-block text-sm font-medium text-primary hover:text-primary-hover"
+            className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
           </Link>
@@ -70,10 +70,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+        <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
           Recuperar Contrasena
         </h1>
-        <p className="mt-2 text-center text-sm text-text-secondary">
+        <p className="mt-2 text-center text-base text-text-secondary">
           Ingresa tu correo y te enviaremos un enlace para restablecer tu
           contrasena.
         </p>
@@ -96,7 +96,6 @@ export default function ForgotPasswordPage() {
             type="submit"
             isLoading={isSubmitting}
             className="w-full"
-            size="lg"
           >
             Enviar enlace
           </Button>
@@ -105,7 +104,7 @@ export default function ForgotPasswordPage() {
         <div className="mt-4 text-center">
           <Link
             to="/app/login"
-            className="text-sm text-primary hover:text-primary-hover"
+            className="text-base text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
           </Link>

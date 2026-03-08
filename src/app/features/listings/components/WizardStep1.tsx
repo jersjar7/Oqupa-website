@@ -40,7 +40,7 @@ export default function WizardStep1() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Property Type */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">Tipo de propiedad</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de propiedad</h3>
         {errors.propertyType && (
           <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>
         )}
@@ -64,7 +64,7 @@ export default function WizardStep1() {
 
       {/* Operation Type */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">Tipo de operacion</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operacion</h3>
         {errors.operationType && (
           <p className="mt-1 text-sm text-error">{errors.operationType.message}</p>
         )}
@@ -88,7 +88,7 @@ export default function WizardStep1() {
 
       {/* Role */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">Tu relacion con la propiedad</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Tu relacion con la propiedad</h3>
         {errors.role && (
           <p className="mt-1 text-sm text-error">{errors.role.message}</p>
         )}
@@ -110,7 +110,7 @@ export default function WizardStep1() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" size="lg">
+      <Button type="submit" className="w-full">
         Continuar
       </Button>
     </form>

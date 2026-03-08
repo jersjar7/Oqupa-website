@@ -5,7 +5,6 @@ import TrustStrip from '@/components/landing/TrustStrip'
 import SolutionSection from '@/components/landing/SolutionSection'
 import ShowcaseSection from '@/components/landing/ShowcaseSection'
 import PricingSection from '@/components/landing/PricingSection'
-import SocialProofSection from '@/components/landing/SocialProofSection'
 import WaitlistSection from '@/components/landing/WaitlistSection'
 
 interface LayoutContext {
@@ -51,11 +50,10 @@ export default function LandingPage() {
   return (
     <>
       <HeroSection heroRef={heroRef} />
+      <ShowcaseSection />
       <TrustStrip />
       <SolutionSection />
-      <ShowcaseSection />
       <PricingSection />
-      <SocialProofSection />
       <WaitlistSection />
     </>
   )

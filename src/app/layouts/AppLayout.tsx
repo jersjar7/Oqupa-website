@@ -49,13 +49,13 @@ export default function AppLayout() {
                 <>
                   <Link
                     to="/app/login"
-                    className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+                    className="text-base text-secondary transition-colors hover:text-secondary-hover"
                   >
                     Iniciar Sesion
                   </Link>
                   <Link
                     to="/app/register"
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+                    className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
                   >
                     Crear Cuenta
                   </Link>

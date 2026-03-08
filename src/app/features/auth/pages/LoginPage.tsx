@@ -49,10 +49,10 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-center font-serif text-2xl font-bold text-text-primary">
+        <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
           Iniciar Sesion
         </h1>
-        <p className="mt-2 text-center text-sm text-text-secondary">
+        <p className="mt-2 text-center text-base text-text-secondary">
           Ingresa a tu cuenta de Oqupa
         </p>
 
@@ -83,7 +83,6 @@ export default function LoginPage() {
             type="submit"
             isLoading={isSubmitting}
             className="w-full"
-            size="lg"
           >
             Iniciar Sesion
           </Button>
@@ -92,18 +91,18 @@ export default function LoginPage() {
         <div className="mt-4 text-center">
           <Link
             to="/app/forgot-password"
-            className="text-sm text-primary hover:text-primary-hover"
+            className="text-base text-secondary hover:text-secondary-hover"
           >
             Olvidaste tu contrasena?
           </Link>
         </div>
 
         <div className="mt-6 border-t border-border pt-6 text-center">
-          <p className="text-sm text-text-secondary">
+          <p className="text-base text-text-secondary">
             No tienes cuenta?{' '}
             <Link
               to="/app/register"
-              className="font-medium text-primary hover:text-primary-hover"
+              className="font-medium text-secondary hover:text-secondary-hover"
             >
               Crear Cuenta
             </Link>

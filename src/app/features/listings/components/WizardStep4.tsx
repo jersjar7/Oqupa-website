@@ -210,7 +210,7 @@ export default function WizardStep4() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Price */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">Precio</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Precio</h3>
 
         {/* Currency toggle */}
         <div className="mt-3 flex rounded-xl border border-border">
@@ -252,7 +252,7 @@ export default function WizardStep4() {
             {...register('wantsRealtorHelp')}
           />
           <div>
-            <span className="text-sm font-medium text-text-primary">
+            <span className="text-sm font-medium uppercase text-text-primary">
               Quiero ayuda de corredores
             </span>
             <p className="text-xs text-text-secondary">
@@ -263,7 +263,7 @@ export default function WizardStep4() {
 
         {wantsRealtorHelp && (
           <div className="mt-4">
-            <label className="text-sm font-medium text-text-primary">
+            <label className="text-sm font-medium uppercase text-text-primary">
               Maximo de corredores
             </label>
             <div className="mt-2 flex gap-2">
@@ -300,8 +300,7 @@ export default function WizardStep4() {
       <div className="flex gap-3">
         <Button
           type="button"
-          variant="ghost"
-          size="lg"
+          variant="text"
           onClick={prevStep}
           disabled={isSubmitting}
           className="flex-1"
@@ -310,7 +309,6 @@ export default function WizardStep4() {
         </Button>
         <Button
           type="submit"
-          size="lg"
           isLoading={isSubmitting}
           className="flex-1"
         >

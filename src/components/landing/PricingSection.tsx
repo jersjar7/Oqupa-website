@@ -8,7 +8,7 @@ const FREE_BENEFITS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -29,7 +29,7 @@ const FREE_BENEFITS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -55,7 +55,7 @@ const FREE_BENEFITS = [
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-secondary"
+        className="h-8 w-8 text-primary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -74,18 +74,12 @@ const FREE_BENEFITS = [
 export default function PricingSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
-  const handleScrollToWaitlist = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const element = document.getElementById('lista-espera')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
+
 
   return (
     <section
       id="precios"
-      className="bg-gradient-to-b from-cream via-white to-cream py-20 lg:py-28"
+      className="bg-[#FFFAF5] py-20 lg:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -98,7 +92,7 @@ export default function PricingSection() {
         >
           {/* Heading */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-3xl font-bold leading-tight text-text-primary sm:text-4xl">
+            <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
               Publica tus propiedades gratis
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-text-secondary">
@@ -110,11 +104,11 @@ export default function PricingSection() {
 
           {/* FREE Highlight Callout */}
           <div className="mt-12 flex flex-col items-center gap-3 rounded-3xl border-2 border-secondary bg-secondary/5 px-10 py-10 shadow-medium sm:px-16">
-            <span className="rounded-full bg-secondary px-5 py-1.5 text-sm font-bold uppercase tracking-wider text-white">
+            <span className="rounded-full bg-primary px-5 py-1.5 text-sm font-bold uppercase tracking-wider text-white">
               Gratis
             </span>
             <span className="text-6xl font-extrabold text-secondary sm:text-7xl">
-              S/ 0
+              S/0<sup className="text-3xl sm:text-4xl">.00</sup>
             </span>
             <p className="text-center text-base font-medium text-text-secondary">
               Sin costos ocultos. Sin comisiones. Sin limites.
@@ -126,12 +120,12 @@ export default function PricingSection() {
             {FREE_BENEFITS.map((feature) => (
               <div
                 key={feature.title}
-                className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 text-center shadow-light transition-shadow duration-300 hover:shadow-medium"
+                className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-light transition-all duration-700 ease-out hover:shadow-medium"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-text-primary">
+                <h3 className="text-lg font-medium uppercase text-secondary">
                   {feature.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-text-secondary">
@@ -142,27 +136,6 @@ export default function PricingSection() {
           </div>
 
           {/* CTA */}
-          <a
-            href="#lista-espera"
-            onClick={handleScrollToWaitlist}
-            className="mt-12 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:text-lg"
-          >
-            Empezar Gratis
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
-          </a>
         </div>
       </div>
     </section>

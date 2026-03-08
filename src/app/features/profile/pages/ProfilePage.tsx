@@ -60,13 +60,13 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-serif text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Mi Perfil
       </h1>
 
       {/* Verification status */}
       <Card className="mt-6">
-        <h2 className="text-sm font-medium text-text-primary">
+        <h2 className="text-sm font-medium uppercase text-text-primary">
           Estado de verificacion
         </h2>
         <div className="mt-3 space-y-2">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
           <div>
             <label
               htmlFor="notes"
-              className="mb-1.5 block text-sm font-medium text-text-primary"
+              className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
             >
               Notas adicionales de contacto
             </label>
@@ -128,7 +128,7 @@ export default function ProfilePage() {
               id="notes"
               rows={3}
               placeholder="Ej: Prefiero WhatsApp"
-              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               {...register('additionalContactNotes')}
             />
           </div>
@@ -144,7 +144,7 @@ export default function ProfilePage() {
 
       {/* Account info */}
       <Card className="mt-6">
-        <h2 className="text-sm font-medium text-text-secondary">Cuenta</h2>
+        <h2 className="text-sm font-medium uppercase text-text-secondary">Cuenta</h2>
         <p className="mt-2 text-xs text-text-tertiary">
           Miembro desde {user.createdAt.toLocaleDateString('es-PE')}
         </p>

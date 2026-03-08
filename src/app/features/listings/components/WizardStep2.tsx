@@ -47,7 +47,7 @@ export default function WizardStep2() {
       <div>
         <label
           htmlFor="description"
-          className="mb-1.5 block text-sm font-medium text-text-primary"
+          className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
         >
           Descripcion
         </label>
@@ -55,7 +55,7 @@ export default function WizardStep2() {
           id="description"
           rows={5}
           placeholder="Describe tu propiedad. Incluye detalles sobre amenidades y caracteristicas especiales. (Minimo 20 caracteres)"
-          className={`w-full rounded-xl border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+          className={`w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
             errors.description ? 'border-error' : 'border-border'
           }`}
           {...register('description')}
@@ -105,10 +105,10 @@ export default function WizardStep2() {
 
       {/* Navigation */}
       <div className="flex gap-3">
-        <Button type="button" variant="ghost" size="lg" onClick={prevStep} className="flex-1">
+        <Button type="button" variant="text" onClick={prevStep} className="flex-1">
           Atras
         </Button>
-        <Button type="submit" size="lg" className="flex-1">
+        <Button type="submit" className="flex-1">
           Continuar
         </Button>
       </div>

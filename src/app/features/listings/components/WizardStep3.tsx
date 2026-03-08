@@ -75,7 +75,7 @@ export default function WizardStep3() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Location */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">Ubicacion</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Ubicacion</h3>
 
         {/* Map placeholder */}
         <div
@@ -130,7 +130,7 @@ export default function WizardStep3() {
 
       {/* Photos */}
       <div>
-        <h3 className="text-sm font-medium text-text-primary">
+        <h3 className="text-sm font-medium uppercase text-text-primary">
           Fotos ({totalPhotos}/25)
         </h3>
         {photoError && (
@@ -210,14 +210,13 @@ export default function WizardStep3() {
       <div className="flex gap-3">
         <Button
           type="button"
-          variant="ghost"
-          size="lg"
+          variant="text"
           onClick={prevStep}
           className="flex-1"
         >
           Atras
         </Button>
-        <Button type="submit" size="lg" className="flex-1">
+        <Button type="submit" className="flex-1">
           Continuar
         </Button>
       </div>

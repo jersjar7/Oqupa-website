@@ -70,7 +70,7 @@ export default function SocialProofSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="py-20 lg:py-28">
+    <section className="bg-[#FFFAF5] py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}

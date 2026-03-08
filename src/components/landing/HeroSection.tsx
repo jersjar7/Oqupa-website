@@ -32,11 +32,11 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         >
           {/* Text Column */}
           <div className="flex flex-col items-start gap-6">
-            <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm font-semibold text-white animate-pulse-badge">
+            <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm font-serif font-light italic text-white animate-pulse-badge">
               *Proximamente 2026
             </span>
 
-            <h1 className="font-serif text-4xl font-normal leading-tight tracking-tight text-secondary sm:text-5xl lg:text-6xl">
+            <h1 className="text-[32px] font-medium leading-tight text-secondary sm:text-[40px] lg:text-[48px]">
               Todas las propiedades de Piura, en un solo lugar confiable.
             </h1>
 
