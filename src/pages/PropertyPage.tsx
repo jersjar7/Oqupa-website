@@ -1,13 +1,113 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { formatPrice } from '@/lib/utils'
 import { PROPERTY_TYPE_LABELS, PLAY_STORE_URL } from '@/lib/constants'
 
+function GalleryModal({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: string[]
+  startIndex: number
+  onClose: () => void
+}) {
+  const { currentSlide, next, prev, trackRef, onTouchStart, onTouchEnd } =
+    useGallery(images.length, startIndex)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+      {/* Counter badge */}
+      <div className="absolute top-4 left-4 z-10 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
+        {currentSlide + 1} / {images.length}
+      </div>
+
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+        aria-label="Cerrar galería"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      {/* Gallery track */}
+      <div
+        ref={trackRef}
+        className="flex h-full w-full transition-transform duration-300 ease-in-out"
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        {images.map((url, i) => (
+          <div key={i} className="flex h-full w-full shrink-0 items-center justify-center p-4">
+            <img
+              src={url}
+              alt={`Foto ${i + 1}`}
+              className="max-h-full max-w-full object-contain"
+              loading={Math.abs(i - startIndex) <= 1 ? 'eager' : 'lazy'}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Prev button */}
+      {images.length > 1 && (
+        <button
+          onClick={prev}
+          className="absolute top-1/2 left-3 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+          aria-label="Imagen anterior"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+
+      {/* Next button */}
+      {images.length > 1 && (
+        <button
+          onClick={next}
+          className="absolute top-1/2 right-3 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+          aria-label="Siguiente imagen"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
 function PropertyGallery({ images }: { images: string[] }) {
-  const { currentSlide, next, prev, goTo, trackRef, onTouchStart, onTouchEnd } =
-    useGallery(images.length)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalStartIndex, setModalStartIndex] = useState(0)
+  const mobileCarousel = useGallery(images.length)
+
+  const openModal = (index: number) => {
+    setModalStartIndex(index)
+    setModalOpen(true)
+  }
 
   if (images.length === 0) {
     return (
@@ -17,108 +117,151 @@ function PropertyGallery({ images }: { images: string[] }) {
     )
   }
 
+  const visibleImages = images.slice(0, 5)
+  const hasMore = images.length > 5
+
+  const getRightImageClass = (index: number, totalRight: number): string => {
+    if (totalRight === 1) return 'col-span-2 row-span-2'
+    if (totalRight === 2) return 'row-span-2'
+    if (totalRight === 3 && index === 2) return 'col-span-2'
+    return ''
+  }
+
   return (
-    <div className="relative w-full overflow-hidden bg-black">
-      {/* Gallery track */}
-      <div
-        ref={trackRef}
-        className="flex transition-transform duration-300 ease-in-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        {images.map((url, i) => (
-          <div
-            key={i}
-            className="h-[300px] w-full shrink-0 md:h-[400px]"
-          >
-            <img
-              src={url}
-              alt={`Foto ${i + 1}`}
-              className="h-full w-full object-cover"
-              loading={i === 0 ? 'eager' : 'lazy'}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Counter badge */}
-      {images.length > 1 && (
-        <div className="absolute top-4 right-4 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
-          {currentSlide + 1} / {images.length}
-        </div>
-      )}
-
-      {/* Prev button */}
-      {images.length > 1 && (
-        <button
-          onClick={prev}
-          className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
-          aria-label="Imagen anterior"
+    <>
+      {/* Mobile carousel */}
+      <div className="relative w-full overflow-hidden bg-black md:hidden">
+        <div
+          ref={mobileCarousel.trackRef}
+          className="flex transition-transform duration-300 ease-in-out"
+          style={{ transform: `translateX(-${mobileCarousel.currentSlide * 100}%)` }}
+          onTouchStart={mobileCarousel.onTouchStart}
+          onTouchEnd={mobileCarousel.onTouchEnd}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-      )}
-
-      {/* Next button */}
-      {images.length > 1 && (
-        <button
-          onClick={next}
-          className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
-          aria-label="Siguiente imagen"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      )}
-
-      {/* Dot indicators */}
-      {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
-          {images.map((_, i) => (
-            <button
+          {images.map((url, i) => (
+            <div
               key={i}
-              onClick={() => goTo(i)}
-              className="flex items-center justify-center p-2"
-              aria-label={`Ir a imagen ${i + 1}`}
+              className="h-[300px] w-full shrink-0 cursor-pointer"
+              onClick={() => openModal(i)}
             >
-              <span
-                className={`block h-3 w-3 rounded-full transition-colors ${
-                  i === currentSlide
-                    ? 'bg-white'
-                    : 'bg-white/50'
-                }`}
+              <img
+                src={url}
+                alt={`Foto ${i + 1}`}
+                className="h-full w-full object-cover"
+                loading={i === 0 ? 'eager' : 'lazy'}
               />
-            </button>
+            </div>
           ))}
         </div>
+
+        {images.length > 1 && (
+          <div className="absolute top-4 right-4 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
+            {mobileCarousel.currentSlide + 1} / {images.length}
+          </div>
+        )}
+
+        {images.length > 1 && (
+          <button
+            onClick={mobileCarousel.prev}
+            className="absolute top-1/2 left-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+            aria-label="Imagen anterior"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {images.length > 1 && (
+          <button
+            onClick={mobileCarousel.next}
+            className="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+            aria-label="Siguiente imagen"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
+        {images.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => mobileCarousel.goTo(i)}
+                className="flex items-center justify-center p-2"
+                aria-label={`Ir a imagen ${i + 1}`}
+              >
+                <span
+                  className={`block h-3 w-3 rounded-full transition-colors ${
+                    i === mobileCarousel.currentSlide ? 'bg-white' : 'bg-white/50'
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop grid */}
+      <div className="mx-auto hidden max-w-5xl px-4 pt-6 md:block">
+        {images.length === 1 ? (
+          <div
+            className="h-[420px] cursor-pointer overflow-hidden rounded-xl"
+            onClick={() => openModal(0)}
+          >
+            <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
+            <div
+              className="col-span-2 row-span-2 cursor-pointer"
+              onClick={() => openModal(0)}
+            >
+              <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" />
+            </div>
+            {visibleImages.slice(1).map((url, i) => {
+              const imageIndex = i + 1
+              const totalRight = visibleImages.length - 1
+              const isLast = i === totalRight - 1
+              const gridClass = getRightImageClass(i, totalRight)
+
+              return (
+                <div
+                  key={imageIndex}
+                  className={`relative cursor-pointer ${gridClass}`}
+                  onClick={() => openModal(imageIndex)}
+                >
+                  <img
+                    src={url}
+                    alt={`Foto ${imageIndex + 1}`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  {isLast && hasMore && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900">
+                        Ver todas las {images.length} fotos
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Full-screen modal */}
+      {modalOpen && (
+        <GalleryModal
+          images={images}
+          startIndex={modalStartIndex}
+          onClose={() => setModalOpen(false)}
+        />
       )}
-    </div>
+    </>
   )
 }
 

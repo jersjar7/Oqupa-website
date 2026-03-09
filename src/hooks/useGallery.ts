@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 
-export function useGallery(totalSlides: number) {
-  const [currentSlide, setCurrentSlide] = useState(0)
+export function useGallery(totalSlides: number, initialSlide = 0) {
+  const [currentSlide, setCurrentSlide] = useState(initialSlide)
   const trackRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef(0)
 

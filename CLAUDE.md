@@ -23,6 +23,10 @@ React 19 + Vite 6 + TypeScript 5.9 (strict) + Tailwind CSS 4. Single-page app us
 
 Vite splits into 3 chunks: `index` (app code), `vendor` (React/Router), `firebase` (Firebase SDK).
 
+## Git Workflow
+
+**Never work directly on `master`.** Always create a new feature branch for changes, then merge to `master` when ready. Example: `git checkout -b feat/my-feature`.
+
 ## Key Patterns
 
 ### Hooks-based architecture
