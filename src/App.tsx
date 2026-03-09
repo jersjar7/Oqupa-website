@@ -5,6 +5,7 @@ import PrivacyPage from '@/pages/PrivacyPage'
 import TermsPage from '@/pages/TermsPage'
 import PropertyPage from '@/pages/PropertyPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import ExplorePage from '@/pages/ExplorePage'
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
 import MagicLinkPage from '@/app/features/auth/pages/MagicLinkPage'
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/property/:id" element={<PropertyPage />} />
+          <Route path="/explorar" element={<ExplorePage />} />
         </Route>
 
         {/* Publisher app routes (own layout) */}

@@ -185,11 +185,6 @@ export default function PropertyPage() {
           {formatPrice(listing.price?.amount)}
         </p>
 
-        {/* Title */}
-        <h1 className="font-serif mt-2 text-xl font-semibold text-text-primary">
-          {listing.description ?? 'Propiedad en venta'}
-        </h1>
-
         {/* Location */}
         {location && (
           <div className="mt-2 flex items-center gap-1.5 text-text-secondary">

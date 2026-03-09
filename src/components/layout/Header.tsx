@@ -9,11 +9,18 @@ interface HeaderProps {
   heroRef?: React.RefObject<HTMLElement | null>
 }
 
-const NAV_LINKS = [
+interface NavLink {
+  label: string
+  href: string
+  isRoute?: boolean
+}
+
+const NAV_LINKS: NavLink[] = [
+  { label: 'Explorar', href: '/explorar', isRoute: true },
   { label: 'Lista de Espera', href: '#lista-espera' },
   { label: 'Publica Gratis', href: '#precios' },
   { label: 'Contacto', href: '#contacto' },
-] as const
+]
 
 export default function Header({
   variant = 'full',
@@ -77,18 +84,30 @@ export default function Header({
           {/* Desktop Nav (full variant only) */}
           {variant === 'full' && (
             <nav className="hidden items-center gap-8 md:flex">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
-                    isScrolled ? 'text-text-primary' : 'text-text-primary'
-                  }`}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.isRoute ? (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                      isScrolled ? 'text-text-primary' : 'text-text-primary'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                      isScrolled ? 'text-text-primary' : 'text-text-primary'
+                    }`}
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
               <Link
                 to="/app/login"
                 className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
@@ -155,16 +174,27 @@ export default function Header({
             }`}
           >
             <nav className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.isRoute ? (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={close}
+                    className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
               <Link
                 to="/app/login"
                 onClick={close}

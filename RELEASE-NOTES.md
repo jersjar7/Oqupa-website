@@ -4,6 +4,35 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-08 — Interactive Map Exploration & Listing Map Picker
+
+### New Features
+- **Explore page** (`/explorar`): Zillow-style interactive map to browse all active listings
+  - Price-label markers on Google Maps centered on Piura
+  - Click marker to see info card with photo, price, specs, and "Ver detalles" link
+  - Filter by operation type (Venta / Alquiler), property type, and price range
+  - Desktop: sidebar with filters + full map; Mobile: full-screen map with bottom drawer
+- **Map picker** in listing wizard (Step 3): click-to-place + draggable marker replaces placeholder
+- **"Explorar" nav link** in header (desktop and mobile) navigates to `/explorar`
+- Removed description-as-title from property detail page (price serves as header)
+
+### Infrastructure
+- Google Maps API key (web, restricted to `oqupa.com`, `www.oqupa.com`, `localhost:5173`)
+- Cloud Map ID for vector map rendering and Advanced Markers
+- Maps JavaScript API enabled in Google Cloud Console
+
+### Technical
+- Added `@vis.gl/react-google-maps` (already in dependencies) with dedicated `maps` build chunk (24KB)
+- New service: `getActiveListingsWithProperties()` batch-fetches active listings + properties
+- New hooks: `useExploreListings` (React Query, 5-min stale), `useMapFilters` (client-side filtering)
+- New components: ExploreMap, PropertyMarker, PropertyInfoCard, ExploreFilters, LocationPicker
+- New types: `ListingWithProperty`, `MapFilters`
+- New utility: `formatShortPrice()` for compact price labels (e.g. "S/ 250K")
+- Header refactored to support both route links (`<Link>`) and hash-scroll anchors (`<a>`)
+- `.env` added to `.gitignore` for API key management
+
+---
+
 ## 2026-03-08 — Magic Link (Passwordless) Authentication
 
 ### New Features

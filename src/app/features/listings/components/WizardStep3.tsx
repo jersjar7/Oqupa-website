@@ -5,6 +5,7 @@ import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button, Input } from '@/app/components/ui'
 import { Upload, X, ImagePlus } from 'lucide-react'
+import LocationPicker from './LocationPicker'
 
 export default function WizardStep3() {
   const { data, updateData, nextStep, prevStep, isEditMode } =
@@ -63,37 +64,30 @@ export default function WizardStep3() {
     nextStep()
   }
 
-  // Default Piura coordinates
-  const handleMapClick = useCallback(() => {
-    // For now, set default Piura coordinates
-    // Full Google Maps integration will come in Phase 3.5
-    setValue('latitude', -5.194, { shouldValidate: true })
-    setValue('longitude', -80.633, { shouldValidate: true })
-  }, [setValue])
+  const handleLocationChange = useCallback(
+    (lat: number, lng: number) => {
+      setValue('latitude', lat, { shouldValidate: true })
+      setValue('longitude', lng, { shouldValidate: true })
+    },
+    [setValue]
+  )
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Location */}
       <div>
-        <h3 className="text-sm font-medium uppercase text-text-primary">Ubicacion</h3>
+        <h3 className="text-sm font-medium uppercase text-text-primary">Ubicación</h3>
 
-        {/* Map placeholder */}
-        <div
-          onClick={handleMapClick}
-          className="mt-3 flex h-48 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-gray-50 transition-colors hover:border-primary/30"
-        >
-          <div className="text-center">
-            <p className="text-sm font-medium text-text-secondary">
-              Haz clic para seleccionar ubicacion
-            </p>
-            <p className="mt-1 text-xs text-text-tertiary">
-              Piura, Peru (-5.194, -80.633)
-            </p>
-          </div>
+        <div className="mt-3">
+          <LocationPicker
+            latitude={data.latitude ?? null}
+            longitude={data.longitude ?? null}
+            onChange={handleLocationChange}
+          />
         </div>
         {(errors.latitude || errors.longitude) && (
           <p className="mt-1.5 text-sm text-error">
-            Selecciona una ubicacion en el mapa
+            Selecciona una ubicación en el mapa
           </p>
         )}
       </div>

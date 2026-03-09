@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
+import type { ListingWithProperty } from '@/types/explore'
 
 // Strip undefined values recursively (Firestore rejects undefined)
 // Converts undefined to null to match Flutter behavior
@@ -130,6 +131,39 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
 }
 
 export const firestoreService = {
+  async getActiveListingsWithProperties(): Promise<ListingWithProperty[]> {
+    const q = query(
+      collection(db, 'listings'),
+      where('status', '==', 'active')
+    )
+    const snapshot = await getDocs(q)
+    const listings = snapshot.docs.map((d) =>
+      listingFromDoc(d.id, d.data() as Record<string, unknown>)
+    )
+
+    // Batch-fetch unique properties
+    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyDocs = await Promise.all(
+      propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
+    )
+    const propertyMap = new Map<string, Property>()
+    for (const snap of propertyDocs) {
+      if (snap.exists()) {
+        propertyMap.set(
+          snap.id,
+          propertyFromDoc(snap.id, snap.data() as Record<string, unknown>)
+        )
+      }
+    }
+
+    return listings
+      .filter((l) => propertyMap.has(l.propertyId))
+      .map((listing) => ({
+        listing,
+        property: propertyMap.get(listing.propertyId)!,
+      }))
+  },
+
   async getUserListings(userId: string): Promise<Listing[]> {
     const q = query(
       collection(db, 'listings'),
