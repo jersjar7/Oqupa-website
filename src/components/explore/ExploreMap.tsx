@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { APIProvider, Map } from '@vis.gl/react-google-maps'
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
 import PropertyMarker from './PropertyMarker'
@@ -9,22 +9,22 @@ const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
 
 interface ExploreMapProps {
   items: ListingWithProperty[]
+  selectedId: string | null
+  onSelect: (id: string | null) => void
 }
 
-export default function ExploreMap({ items }: ExploreMapProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-
+export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapProps) {
   const selectedItem = selectedId
     ? items.find((i) => i.listing.id === selectedId) ?? null
     : null
 
   const handleMarkerClick = useCallback((id: string) => {
-    setSelectedId((prev) => (prev === id ? null : id))
-  }, [])
+    onSelect(id === selectedId ? null : id)
+  }, [onSelect, selectedId])
 
   const handleClose = useCallback(() => {
-    setSelectedId(null)
-  }, [])
+    onSelect(null)
+  }, [onSelect])
 
   return (
     <APIProvider apiKey={API_KEY}>
