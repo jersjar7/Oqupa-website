@@ -4,6 +4,21 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-09 — Zillow-style Property Image Gallery
+
+### New Features
+- **Desktop image grid**: Hero image (left half) + up to 4 thumbnails in a 2×2 grid (right half), replacing the full-width carousel
+- **"Ver todas las X fotos" overlay**: Appears on the last thumbnail when the property has more than 5 images
+- **Full-screen gallery modal**: Click any image to open a full-viewport carousel with prev/next arrows, counter badge, touch swipe, and Escape-to-close
+- Graceful handling of edge cases: 0 images (placeholder), 1 image (full-width hero), 2–4 images (adaptive grid)
+
+### Technical
+- Rewrote `PropertyGallery` in `PropertyPage.tsx` with responsive breakpoints: mobile keeps the existing swipeable carousel, desktop shows the new grid
+- Added `GalleryModal` component with body scroll lock and keyboard navigation
+- `useGallery` hook now accepts optional `initialSlide` parameter for modal start position
+
+---
+
 ## 2026-03-08 — Interactive Map Exploration & Listing Map Picker
 
 ### New Features

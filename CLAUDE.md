@@ -63,7 +63,7 @@ Extension config: `extensions/firestore-send-email.env`
 
 ## Deployment
 
-The site is deployed to Firebase Hosting via GitHub Actions on push to master. Custom domains: `oqupa.com` and `www.oqupa.com`.
+The site is deployed manually to Firebase Hosting (`npm run build && firebase deploy --only hosting`). Pushing to master does **not** trigger automatic deployment. Custom domains: `oqupa.com` and `www.oqupa.com`.
 
 Firebase is used for:
 - Firebase Hosting (website deployment)
