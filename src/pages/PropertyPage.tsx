@@ -321,7 +321,7 @@ export default function PropertyPage() {
   )
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 pt-20">
       {/* Gallery */}
       <PropertyGallery images={images} />
 
