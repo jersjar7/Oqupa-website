@@ -316,8 +316,15 @@ export default function PropertyPage() {
   const propertyTypeLabel =
     PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const whatsappNumber = listing.contactInfo?.whatsappPhoneNumber
+  const whatsappAddress = [
+    property.location?.calle,
+    property.location?.distrito,
+    property.location?.departamento,
+  ]
+    .filter(Boolean)
+    .join(', ')
   const whatsappMessage = encodeURIComponent(
-    `Hola, me interesa la propiedad en: ${property.normalizedAddress || location || 'su sitio web'}`
+    `Hola, me interesa la propiedad en: ${whatsappAddress || 'su sitio web'}`
   )
 
   return (
