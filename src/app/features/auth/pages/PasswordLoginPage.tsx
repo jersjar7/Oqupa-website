@@ -5,20 +5,21 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input } from '@/app/components/ui'
 
 export default function PasswordLoginPage() {
   const navigate = useNavigate()
-  const { firebaseUser, user, isInitialized } = useAuthStore()
+  const { firebaseUser, user, isInitialized, isLoading } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!isInitialized) return
+    if (!isInitialized || isLoading) return
     if (firebaseUser) {
-      navigate(user?.isPhoneVerified ? '/app' : '/app/verify', { replace: true })
+      navigate(user?.isPhoneVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify', { replace: true })
     }
-  }, [firebaseUser, user, isInitialized, navigate])
+  }, [firebaseUser, user, isInitialized, isLoading, navigate])
 
   const {
     register,
@@ -32,7 +33,6 @@ export default function PasswordLoginPage() {
     setError(null)
     try {
       await authService.loginWithEmailAndPassword(data.email, data.password)
-      navigate('/app')
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error al iniciar sesion'

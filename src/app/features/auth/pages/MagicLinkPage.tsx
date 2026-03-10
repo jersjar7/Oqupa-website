@@ -5,22 +5,23 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input } from '@/app/components/ui'
 
 export default function MagicLinkPage() {
   const navigate = useNavigate()
-  const { firebaseUser, user, isInitialized } = useAuthStore()
+  const { firebaseUser, user, isInitialized, isLoading } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
   const [sentEmail, setSentEmail] = useState<string | null>(null)
   const [cooldown, setCooldown] = useState(0)
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!isInitialized) return
+    if (!isInitialized || isLoading) return
     if (firebaseUser) {
-      navigate(user?.isPhoneVerified ? '/app' : '/app/verify', { replace: true })
+      navigate(user?.isPhoneVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify', { replace: true })
     }
-  }, [firebaseUser, user, isInitialized, navigate])
+  }, [firebaseUser, user, isInitialized, isLoading, navigate])
 
   // Cooldown timer
   useEffect(() => {
