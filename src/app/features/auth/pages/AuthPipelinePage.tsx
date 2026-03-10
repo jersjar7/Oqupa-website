@@ -12,6 +12,7 @@ import {
 } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input } from '@/app/components/ui'
 
 type PipelineStep = 'name' | 'phone' | 'verify-code'
@@ -43,7 +44,7 @@ export default function AuthPipelinePage() {
   // Redirect if already fully verified
   useEffect(() => {
     if (user?.name && user?.isPhoneVerified) {
-      navigate('/app')
+      navigate(consumeReturnUrl() ?? '/app')
     }
   }, [user, navigate])
 
@@ -159,7 +160,7 @@ export default function AuthPipelinePage() {
                 if (!verificationId) throw new Error('No verification ID')
                 await authService.verifyPhoneCode(verificationId, data.code)
                 await refreshUser()
-                navigate('/app')
+                navigate(consumeReturnUrl() ?? '/app')
               } catch {
                 setError('Codigo incorrecto. Intenta de nuevo.')
               } finally {

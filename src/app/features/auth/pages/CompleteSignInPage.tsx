@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
+import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input, Spinner } from '@/app/components/ui'
 
 type PageState = 'completing' | 'needs-email' | 'error'
@@ -47,7 +48,12 @@ export default function CompleteSignInPage() {
     try {
       await authService.completeMagicLinkSignIn(email, url)
       await refreshUser()
-      navigate('/app', { replace: true })
+      const { user } = useAuthStore.getState()
+      if (!user?.isPhoneVerified) {
+        navigate('/app/verify', { replace: true })
+      } else {
+        navigate(consumeReturnUrl() ?? '/app', { replace: true })
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error al iniciar sesion'
