@@ -4,6 +4,22 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-10 — Auth Session Fixes & UX Improvements
+
+### Bug Fixes
+- **Cross-tab auth session restoration**: Replaced `getAuth()` with `initializeAuth()` using explicit persistence (IndexedDB + localStorage) to fix `onAuthStateChanged` not firing in new tabs
+- **Login redirect race condition**: Login pages now wait for user document to load before redirecting, preventing verified users from briefly hitting `/app/verify` and consuming the return URL
+- **PropertyPage content overlapping header**: Added top padding so the gallery starts below the fixed header
+
+### UX Improvements
+- **No more "Ingresar" flash**: Header auth blocks wait for auth initialization before rendering, preventing a brief flash of the login button for already-authenticated users
+- **Return URL preservation**: Login flow now remembers and restores the page users were trying to visit before being redirected to sign in
+- **Phone verification gate on WhatsApp contact**: Property page contact button now requires phone verification before opening WhatsApp
+- **Shared UserMenu component**: Unified user menu across Header and AppLayout for consistent auth UI
+- **Auth initialization at App root**: Moved auth setup to the App component so all routes benefit from early session detection
+
+---
+
 ## 2026-03-09 — Zillow-style Property Image Gallery
 
 ### New Features
