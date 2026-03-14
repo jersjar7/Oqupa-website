@@ -57,8 +57,16 @@ export type NameFormData = z.infer<typeof nameSchema>
 export const phoneSchema = z.object({
   phoneNumber: z
     .string()
-    .min(9, 'Ingresa un numero de telefono valido')
-    .regex(/^\d{9}$/, 'El numero debe tener 9 digitos'),
+    .min(1, 'Ingresa un numero de telefono')
+    .regex(/^\d+$/, 'Solo digitos'),
+  countryCode: z.enum(['+51', '+1']),
+}).refine((data) => {
+  if (data.countryCode === '+51') return data.phoneNumber.length === 9
+  if (data.countryCode === '+1') return data.phoneNumber.length === 10
+  return false
+}, {
+  message: 'Ingresa un numero valido para el pais seleccionado',
+  path: ['phoneNumber'],
 })
 export type PhoneFormData = z.infer<typeof phoneSchema>
 

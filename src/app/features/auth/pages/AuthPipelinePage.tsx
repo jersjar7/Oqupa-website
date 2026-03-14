@@ -121,7 +121,8 @@ export default function AuthPipelinePage() {
               setError(null)
               setIsSubmitting(true)
               try {
-                const phoneWithCountry = `+51${data.phoneNumber}`
+                const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
+                const countryName = data.countryCode === '+51' ? 'peru' : 'usa'
                 const verId =
                   await authService.sendPhoneVerificationCode(phoneWithCountry)
                 setVerificationId(verId)
@@ -131,7 +132,7 @@ export default function AuthPipelinePage() {
                 if (firebaseUser) {
                   await authService.updateUserContactInfo(firebaseUser.uid, {
                     whatsappPhoneNumber: phoneWithCountry,
-                    countryCode: 'peru',
+                    countryCode: countryName,
                     preferredContactTimeSlot: 'anytime',
                   })
                 }
@@ -246,10 +247,15 @@ function PhoneStep({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<PhoneFormData>({
     resolver: zodResolver(phoneSchema),
+    defaultValues: { countryCode: '+51' },
   })
+
+  const selectedCode = watch('countryCode')
+  const placeholder = selectedCode === '+1' ? '(555) 123-4567' : '912 345 678'
 
   return (
     <>
@@ -262,14 +268,18 @@ function PhoneStep({
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <div className="flex gap-2">
-          <div className="flex h-[42px] items-center rounded-xl border border-border bg-gray-50 px-3 text-base text-text-secondary">
-            +51
-          </div>
+          <select
+            {...register('countryCode')}
+            className="flex h-[42px] items-center rounded-xl border border-border bg-gray-50 px-2 text-base text-text-secondary outline-none"
+          >
+            <option value="+51">🇵🇪 +51</option>
+            <option value="+1">🇺🇸 +1</option>
+          </select>
           <Input
             type="tel"
             autoComplete="tel-national"
             autoFocus
-            placeholder="912 345 678"
+            placeholder={placeholder}
             error={errors.phoneNumber?.message}
             {...register('phoneNumber')}
           />
