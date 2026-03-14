@@ -14,6 +14,7 @@ import {
   OAuthProvider,
   GoogleAuthProvider,
   signInWithPopup,
+  browserPopupRedirectResolver,
 } from 'firebase/auth'
 import {
   doc,
@@ -188,7 +189,7 @@ export const authService = {
     const provider = new OAuthProvider('apple.com')
     provider.addScope('email')
     provider.addScope('name')
-    const credential = await signInWithPopup(auth, provider)
+    const credential = await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     const user = credential.user
 
     // Create Firestore doc if first time on web (mobile user logging in)
@@ -215,7 +216,7 @@ export const authService = {
 
   async signInWithGoogle() {
     const provider = new GoogleAuthProvider()
-    const credential = await signInWithPopup(auth, provider)
+    const credential = await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     const user = credential.user
 
     const existingDoc = await getDoc(doc(db, 'users', user.uid))
