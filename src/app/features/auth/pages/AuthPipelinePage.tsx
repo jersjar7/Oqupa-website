@@ -268,13 +268,24 @@ function PhoneStep({
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <div className="flex gap-2">
-          <select
-            {...register('countryCode')}
-            className="flex h-[42px] items-center rounded-xl border border-border bg-gray-50 px-2 text-base text-text-secondary outline-none"
-          >
-            <option value="+51">🇵🇪 +51</option>
-            <option value="+1">🇺🇸 +1</option>
-          </select>
+          <div className="relative">
+            <select
+              {...register('countryCode')}
+              className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
+            >
+              <option value="+51">🇵🇪 +51</option>
+              <option value="+1">🇺🇸 +1</option>
+            </select>
+            <svg
+              className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
           <Input
             type="tel"
             autoComplete="tel-national"
