@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LogOut, User } from 'lucide-react'
+import { Home, LogOut, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { Spinner } from '@/app/components/ui'
@@ -34,9 +34,9 @@ export default function AppLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top bar */}
       <header className="border-b border-border bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to={firebaseUser ? '/app' : '/'} className="flex items-center">
-            <img src={logo} alt="Oqupa" className="h-8" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center">
+            <img src={logo} alt="Oqupa" className="h-12" />
           </Link>
 
           {/* Auth-aware nav */}
@@ -46,11 +46,24 @@ export default function AppLayout() {
                 <UserMenu
                   userName={user?.name ?? user?.email ?? '...'}
                   items={[
-                    {
-                      label: 'Mi Perfil',
-                      icon: <User className="h-4 w-4" />,
-                      to: '/app/profile',
-                    },
+                    ...(location.pathname !== '/app/profile'
+                      ? [
+                          {
+                            label: 'Mi Perfil',
+                            icon: <User className="h-4 w-4" />,
+                            to: '/app/profile',
+                          },
+                        ]
+                      : []),
+                    ...(location.pathname === '/app/profile' || location.pathname !== '/app'
+                      ? [
+                          {
+                            label: 'Mis Publicaciones',
+                            icon: <Home className="h-4 w-4" />,
+                            to: '/app',
+                          },
+                        ]
+                      : []),
                     {
                       label: 'Cerrar Sesion',
                       icon: <LogOut className="h-4 w-4" />,

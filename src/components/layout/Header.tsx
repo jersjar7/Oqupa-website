@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, LogOut } from 'lucide-react'
+import { Home, LogOut, User } from 'lucide-react'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -22,8 +22,8 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
-  { label: 'Lista de Espera', href: '#lista-espera' },
   { label: 'Publica Gratis', href: '#precios' },
+  { label: 'Lista de Espera', href: '#lista-espera' },
   { label: 'Contacto', href: '#contacto' },
 ]
 
@@ -55,6 +55,11 @@ function AuthBlock() {
           label: 'Mis Propiedades',
           icon: <Home className="h-4 w-4" />,
           to: '/app',
+        },
+        {
+          label: 'Mi Perfil',
+          icon: <User className="h-4 w-4" />,
+          to: '/app/profile',
         },
         {
           label: 'Salir',
@@ -100,6 +105,14 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         <Home className="h-4 w-4" />
         Mis Propiedades
       </Link>
+      <Link
+        to="/app/profile"
+        onClick={onNavigate}
+        className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
+      >
+        <User className="h-4 w-4" />
+        Mi Perfil
+      </Link>
       <button
         onClick={() => {
           onNavigate()
@@ -135,10 +148,8 @@ export default function Header({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-[#FFFAF5]/95 shadow-light backdrop-blur-xl py-3'
-          : 'bg-transparent py-5'
+      className={`fixed top-0 left-0 right-0 z-50 bg-[#FFFAF5]/95 backdrop-blur-xl transition-all duration-300 ${
+        isScrolled ? 'shadow-light py-3' : 'py-5'
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

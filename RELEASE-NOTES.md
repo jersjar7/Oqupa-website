@@ -4,6 +4,33 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-03-14 — OAuth Sign-In, Map & Validation Improvements, Header Consistency
+
+### New Features
+- **Apple & Google OAuth sign-in**: Added social login buttons with official logos on the login page
+- **US phone number support**: Country code selector now supports +1 (US) in addition to +51 (Peru), with a chevron indicator
+- **Pre-publish validation**: Listings are validated before activation — incomplete listings show specific error messages instead of silently failing
+
+### UX Improvements
+- **Header always has cream background**: Landing page header no longer starts transparent — consistent `#FFFAF5` background from the start
+- **Nav links match page order**: Reordered to Explorar → Publica Gratis → Lista de Espera → Contacto
+- **"Mi Perfil" in landing page menu**: Logged-in dropdown now shows Mis Propiedades, Mi Perfil, and Salir
+- **Context-aware app menu**: On profile page shows "Mis Publicaciones"; on other pages shows "Mi Perfil" + "Mis Publicaciones"
+- **Consistent header sizing**: App layout logo enlarged from `h-8` to `h-12` and header uses padding-based height to match landing page
+- **Logo always links home**: App layout logo now navigates to `/` instead of `/app`
+- **Map pin UX**: Improved map marker interaction and placement behavior
+- **WhatsApp message formatting**: Property address now uses comma-separated location fields
+
+### Bug Fixes
+- **OAuth popup fix**: Pass `browserPopupRedirectResolver` explicitly to fix blocked popups
+- **reCAPTCHA v2 fallback**: Reverted Enterprise config — use v2 reCAPTCHA for phone verification compatibility
+
+### Technical
+- Consolidated Firestore reads to reduce redundant fetches
+- Imported `Home` and `User` icons in both header components for unified menu rendering
+
+---
+
 ## 2026-03-10 — Auth Session Fixes & UX Improvements
 
 ### Bug Fixes
