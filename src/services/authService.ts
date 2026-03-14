@@ -11,6 +11,9 @@ import {
   signInWithCredential,
   linkWithCredential,
   updatePassword,
+  OAuthProvider,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth'
 import {
   doc,
@@ -178,6 +181,61 @@ export const authService = {
     }
 
     localStorage.removeItem('oqupa_signInEmail')
+    return user
+  },
+
+  async signInWithApple() {
+    const provider = new OAuthProvider('apple.com')
+    provider.addScope('email')
+    provider.addScope('name')
+    const credential = await signInWithPopup(auth, provider)
+    const user = credential.user
+
+    // Create Firestore doc if first time on web (mobile user logging in)
+    const existingDoc = await getDoc(doc(db, 'users', user.uid))
+    if (!existingDoc.exists()) {
+      const now = new Date()
+      const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isActive: true,
+        isPhoneVerified: false,
+        isIdentityVerified: false,
+        isVerifiedRealtor: false,
+        claimsThisMonth: 0,
+        claimMonth,
+        authProvider: 'apple.com',
+      })
+    }
+    return user
+  },
+
+  async signInWithGoogle() {
+    const provider = new GoogleAuthProvider()
+    const credential = await signInWithPopup(auth, provider)
+    const user = credential.user
+
+    const existingDoc = await getDoc(doc(db, 'users', user.uid))
+    if (!existingDoc.exists()) {
+      const now = new Date()
+      const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isActive: true,
+        isPhoneVerified: false,
+        isIdentityVerified: false,
+        isVerifiedRealtor: false,
+        claimsThisMonth: 0,
+        claimMonth,
+        authProvider: 'google.com',
+      })
+    }
     return user
   },
 
