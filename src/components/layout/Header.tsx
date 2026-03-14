@@ -52,7 +52,7 @@ function AuthBlock() {
       userName={userName}
       items={[
         {
-          label: 'Mis Propiedades',
+          label: 'Mis Publicaciones',
           icon: <Home className="h-4 w-4" />,
           to: '/app',
         },
@@ -103,7 +103,7 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
       >
         <Home className="h-4 w-4" />
-        Mis Propiedades
+        Mis Publicaciones
       </Link>
       <Link
         to="/app/profile"
