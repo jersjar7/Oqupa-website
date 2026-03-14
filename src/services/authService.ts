@@ -15,6 +15,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
+  initializeRecaptchaConfig,
 } from 'firebase/auth'
 import {
   doc,
@@ -99,10 +100,11 @@ export const authService = {
   },
 
   // Phone verification flow
-  initializeRecaptcha(containerId: string) {
+  async initializeRecaptcha(containerId: string) {
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()
     }
+    await initializeRecaptchaConfig(auth)
     recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       size: 'invisible',
     })
