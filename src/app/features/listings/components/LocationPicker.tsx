@@ -62,7 +62,7 @@ export default function LocationPicker({ latitude, longitude, onChange }: Locati
       </div>
       {hasPosition && (
         <p className="mt-2 text-xs text-text-tertiary">
-          Coordenadas: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+          Arrastra el pin o toca el mapa para ajustar la ubicacion — {latitude.toFixed(6)}, {longitude.toFixed(6)}
         </p>
       )}
     </div>

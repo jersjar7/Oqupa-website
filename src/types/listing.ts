@@ -1,5 +1,5 @@
 import type { ContactInfo } from './user'
-import type { Currency, ListingRole, ListingStatus } from './enums'
+import type { Currency, ListingRole, ListingStatus, OperationType } from './enums'
 
 export interface Price {
   amount: number
@@ -17,6 +17,7 @@ export interface Listing {
   ownerId: string
   propertyId: string
   description: string
+  operationType: OperationType
   price: Price
   contactInfo?: ContactInfo
   status: ListingStatus

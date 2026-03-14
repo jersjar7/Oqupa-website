@@ -240,12 +240,6 @@ export const authService = {
     return user
   },
 
-  async getUserDoc(uid: string) {
-    const snap = await getDoc(doc(db, 'users', uid))
-    if (!snap.exists()) return null
-    return snap.data()
-  },
-
   cleanupRecaptcha() {
     if (recaptchaVerifier) {
       recaptchaVerifier.clear()

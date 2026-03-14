@@ -3,16 +3,18 @@ import {
   doc,
   getDoc,
   getDocs,
+  addDoc,
   query,
   where,
   updateDoc,
-  addDoc,
+  setDoc,
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
+import type { WaitlistEntry } from '@/types/waitlist'
 import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -60,6 +62,7 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     ownerId: data['ownerId'] as string,
     propertyId: data['propertyId'] as string,
     description: (data['description'] as string) ?? '',
+    operationType: (data['operationType'] as Listing['operationType']) ?? 'venta',
     price: {
       amount: (priceData?.['amount'] as number) ?? 0,
       currency: ((priceData?.['currency'] as string) ?? 'PEN') as Listing['price']['currency'],
@@ -131,6 +134,35 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
 }
 
 export const firestoreService = {
+  async addWaitlistEntry(
+    entry: Omit<WaitlistEntry, 'createdAt'>
+  ) {
+    const waitlistRef = collection(db, 'waitlist')
+    const docRef = await addDoc(waitlistRef, {
+      ...entry,
+      createdAt: serverTimestamp(),
+    })
+
+    // Queue notification email via Firebase Trigger Email extension
+    const mailRef = collection(db, 'mail')
+    await addDoc(mailRef, {
+      to: 'admin@oqupa.com',
+      message: {
+        subject: `Nueva inscripcion en lista de espera: ${entry.name}`,
+        html: `
+          <h2>Nueva inscripcion en la lista de espera</h2>
+          <table style="border-collapse:collapse;font-family:sans-serif;">
+            <tr><td style="padding:8px;font-weight:bold;">Nombre:</td><td style="padding:8px;">${entry.name}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${entry.email}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Interes:</td><td style="padding:8px;">${entry.intent}</td></tr>
+          </table>
+        `,
+      },
+    })
+
+    return docRef
+  },
+
   async getActiveListingsWithProperties(): Promise<ListingWithProperty[]> {
     const q = query(
       collection(db, 'listings'),
@@ -142,6 +174,33 @@ export const firestoreService = {
     )
 
     // Batch-fetch unique properties
+    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyDocs = await Promise.all(
+      propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
+    )
+    const propertyMap = new Map<string, Property>()
+    for (const snap of propertyDocs) {
+      if (snap.exists()) {
+        propertyMap.set(
+          snap.id,
+          propertyFromDoc(snap.id, snap.data() as Record<string, unknown>)
+        )
+      }
+    }
+
+    return listings
+      .filter((l) => propertyMap.has(l.propertyId))
+      .map((listing) => ({
+        listing,
+        property: propertyMap.get(listing.propertyId)!,
+      }))
+  },
+
+  async getUserListingsWithProperties(
+    userId: string
+  ): Promise<ListingWithProperty[]> {
+    const listings = await this.getUserListings(userId)
+
     const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
     const propertyDocs = await Promise.all(
       propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
@@ -228,12 +287,13 @@ export const firestoreService = {
   async createProperty(
     data: Omit<Property, 'id' | 'updatedAt'>
   ): Promise<string> {
+    const propertyId = `property_${Date.now()}`
     const cleaned = stripUndefined(data as unknown as Record<string, unknown>)
-    const docRef = await addDoc(collection(db, 'properties'), {
+    await setDoc(doc(db, 'properties', propertyId), {
       ...cleaned,
       updatedAt: serverTimestamp(),
     })
-    return docRef.id
+    return propertyId
   },
 
   async updateProperty(
@@ -251,14 +311,15 @@ export const firestoreService = {
   async createListing(
     data: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>
   ): Promise<string> {
+    const listingId = `listing_${Date.now()}`
     const cleaned = stripUndefined(data as unknown as Record<string, unknown>)
-    const docRef = await addDoc(collection(db, 'listings'), {
+    await setDoc(doc(db, 'listings', listingId), {
       ...cleaned,
       viewCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })
-    return docRef.id
+    return listingId
   },
 
   async updateListing(

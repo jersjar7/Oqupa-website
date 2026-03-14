@@ -1,59 +1,15 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { useUserListings } from '@/hooks/useListings'
-import { firestoreService } from '@/services/firestoreService'
+import { useUserListingsWithProperties } from '@/hooks/useListings'
 import { Button } from '@/app/components/ui'
 import ListingCard from '../components/ListingCard'
 import ListingCardSkeleton from '../components/ListingCardSkeleton'
 import EmptyState from '../components/EmptyState'
-import type { Property } from '@/types/property'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const { data: listings, isLoading, error } = useUserListings(user?.id)
-  const [properties, setProperties] = useState<Record<string, Property>>({})
-  const [propertiesLoading, setPropertiesLoading] = useState(false)
-  const [propertiesError, setPropertiesError] = useState(false)
-
-  // Fetch properties for all listings
-  useEffect(() => {
-    if (!listings || listings.length === 0) return
-
-    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
-    const missingIds = propertyIds.filter((id) => !properties[id])
-
-    if (missingIds.length === 0) return
-
-    let cancelled = false
-    setPropertiesLoading(true)
-    setPropertiesError(false)
-
-    Promise.all(
-      missingIds.map((id) => firestoreService.getPropertyById(id))
-    )
-      .then((results) => {
-        if (cancelled) return
-        const newProperties = { ...properties }
-        results.forEach((prop) => {
-          if (prop) newProperties[prop.id] = prop
-        })
-        setProperties(newProperties)
-      })
-      .catch((err) => {
-        if (cancelled) return
-        console.error('Error fetching properties:', err)
-        setPropertiesError(true)
-      })
-      .finally(() => {
-        if (!cancelled) setPropertiesLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [listings]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loading = isLoading || propertiesLoading
+  const { data: items, isLoading, error } = useUserListingsWithProperties(user?.id)
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -79,13 +35,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {isLoading ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <ListingCardSkeleton key={i} />
           ))}
         </div>
-      ) : error || propertiesError ? (
+      ) : error ? (
         <div className="mt-8 text-center">
           <p className="text-error">Error al cargar tus publicaciones</p>
           <button
@@ -95,23 +51,19 @@ export default function DashboardPage() {
             Reintentar
           </button>
         </div>
-      ) : !listings || listings.length === 0 ? (
+      ) : !items || items.length === 0 ? (
         <div className="mt-8">
           <EmptyState />
         </div>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing) => {
-            const property = properties[listing.propertyId]
-            if (!property) return null
-            return (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                property={property}
-              />
-            )
-          })}
+          {items.map(({ listing, property }) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              property={property}
+            />
+          ))}
         </div>
       )}
     </div>

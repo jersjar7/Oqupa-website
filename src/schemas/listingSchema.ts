@@ -109,3 +109,29 @@ export const step4Schema = z
     }
   })
 export type Step4Data = z.infer<typeof step4Schema>
+
+// Pre-submission validation for all steps (used in Step 4 before publish)
+export const fullListingSchema = z.object({
+  // Step 1
+  propertyType: z.string().min(1, 'Tipo de propiedad no seleccionado (Paso 1)'),
+  operationType: z.string().min(1, 'Tipo de operacion no seleccionado (Paso 1)'),
+  role: z.string().min(1, 'Relacion con la propiedad no seleccionada (Paso 1)'),
+  // Step 2
+  description: z.string().min(20, 'La descripcion es muy corta (Paso 2)'),
+  totalAreaInSquareMeters: z
+    .number({ message: 'Area total no ingresada (Paso 2)' })
+    .positive('Area total no ingresada (Paso 2)'),
+  // Step 3
+  latitude: z
+    .number({ message: 'Ubicacion no seleccionada en el mapa (Paso 3)' })
+    .min(-90)
+    .max(90),
+  longitude: z
+    .number({ message: 'Ubicacion no seleccionada en el mapa (Paso 3)' })
+    .min(-180)
+    .max(180),
+  calle: z.string().min(1, 'Calle no ingresada (Paso 3)'),
+  distrito: z.string().min(1, 'Distrito no ingresado (Paso 3)'),
+  provincia: z.string().min(1, 'Provincia no ingresada (Paso 3)'),
+  departamento: z.string().min(1, 'Departamento no ingresado (Paso 3)'),
+})

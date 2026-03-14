@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
+import { PIURA_CENTER } from '@/lib/constants'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button, Input } from '@/app/components/ui'
 import { Upload, X, ImagePlus } from 'lucide-react'
@@ -20,18 +21,22 @@ export default function WizardStep3() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
-      latitude: data.latitude ?? undefined,
-      longitude: data.longitude ?? undefined,
+      latitude: data.latitude ?? PIURA_CENTER.lat,
+      longitude: data.longitude ?? PIURA_CENTER.lng,
       calle: data.calle,
       distrito: data.distrito,
       provincia: data.provincia,
       departamento: data.departamento,
     },
   })
+
+  const watchedLat = watch('latitude')
+  const watchedLng = watch('longitude')
 
   const totalPhotos = existingUrls.length + photos.length
 
@@ -80,8 +85,8 @@ export default function WizardStep3() {
 
         <div className="mt-3">
           <LocationPicker
-            latitude={data.latitude ?? null}
-            longitude={data.longitude ?? null}
+            latitude={watchedLat ?? null}
+            longitude={watchedLng ?? null}
             onChange={handleLocationChange}
           />
         </div>

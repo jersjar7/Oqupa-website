@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { step4Schema, type Step4Data } from '@/schemas/listingSchema'
+import { step4Schema, fullListingSchema, type Step4Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
@@ -46,6 +46,25 @@ export default function WizardStep4() {
 
   async function onSubmit(formData: Step4Data) {
     if (!user) return
+
+    // Pre-submission validation of all steps
+    const fullResult = fullListingSchema.safeParse({
+      ...data,
+      totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
+      latitude: data.latitude ?? undefined,
+      longitude: data.longitude ?? undefined,
+    })
+
+    if (!fullResult.success) {
+      const message = fullResult.error.issues[0]?.message ?? 'Faltan datos obligatorios'
+      setSubmitError(message)
+      return
+    }
+
+    if (!isEditMode && data.photos.length === 0 && data.existingPhotoUrls.length === 0) {
+      setSubmitError('No hay fotos seleccionadas (Paso 3)')
+      return
+    }
 
     setIsSubmitting(true)
     setSubmitError(null)
@@ -176,6 +195,7 @@ export default function WizardStep4() {
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           currentClaimsCount: 0,
+          operationType: data.operationType as Listing['operationType'],
         })
       }
 

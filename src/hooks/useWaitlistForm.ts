@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addWaitlistEntry } from '@/lib/firestore'
+import { firestoreService } from '@/services/firestoreService'
 
 interface FormData {
   name: string
@@ -73,7 +73,7 @@ export function useWaitlistForm() {
 
     setIsSubmitting(true)
     try {
-      await addWaitlistEntry({
+      await firestoreService.addWaitlistEntry({
         name: formData.name.trim(),
         email: formData.email.trim(),
         intent: formData.intent as 'buscar' | 'publicar' | 'ambos',
