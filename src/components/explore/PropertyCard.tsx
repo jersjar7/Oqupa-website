@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { getPriceSuffix } from '@/lib/formatters'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyCardProps {
@@ -13,6 +14,7 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
   const thumbnail = property.media.propertyPhotoUrls[0]
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
+  const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
 
   return (
     <Link
@@ -48,6 +50,9 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
       <div className="p-3">
         <p className="text-base font-bold text-text-primary">
           {symbol} {listing.price.amount.toLocaleString()}
+          {priceSuffix && (
+            <span className="text-xs font-medium text-primary"> {priceSuffix}</span>
+          )}
         </p>
         <p className="mt-0.5 text-xs font-medium text-text-secondary">
           {typeLabel} &middot; {property.location.distrito}

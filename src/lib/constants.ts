@@ -9,6 +9,8 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   terreno: 'Terreno',
   oficina: 'Oficina',
   local: 'Local Comercial',
+  hospedaje: 'Hospedaje',
+  habitacion: 'Habitación',
 }
 
 export const PIURA_CENTER = { lat: -5.194, lng: -80.633 }

@@ -7,6 +7,8 @@ export const PropertyType = {
   terreno: 'terreno',
   oficina: 'oficina',
   local: 'local',
+  hospedaje: 'hospedaje',
+  habitacion: 'habitacion',
 } as const
 export type PropertyType = (typeof PropertyType)[keyof typeof PropertyType]
 
@@ -15,6 +17,13 @@ export const OperationType = {
   alquiler: 'alquiler',
 } as const
 export type OperationType = (typeof OperationType)[keyof typeof OperationType]
+
+export const RentalDurationType = {
+  longTerm: 'longTerm',
+  shortTerm: 'shortTerm',
+} as const
+export type RentalDurationType =
+  (typeof RentalDurationType)[keyof typeof RentalDurationType]
 
 export const ListingStatus = {
   draft: 'draft',
@@ -99,12 +108,51 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   terreno: 'Terreno',
   oficina: 'Oficina',
   local: 'Local Comercial',
+  hospedaje: 'Hospedaje',
+  habitacion: 'Habitación',
 }
 
 export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
   venta: 'Venta',
   alquiler: 'Alquiler',
 }
+
+export const RENTAL_DURATION_TYPE_LABELS: Record<RentalDurationType, string> = {
+  longTerm: 'Largo plazo',
+  shortTerm: 'Corto plazo',
+}
+
+export const RENTAL_DURATION_PRICE_SUFFIX: Record<RentalDurationType, string> = {
+  longTerm: '/mes',
+  shortTerm: '/noche',
+}
+
+/** Property types available for venta */
+export const VENTA_PROPERTY_TYPES: PropertyType[] = [
+  'casa', 'departamento', 'terreno', 'oficina', 'local',
+]
+
+/** Property types available for alquiler largo plazo */
+export const ALQUILER_LONG_TERM_PROPERTY_TYPES: PropertyType[] = [
+  'casa', 'departamento', 'terreno', 'oficina', 'local', 'habitacion',
+]
+
+/** Property types available for alquiler corto plazo */
+export const ALQUILER_SHORT_TERM_PROPERTY_TYPES: PropertyType[] = [
+  'casa', 'departamento', 'hospedaje', 'habitacion',
+]
+
+/** Whether a property type can only be used with alquiler */
+export const isAlquilerOnlyType = (type: PropertyType): boolean =>
+  type === 'hospedaje' || type === 'habitacion'
+
+/** Whether a property type has rooms (bedrooms) */
+export const propertyTypeHasRooms = (type: PropertyType): boolean =>
+  type === 'casa' || type === 'departamento' || type === 'hospedaje'
+
+/** Whether a property type is a single room */
+export const propertyTypeIsRoom = (type: PropertyType): boolean =>
+  type === 'habitacion'
 
 export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   draft: 'Borrador',

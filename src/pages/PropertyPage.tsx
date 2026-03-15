@@ -4,6 +4,7 @@ import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
+import { getPriceSuffix } from '@/lib/formatters'
 import { PROPERTY_TYPE_LABELS, PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
 
@@ -37,7 +38,7 @@ function GalleryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
       {/* Counter badge */}
-      <div className="absolute top-4 left-4 z-10 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
+      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
         {currentSlide + 1} / {images.length}
       </div>
 
@@ -344,6 +345,10 @@ export default function PropertyPage() {
         {/* Price */}
         <p className="text-2xl font-bold text-primary">
           {formatPrice(listing.price?.amount)}
+          {(() => {
+            const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
+            return suffix ? <span className="text-lg font-normal text-text-secondary"> {suffix}</span> : null
+          })()}
         </p>
 
         {/* Location */}
@@ -396,6 +401,12 @@ export default function PropertyPage() {
             <span aria-hidden="true">&#x1F3E0;</span>
             {propertyTypeLabel}
           </span>
+          {property.propertyType === 'habitacion' && property.specs?.hasPrivateBathroom != null && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+              <span aria-hidden="true">&#x1F6BF;</span>
+              {property.specs.hasPrivateBathroom ? 'Baño privado' : 'Baño compartido'}
+            </span>
+          )}
         </div>
 
         {/* Description */}
@@ -482,7 +493,7 @@ export default function PropertyPage() {
             if (e.target === e.currentTarget) setShowAuthModal(false)
           }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl">
             <h3 className="font-serif text-lg font-bold text-text-primary">
               Verificación requerida
             </h3>

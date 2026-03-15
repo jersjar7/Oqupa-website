@@ -136,7 +136,7 @@ export default function WizardStep3() {
           <p className="mt-1 text-sm text-error">{photoError}</p>
         )}
 
-        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {/* Existing photo URLs (edit mode) */}
           {existingUrls.map((url, i) => (
             <div

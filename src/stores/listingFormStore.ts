@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import type { PropertyType, OperationType, ListingRole, Currency } from '@/types/enums'
+import type { PropertyType, OperationType, ListingRole, Currency, RentalDurationType } from '@/types/enums'
 
 export interface ListingFormData {
   // Step 1: Basics
   propertyType: PropertyType | ''
   operationType: OperationType | ''
+  rentalDurationType: RentalDurationType | '' // '' for venta
   role: ListingRole | ''
 
   // Step 2: Details
@@ -14,6 +15,7 @@ export interface ListingFormData {
   bathroomCount: number | null
   availableParkingSpaces: number
   propertyAmenities: string[]
+  hasPrivateBathroom: boolean // only for habitacion
 
   // Step 3: Location + Photos
   latitude: number | null
@@ -49,6 +51,7 @@ interface ListingFormState {
 const INITIAL_DATA: ListingFormData = {
   propertyType: '',
   operationType: '',
+  rentalDurationType: '',
   role: '',
   description: '',
   totalAreaInSquareMeters: null,
@@ -56,6 +59,7 @@ const INITIAL_DATA: ListingFormData = {
   bathroomCount: null,
   availableParkingSpaces: 0,
   propertyAmenities: [],
+  hasPrivateBathroom: false,
   latitude: null,
   longitude: null,
   calle: '',
@@ -87,8 +91,10 @@ function saveToSession(step: number, data: ListingFormData) {
     // Don't save File objects to sessionStorage
     const { photos: _photos, ...serializable } = data
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable }))
-  } catch {
-    // sessionStorage full or unavailable
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      console.warn('Session storage quota exceeded — form progress not saved')
+    }
   }
 }
 
@@ -126,6 +132,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     },
 
     setEditMode: (listingId, propertyId) => {
+      sessionStorage.removeItem(STORAGE_KEY)
       set({ isEditMode: true, editListingId: listingId, editPropertyId: propertyId })
     },
 

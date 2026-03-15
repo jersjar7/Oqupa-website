@@ -1,4 +1,12 @@
-import { PROPERTY_TYPE_LABELS, OPERATION_TYPE_LABELS } from '@/types/enums'
+import {
+  PROPERTY_TYPE_LABELS,
+  OPERATION_TYPE_LABELS,
+  RENTAL_DURATION_TYPE_LABELS,
+  VENTA_PROPERTY_TYPES,
+  ALQUILER_LONG_TERM_PROPERTY_TYPES,
+  ALQUILER_SHORT_TERM_PROPERTY_TYPES,
+  type RentalDurationType,
+} from '@/types/enums'
 import type { MapFilters } from '@/types/explore'
 
 interface ExploreFiltersProps {
@@ -9,8 +17,6 @@ interface ExploreFiltersProps {
   layout?: 'horizontal' | 'vertical'
 }
 
-const PROPERTY_TYPES = Object.entries(PROPERTY_TYPE_LABELS) as [string, string][]
-
 export default function ExploreFilters({
   filters,
   setFilters,
@@ -19,6 +25,18 @@ export default function ExploreFilters({
   layout = 'horizontal',
 }: ExploreFiltersProps) {
   const isVertical = layout === 'vertical'
+  const isAlquiler = filters.operationType === 'alquiler'
+
+  // Determine which property types to show based on filters
+  const availablePropertyTypes = filters.operationType === 'venta'
+    ? VENTA_PROPERTY_TYPES
+    : isAlquiler
+      ? (filters.rentalDurationType === 'shortTerm'
+        ? ALQUILER_SHORT_TERM_PROPERTY_TYPES
+        : filters.rentalDurationType === 'longTerm'
+          ? ALQUILER_LONG_TERM_PROPERTY_TYPES
+          : [...new Set([...ALQUILER_LONG_TERM_PROPERTY_TYPES, ...ALQUILER_SHORT_TERM_PROPERTY_TYPES])])
+      : Object.keys(PROPERTY_TYPE_LABELS)
 
   return (
     <div className={isVertical ? 'space-y-5' : 'flex flex-wrap items-center gap-3'}>
@@ -34,7 +52,11 @@ export default function ExploreFilters({
           <button
             key={opt.label}
             onClick={() =>
-              setFilters((prev) => ({ ...prev, operationType: opt.value }))
+              setFilters((prev) => ({
+                ...prev,
+                operationType: opt.value,
+                rentalDurationType: opt.value === 'alquiler' ? (prev.rentalDurationType ?? 'longTerm') : null,
+              }))
             }
             className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
               filters.operationType === opt.value
@@ -47,12 +69,52 @@ export default function ExploreFilters({
         ))}
       </div>
 
+      {/* Rental duration (only when Alquiler is selected) */}
+      {isAlquiler && (
+        <>
+          {!isVertical && <div className="h-5 w-px bg-border" />}
+          <div className="flex gap-1.5">
+            <button
+              onClick={() =>
+                setFilters((prev) => ({ ...prev, rentalDurationType: null }))
+              }
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                filters.rentalDurationType === null
+                  ? 'bg-primary text-white'
+                  : 'bg-background-secondary text-text-secondary hover:bg-border'
+              }`}
+            >
+              Todos
+            </button>
+            {Object.entries(RENTAL_DURATION_TYPE_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    rentalDurationType: value as RentalDurationType,
+                  }))
+                }
+                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                  filters.rentalDurationType === value
+                    ? 'bg-primary text-white'
+                    : 'bg-background-secondary text-text-secondary hover:bg-border'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Divider (horizontal only) */}
       {!isVertical && <div className="h-5 w-px bg-border" />}
 
       {/* Property type */}
       <div className="flex flex-wrap gap-1.5">
-        {PROPERTY_TYPES.map(([value, label]) => {
+        {availablePropertyTypes.map((value) => {
+          const label = PROPERTY_TYPE_LABELS[value as keyof typeof PROPERTY_TYPE_LABELS]
           const isActive = filters.propertyTypes.includes(value)
           return (
             <button

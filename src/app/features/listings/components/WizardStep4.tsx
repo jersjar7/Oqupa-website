@@ -35,6 +35,8 @@ export default function WizardStep4() {
     resolver: zodResolver(step4Schema),
     defaultValues: {
       operationType: data.operationType,
+      rentalDurationType: data.rentalDurationType || undefined,
+      propertyType: data.propertyType || undefined,
       amount: data.amount ?? undefined,
       currency: (data.currency || 'PEN') as Currency,
       wantsRealtorHelp: data.wantsRealtorHelp,
@@ -44,6 +46,8 @@ export default function WizardStep4() {
 
   const currency = watch('currency')
   const wantsRealtorHelp = watch('wantsRealtorHelp')
+  const isAlquiler = data.operationType === 'alquiler'
+  const isShortTerm = data.rentalDurationType === 'shortTerm'
 
   async function onSubmit(formData: Step4Data) {
     if (!user) return
@@ -97,12 +101,16 @@ export default function WizardStep4() {
         await firestoreService.updateProperty(editPropertyId, {
           propertyType: data.propertyType as Property['propertyType'],
           operationType: data.operationType as Property['operationType'],
+          ...(data.operationType === 'alquiler' && data.rentalDurationType
+            ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
+            : {}),
           specs: {
             totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
             bedroomCount: data.bedroomCount ?? undefined,
             bathroomCount: data.bathroomCount ?? undefined,
             availableParkingSpaces: data.availableParkingSpaces,
             propertyAmenities: data.propertyAmenities,
+            ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
           },
           location: {
             latitude: data.latitude!,
@@ -136,12 +144,16 @@ export default function WizardStep4() {
           listedByUserId: user.id,
           propertyType: data.propertyType as Property['propertyType'],
           operationType: data.operationType as Property['operationType'],
+          ...(data.operationType === 'alquiler' && data.rentalDurationType
+            ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
+            : {}),
           specs: {
             totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
             bedroomCount: data.bedroomCount ?? undefined,
             bathroomCount: data.bathroomCount ?? undefined,
             availableParkingSpaces: data.availableParkingSpaces,
             propertyAmenities: data.propertyAmenities,
+            ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
           },
           location: {
             latitude: data.latitude!,
@@ -259,12 +271,14 @@ export default function WizardStep4() {
         <div className="mt-3">
           <Input
             type="number"
-            placeholder={`Ej: ${data.operationType === 'alquiler' ? '1500' : '250000'}`}
+            placeholder={`Ej: ${isAlquiler ? (isShortTerm ? '120' : '1500') : '250000'}`}
             error={errors.amount?.message}
             {...register('amount', { valueAsNumber: true })}
           />
-          {data.operationType === 'alquiler' && (
-            <p className="mt-1 text-xs text-text-tertiary">Precio mensual</p>
+          {isAlquiler && (
+            <p className="mt-1 text-xs text-text-tertiary">
+              {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
+            </p>
           )}
         </div>
       </div>

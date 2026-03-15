@@ -1,11 +1,12 @@
-import type { Currency, OperationType, PropertyType } from './enums'
+import type { Currency, OperationType, PropertyType, RentalDurationType } from './enums'
 
 export interface PropertySpecs {
   totalAreaInSquareMeters: number
-  bedroomCount?: number // null for commercial/land
-  bathroomCount?: number // null for land
+  bedroomCount?: number // null for commercial/land/habitacion
+  bathroomCount?: number // null for land/habitacion
   availableParkingSpaces: number
   propertyAmenities: string[]
+  hasPrivateBathroom?: boolean // only for habitacion type
 }
 
 export interface PropertyLocation {
@@ -33,6 +34,7 @@ export interface Property {
   listedByUserId: string
   propertyType: PropertyType
   operationType: OperationType
+  rentalDurationType?: RentalDurationType // null for venta, defaults to longTerm for alquiler
   specs: PropertySpecs
   location: PropertyLocation
   currentPrice: PropertyPrice
@@ -47,12 +49,14 @@ export interface PropertyFirestoreDoc {
   listedByUserId: string
   propertyType: string
   operationType: string
+  rentalDurationType?: string // 'longTerm' | 'shortTerm'
   specs: {
     totalAreaInSquareMeters: number
     bedroomCount?: number
     bathroomCount?: number
     availableParkingSpaces: number
     propertyAmenities: string[]
+    hasPrivateBathroom?: boolean
   }
   location: {
     latitude: number

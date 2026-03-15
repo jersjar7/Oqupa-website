@@ -19,13 +19,13 @@ import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
 import type { ListingWithProperty } from '@/types/explore'
 
 // Strip undefined values recursively (Firestore rejects undefined)
-// Converts undefined to null to match Flutter behavior
+// Omits undefined keys entirely to avoid writing null for fields that don't exist
 function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
     if (value === undefined) {
-      // Firestore stores null for missing optional fields (matches Flutter)
-      result[key] = null
+      // Skip undefined keys entirely instead of converting to null
+      continue
     } else if (
       value !== null &&
       typeof value === 'object' &&
@@ -43,12 +43,16 @@ function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
 
 // Timestamp converter
 function toDate(value: unknown): Date {
-  if (!value) return new Date()
+  if (!value) {
+    console.warn('[firestoreService] Missing timestamp field, defaulting to epoch')
+    return new Date(0)
+  }
   if (typeof value === 'object' && value !== null && 'toDate' in value) {
     return (value as Timestamp).toDate()
   }
   if (typeof value === 'string') return new Date(value)
-  return new Date()
+  console.warn('[firestoreService] Unexpected timestamp format:', value)
+  return new Date(0)
 }
 
 function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
@@ -99,17 +103,20 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
   const mediaData = data['media'] as Record<string, unknown> | undefined
   const priceData = data['currentPrice'] as Record<string, unknown> | undefined
 
+  const rentalDurationType = data['rentalDurationType'] as string | undefined
   return {
     id,
     listedByUserId: data['listedByUserId'] as string,
     propertyType: (data['propertyType'] as Property['propertyType']) ?? 'casa',
     operationType: (data['operationType'] as Property['operationType']) ?? 'venta',
+    ...(rentalDurationType ? { rentalDurationType: rentalDurationType as Property['rentalDurationType'] } : {}),
     specs: {
       totalAreaInSquareMeters: (specsData?.['totalAreaInSquareMeters'] as number) ?? 0,
       bedroomCount: specsData?.['bedroomCount'] as number | undefined,
       bathroomCount: specsData?.['bathroomCount'] as number | undefined,
       availableParkingSpaces: (specsData?.['availableParkingSpaces'] as number) ?? 0,
       propertyAmenities: (specsData?.['propertyAmenities'] as string[]) ?? [],
+      hasPrivateBathroom: specsData?.['hasPrivateBathroom'] as boolean | undefined,
     },
     location: {
       latitude: (locationData?.['latitude'] as number) ?? 0,
@@ -190,10 +197,16 @@ export const firestoreService = {
 
     return listings
       .filter((l) => propertyMap.has(l.propertyId))
-      .map((listing) => ({
-        listing,
-        property: propertyMap.get(listing.propertyId)!,
-      }))
+      .map((listing) => {
+        const property = propertyMap.get(listing.propertyId)!
+        // Property is the source of truth for operationType — Flutter doesn't
+        // write operationType to listing docs, so the listing default ('venta')
+        // may be wrong for alquiler listings created from the mobile app.
+        return {
+          listing: { ...listing, operationType: property.operationType },
+          property,
+        }
+      })
   },
 
   async getUserListingsWithProperties(
@@ -217,10 +230,13 @@ export const firestoreService = {
 
     return listings
       .filter((l) => propertyMap.has(l.propertyId))
-      .map((listing) => ({
-        listing,
-        property: propertyMap.get(listing.propertyId)!,
-      }))
+      .map((listing) => {
+        const property = propertyMap.get(listing.propertyId)!
+        return {
+          listing: { ...listing, operationType: property.operationType },
+          property,
+        }
+      })
   },
 
   async getUserListings(userId: string): Promise<Listing[]> {
@@ -287,7 +303,7 @@ export const firestoreService = {
   async createProperty(
     data: Omit<Property, 'id' | 'updatedAt'>
   ): Promise<string> {
-    const propertyId = `property_${Date.now()}`
+    const propertyId = `property_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const cleaned = stripUndefined(data as unknown as Record<string, unknown>)
     await setDoc(doc(db, 'properties', propertyId), {
       ...cleaned,
@@ -311,7 +327,7 @@ export const firestoreService = {
   async createListing(
     data: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>
   ): Promise<string> {
-    const listingId = `listing_${Date.now()}`
+    const listingId = `listing_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const cleaned = stripUndefined(data as unknown as Record<string, unknown>)
     await setDoc(doc(db, 'listings', listingId), {
       ...cleaned,

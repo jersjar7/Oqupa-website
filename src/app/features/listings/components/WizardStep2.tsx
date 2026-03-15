@@ -3,18 +3,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { step2Schema, type Step2Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button, Input } from '@/app/components/ui'
-import { PropertyType } from '@/types/enums'
+import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
 
 export default function WizardStep2() {
   const { data, updateData, nextStep, prevStep } = useListingFormStore()
 
-  const hasRooms =
-    data.propertyType === PropertyType.casa ||
-    data.propertyType === PropertyType.departamento
+  const hasRooms = data.propertyType ? propertyTypeHasRooms(data.propertyType as PropertyType) : false
+  const isRoom = data.propertyType ? propertyTypeIsRoom(data.propertyType as PropertyType) : false
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<Step2Data>({
     resolver: zodResolver(step2Schema),
@@ -26,8 +27,11 @@ export default function WizardStep2() {
       bathroomCount: data.bathroomCount,
       availableParkingSpaces: data.availableParkingSpaces,
       propertyAmenities: data.propertyAmenities,
+      hasPrivateBathroom: data.hasPrivateBathroom ?? false,
     },
   })
+
+  const hasPrivateBathroom = watch('hasPrivateBathroom')
 
   function onSubmit(formData: Step2Data) {
     updateData({
@@ -37,6 +41,7 @@ export default function WizardStep2() {
       bathroomCount: hasRooms ? formData.bathroomCount : null,
       availableParkingSpaces: formData.availableParkingSpaces,
       propertyAmenities: formData.propertyAmenities,
+      hasPrivateBathroom: isRoom ? (formData.hasPrivateBathroom ?? false) : false,
     })
     nextStep()
   }
@@ -91,6 +96,29 @@ export default function WizardStep2() {
             error={errors.bathroomCount?.message}
             {...register('bathroomCount', { valueAsNumber: true })}
           />
+        </div>
+      )}
+
+      {/* Private Bathroom (only for habitacion) */}
+      {isRoom && (
+        <div>
+          <h3 className="text-sm font-medium uppercase text-text-primary">Baño privado</h3>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {[true, false].map((value) => (
+              <button
+                key={String(value)}
+                type="button"
+                onClick={() => setValue('hasPrivateBathroom', value)}
+                className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                  hasPrivateBathroom === value
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border text-text-secondary hover:border-primary/30'
+                }`}
+              >
+                {value ? 'Sí' : 'No'}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

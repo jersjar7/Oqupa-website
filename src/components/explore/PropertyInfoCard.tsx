@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { InfoWindow } from '@vis.gl/react-google-maps'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { getPriceSuffix } from '@/lib/formatters'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyInfoCardProps {
@@ -13,6 +14,7 @@ export default function PropertyInfoCard({ item, onClose }: PropertyInfoCardProp
   const thumbnail = property.media.propertyPhotoUrls[0]
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
+  const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
 
   return (
     <InfoWindow
@@ -34,6 +36,9 @@ export default function PropertyInfoCard({ item, onClose }: PropertyInfoCardProp
         <div className="p-3">
           <p className="text-base font-bold text-text-primary">
             {symbol} {listing.price.amount.toLocaleString()}
+            {priceSuffix && (
+              <span className="text-xs font-normal text-text-secondary"> {priceSuffix}</span>
+            )}
           </p>
           <p className="mt-0.5 text-xs font-medium text-text-secondary">
             {typeLabel} &middot; {property.location.distrito}

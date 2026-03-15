@@ -28,6 +28,8 @@ export default function EditListingPage() {
     updateData({
       propertyType: property.propertyType,
       operationType: property.operationType,
+      rentalDurationType: property.rentalDurationType || '',
+      hasPrivateBathroom: property.specs?.hasPrivateBathroom ?? false,
       role: listing.role,
       description: listing.description,
       totalAreaInSquareMeters: property.specs.totalAreaInSquareMeters,

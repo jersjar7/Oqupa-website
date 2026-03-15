@@ -1,5 +1,5 @@
 import { AdvancedMarker } from '@vis.gl/react-google-maps'
-import { formatShortPrice } from '@/lib/formatters'
+import { formatShortPrice, getPriceSuffix } from '@/lib/formatters'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyMarkerProps {
@@ -10,7 +10,8 @@ interface PropertyMarkerProps {
 
 export default function PropertyMarker({ item, isSelected, onClick }: PropertyMarkerProps) {
   const { listing, property } = item
-  const label = formatShortPrice(listing.price.amount, listing.price.currency)
+  const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
+  const label = formatShortPrice(listing.price.amount, listing.price.currency) + (priceSuffix ? ` ${priceSuffix}` : '')
 
   return (
     <AdvancedMarker

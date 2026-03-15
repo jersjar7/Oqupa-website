@@ -10,6 +10,7 @@ import {
   CURRENCY_SYMBOLS,
   type ListingStatus,
 } from '@/types/enums'
+import { getPriceSuffix } from '@/lib/formatters'
 
 interface ListingCardProps {
   listing: Listing
@@ -65,6 +66,10 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {/* Price */}
         <p className="text-lg font-bold text-primary">
           {formatPrice(listing.price.amount, listing.price.currency)}
+          {(() => {
+            const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
+            return suffix ? <span className="text-sm font-normal text-text-secondary"> {suffix}</span> : null
+          })()}
         </p>
 
         {/* Property type */}
@@ -88,6 +93,9 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           )}
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
+          )}
+          {property.propertyType === 'habitacion' && property.specs.hasPrivateBathroom != null && (
+            <span>{property.specs.hasPrivateBathroom ? 'Baño privado' : 'Baño compartido'}</span>
           )}
         </div>
 
