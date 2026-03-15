@@ -10,6 +10,7 @@ import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
 import { Button, Input } from '@/app/components/ui'
 import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
+import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 
@@ -197,6 +198,11 @@ export default function WizardStep4() {
           currentClaimsCount: 0,
           operationType: data.operationType as Listing['operationType'],
         })
+      }
+
+      // Log analytics
+      if (!isEditMode) {
+        AnalyticsLogger.listingCreated(data.operationType)
       }
 
       // Invalidate queries and navigate

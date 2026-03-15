@@ -2,6 +2,8 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
+import { getAnalytics } from 'firebase/analytics'
+import { getPerformance } from 'firebase/performance'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBBdwf8ClZyPbW2BigyCk5impOReVYRVfY',
@@ -18,3 +20,5 @@ export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],
 })
 export const storage = getStorage(app)
+export const analytics = getAnalytics(app)
+export const performance = getPerformance(app)

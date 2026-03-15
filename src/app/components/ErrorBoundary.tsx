@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { AnalyticsLogger } from '@/lib/analytics'
 
 interface Props {
   children: ReactNode
@@ -20,6 +21,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info.componentStack)
+    AnalyticsLogger.errorOccurred(error.message, 'ErrorBoundary')
   }
 
   render() {

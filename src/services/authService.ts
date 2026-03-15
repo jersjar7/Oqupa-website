@@ -24,6 +24,7 @@ import {
   getDoc,
 } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
+import { AnalyticsLogger } from '@/lib/analytics'
 
 // Store for phone verification flow
 let recaptchaVerifier: RecaptchaVerifier | null = null
@@ -54,11 +55,13 @@ export const authService = {
       authProvider: 'password',
     })
 
+    AnalyticsLogger.registrationCompleted()
     return user
   },
 
   async loginWithEmailAndPassword(email: string, password: string) {
     const credential = await signInWithEmailAndPassword(auth, email, password)
+    AnalyticsLogger.loginCompleted('email')
     return credential.user
   },
 
@@ -182,6 +185,7 @@ export const authService = {
     }
 
     localStorage.removeItem('oqupa_signInEmail')
+    AnalyticsLogger.loginCompleted('emailLink')
     return user
   },
 
@@ -211,6 +215,7 @@ export const authService = {
         authProvider: 'apple.com',
       })
     }
+    AnalyticsLogger.loginCompleted('apple')
     return user
   },
 
@@ -237,6 +242,7 @@ export const authService = {
         authProvider: 'google.com',
       })
     }
+    AnalyticsLogger.loginCompleted('google')
     return user
   },
 

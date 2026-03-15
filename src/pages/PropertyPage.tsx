@@ -5,6 +5,7 @@ import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { PROPERTY_TYPE_LABELS, PLAY_STORE_URL } from '@/lib/constants'
+import { AnalyticsLogger } from '@/lib/analytics'
 
 function GalleryModal({
   images,
@@ -280,6 +281,12 @@ export default function PropertyPage() {
       document.title = 'Propiedad - Oqupa'
     }
   }, [listing?.description])
+
+  useEffect(() => {
+    if (id && listing) {
+      AnalyticsLogger.listingViewed(id)
+    }
+  }, [id, listing])
 
   if (isLoading) {
     return (
