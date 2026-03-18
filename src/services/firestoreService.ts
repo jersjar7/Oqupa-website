@@ -6,17 +6,21 @@ import {
   addDoc,
   query,
   where,
+  orderBy,
+  limit,
+  startAfter,
   updateDoc,
   setDoc,
   serverTimestamp,
   type Timestamp,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { WaitlistEntry } from '@/types/waitlist'
 import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
-import type { ListingWithProperty } from '@/types/explore'
+import type { ListingWithProperty, ExploreListingsPage } from '@/types/explore'
 
 // Strip undefined values recursively (Firestore rejects undefined)
 // Omits undefined keys entirely to avoid writing null for fields that don't exist
@@ -207,6 +211,68 @@ export const firestoreService = {
           property,
         }
       })
+  },
+
+  async getActiveListingsWithPropertiesPaginated(
+    pageSize: number = 30,
+    cursor?: QueryDocumentSnapshot,
+  ): Promise<ExploreListingsPage> {
+    let q = query(
+      collection(db, 'listings'),
+      where('status', '==', 'active'),
+      orderBy('publishedAt', 'desc'),
+      limit(pageSize),
+    )
+
+    if (cursor) {
+      q = query(
+        collection(db, 'listings'),
+        where('status', '==', 'active'),
+        orderBy('publishedAt', 'desc'),
+        startAfter(cursor),
+        limit(pageSize),
+      )
+    }
+
+    const snapshot = await getDocs(q)
+    const listings = snapshot.docs.map((d) =>
+      listingFromDoc(d.id, d.data() as Record<string, unknown>)
+    )
+
+    // Batch-fetch unique properties
+    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyDocs = await Promise.all(
+      propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
+    )
+    const propertyMap = new Map<string, Property>()
+    for (const snap of propertyDocs) {
+      if (snap.exists()) {
+        propertyMap.set(
+          snap.id,
+          propertyFromDoc(snap.id, snap.data() as Record<string, unknown>)
+        )
+      }
+    }
+
+    const items = listings
+      .filter((l) => propertyMap.has(l.propertyId))
+      .map((listing) => {
+        const property = propertyMap.get(listing.propertyId)!
+        return {
+          listing: { ...listing, operationType: property.operationType },
+          property,
+        }
+      })
+
+    const lastDoc = snapshot.docs.length > 0
+      ? snapshot.docs[snapshot.docs.length - 1]
+      : undefined
+
+    return {
+      items,
+      lastDoc,
+      hasMore: snapshot.docs.length === pageSize,
+    }
   },
 
   async getUserListingsWithProperties(

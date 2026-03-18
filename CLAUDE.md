@@ -36,7 +36,10 @@ All stateful logic lives in custom hooks under `src/hooks/`. Components are pres
 Components use `useAnimateOnScroll()` which returns `{ ref, isVisible }`. Attach `ref` to the element, conditionally apply animation classes based on `isVisible`. Uses IntersectionObserver, fires once.
 
 ### Firestore access
-All Firestore operations go through `src/lib/firestore.ts`. The Firebase app is initialized in `src/lib/firebase.ts` and exports `db`.
+All Firestore operations go through `src/services/firestoreService.ts`. The Firebase app is initialized in `src/lib/firebase.ts` and exports `db`.
+
+### Explore page data flow
+The Explore page (`/explorar`) uses paginated Firestore queries via `useInfiniteQuery` from TanStack Query. The `useExploreListings` hook loads 30 listings per page ordered by `publishedAt` descending, flattening all pages into a single array. Client-side filtering (`useMapFilters`) applies to the accumulated items. The list panel uses infinite scroll (`useInfiniteScroll` with IntersectionObserver sentinel) to load more pages. The map uses `@googlemaps/markerclusterer` for marker clustering via the `ClusteredMarkers` component.
 
 ### Styling
 Tailwind utility classes inline. Brand theme (colors, fonts, shadows) defined as CSS custom properties in `src/index.css`. Custom animations also defined there. No component CSS files.

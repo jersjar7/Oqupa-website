@@ -1,10 +1,17 @@
 import type { Listing } from './listing'
 import type { Property } from './property'
 import type { RentalDurationType } from './enums'
+import type { QueryDocumentSnapshot } from 'firebase/firestore'
 
 export interface ListingWithProperty {
   listing: Listing
   property: Property
+}
+
+export interface ExploreListingsPage {
+  items: ListingWithProperty[]
+  lastDoc: QueryDocumentSnapshot | undefined
+  hasMore: boolean
 }
 
 export interface MapFilters {

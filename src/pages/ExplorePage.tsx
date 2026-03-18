@@ -1,13 +1,21 @@
 import { useState, useCallback } from 'react'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
 import { SlidersHorizontal, X } from 'lucide-react'
 
 export default function ExplorePage() {
-  const { data: items = [], isLoading, error } = useExploreListings()
+  const {
+    data: items,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useExploreListings()
   const { filters, setFilters, filtered, total } = useMapFilters(items)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -15,6 +23,11 @@ export default function ExplorePage() {
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id)
   }, [])
+
+  const sentinelRef = useInfiniteScroll(
+    fetchNextPage,
+    hasNextPage && !isFetchingNextPage,
+  )
 
   return (
     <div className="fixed inset-0 top-[72px] flex flex-col">
@@ -66,7 +79,7 @@ export default function ExplorePage() {
 
         {/* Desktop property cards panel */}
         <div className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block">
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && !isLoading ? (
             <p className="py-12 text-center text-sm text-text-tertiary">
               No se encontraron propiedades
             </p>
@@ -83,6 +96,23 @@ export default function ExplorePage() {
                 />
               ))}
             </div>
+          )}
+
+          {/* Infinite scroll sentinel */}
+          <div ref={sentinelRef} className="h-1" />
+
+          {/* Loading indicator for next page */}
+          {isFetchingNextPage && (
+            <div className="flex justify-center py-6">
+              <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          )}
+
+          {/* End of results */}
+          {!hasNextPage && filtered.length > 0 && !isLoading && (
+            <p className="py-4 text-center text-xs text-text-tertiary">
+              Has visto todas las propiedades
+            </p>
           )}
         </div>
       </div>

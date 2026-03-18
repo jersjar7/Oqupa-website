@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { APIProvider, Map } from '@vis.gl/react-google-maps'
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
-import PropertyMarker from './PropertyMarker'
+import ClusteredMarkers from './ClusteredMarkers'
 import PropertyInfoCard from './PropertyInfoCard'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -18,10 +18,6 @@ export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapPr
     ? items.find((i) => i.listing.id === selectedId) ?? null
     : null
 
-  const handleMarkerClick = useCallback((id: string) => {
-    onSelect(id === selectedId ? null : id)
-  }, [onSelect, selectedId])
-
   const handleClose = useCallback(() => {
     onSelect(null)
   }, [onSelect])
@@ -36,14 +32,11 @@ export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapPr
         disableDefaultUI={false}
         className="h-full w-full"
       >
-        {items.map((item) => (
-          <PropertyMarker
-            key={item.listing.id}
-            item={item}
-            isSelected={selectedId === item.listing.id}
-            onClick={() => handleMarkerClick(item.listing.id)}
-          />
-        ))}
+        <ClusteredMarkers
+          items={items}
+          selectedId={selectedId}
+          onSelect={onSelect}
+        />
 
         {selectedItem && (
           <PropertyInfoCard item={selectedItem} onClose={handleClose} />
