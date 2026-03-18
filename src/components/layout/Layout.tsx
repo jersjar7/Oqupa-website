@@ -10,6 +10,8 @@ export default function Layout() {
 
   const isLanding = location.pathname === '/'
   const headerVariant = isLanding ? 'full' : 'minimal'
+  // Non-landing pages have no hero element, so force compact header
+  const effectiveIsScrolled = isLanding ? isScrolled : true
 
   // Scroll to top on route change
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col">
       <Header
         variant={headerVariant}
-        isScrolled={isScrolled}
+        isScrolled={effectiveIsScrolled}
       />
 
       <main className="flex-1">

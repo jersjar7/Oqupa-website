@@ -74,7 +74,7 @@ export default function ClusteredMarkers({
           content,
         })
 
-        marker.addListener('click', () => {
+        marker.addEventListener('gmp-click', () => {
           onSelectRef.current(id)
         })
 
