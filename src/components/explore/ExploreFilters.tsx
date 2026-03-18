@@ -146,6 +146,8 @@ export default function ExploreFilters({
       <div className="flex items-center gap-2">
         <input
           type="number"
+          name="priceMin"
+          autoComplete="off"
           placeholder="Mín"
           value={filters.priceMin ?? ''}
           onChange={(e) =>
@@ -159,6 +161,8 @@ export default function ExploreFilters({
         <span className="text-text-tertiary">—</span>
         <input
           type="number"
+          name="priceMax"
+          autoComplete="off"
           placeholder="Máx"
           value={filters.priceMax ?? ''}
           onChange={(e) =>
