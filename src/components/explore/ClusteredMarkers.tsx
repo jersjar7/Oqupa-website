@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useMap } from '@vis.gl/react-google-maps'
+import { useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { formatShortPrice, getPriceSuffix } from '@/lib/formatters'
 import type { ListingWithProperty } from '@/types/explore'
@@ -21,6 +21,7 @@ export default function ClusteredMarkers({
   onSelect,
 }: ClusteredMarkersProps) {
   const map = useMap()
+  const markerLib = useMapsLibrary('marker')
   const clustererRef = useRef<MarkerClusterer | null>(null)
   const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map())
   const onSelectRef = useRef(onSelect)
@@ -41,11 +42,12 @@ export default function ClusteredMarkers({
 
   // Update markers when items change
   useEffect(() => {
-    if (!map || !clustererRef.current) return
+    if (!map || !markerLib || !clustererRef.current) return
 
     const clusterer = clustererRef.current
     const oldMarkers = markersRef.current
     const newMarkers = new Map<string, google.maps.marker.AdvancedMarkerElement>()
+
     for (const item of items) {
       const id = item.listing.id
       const existing = oldMarkers.get(id)
@@ -64,7 +66,7 @@ export default function ClusteredMarkers({
         content.className = id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT
         content.textContent = label
 
-        const marker = new google.maps.marker.AdvancedMarkerElement({
+        const marker = new markerLib.AdvancedMarkerElement({
           position: {
             lat: property.location.latitude,
             lng: property.location.longitude,
@@ -88,7 +90,7 @@ export default function ClusteredMarkers({
     markersRef.current = newMarkers
     clusterer.clearMarkers()
     clusterer.addMarkers([...newMarkers.values()])
-  }, [map, items, selectedId])
+  }, [map, markerLib, items, selectedId])
 
   // Update selected marker styling
   useEffect(() => {
