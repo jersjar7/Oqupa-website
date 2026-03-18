@@ -23,7 +23,6 @@ jobs:
         run: npm run build
       - name: Dependency audit
         run: npm audit --audit-level=high
-        continue-on-error: true
 
   deploy-staging:
     needs: build-and-test
