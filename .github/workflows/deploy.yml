@@ -45,11 +45,8 @@ jobs:
         with:
           workload_identity_provider: 'projects/324931340315/locations/global/workloadIdentityPools/github-actions/providers/github'
           service_account: 'firebase-adminsdk-fbsvc@oqupa-staging.iam.gserviceaccount.com'
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          channelId: live
-          projectId: oqupa-staging
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --only hosting --project oqupa-staging
 
   deploy-production:
     needs: build-and-test
@@ -71,8 +68,5 @@ jobs:
         with:
           workload_identity_provider: 'projects/109922131848/locations/global/workloadIdentityPools/github-actions/providers/github'
           service_account: 'firebase-adminsdk-fbsvc@oqupa-production.iam.gserviceaccount.com'
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          channelId: live
-          projectId: oqupa-production
+      - run: npm install -g firebase-tools
+      - run: firebase deploy --only hosting --project oqupa-production
