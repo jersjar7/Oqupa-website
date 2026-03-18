@@ -1,14 +1,14 @@
-name: Deploy to Firebase Hosting
+name: CI & Deploy to Firebase Hosting
 
 on:
-  # Auto-deploy disabled until FIREBASE_SERVICE_ACCOUNT_OQUPA_PRODUCTION secret is configured.
-  # Deploy manually: npm run build && firebase deploy --only hosting --project oqupa-production
-  # push:
-  #   branches: [master]
+  push:
+    branches: [master, development]
+  pull_request:
+    branches: [master, development]
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,10 +17,62 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Lint & type-check
+        run: npx tsc -b --noEmit
+      - name: Build
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  deploy-staging:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
       - run: npm run build
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/324931340315/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'firebase-adminsdk-fbsvc@oqupa-staging.iam.gserviceaccount.com'
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_OQUPA_PRODUCTION }}
+          channelId: live
+          projectId: oqupa-staging
+
+  deploy-production:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/109922131848/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'firebase-adminsdk-fbsvc@oqupa-production.iam.gserviceaccount.com'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
           channelId: live
           projectId: oqupa-production

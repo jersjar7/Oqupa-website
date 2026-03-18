@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { httpsCallable } from 'firebase/functions'
+import { getFunctions } from 'firebase/functions'
 import { firestoreService } from '@/services/firestoreService'
+import { getRecaptchaToken } from '@/lib/recaptcha'
 
 interface FormData {
   name: string
@@ -14,6 +17,8 @@ interface FormErrors {
   intent?: string
   privacyConsent?: string
 }
+
+const RECAPTCHA_ENABLED = !!import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 export function useWaitlistForm() {
   const [formData, setFormData] = useState<FormData>({
@@ -73,12 +78,27 @@ export function useWaitlistForm() {
 
     setIsSubmitting(true)
     try {
-      await firestoreService.addWaitlistEntry({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        intent: formData.intent as 'buscar' | 'publicar' | 'ambos',
-        privacyConsent: formData.privacyConsent,
-      })
+      if (RECAPTCHA_ENABLED) {
+        // Use Cloud Function with reCAPTCHA verification
+        const token = await getRecaptchaToken('waitlist_signup')
+        const functions = getFunctions(undefined, 'southamerica-east1')
+        const submitWaitlist = httpsCallable(functions, 'submitWaitlistWithCaptcha')
+        await submitWaitlist({
+          token,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          intent: formData.intent,
+          privacyConsent: formData.privacyConsent,
+        })
+      } else {
+        // Fallback: direct Firestore write (no reCAPTCHA configured)
+        await firestoreService.addWaitlistEntry({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          intent: formData.intent as 'buscar' | 'publicar' | 'ambos',
+          privacyConsent: formData.privacyConsent,
+        })
+      }
       setIsSuccess(true)
       setFormData({ name: '', email: '', intent: '', privacyConsent: false })
     } catch {

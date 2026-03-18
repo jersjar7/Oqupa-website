@@ -30,7 +30,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing page routes (with Header + Footer) */}
-        <Route element={<Layout />}>
+        <Route element={<ErrorBoundary><Layout /></ErrorBoundary>}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />

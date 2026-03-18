@@ -5,3 +5,5 @@ dist
 .firebase/
 *.tsbuildinfo
 .env
+.env.staging
+.env.production

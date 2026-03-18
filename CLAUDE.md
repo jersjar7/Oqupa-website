@@ -53,7 +53,11 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `listings` | Property data (read by PropertyPage) | Public read |
 | `properties` | Property specs/photos (read by PropertyPage) | Public read |
 
-**Important:** Firestore rules are managed in the Firebase Console, not in this repo. The `oqupa-production` project's Firestore is in `southamerica-east1`.
+**Firestore rules** are version-controlled at the repo root (`firestore.rules`, `storage.rules`). Deploy from the repo root:
+```bash
+cd /Users/jerson/developer/Oqupa-Platform
+firebase deploy --only firestore:rules --project oqupa-production
+```
 
 ## Email Notifications
 
@@ -88,6 +92,23 @@ Firebase is used for:
 - `#precios` → PricingSection
 - `#caracteristicas` → ShowcaseSection
 - `#contacto` → Footer
+
+## Firebase Environments
+
+### Project Aliases
+- **production:** `oqupa-production` (region: `southamerica-east1`)
+- **staging:** `oqupa-staging` (region: `southamerica-east1`)
+
+### Switching Environments
+```bash
+firebase use staging    # Switch to staging project
+firebase use production # Switch to production project
+```
+
+### Environment Files
+- `.env` — Production API keys (gitignored)
+- `.env.staging` — Staging API keys (gitignored)
+- `.env.example` — Template with placeholder values (committed)
 
 ## Related Projects
 
