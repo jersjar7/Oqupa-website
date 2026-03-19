@@ -6,8 +6,16 @@ import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
 import { SlidersHorizontal, X } from 'lucide-react'
+import type { MapFilters } from '@/types/explore'
 
 export default function ExplorePage() {
+  const [filters, setFilters] = useState<MapFilters>({
+    operationType: null,
+    rentalDurationType: null,
+    propertyTypes: [],
+    priceMin: null,
+    priceMax: null,
+  })
   const {
     data: items,
     isLoading,
@@ -15,8 +23,8 @@ export default function ExplorePage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useExploreListings()
-  const { filters, setFilters, filtered, total } = useMapFilters(items)
+  } = useExploreListings(filters.operationType)
+  const { filtered, total } = useMapFilters(items, filters)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 

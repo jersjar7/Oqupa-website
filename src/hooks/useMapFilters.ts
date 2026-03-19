@@ -1,22 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { ListingWithProperty, MapFilters } from '@/types/explore'
 
-const initialFilters: MapFilters = {
-  operationType: null,
-  rentalDurationType: null,
-  propertyTypes: [],
-  priceMin: null,
-  priceMax: null,
-}
-
-export function useMapFilters(items: ListingWithProperty[]) {
-  const [filters, setFilters] = useState<MapFilters>(initialFilters)
-
+export function useMapFilters(items: ListingWithProperty[], filters: MapFilters) {
   const filtered = useMemo(() => {
     return items.filter(({ listing, property }) => {
-      if (filters.operationType && property.operationType !== filters.operationType) {
-        return false
-      }
+      // operationType is filtered server-side via Firestore query
       if (filters.rentalDurationType && property.rentalDurationType !== filters.rentalDurationType) {
         return false
       }
@@ -33,5 +21,5 @@ export function useMapFilters(items: ListingWithProperty[]) {
     })
   }, [items, filters])
 
-  return { filters, setFilters, filtered, total: items.length }
+  return { filtered, total: items.length }
 }

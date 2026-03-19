@@ -39,7 +39,16 @@ Components use `useAnimateOnScroll()` which returns `{ ref, isVisible }`. Attach
 All Firestore operations go through `src/services/firestoreService.ts`. The Firebase app is initialized in `src/lib/firebase.ts` and exports `db`.
 
 ### Explore page data flow
-The Explore page (`/explorar`) uses paginated Firestore queries via `useInfiniteQuery` from TanStack Query. The `useExploreListings` hook loads 30 listings per page ordered by `publishedAt` descending, flattening all pages into a single array. Client-side filtering (`useMapFilters`) applies to the accumulated items. The list panel uses infinite scroll (`useInfiniteScroll` with IntersectionObserver sentinel) to load more pages. The map uses `@googlemaps/markerclusterer` for marker clustering via the `ClusteredMarkers` component.
+The Explore page (`/explorar`) uses paginated Firestore queries via `useInfiniteQuery` from TanStack Query. The `useExploreListings` hook loads 30 listings per page ordered by `boostScore` DESC then `publishedAt` DESC, flattening all pages into a single array. `operationType` filtering (Venta/Alquiler/Todos) is done **server-side** at the Firestore query level — when `operationType` is set, the query adds `where('operationType', '==', value)` and uses the `operationType + status + boostScore + publishedAt` index. When null (Todos tab), it omits the filter and uses the `status + boostScore + publishedAt` index. Other filters (propertyType, rentalDurationType, price range) remain client-side in `useMapFilters` since they reference Property fields. The list panel uses infinite scroll (`useInfiniteScroll` with IntersectionObserver sentinel) to load more pages. The map uses `@googlemaps/markerclusterer` for marker clustering via the `ClusteredMarkers` component.
+
+### Firestore query patterns
+
+| Query | Filters | Order | Index |
+|-------|---------|-------|-------|
+| Venta/Alquiler | `status == 'active'` + `operationType == X` | boostScore DESC, publishedAt DESC | operationType + status + boostScore + publishedAt |
+| Todos | `status == 'active'` | boostScore DESC, publishedAt DESC | status + boostScore + publishedAt |
+
+**Required fields on every listing document:** `boostScore` (default: 1), `operationType`, `status`, `publishedAt` (on activation).
 
 ### Styling
 Tailwind utility classes inline. Brand theme (colors, fonts, shadows) defined as CSS custom properties in `src/index.css`. Custom animations also defined there. No component CSS files.

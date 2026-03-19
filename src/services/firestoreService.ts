@@ -19,7 +19,7 @@ import { db } from '@/lib/firebase'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { WaitlistEntry } from '@/types/waitlist'
-import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
+import type { ContactTimeSlot, SupportedCountryCode, OperationType } from '@/types/enums'
 import type { ListingWithProperty, ExploreListingsPage } from '@/types/explore'
 
 // Strip undefined values recursively (Firestore rejects undefined)
@@ -208,38 +208,25 @@ export const firestoreService = {
       .filter((l) => propertyMap.has(l.propertyId))
       .map((listing) => {
         const property = propertyMap.get(listing.propertyId)!
-        // Property is the source of truth for operationType — Flutter doesn't
-        // write operationType to listing docs, so the listing default ('venta')
-        // may be wrong for alquiler listings created from the mobile app.
-        return {
-          listing: { ...listing, operationType: property.operationType },
-          property,
-        }
+        return { listing, property }
       })
   },
 
   async getActiveListingsWithPropertiesPaginated(
     pageSize: number = 30,
     cursor?: QueryDocumentSnapshot,
+    operationType?: OperationType,
   ): Promise<ExploreListingsPage> {
-    let q = query(
-      collection(db, 'listings'),
+    const constraints = [
       where('status', '==', 'active'),
+      ...(operationType ? [where('operationType', '==', operationType)] : []),
       orderBy('boostScore', 'desc'),
       orderBy('publishedAt', 'desc'),
+      ...(cursor ? [startAfter(cursor)] : []),
       limit(pageSize),
-    )
+    ]
 
-    if (cursor) {
-      q = query(
-        collection(db, 'listings'),
-        where('status', '==', 'active'),
-        orderBy('boostScore', 'desc'),
-        orderBy('publishedAt', 'desc'),
-        startAfter(cursor),
-        limit(pageSize),
-      )
-    }
+    const q = query(collection(db, 'listings'), ...constraints)
 
     const snapshot = await getDocs(q)
     const listings = snapshot.docs.map((d) =>
@@ -265,10 +252,7 @@ export const firestoreService = {
       .filter((l) => propertyMap.has(l.propertyId))
       .map((listing) => {
         const property = propertyMap.get(listing.propertyId)!
-        return {
-          listing: { ...listing, operationType: property.operationType },
-          property,
-        }
+        return { listing, property }
       })
 
     const lastDoc = snapshot.docs.length > 0
@@ -305,10 +289,7 @@ export const firestoreService = {
       .filter((l) => propertyMap.has(l.propertyId))
       .map((listing) => {
         const property = propertyMap.get(listing.propertyId)!
-        return {
-          listing: { ...listing, operationType: property.operationType },
-          property,
-        }
+        return { listing, property }
       })
   },
 
