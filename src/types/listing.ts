@@ -36,6 +36,12 @@ export interface Listing {
   // Assignment fields
   assignedRealtorId?: string
   assignedRealtorPhoneNumber?: string
+
+  // Boost fields
+  isBoosted: boolean
+  boostedUntil?: Date
+  boostTier?: 'sevenDays' | 'fifteenDays' | 'thirtyDays'
+  boostScore: number
 }
 
 // Firestore document shape
@@ -68,4 +74,8 @@ export interface ListingFirestoreDoc {
   currentClaimsCount: number
   assignedRealtorId?: string
   assignedRealtorPhoneNumber?: string
+  isBoosted?: boolean
+  boostedUntil?: unknown // Firestore Timestamp
+  boostTier?: string
+  boostScore?: number
 }

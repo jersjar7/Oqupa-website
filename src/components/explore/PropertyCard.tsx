@@ -30,7 +30,7 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
       }`}
     >
       {/* Thumbnail */}
-      <div className="aspect-[4/3] w-full bg-background-secondary">
+      <div className="relative aspect-[4/3] w-full bg-background-secondary">
         {thumbnail ? (
           <img
             src={thumbnail}
@@ -43,6 +43,12 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
               <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
             </svg>
           </div>
+        )}
+        {listing.isBoosted && (
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-1 text-[11px] font-semibold text-white shadow">
+            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+            Destacado
+          </span>
         )}
       </div>
 

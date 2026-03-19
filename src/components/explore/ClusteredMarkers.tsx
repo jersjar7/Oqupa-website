@@ -14,6 +14,10 @@ const STYLE_DEFAULT =
   'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md bg-white text-gray-900 hover:scale-105 transition-all'
 const STYLE_SELECTED =
   'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md scale-110 bg-emerald-600 text-white transition-all'
+const STYLE_BOOSTED =
+  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md bg-amber-500 text-white ring-2 ring-amber-300 hover:scale-105 transition-all'
+const STYLE_BOOSTED_SELECTED =
+  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md scale-110 bg-amber-500 text-white ring-2 ring-amber-300 transition-all'
 
 export default function ClusteredMarkers({
   items,
@@ -62,9 +66,12 @@ export default function ClusteredMarkers({
           formatShortPrice(listing.price.amount, listing.price.currency) +
           (priceSuffix ? ` ${priceSuffix}` : '')
 
+        const isBoosted = listing.isBoosted
         const content = document.createElement('div')
-        content.className = id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT
-        content.textContent = label
+        content.className = isBoosted
+          ? (id === selectedId ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
+          : (id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT)
+        content.textContent = isBoosted ? `★ ${label}` : label
 
         const marker = new markerLib.AdvancedMarkerElement({
           position: {
@@ -97,7 +104,10 @@ export default function ClusteredMarkers({
     for (const [id, marker] of markersRef.current) {
       const el = marker.content as HTMLElement
       if (!el) continue
-      el.className = id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT
+      const isBoosted = el.textContent?.startsWith('★') ?? false
+      el.className = isBoosted
+        ? (id === selectedId ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
+        : (id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT)
     }
   }, [selectedId])
 

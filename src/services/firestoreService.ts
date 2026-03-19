@@ -98,6 +98,11 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     currentClaimsCount: (data['currentClaimsCount'] as number) ?? 0,
     assignedRealtorId: data['assignedRealtorId'] as string | undefined,
     assignedRealtorPhoneNumber: data['assignedRealtorPhoneNumber'] as string | undefined,
+    // Boost fields
+    isBoosted: (data['isBoosted'] as boolean) ?? false,
+    boostedUntil: data['boostedUntil'] ? toDate(data['boostedUntil']) : undefined,
+    boostTier: data['boostTier'] as Listing['boostTier'],
+    boostScore: (data['boostScore'] as number) ?? 1,
   }
 }
 
@@ -220,6 +225,7 @@ export const firestoreService = {
     let q = query(
       collection(db, 'listings'),
       where('status', '==', 'active'),
+      orderBy('boostScore', 'desc'),
       orderBy('publishedAt', 'desc'),
       limit(pageSize),
     )
@@ -228,6 +234,7 @@ export const firestoreService = {
       q = query(
         collection(db, 'listings'),
         where('status', '==', 'active'),
+        orderBy('boostScore', 'desc'),
         orderBy('publishedAt', 'desc'),
         startAfter(cursor),
         limit(pageSize),

@@ -209,6 +209,8 @@ export default function WizardStep4() {
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           currentClaimsCount: 0,
           operationType: data.operationType as Listing['operationType'],
+          isBoosted: false,
+          boostScore: 1,
         })
       }
 
