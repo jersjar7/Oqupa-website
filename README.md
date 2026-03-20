@@ -24,25 +24,42 @@ Built with React + Vite + TypeScript + Tailwind CSS. Deployed to Firebase Hostin
 
 ## Getting Started
 
+### Prerequisites
+- Node.js 20+
+- Firebase CLI (`npm i -g firebase-tools`)
+
+### Environment Setup
+1. Copy `.env.example` to `.env` and fill in production values
+2. Create `.env.development` with staging Firebase values (see `.env.example` for template)
+3. Run `npm install`
+
+### Running
 ```bash
-npm install
-npm run dev      # Dev server at localhost:5173
-npm run build    # TypeScript check + Vite build → dist/
+npm run dev      # Dev server at localhost:5173 → connects to oqupa-staging (auto)
+npm run build    # TypeScript check + Vite build → dist/ → uses oqupa-production
 npm run preview  # Preview production build
 ```
 
+### Environment Switching
+| Command | Firebase project | Env files |
+|---------|-----------------|-----------|
+| `npm run dev` | `oqupa-staging` | `.env` + `.env.development` (overrides) |
+| `npm run build` | `oqupa-production` | `.env` only |
+
 ## Deployment
 
-Deployed to **Firebase Hosting** under the `oqupa-production` project.
+Deployed to **Firebase Hosting**. CI/CD handles this automatically:
+- Push to `development` → deploy to `oqupa-staging`
+- Push to `master` → deploy to `oqupa-production`
 
-### Manual deploy (current workflow)
+### Manual deploy
 
 ```bash
 npm run build
 firebase deploy --only hosting --project oqupa-production
 ```
 
-Requires Firebase CLI (`npm i -g firebase-tools`) and login (`firebase login` with `admin@oqupa.com`).
+Requires Firebase CLI and login (`firebase login` with `admin@oqupa.com`).
 
 ### Deploy checklist
 

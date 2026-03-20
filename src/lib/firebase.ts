@@ -6,12 +6,12 @@ import { getAnalytics } from 'firebase/analytics'
 import { getPerformance } from 'firebase/performance'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBBdwf8ClZyPbW2BigyCk5impOReVYRVfY',
-  authDomain: 'oqupa-production.firebaseapp.com',
-  projectId: 'oqupa-production',
-  storageBucket: 'oqupa-production.firebasestorage.app',
-  messagingSenderId: '109922131848',
-  appId: '1:109922131848:web:bb2f23f49a1f3d378fe43d',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 const app = initializeApp(firebaseConfig)

@@ -23,9 +23,21 @@ React 19 + Vite 6 + TypeScript 5.9 (strict) + Tailwind CSS 4. Single-page app us
 
 Vite splits into 3 chunks: `index` (app code), `vendor` (React/Router), `firebase` (Firebase SDK).
 
-## Git Workflow
+## Git Workflow & Environment Strategy
 
-**Never work directly on `master`.** Always create a new feature branch for changes, then merge to `master` when ready. Example: `git checkout -b feat/my-feature`.
+**Never work directly on `master`.** Always create a new feature branch from `development`, then merge to `development` for staging QA. Only merge `development` → `master` when ready for production release.
+
+| Branch | Firebase project | Deploy target |
+|--------|-----------------|---------------|
+| `feature/*` | `oqupa-staging` (via `npm run dev`) | Local only |
+| `development` | `oqupa-staging` | CI auto-deploys to staging hosting |
+| `master` | `oqupa-production` | CI auto-deploys to production hosting |
+
+**All local development (`npm run dev`) always connects to staging, regardless of branch.** The environment is determined by Vite's build mode, not by git branch.
+
+```
+feature/xyz → merge to development → CI deploys to staging → QA → merge to master → CI deploys to production
+```
 
 ## Key Patterns
 
@@ -79,7 +91,11 @@ Extension config: `extensions/firestore-send-email.env`
 
 ## Deployment
 
-The site is deployed manually to Firebase Hosting (`npm run build && firebase deploy --only hosting`). Pushing to master does **not** trigger automatic deployment. Custom domains: `oqupa.com` and `www.oqupa.com`.
+CI/CD handles deployment automatically:
+- Push to `development` → build with staging config → deploy to `oqupa-staging` hosting
+- Push to `master` → build with production config → deploy to `oqupa-production` hosting (custom domains: `oqupa.com` and `www.oqupa.com`)
+
+Manual deploy (if needed): `npm run build && firebase deploy --only hosting --project oqupa-production`
 
 Firebase is used for:
 - Firebase Hosting (website deployment)
@@ -117,10 +133,27 @@ firebase use staging    # Switch to staging project
 firebase use production # Switch to production project
 ```
 
+### Environment Switching (Auto)
+
+Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite's env file loading handles the switching:
+
+| Command | Firebase project | Env files loaded |
+|---------|-----------------|-----------------|
+| `npm run dev` | `oqupa-staging` | `.env` + `.env.development` (overrides) |
+| `npm run build` | `oqupa-production` | `.env` only |
+
 ### Environment Files
-- `.env` — Production API keys (gitignored)
-- `.env.staging` — Staging API keys (gitignored)
+- `.env` — Production API keys + Firebase config (gitignored)
+- `.env.development` — Staging Firebase overrides for dev mode (gitignored)
+- `.env.staging` — Staging API keys (gitignored, reference copy)
 - `.env.example` — Template with placeholder values (committed)
+
+### CI/CD
+The workflow (`.github/workflows/deploy.yml`) injects correct env vars per deploy target:
+- `development` branch → staging Firebase config → deploy to `oqupa-staging` hosting
+- `master` branch → production Firebase config → deploy to `oqupa-production` hosting
+
+Firebase config values are public (visible in compiled JS), so they are hardcoded in the workflow rather than using GitHub Secrets.
 
 ## Related Projects
 

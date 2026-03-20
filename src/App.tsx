@@ -28,6 +28,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {import.meta.env.DEV && (
+        <div style={{
+          position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
+          background: '#f59e0b', color: '#fff', padding: '2px 8px',
+          borderRadius: 4, fontSize: 11, fontWeight: 700, opacity: 0.85,
+          pointerEvents: 'none',
+        }}>
+          STAGING
+        </div>
+      )}
       <Routes>
         {/* Landing page routes (with Header + Footer) */}
         <Route element={<ErrorBoundary><Layout /></ErrorBoundary>}>
