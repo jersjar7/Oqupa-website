@@ -5,7 +5,8 @@ import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
-import { PROPERTY_TYPE_LABELS, PLAY_STORE_URL } from '@/lib/constants'
+import { PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
 
 function GalleryModal({

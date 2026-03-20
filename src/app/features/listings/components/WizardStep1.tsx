@@ -5,6 +5,7 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button } from '@/app/components/ui'
 import {
   PROPERTY_TYPE_LABELS,
+  PROPERTY_TYPE_DESCRIPTIONS,
   OPERATION_TYPE_LABELS,
   LISTING_ROLE_LABELS,
   RENTAL_DURATION_TYPE_LABELS,
@@ -154,19 +155,28 @@ export default function WizardStep1() {
         {errors.propertyType && (
           <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>
         )}
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-3">
           {availablePropertyTypes.map((type) => (
             <button
               key={type}
               type="button"
               onClick={() => handlePropertyTypeChange(type)}
-              className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+              className={`flex flex-col items-start rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                 selected.propertyType === type
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border text-text-secondary hover:border-primary/30'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/30'
               }`}
             >
-              {PROPERTY_TYPE_LABELS[type]}
+              <span className={`text-sm font-semibold ${
+                selected.propertyType === type ? 'text-primary' : 'text-text-primary'
+              }`}>
+                {PROPERTY_TYPE_LABELS[type]}
+              </span>
+              <span className={`text-xs ${
+                selected.propertyType === type ? 'text-primary/70' : 'text-text-tertiary'
+              }`}>
+                {PROPERTY_TYPE_DESCRIPTIONS[type]}
+              </span>
             </button>
           ))}
         </div>

@@ -5,6 +5,9 @@ import {
   VENTA_PROPERTY_TYPES,
   ALQUILER_LONG_TERM_PROPERTY_TYPES,
   ALQUILER_SHORT_TERM_PROPERTY_TYPES,
+  ALQUILER_ALL_PROPERTY_TYPES,
+  isAlquilerOnlyType,
+  type PropertyType,
   type RentalDurationType,
 } from '@/types/enums'
 import type { MapFilters } from '@/types/explore'
@@ -35,7 +38,7 @@ export default function ExploreFilters({
         ? ALQUILER_SHORT_TERM_PROPERTY_TYPES
         : filters.rentalDurationType === 'longTerm'
           ? ALQUILER_LONG_TERM_PROPERTY_TYPES
-          : [...new Set([...ALQUILER_LONG_TERM_PROPERTY_TYPES, ...ALQUILER_SHORT_TERM_PROPERTY_TYPES])])
+          : ALQUILER_ALL_PROPERTY_TYPES)
       : Object.keys(PROPERTY_TYPE_LABELS)
 
   return (
@@ -52,11 +55,17 @@ export default function ExploreFilters({
           <button
             key={opt.label}
             onClick={() =>
-              setFilters((prev) => ({
-                ...prev,
-                operationType: opt.value,
-                rentalDurationType: opt.value === 'alquiler' ? (prev.rentalDurationType ?? 'longTerm') : null,
-              }))
+              setFilters((prev) => {
+                const cleanedTypes = opt.value === 'venta'
+                  ? prev.propertyTypes.filter((t) => !isAlquilerOnlyType(t as PropertyType))
+                  : prev.propertyTypes
+                return {
+                  ...prev,
+                  operationType: opt.value,
+                  rentalDurationType: opt.value === 'alquiler' ? (prev.rentalDurationType ?? 'longTerm') : null,
+                  propertyTypes: cleanedTypes,
+                }
+              })
             }
             className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
               filters.operationType === opt.value
@@ -90,10 +99,17 @@ export default function ExploreFilters({
               <button
                 key={value}
                 onClick={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    rentalDurationType: value as RentalDurationType,
-                  }))
+                  setFilters((prev) => {
+                    const duration = value as RentalDurationType
+                    const validTypes = duration === 'longTerm'
+                      ? ALQUILER_LONG_TERM_PROPERTY_TYPES
+                      : ALQUILER_SHORT_TERM_PROPERTY_TYPES
+                    return {
+                      ...prev,
+                      rentalDurationType: duration,
+                      propertyTypes: prev.propertyTypes.filter((t) => validTypes.includes(t as PropertyType)),
+                    }
+                  })
                 }
                 className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
                   filters.rentalDurationType === value

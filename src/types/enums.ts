@@ -104,12 +104,22 @@ export type PaymentMethod =
 
 export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   casa: 'Casa',
-  departamento: 'Departamento',
+  departamento: 'Apartamento',
   terreno: 'Terreno',
   oficina: 'Oficina',
   local: 'Local Comercial',
-  hospedaje: 'Hospedaje',
+  hospedaje: 'Alojamiento',
   habitacion: 'Habitación',
+}
+
+export const PROPERTY_TYPE_DESCRIPTIONS: Record<PropertyType, string> = {
+  casa: 'Casa completa',
+  departamento: 'Departamento o piso',
+  terreno: 'Lote sin construir',
+  oficina: 'Espacio de trabajo',
+  local: 'Tienda o negocio',
+  hospedaje: 'Hotel, hostal, casa vacacional, alquiler por días',
+  habitacion: 'Cuarto en vivienda compartida',
 }
 
 export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
@@ -140,6 +150,11 @@ export const ALQUILER_LONG_TERM_PROPERTY_TYPES: PropertyType[] = [
 /** Property types available for alquiler corto plazo */
 export const ALQUILER_SHORT_TERM_PROPERTY_TYPES: PropertyType[] = [
   'casa', 'departamento', 'hospedaje', 'habitacion',
+]
+
+/** All property types available for alquiler (union of long + short term) */
+export const ALQUILER_ALL_PROPERTY_TYPES: PropertyType[] = [
+  'casa', 'departamento', 'terreno', 'oficina', 'local', 'hospedaje', 'habitacion',
 ]
 
 /** Whether a property type can only be used with alquiler */
