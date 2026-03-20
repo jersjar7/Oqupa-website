@@ -1,17 +1,22 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
-import { Button, Input, Select, Card } from '@/app/components/ui'
+import { Button, Input, Select, Card, Modal } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Shield } from 'lucide-react'
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const { user, refreshUser } = useAuthStore()
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const {
     register,
@@ -49,6 +54,18 @@ export default function ProfilePage() {
       setSuccess('Perfil actualizado')
     } catch {
       setError('Error al actualizar el perfil')
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteError(null)
+    setIsDeleting(true)
+    try {
+      await authService.deleteAccount()
+      navigate('/app/login')
+    } catch {
+      setDeleteError('Error al eliminar la cuenta. Intenta de nuevo.')
+      setIsDeleting(false)
     }
   }
 
@@ -149,6 +166,68 @@ export default function ProfilePage() {
           Miembro desde {user.createdAt.toLocaleDateString('es-PE')}
         </p>
       </Card>
+
+      {/* Delete account */}
+      <Card className="mt-6">
+        <h2 className="text-sm font-medium uppercase text-text-secondary">
+          Configuracion de cuenta
+        </h2>
+        <p className="mt-2 text-sm text-text-tertiary">
+          Al eliminar tu cuenta se desactivaran tus anuncios y se eliminaran tus datos personales.
+        </p>
+        <div className="mt-4">
+          <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+            Eliminar Cuenta
+          </Button>
+        </div>
+      </Card>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          if (!isDeleting) {
+            setShowDeleteModal(false)
+            setDeleteError(null)
+          }
+        }}
+        title="Eliminar cuenta"
+      >
+        <p className="text-sm text-text-secondary">
+          Esta accion es permanente. Se eliminara:
+        </p>
+        <ul className="mt-2 list-disc pl-5 text-sm text-text-secondary">
+          <li>Tu perfil y datos personales</li>
+          <li>Tus favoritos y notificaciones</li>
+          <li>Tus anuncios activos seran desactivados</li>
+        </ul>
+        <p className="mt-3 text-sm font-medium text-text-primary">
+          ¿Estas seguro que deseas continuar?
+        </p>
+
+        {deleteError && (
+          <p className="mt-3 text-sm text-error">{deleteError}</p>
+        )}
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowDeleteModal(false)
+              setDeleteError(null)
+            }}
+            disabled={isDeleting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteAccount}
+            isLoading={isDeleting}
+          >
+            Eliminar
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

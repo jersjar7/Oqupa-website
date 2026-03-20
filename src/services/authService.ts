@@ -23,6 +23,7 @@ import {
   serverTimestamp,
   getDoc,
 } from 'firebase/firestore'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 
@@ -244,6 +245,13 @@ export const authService = {
     }
     AnalyticsLogger.loginCompleted('google')
     return user
+  },
+
+  async deleteAccount() {
+    const functions = getFunctions(undefined, 'southamerica-east1')
+    const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
+    await deleteUserAccount({})
+    await signOut(auth)
   },
 
   cleanupRecaptcha() {
