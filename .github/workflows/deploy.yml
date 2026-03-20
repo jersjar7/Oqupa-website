@@ -20,17 +20,7 @@ jobs:
       - name: Lint & type-check
         run: npx tsc -b --noEmit
       - name: Create .env for build
-        run: |
-          cat <<'EOF' > .env
-          VITE_GOOGLE_MAPS_API_KEY=AIzaSyDJlLD113SPTzjka90pO8awBexUwMqriVk
-          VITE_RECAPTCHA_SITE_KEY=6LfkKI4sAAAAAFA87c6z6Uig07wt6EI9DDSu4sxt
-          VITE_FIREBASE_API_KEY=AIzaSyBBdwf8ClZyPbW2BigyCk5impOReVYRVfY
-          VITE_FIREBASE_AUTH_DOMAIN=oqupa-production.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID=oqupa-production
-          VITE_FIREBASE_STORAGE_BUCKET=oqupa-production.firebasestorage.app
-          VITE_FIREBASE_MESSAGING_SENDER_ID=109922131848
-          VITE_FIREBASE_APP_ID=1:109922131848:web:bb2f23f49a1f3d378fe43d
-          EOF
+        run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
       - name: Build
         run: npm run build
       - name: Dependency audit
@@ -51,17 +41,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Create .env for staging build
-        run: |
-          cat <<'EOF' > .env
-          VITE_GOOGLE_MAPS_API_KEY=AIzaSyDJlLD113SPTzjka90pO8awBexUwMqriVk
-          VITE_RECAPTCHA_SITE_KEY=6LfkKI4sAAAAAFA87c6z6Uig07wt6EI9DDSu4sxt
-          VITE_FIREBASE_API_KEY=AIzaSyCBuQZkNRvnb_JoQTs3v6OkJUIGCSplWU
-          VITE_FIREBASE_AUTH_DOMAIN=oqupa-staging.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID=oqupa-staging
-          VITE_FIREBASE_STORAGE_BUCKET=oqupa-staging.firebasestorage.app
-          VITE_FIREBASE_MESSAGING_SENDER_ID=324931340315
-          VITE_FIREBASE_APP_ID=1:324931340315:web:b5ab4b9caa8d482e2410be
-          EOF
+        run: echo "${{ secrets.DOTENV_STAGING }}" > .env
       - run: npm run build
       - id: auth
         uses: google-github-actions/auth@v2
@@ -86,17 +66,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Create .env for production build
-        run: |
-          cat <<'EOF' > .env
-          VITE_GOOGLE_MAPS_API_KEY=AIzaSyDJlLD113SPTzjka90pO8awBexUwMqriVk
-          VITE_RECAPTCHA_SITE_KEY=6LfkKI4sAAAAAFA87c6z6Uig07wt6EI9DDSu4sxt
-          VITE_FIREBASE_API_KEY=AIzaSyBBdwf8ClZyPbW2BigyCk5impOReVYRVfY
-          VITE_FIREBASE_AUTH_DOMAIN=oqupa-production.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID=oqupa-production
-          VITE_FIREBASE_STORAGE_BUCKET=oqupa-production.firebasestorage.app
-          VITE_FIREBASE_MESSAGING_SENDER_ID=109922131848
-          VITE_FIREBASE_APP_ID=1:109922131848:web:bb2f23f49a1f3d378fe43d
-          EOF
+        run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
       - run: npm run build
       - id: auth
         uses: google-github-actions/auth@v2
