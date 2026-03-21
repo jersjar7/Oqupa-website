@@ -56,6 +56,9 @@ export default function ForgotPasswordPage() {
           <p className="mt-2 text-base text-text-secondary">
             Revisa tu bandeja de entrada para restablecer tu contrasena.
           </p>
+          <p className="mt-1 text-sm text-text-tertiary">
+            Si no lo encuentras, revisa tu bandeja de spam.
+          </p>
           <Link
             to="/app/login/password"
             className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"

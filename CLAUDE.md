@@ -65,6 +65,26 @@ The Explore page (`/explorar`) uses paginated Firestore queries via `useInfinite
 ### Styling
 Tailwind utility classes inline. Brand theme (colors, fonts, shadows) defined as CSS custom properties in `src/index.css`. Custom animations also defined there. No component CSS files.
 
+### Text Styles
+
+Two font families defined in `src/index.css`:
+- **Gotham** (`font-sans`, the body default) — Book (400), Medium (500), Bold (700)
+- **Roboto Serif** (`font-serif`) — Light (300), Regular (400), Medium (500), Bold (700)
+
+Semantic styles mapped to Tailwind classes (mirrors Flutter `AppTextStyles`):
+
+| Style | Tailwind classes | Font | Use for |
+|-------|-----------------|------|---------|
+| **Header 1** | `font-serif text-[28px] font-normal` | Roboto Serif 400 | Page titles (auth, dashboard, profile). Reserved for decorative/formal headings — do NOT use for general UI headings. |
+| **Header 2** | `font-sans text-[28px] font-medium` | Gotham 500 | General app headings. **Preferred default** for new headings. |
+| **Subhead** | `font-sans text-sm font-medium uppercase` | Gotham 500 | Section labels, field labels |
+| **Body** | `text-base` (inherits `font-sans`) | Gotham 400 | Body text, descriptions, form text |
+| **Caption** | `font-serif text-xs font-light italic` | Roboto Serif 300 italic | Fine print, secondary details, timestamps |
+| **Legal** | `font-serif text-xs font-light` | Roboto Serif 300 | Legal links, privacy/terms text |
+| **Button** | `font-sans text-base font-bold uppercase` | Gotham 700 | Button labels |
+
+**Current convention:** Most existing page titles use Header 1 (`font-serif`). For new UI, prefer Header 2 (`font-sans font-medium`) unless the context is decorative or formal (legal pages, onboarding, welcome screens).
+
 ### Language
 All user-facing text is in Spanish. Variable names and code comments are in English.
 

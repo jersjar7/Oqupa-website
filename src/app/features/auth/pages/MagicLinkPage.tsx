@@ -122,6 +122,9 @@ export default function MagicLinkPage() {
             Enviamos un enlace de acceso a{' '}
             <span className="font-medium text-text-primary">{sentEmail}</span>
           </p>
+          <p className="mt-1 text-sm text-text-tertiary">
+            Si no lo encuentras, revisa tu bandeja de spam.
+          </p>
 
           {error && (
             <p className="mt-4 text-sm text-error">{error}</p>
