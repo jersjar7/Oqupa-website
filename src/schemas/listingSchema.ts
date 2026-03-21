@@ -77,6 +77,7 @@ export const step3Schema = z.object({
     .min(-180)
     .max(180),
   calle: z.string().min(1, 'Ingresa la calle y numero'),
+  urbanizacion: z.string(),
   distrito: z.string().min(1, 'Ingresa el distrito'),
   provincia: z.string().min(1, 'Ingresa la provincia'),
   departamento: z.string().min(1, 'Ingresa el departamento'),

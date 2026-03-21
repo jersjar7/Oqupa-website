@@ -319,19 +319,31 @@ export default function PropertyPage() {
   }
 
   const images = property.media?.propertyPhotoUrls ?? []
-  const location = [property.location?.distrito, property.location?.departamento]
-    .filter(Boolean)
-    .join(', ')
+  const showExact = listing.showExactLocation !== false
+  const location = showExact
+    ? [
+        property.location?.urbanizacion,
+        property.location?.distrito,
+        property.location?.departamento,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : [property.location?.distrito, property.location?.provincia]
+        .filter(Boolean)
+        .join(', ')
   const propertyTypeLabel =
     PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const whatsappNumber = listing.contactInfo?.whatsappPhoneNumber
-  const whatsappAddress = [
-    property.location?.calle,
-    property.location?.distrito,
-    property.location?.departamento,
-  ]
-    .filter(Boolean)
-    .join(', ')
+  const whatsappAddress = showExact
+    ? [
+        property.location?.calle,
+        property.location?.urbanizacion,
+        property.location?.distrito,
+        property.location?.departamento,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : property.location?.distrito ?? ''
   const whatsappMessage = encodeURIComponent(
     `Hola, me interesa la propiedad en: ${whatsappAddress || 'su sitio web'}`
   )
@@ -383,6 +395,11 @@ export default function PropertyPage() {
               />
             </svg>
             <span className="text-sm">{location}</span>
+            {!showExact && (
+              <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                Ubicacion aproximada
+              </span>
+            )}
           </div>
         )}
 

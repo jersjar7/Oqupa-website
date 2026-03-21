@@ -42,6 +42,11 @@ export interface Listing {
   boostedUntil?: Date
   boostTier?: 'sevenDays' | 'fifteenDays' | 'thirtyDays'
   boostScore: number
+
+  // Location privacy fields
+  showExactLocation: boolean
+  displayLatitude?: number
+  displayLongitude?: number
 }
 
 // Firestore document shape
@@ -78,4 +83,7 @@ export interface ListingFirestoreDoc {
   boostedUntil?: unknown // Firestore Timestamp
   boostTier?: string
   boostScore?: number
+  showExactLocation?: boolean
+  displayLatitude?: number
+  displayLongitude?: number
 }

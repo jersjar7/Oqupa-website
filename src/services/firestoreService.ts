@@ -103,6 +103,10 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     boostedUntil: data['boostedUntil'] ? toDate(data['boostedUntil']) : undefined,
     boostTier: data['boostTier'] as Listing['boostTier'],
     boostScore: (data['boostScore'] as number) ?? 1,
+    // Location privacy fields
+    showExactLocation: (data['showExactLocation'] as boolean) ?? true,
+    displayLatitude: data['displayLatitude'] as number | undefined,
+    displayLongitude: data['displayLongitude'] as number | undefined,
   }
 }
 
@@ -131,6 +135,7 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
       latitude: (locationData?.['latitude'] as number) ?? 0,
       longitude: (locationData?.['longitude'] as number) ?? 0,
       calle: (locationData?.['calle'] as string) ?? '',
+      urbanizacion: (locationData?.['urbanizacion'] as string) ?? '',
       distrito: (locationData?.['distrito'] as string) ?? '',
       provincia: (locationData?.['provincia'] as string) ?? '',
       departamento: (locationData?.['departamento'] as string) ?? '',

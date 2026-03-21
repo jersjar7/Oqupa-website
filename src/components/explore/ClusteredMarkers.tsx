@@ -28,6 +28,7 @@ export default function ClusteredMarkers({
   const markerLib = useMapsLibrary('marker')
   const clustererRef = useRef<MarkerClusterer | null>(null)
   const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map())
+  const circlesRef = useRef<google.maps.Circle[]>([])
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
 
@@ -41,6 +42,8 @@ export default function ClusteredMarkers({
     return () => {
       clusterer.clearMarkers()
       clusterer.setMap(null)
+      circlesRef.current.forEach((c) => c.setMap(null))
+      circlesRef.current = []
     }
   }, [map])
 
@@ -75,8 +78,8 @@ export default function ClusteredMarkers({
 
         const marker = new markerLib.AdvancedMarkerElement({
           position: {
-            lat: property.location.latitude,
-            lng: property.location.longitude,
+            lat: listing.displayLatitude ?? property.location.latitude,
+            lng: listing.displayLongitude ?? property.location.longitude,
           },
           content,
         })
@@ -97,6 +100,28 @@ export default function ClusteredMarkers({
     markersRef.current = newMarkers
     clusterer.clearMarkers()
     clusterer.addMarkers([...newMarkers.values()])
+
+    // Update circles for approximate-location listings
+    circlesRef.current.forEach((c) => c.setMap(null))
+    circlesRef.current = []
+    for (const item of items) {
+      if (!item.listing.showExactLocation) {
+        const lat = item.listing.displayLatitude ?? item.property.location.latitude
+        const lng = item.listing.displayLongitude ?? item.property.location.longitude
+        const circle = new google.maps.Circle({
+          map,
+          center: { lat, lng },
+          radius: 250,
+          fillColor: '#008080',
+          fillOpacity: 0.06,
+          strokeColor: '#008080',
+          strokeOpacity: 0.15,
+          strokeWeight: 1,
+          clickable: false,
+        })
+        circlesRef.current.push(circle)
+      }
+    }
   }, [map, markerLib, items, selectedId])
 
   // Update selected marker styling

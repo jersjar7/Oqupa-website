@@ -13,6 +13,7 @@ export interface PropertyLocation {
   latitude: number
   longitude: number
   calle: string
+  urbanizacion: string
   distrito: string
   provincia: string
   departamento: string
@@ -62,6 +63,7 @@ export interface PropertyFirestoreDoc {
     latitude: number
     longitude: number
     calle: string
+    urbanizacion: string
     distrito: string
     provincia: string
     departamento: string

@@ -116,6 +116,7 @@ export default function WizardStep4() {
             latitude: data.latitude!,
             longitude: data.longitude!,
             calle: data.calle,
+            urbanizacion: data.urbanizacion,
             distrito: data.distrito,
             provincia: data.provincia,
             departamento: data.departamento,
@@ -136,6 +137,7 @@ export default function WizardStep4() {
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           media: { propertyPhotoUrls: allPhotoUrls },
           contactInfo: user.contactInfo,
+          showExactLocation: data.showExactLocation,
         })
       } else {
         // CREATE FLOW
@@ -159,6 +161,7 @@ export default function WizardStep4() {
             latitude: data.latitude!,
             longitude: data.longitude!,
             calle: data.calle,
+            urbanizacion: data.urbanizacion,
             distrito: data.distrito,
             provincia: data.provincia,
             departamento: data.departamento,
@@ -168,7 +171,7 @@ export default function WizardStep4() {
             amount: formData.amount,
             currency: formData.currency,
           },
-          normalizedAddress: `${data.calle}, ${data.distrito}, ${data.provincia}, ${data.departamento}`,
+          normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}, ${data.provincia}, ${data.departamento}`,
           media: { propertyPhotoUrls: [] },
           isAvailable: true,
         })
@@ -211,6 +214,7 @@ export default function WizardStep4() {
           operationType: data.operationType as Listing['operationType'],
           isBoosted: false,
           boostScore: 1,
+          showExactLocation: data.showExactLocation,
         })
       }
 

@@ -21,9 +21,11 @@ export interface ListingFormData {
   latitude: number | null
   longitude: number | null
   calle: string
+  urbanizacion: string
   distrito: string
   provincia: string
   departamento: string
+  showExactLocation: boolean
   photos: File[]
   existingPhotoUrls: string[] // for edit mode
 
@@ -63,9 +65,11 @@ const INITIAL_DATA: ListingFormData = {
   latitude: null,
   longitude: null,
   calle: '',
+  urbanizacion: '',
   distrito: '',
   provincia: '',
   departamento: '',
+  showExactLocation: true,
   photos: [],
   existingPhotoUrls: [],
   amount: null,

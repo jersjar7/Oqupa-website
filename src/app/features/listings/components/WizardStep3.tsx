@@ -12,6 +12,7 @@ export default function WizardStep3() {
   const { data, updateData, nextStep, prevStep, isEditMode } =
     useListingFormStore()
 
+  const [showExactLocation, setShowExactLocation] = useState(data.showExactLocation)
   const [photos, setPhotos] = useState<File[]>(data.photos)
   const [existingUrls] = useState<string[]>(data.existingPhotoUrls)
   const [photoError, setPhotoError] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export default function WizardStep3() {
       latitude: data.latitude ?? PIURA_CENTER.lat,
       longitude: data.longitude ?? PIURA_CENTER.lng,
       calle: data.calle,
+      urbanizacion: data.urbanizacion,
       distrito: data.distrito,
       provincia: data.provincia,
       departamento: data.departamento,
@@ -64,6 +66,7 @@ export default function WizardStep3() {
 
     updateData({
       ...formData,
+      showExactLocation,
       photos,
     })
     nextStep()
@@ -99,10 +102,17 @@ export default function WizardStep3() {
 
       {/* Address fields */}
       <Input
-        label="Calle y numero"
-        placeholder="Ej: Av. Grau 123"
+        label="Dirección"
+        placeholder="Ej: Av. Grau 123-A"
         error={errors.calle?.message}
         {...register('calle')}
+      />
+
+      <Input
+        label="Urbanización o barrio (opcional)"
+        placeholder="Ej: Urb. San Eduardo"
+        error={errors.urbanizacion?.message}
+        {...register('urbanizacion')}
       />
 
       <div className="grid grid-cols-2 gap-4">
@@ -126,6 +136,28 @@ export default function WizardStep3() {
         error={errors.departamento?.message}
         {...register('departamento')}
       />
+
+      {/* Location privacy toggle */}
+      <div className="rounded-xl border border-border p-4">
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={showExactLocation}
+            onChange={(e) => setShowExactLocation(e.target.checked)}
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+          />
+          <div>
+            <span className="text-sm font-medium text-text-primary">
+              Mostrar ubicacion exacta
+            </span>
+            <p className="text-xs text-text-secondary">
+              {showExactLocation
+                ? 'Se mostrara tu direccion completa y ubicacion exacta en el mapa'
+                : 'Se mostrara solo el distrito y una ubicacion aproximada en el mapa'}
+            </p>
+          </div>
+        </label>
+      </div>
 
       {/* Photos */}
       <div>
