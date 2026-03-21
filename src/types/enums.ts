@@ -181,7 +181,7 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
 
 export const LISTING_ROLE_LABELS: Record<ListingRole, string> = {
   owner: 'Soy el propietario',
-  realtor: 'Soy corredor inmobiliario',
+  realtor: 'Soy agente inmobiliario',
   relative: 'Represento al propietario',
 }
 

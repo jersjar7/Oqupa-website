@@ -295,10 +295,10 @@ export default function WizardStep4() {
           />
           <div>
             <span className="text-sm font-medium uppercase text-text-primary">
-              Quiero ayuda de corredores
+              Quiero ayuda de agentes
             </span>
             <p className="text-xs text-text-secondary">
-              Corredores verificados podran contactarte para ayudar a vender tu propiedad
+              Agentes verificados podran contactarte para ayudar a vender tu propiedad
             </p>
           </div>
         </label>
@@ -306,7 +306,7 @@ export default function WizardStep4() {
         {wantsRealtorHelp && (
           <div className="mt-4">
             <label className="text-sm font-medium uppercase text-text-primary">
-              Maximo de corredores
+              Maximo de agentes
             </label>
             <div className="mt-2 flex gap-2">
               {[1, 3, 5, 10].map((n) => (
