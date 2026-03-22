@@ -159,7 +159,7 @@ export default function MagicLinkPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Ingresar
+          Iniciar Sesion
         </h1>
         <p className="mt-2 text-center text-base text-text-secondary">
           Te enviaremos un enlace para acceder a tu cuenta
