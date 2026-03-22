@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
@@ -9,6 +10,20 @@ import { SlidersHorizontal, X } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
 
 export default function ExplorePage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Read post-publish focus coordinates from navigation state (once)
+  const initialCenter = useMemo(() => {
+    const state = location.state as { focusLat?: number; focusLng?: number } | null
+    if (state?.focusLat != null && state?.focusLng != null) {
+      // Clear state so refreshing/returning doesn't re-focus
+      navigate(location.pathname, { replace: true, state: {} })
+      return { lat: state.focusLat, lng: state.focusLng }
+    }
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [filters, setFilters] = useState<MapFilters>({
     operationType: null,
     rentalDurationType: null,
@@ -74,6 +89,7 @@ export default function ExplorePage() {
             selectedId={selectedId}
             onSelect={handleSelect}
             onBoundsChanged={handleBoundsChanged}
+            initialCenter={initialCenter}
           />
 
           {/* Mobile filter button */}

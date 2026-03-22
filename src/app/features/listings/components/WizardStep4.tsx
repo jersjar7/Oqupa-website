@@ -223,10 +223,20 @@ export default function WizardStep4() {
         AnalyticsLogger.listingCreated(data.operationType)
       }
 
+      // Capture location before resetting form
+      const focusLat = data.latitude
+      const focusLng = data.longitude
+
       // Invalidate queries and navigate
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
       reset()
-      navigate('/app')
+
+      // Navigate to explore map centered on the new listing
+      if (focusLat != null && focusLng != null && !isEditMode) {
+        navigate('/explorar', { state: { focusLat, focusLng } })
+      } else {
+        navigate('/app')
+      }
     } catch (err) {
       console.error('Submission error:', err)
       // Invalidate queries even on error so dashboard reflects any partial changes
