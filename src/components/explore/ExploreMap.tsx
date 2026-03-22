@@ -3,6 +3,7 @@ import { APIProvider, Map, type MapCameraChangedEvent } from '@vis.gl/react-goog
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
 import ClusteredMarkers from './ClusteredMarkers'
 import PropertyInfoCard from './PropertyInfoCard'
+import { useBoundaryPolygons } from '@/hooks/useBoundaryPolygons'
 import type { ListingWithProperty } from '@/types/explore'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
@@ -12,6 +13,12 @@ interface ExploreMapProps {
   selectedId: string | null
   onSelect: (id: string | null) => void
   onBoundsChanged?: (bounds: google.maps.LatLngBoundsLiteral) => void
+}
+
+/** Renders boundary polygons on the map (display only). */
+function BoundaryLayer() {
+  useBoundaryPolygons()
+  return null
 }
 
 export default function ExploreMap({ items, selectedId, onSelect, onBoundsChanged }: ExploreMapProps) {
@@ -41,6 +48,7 @@ export default function ExploreMap({ items, selectedId, onSelect, onBoundsChange
         className="h-full w-full"
         onCameraChanged={handleCameraChanged}
       >
+        <BoundaryLayer />
         <ClusteredMarkers
           items={items}
           selectedId={selectedId}
