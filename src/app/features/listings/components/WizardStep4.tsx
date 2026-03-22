@@ -91,7 +91,7 @@ export default function WizardStep4() {
           newPhotoUrls = await storageService.uploadMultiplePropertyPhotos(
             editPropertyId,
             data.photos,
-            (i, p) => setUploadProgress(`Subiendo foto ${i + 1}/${data.photos.length} (${Math.round(p)}%)`)
+            (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
         }
 
@@ -183,7 +183,7 @@ export default function WizardStep4() {
           photoUrls = await storageService.uploadMultiplePropertyPhotos(
             propertyId,
             data.photos,
-            (i, p) => setUploadProgress(`Subiendo foto ${i + 1}/${data.photos.length} (${Math.round(p)}%)`)
+            (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
 
           // Update property with photo URLs

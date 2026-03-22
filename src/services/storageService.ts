@@ -76,17 +76,18 @@ export const storageService = {
   async uploadMultiplePropertyPhotos(
     propertyId: string,
     files: File[],
-    onProgress?: (fileIndex: number, progress: number) => void
+    onProgress?: (overallProgress: number) => void
   ): Promise<string[]> {
-    const urls: string[] = []
-    for (let i = 0; i < files.length; i++) {
-      const url = await this.uploadPropertyPhoto(
-        propertyId,
-        files[i]!,
-        (progress) => onProgress?.(i, progress)
-      )
-      urls.push(url)
-    }
-    return urls
+    const progressPerFile = new Array<number>(files.length).fill(0)
+
+    const uploads = files.map((file, i) =>
+      this.uploadPropertyPhoto(propertyId, file, (progress) => {
+        progressPerFile[i] = progress
+        const overall = progressPerFile.reduce((a, b) => a + b, 0) / files.length
+        onProgress?.(overall)
+      })
+    )
+
+    return Promise.all(uploads)
   },
 }
