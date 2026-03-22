@@ -62,7 +62,7 @@ export default function ExploreFilters({
                 return {
                   ...prev,
                   operationType: opt.value,
-                  rentalDurationType: opt.value === 'alquiler' ? (prev.rentalDurationType ?? 'longTerm') : null,
+                  rentalDurationType: opt.value === 'alquiler' ? (prev.rentalDurationType ?? null) : null,
                   propertyTypes: cleanedTypes,
                 }
               })
@@ -160,6 +160,7 @@ export default function ExploreFilters({
 
       {/* Price range */}
       <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-text-secondary">Precio:</span>
         <input
           type="number"
           name="priceMin"

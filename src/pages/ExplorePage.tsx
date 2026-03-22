@@ -16,6 +16,7 @@ export default function ExplorePage() {
     priceMin: null,
     priceMax: null,
   })
+  const [mapBounds, setMapBounds] = useState<google.maps.LatLngBoundsLiteral | null>(null)
   const {
     data: items,
     isLoading,
@@ -24,12 +25,16 @@ export default function ExplorePage() {
     hasNextPage,
     isFetchingNextPage,
   } = useExploreListings(filters.operationType)
-  const { filtered, total } = useMapFilters(items, filters)
+  const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id)
+  }, [])
+
+  const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBoundsLiteral) => {
+    setMapBounds(bounds)
   }, [])
 
   const sentinelRef = useInfiniteScroll(
@@ -44,7 +49,7 @@ export default function ExplorePage() {
         <ExploreFilters
           filters={filters}
           setFilters={setFilters}
-          resultCount={filtered.length}
+          resultCount={visible.length}
           total={total}
           layout="horizontal"
         />
@@ -68,6 +73,7 @@ export default function ExplorePage() {
             items={filtered}
             selectedId={selectedId}
             onSelect={handleSelect}
+            onBoundsChanged={handleBoundsChanged}
           />
 
           {/* Mobile filter button */}
@@ -77,9 +83,9 @@ export default function ExplorePage() {
           >
             <SlidersHorizontal className="h-4 w-4" />
             Filtros
-            {filtered.length < total && (
+            {visible.length < total && (
               <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-white">
-                {filtered.length}
+                {visible.length}
               </span>
             )}
           </button>
@@ -87,13 +93,13 @@ export default function ExplorePage() {
 
         {/* Desktop property cards panel */}
         <div className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block">
-          {filtered.length === 0 && !isLoading ? (
+          {visible.length === 0 && !isLoading ? (
             <p className="py-12 text-center text-sm text-text-tertiary">
               No se encontraron propiedades
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {filtered.map((item) => (
+              {visible.map((item) => (
                 <PropertyCard
                   key={item.listing.id}
                   item={item}
@@ -117,7 +123,7 @@ export default function ExplorePage() {
           )}
 
           {/* End of results */}
-          {!hasNextPage && filtered.length > 0 && !isLoading && (
+          {!hasNextPage && visible.length > 0 && !isLoading && (
             <p className="py-4 text-center text-xs text-text-tertiary">
               Has visto todas las propiedades
             </p>
@@ -145,7 +151,7 @@ export default function ExplorePage() {
             <ExploreFilters
               filters={filters}
               setFilters={setFilters}
-              resultCount={filtered.length}
+              resultCount={visible.length}
               total={total}
               layout="vertical"
             />

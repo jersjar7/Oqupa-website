@@ -10,17 +10,13 @@ interface ClusteredMarkersProps {
   onSelect: (id: string | null) => void
 }
 
-const STYLE_DEFAULT =
-  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md bg-white text-gray-900 hover:scale-105 transition-all'
-const STYLE_SELECTED =
-  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md scale-110 bg-emerald-600 text-white transition-all'
-const STYLE_BOOSTED =
-  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md bg-amber-500 text-white ring-2 ring-amber-300 hover:scale-105 transition-all'
-const STYLE_BOOSTED_SELECTED =
-  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md scale-110 bg-amber-500 text-white ring-2 ring-amber-300 transition-all'
+// Base classes shared by all pill styles
+const PILL_BASE =
+  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md transition-all'
 
-// Background colors for the triangle pedestal (must match pill bg)
-const BG_DEFAULT = '#ffffff'
+// Background colors matching Flutter MapBubblePainter (must match pill inline bg)
+const BG_VENTA = '#005B8D'
+const BG_ALQUILER = '#B34E00'
 const BG_SELECTED = '#059669' // emerald-600
 const BG_BOOSTED = '#f59e0b' // amber-500
 
@@ -38,9 +34,10 @@ function createTriangle(color: string): HTMLDivElement {
 }
 
 /** Returns the pill background color for a given state */
-function getPillBg(isBoosted: boolean, isSelected: boolean): string {
+function getPillBg(isBoosted: boolean, isSelected: boolean, isVenta: boolean): string {
   if (isBoosted) return BG_BOOSTED
-  return isSelected ? BG_SELECTED : BG_DEFAULT
+  if (isSelected) return BG_SELECTED
+  return isVenta ? BG_VENTA : BG_ALQUILER
 }
 
 export default function ClusteredMarkers({
@@ -96,24 +93,29 @@ export default function ClusteredMarkers({
         const isBoosted = listing.isBoosted
         const isSelected = id === selectedId
         const isApproximate = listing.showExactLocation === false
+        const isVenta = property.operationType === 'venta'
 
         // Wrapper for pill + optional pedestal
         const wrapper = document.createElement('div')
         wrapper.style.display = 'flex'
         wrapper.style.flexDirection = 'column'
         wrapper.style.alignItems = 'center'
+        wrapper.dataset.venta = isVenta ? '1' : ''
 
-        // Pill
+        // Pill with inline background color matching Flutter
+        const bg = getPillBg(isBoosted, isSelected, isVenta)
         const pill = document.createElement('div')
         pill.className = isBoosted
-          ? (isSelected ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
-          : (isSelected ? STYLE_SELECTED : STYLE_DEFAULT)
+          ? `${PILL_BASE} ring-2 ring-amber-300 ${isSelected ? 'scale-110' : 'hover:scale-105'}`
+          : `${PILL_BASE} ${isSelected ? 'scale-110' : 'hover:scale-105'}`
+        pill.style.backgroundColor = bg
+        pill.style.color = 'white'
         pill.textContent = isBoosted ? `★ ${label}` : label
         wrapper.appendChild(pill)
 
         // Pedestal triangle (only for exact-location markers)
         if (!isApproximate) {
-          wrapper.appendChild(createTriangle(getPillBg(isBoosted, isSelected)))
+          wrapper.appendChild(createTriangle(bg))
         }
 
         const marker = new markerLib.AdvancedMarkerElement({
@@ -173,14 +175,18 @@ export default function ClusteredMarkers({
       if (!pill) continue
       const isBoosted = pill.textContent?.startsWith('★') ?? false
       const isSelected = id === selectedId
+      const isVenta = wrapper.dataset.venta === '1'
+      const bg = getPillBg(isBoosted, isSelected, isVenta)
+
       pill.className = isBoosted
-        ? (isSelected ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
-        : (isSelected ? STYLE_SELECTED : STYLE_DEFAULT)
+        ? `${PILL_BASE} ring-2 ring-amber-300 ${isSelected ? 'scale-110' : 'hover:scale-105'}`
+        : `${PILL_BASE} ${isSelected ? 'scale-110' : 'hover:scale-105'}`
+      pill.style.backgroundColor = bg
 
       // Update triangle color if present
       const tri = wrapper.querySelector('[data-pedestal]') as HTMLElement
       if (tri) {
-        tri.style.borderTopColor = getPillBg(isBoosted, isSelected)
+        tri.style.borderTopColor = bg
       }
     }
   }, [selectedId])

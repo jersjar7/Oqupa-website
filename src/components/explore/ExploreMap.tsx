@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { APIProvider, Map } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, type MapCameraChangedEvent } from '@vis.gl/react-google-maps'
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
 import ClusteredMarkers from './ClusteredMarkers'
 import PropertyInfoCard from './PropertyInfoCard'
@@ -11,9 +11,10 @@ interface ExploreMapProps {
   items: ListingWithProperty[]
   selectedId: string | null
   onSelect: (id: string | null) => void
+  onBoundsChanged?: (bounds: google.maps.LatLngBoundsLiteral) => void
 }
 
-export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapProps) {
+export default function ExploreMap({ items, selectedId, onSelect, onBoundsChanged }: ExploreMapProps) {
   const selectedItem = selectedId
     ? items.find((i) => i.listing.id === selectedId) ?? null
     : null
@@ -21,6 +22,13 @@ export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapPr
   const handleClose = useCallback(() => {
     onSelect(null)
   }, [onSelect])
+
+  const handleCameraChanged = useCallback(
+    (ev: MapCameraChangedEvent) => {
+      onBoundsChanged?.(ev.detail.bounds)
+    },
+    [onBoundsChanged],
+  )
 
   return (
     <APIProvider apiKey={API_KEY}>
@@ -31,6 +39,7 @@ export default function ExploreMap({ items, selectedId, onSelect }: ExploreMapPr
         gestureHandling="greedy"
         disableDefaultUI={false}
         className="h-full w-full"
+        onCameraChanged={handleCameraChanged}
       >
         <ClusteredMarkers
           items={items}
