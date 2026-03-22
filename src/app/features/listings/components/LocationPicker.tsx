@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps'
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
 import { useBoundaryPolygons } from '@/hooks/useBoundaryPolygons'
 import type { MapMouseEvent } from '@vis.gl/react-google-maps'
@@ -73,7 +73,9 @@ function LocationPickerInner({
               position={{ lat: latitude, lng: longitude }}
               draggable
               onDragEnd={handleDragEnd}
-            />
+            >
+              <Pin background="#F47843" borderColor="#C45D30" glyphColor="#FFFFFF" />
+            </AdvancedMarker>
           )}
         </Map>
       </div>
