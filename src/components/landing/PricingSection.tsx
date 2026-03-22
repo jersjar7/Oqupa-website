@@ -108,7 +108,7 @@ export default function PricingSection() {
               Gratis
             </span>
             <span className="text-6xl font-extrabold text-secondary sm:text-7xl">
-              S/0<sup className="text-3xl sm:text-4xl">.00</sup>
+              S/.0<sup className="text-3xl sm:text-4xl">.00</sup>
             </span>
             <p className="text-center text-base font-medium text-text-secondary">
               Sin costos ocultos. Sin comisiones. Sin limites.

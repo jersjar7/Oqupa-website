@@ -1,6 +1,6 @@
 export function formatPrice(price?: number): string {
   if (!price) return 'Precio no disponible'
-  return `S/ ${price.toLocaleString('es-PE')}`
+  return `S/. ${price.toLocaleString('es-PE')}`
 }
 
 const RETURN_URL_KEY = 'oqupa_returnUrl'

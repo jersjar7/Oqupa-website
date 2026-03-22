@@ -193,6 +193,6 @@ export const CONTACT_TIME_SLOT_LABELS: Record<ContactTimeSlot, string> = {
 }
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
-  PEN: 'S/',
+  PEN: 'S/.',
   USD: 'US$',
 }

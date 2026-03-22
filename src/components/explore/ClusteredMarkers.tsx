@@ -19,6 +19,30 @@ const STYLE_BOOSTED =
 const STYLE_BOOSTED_SELECTED =
   'cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-md scale-110 bg-amber-500 text-white ring-2 ring-amber-300 transition-all'
 
+// Background colors for the triangle pedestal (must match pill bg)
+const BG_DEFAULT = '#ffffff'
+const BG_SELECTED = '#059669' // emerald-600
+const BG_BOOSTED = '#f59e0b' // amber-500
+
+/** Creates a downward-pointing triangle element matching the pill color */
+function createTriangle(color: string): HTMLDivElement {
+  const tri = document.createElement('div')
+  tri.style.width = '0'
+  tri.style.height = '0'
+  tri.style.borderLeft = '6px solid transparent'
+  tri.style.borderRight = '6px solid transparent'
+  tri.style.borderTop = `7px solid ${color}`
+  tri.style.margin = '0 auto'
+  tri.dataset.pedestal = 'true'
+  return tri
+}
+
+/** Returns the pill background color for a given state */
+function getPillBg(isBoosted: boolean, isSelected: boolean): string {
+  if (isBoosted) return BG_BOOSTED
+  return isSelected ? BG_SELECTED : BG_DEFAULT
+}
+
 export default function ClusteredMarkers({
   items,
   selectedId,
@@ -70,18 +94,34 @@ export default function ClusteredMarkers({
           (priceSuffix ? ` ${priceSuffix}` : '')
 
         const isBoosted = listing.isBoosted
-        const content = document.createElement('div')
-        content.className = isBoosted
-          ? (id === selectedId ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
-          : (id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT)
-        content.textContent = isBoosted ? `★ ${label}` : label
+        const isSelected = id === selectedId
+        const isApproximate = listing.showExactLocation === false
+
+        // Wrapper for pill + optional pedestal
+        const wrapper = document.createElement('div')
+        wrapper.style.display = 'flex'
+        wrapper.style.flexDirection = 'column'
+        wrapper.style.alignItems = 'center'
+
+        // Pill
+        const pill = document.createElement('div')
+        pill.className = isBoosted
+          ? (isSelected ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
+          : (isSelected ? STYLE_SELECTED : STYLE_DEFAULT)
+        pill.textContent = isBoosted ? `★ ${label}` : label
+        wrapper.appendChild(pill)
+
+        // Pedestal triangle (only for exact-location markers)
+        if (!isApproximate) {
+          wrapper.appendChild(createTriangle(getPillBg(isBoosted, isSelected)))
+        }
 
         const marker = new markerLib.AdvancedMarkerElement({
           position: {
             lat: listing.displayLatitude ?? property.location.latitude,
             lng: listing.displayLongitude ?? property.location.longitude,
           },
-          content,
+          content: wrapper,
         })
 
         marker.addEventListener('gmp-click', () => {
@@ -127,12 +167,21 @@ export default function ClusteredMarkers({
   // Update selected marker styling
   useEffect(() => {
     for (const [id, marker] of markersRef.current) {
-      const el = marker.content as HTMLElement
-      if (!el) continue
-      const isBoosted = el.textContent?.startsWith('★') ?? false
-      el.className = isBoosted
-        ? (id === selectedId ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
-        : (id === selectedId ? STYLE_SELECTED : STYLE_DEFAULT)
+      const wrapper = marker.content as HTMLElement
+      if (!wrapper) continue
+      const pill = wrapper.firstElementChild as HTMLElement
+      if (!pill) continue
+      const isBoosted = pill.textContent?.startsWith('★') ?? false
+      const isSelected = id === selectedId
+      pill.className = isBoosted
+        ? (isSelected ? STYLE_BOOSTED_SELECTED : STYLE_BOOSTED)
+        : (isSelected ? STYLE_SELECTED : STYLE_DEFAULT)
+
+      // Update triangle color if present
+      const tri = wrapper.querySelector('[data-pedestal]') as HTMLElement
+      if (tri) {
+        tri.style.borderTopColor = getPillBg(isBoosted, isSelected)
+      }
     }
   }, [selectedId])
 

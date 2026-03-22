@@ -102,7 +102,7 @@ export const step4Schema = z
     const isShortTerm = data.rentalDurationType === 'shortTerm'
     const isRoom = data.propertyType === 'habitacion'
     const isPEN = data.currency === 'PEN'
-    const symbol = isPEN ? 'S/' : 'US$'
+    const symbol = isPEN ? 'S/.' : 'US$'
 
     if (isVenta) {
       const max = isPEN ? 5_000_000 : 2_000_000
