@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
@@ -51,6 +51,18 @@ export default function ExplorePage() {
   const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBoundsLiteral) => {
     setMapBounds(bounds)
   }, [])
+
+  // Prefetch thumbnail images when listing data arrives
+  useEffect(() => {
+    if (!items?.length) return
+    for (const item of items) {
+      const url = item.property.media.thumbnailPhotoUrls?.[0] ?? item.property.media.propertyPhotoUrls[0]
+      if (url) {
+        const img = new Image()
+        img.src = url
+      }
+    }
+  }, [items])
 
   const sentinelRef = useInfiniteScroll(
     fetchNextPage,

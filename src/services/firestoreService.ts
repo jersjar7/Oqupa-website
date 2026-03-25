@@ -92,6 +92,8 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     updatedAt: toDate(data['updatedAt']),
     media: {
       propertyPhotoUrls: (mediaData?.['propertyPhotoUrls'] as string[]) ?? [],
+      thumbnailPhotoUrls: (mediaData?.['thumbnailPhotoUrls'] as string[]) ?? undefined,
+      photoBlurHashes: (mediaData?.['photoBlurHashes'] as string[]) ?? undefined,
     },
     wantsRealtorHelp: (data['wantsRealtorHelp'] as boolean) ?? false,
     maxRealtors: (data['maxRealtors'] as number) ?? 3,
@@ -148,6 +150,8 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
     normalizedAddress: (data['normalizedAddress'] as string) ?? '',
     media: {
       propertyPhotoUrls: (mediaData?.['propertyPhotoUrls'] as string[]) ?? [],
+      thumbnailPhotoUrls: (mediaData?.['thumbnailPhotoUrls'] as string[]) ?? undefined,
+      photoBlurHashes: (mediaData?.['photoBlurHashes'] as string[]) ?? undefined,
     },
     updatedAt: toDate(data['updatedAt']),
     isAvailable: (data['isAvailable'] as boolean) ?? true,

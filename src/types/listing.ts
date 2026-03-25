@@ -8,6 +8,8 @@ export interface Price {
 
 export interface Media {
   propertyPhotoUrls: string[]
+  thumbnailPhotoUrls?: string[]
+  photoBlurHashes?: string[]
 }
 
 // Matches Firestore `listings/{id}` document schema
@@ -73,6 +75,8 @@ export interface ListingFirestoreDoc {
   updatedAt: unknown
   media: {
     propertyPhotoUrls: string[]
+    thumbnailPhotoUrls?: string[]
+    photoBlurHashes?: string[]
   }
   wantsRealtorHelp: boolean
   maxRealtors: number

@@ -69,6 +69,7 @@ function GalleryModal({
               alt={`Foto ${i + 1}`}
               className="max-h-full max-w-full object-contain"
               loading={Math.abs(i - startIndex) <= 1 ? 'eager' : 'lazy'}
+                decoding="async"
             />
           </div>
         ))}
@@ -153,6 +154,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                 alt={`Foto ${i + 1}`}
                 className="h-full w-full object-cover"
                 loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
               />
             </div>
           ))}
@@ -215,7 +217,7 @@ function PropertyGallery({ images }: { images: string[] }) {
             className="h-[420px] cursor-pointer overflow-hidden rounded-xl"
             onClick={() => openModal(0)}
           >
-            <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" />
+            <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
           </div>
         ) : (
           <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
@@ -223,7 +225,7 @@ function PropertyGallery({ images }: { images: string[] }) {
               className="col-span-2 row-span-2 cursor-pointer"
               onClick={() => openModal(0)}
             >
-              <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" />
+              <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
             </div>
             {visibleImages.slice(1).map((url, i) => {
               const imageIndex = i + 1
@@ -242,6 +244,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                     alt={`Foto ${imageIndex + 1}`}
                     className="h-full w-full object-cover"
                     loading="lazy"
+                    decoding="async"
                   />
                   {isLast && hasMore && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -319,6 +322,14 @@ export default function PropertyPage() {
   }
 
   const images = property.media?.propertyPhotoUrls ?? []
+
+  // Prefetch all gallery images when property data loads
+  useEffect(() => {
+    for (const url of images) {
+      const img = new window.Image()
+      img.src = url
+    }
+  }, [images])
   const showExact = listing.showExactLocation !== false
   const location = showExact
     ? [

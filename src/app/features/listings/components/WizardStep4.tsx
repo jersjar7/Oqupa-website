@@ -86,13 +86,16 @@ export default function WizardStep4() {
         // UPDATE FLOW
         // Upload new photos if any
         let newPhotoUrls: string[] = []
+        let newBlurHashes: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
-          newPhotoUrls = await storageService.uploadMultiplePropertyPhotos(
+          const results = await storageService.uploadMultiplePropertyPhotos(
             editPropertyId,
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
+          newPhotoUrls = results.map(r => r.url)
+          newBlurHashes = results.map(r => r.blurHash)
         }
 
         const allPhotoUrls = [...data.existingPhotoUrls, ...newPhotoUrls]
@@ -126,7 +129,10 @@ export default function WizardStep4() {
             amount: formData.amount,
             currency: formData.currency,
           },
-          media: { propertyPhotoUrls: allPhotoUrls },
+          media: {
+            propertyPhotoUrls: allPhotoUrls,
+            ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
+          },
         })
 
         await firestoreService.updateListing(editListingId, {
@@ -135,7 +141,10 @@ export default function WizardStep4() {
           role: data.role as Listing['role'],
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
-          media: { propertyPhotoUrls: allPhotoUrls },
+          media: {
+            propertyPhotoUrls: allPhotoUrls,
+            ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
+          },
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,
         })
@@ -178,17 +187,23 @@ export default function WizardStep4() {
 
         // Upload photos
         let photoUrls: string[] = []
+        let blurHashes: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
-          photoUrls = await storageService.uploadMultiplePropertyPhotos(
+          const results = await storageService.uploadMultiplePropertyPhotos(
             propertyId,
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
+          photoUrls = results.map(r => r.url)
+          blurHashes = results.map(r => r.blurHash)
 
-          // Update property with photo URLs
+          // Update property with photo URLs and BlurHash
           await firestoreService.updateProperty(propertyId, {
-            media: { propertyPhotoUrls: photoUrls },
+            media: {
+              propertyPhotoUrls: photoUrls,
+              photoBlurHashes: blurHashes,
+            },
           })
         }
 
@@ -207,7 +222,10 @@ export default function WizardStep4() {
           status: 'active',
           publishedAt: now,
           expiresAt,
-          media: { propertyPhotoUrls: photoUrls },
+          media: {
+            propertyPhotoUrls: photoUrls,
+            photoBlurHashes: blurHashes,
+          },
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           currentClaimsCount: 0,

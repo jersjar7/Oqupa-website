@@ -5,11 +5,17 @@ import {
 } from 'firebase/storage'
 import imageCompression from 'browser-image-compression'
 import { storage } from '@/lib/firebase'
+import { generateBlurHash } from '@/lib/blurhash'
 
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
   maxWidthOrHeight: 1920,
   useWebWorker: true,
+}
+
+export interface PhotoUploadResult {
+  url: string
+  blurHash: string
 }
 
 export const storageService = {
@@ -21,12 +27,16 @@ export const storageService = {
     propertyId: string,
     file: File,
     onProgress?: (progress: number) => void
-  ): Promise<string> {
+  ): Promise<PhotoUploadResult> {
     const compressed = await this.compressImage(file)
+
+    // Generate BlurHash from compressed image (runs in parallel with upload)
+    const blurHashPromise = generateBlurHash(compressed)
+
     const filename = `${Date.now()}_${file.name}`
     const storageRef = ref(storage, `property-photos/${propertyId}/${filename}`)
 
-    return new Promise((resolve, reject) => {
+    const url = await new Promise<string>((resolve, reject) => {
       const uploadTask = uploadBytesResumable(storageRef, compressed)
 
       uploadTask.on(
@@ -38,11 +48,15 @@ export const storageService = {
         },
         reject,
         async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref)
-          resolve(url)
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref)
+          resolve(downloadUrl)
         }
       )
     })
+
+    const blurHash = await blurHashPromise
+
+    return { url, blurHash }
   },
 
   async uploadUserPhoto(
@@ -77,7 +91,7 @@ export const storageService = {
     propertyId: string,
     files: File[],
     onProgress?: (overallProgress: number) => void
-  ): Promise<string[]> {
+  ): Promise<PhotoUploadResult[]> {
     const progressPerFile = new Array<number>(files.length).fill(0)
 
     const uploads = files.map((file, i) =>

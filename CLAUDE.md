@@ -168,6 +168,8 @@ Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite'
 - `.env.staging` — Staging API keys (gitignored, reference copy)
 - `.env.example` — Template with placeholder values (committed)
 
+> **CRITICAL: NEVER delete `.env`, `.env.development`, or `.env.staging` files.** These contain real API keys and Firebase config that are gitignored and cannot be recovered from version control. Do not `rm`, overwrite, or `touch` these files under any circumstances. If you need a temporary file for testing, use a different name (e.g., `.env.test.tmp`). Deleting these files breaks the build completely.
+
 ### CI/CD
 The workflow (`.github/workflows/deploy.yml`) injects correct env vars per deploy target:
 - `development` branch → staging Firebase config → deploy to `oqupa-staging` hosting

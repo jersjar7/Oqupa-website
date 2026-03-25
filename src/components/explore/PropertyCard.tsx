@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
+import { blurHashToDataUrl } from '@/lib/blurhash'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyCardProps {
@@ -11,7 +13,9 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ item, isSelected, onClick }: PropertyCardProps) {
   const { listing, property } = item
-  const thumbnail = property.media.propertyPhotoUrls[0]
+  const thumbnail = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const blurHash = property.media.photoBlurHashes?.[0]
+  const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
@@ -30,12 +34,17 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
       }`}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[4/3] w-full bg-background-secondary">
+      <div
+        className="relative aspect-[4/3] w-full bg-background-secondary"
+        style={blurDataUrl ? { backgroundImage: `url(${blurDataUrl})`, backgroundSize: 'cover' } : undefined}
+      >
         {thumbnail ? (
           <img
             src={thumbnail}
             alt={typeLabel}
             className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-text-tertiary">

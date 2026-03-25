@@ -22,6 +22,8 @@ export interface PropertyLocation {
 
 export interface PropertyMedia {
   propertyPhotoUrls: string[]
+  thumbnailPhotoUrls?: string[]
+  photoBlurHashes?: string[]
 }
 
 export interface PropertyPrice {
@@ -76,6 +78,8 @@ export interface PropertyFirestoreDoc {
   normalizedAddress: string
   media: {
     propertyPhotoUrls: string[]
+    thumbnailPhotoUrls?: string[]
+    photoBlurHashes?: string[]
   }
   updatedAt: unknown // Firestore Timestamp
   isAvailable: boolean

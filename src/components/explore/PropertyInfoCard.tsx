@@ -11,7 +11,7 @@ interface PropertyInfoCardProps {
 
 export default function PropertyInfoCard({ item, onClose }: PropertyInfoCardProps) {
   const { listing, property } = item
-  const thumbnail = property.media.propertyPhotoUrls[0]
+  const thumbnail = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)

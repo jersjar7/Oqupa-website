@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Eye, Pencil, Power, PowerOff } from 'lucide-react'
 import { Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus } from '@/hooks/useListings'
+import { blurHashToDataUrl } from '@/lib/blurhash'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import {
@@ -34,19 +36,25 @@ function formatPrice(amount: number, currency: string): string {
 
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
-  const photoUrl = property.media.propertyPhotoUrls[0]
+  const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const blurHash = property.media.photoBlurHashes?.[0]
+  const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
   const canToggle = listing.status === 'active' || listing.status === 'deactivated'
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
       {/* Photo */}
-      <div className="relative h-48 bg-gray-100">
+      <div
+        className="relative h-48 bg-gray-100"
+        style={blurDataUrl ? { backgroundImage: `url(${blurDataUrl})`, backgroundSize: 'cover' } : undefined}
+      >
         {photoUrl ? (
           <img
             src={photoUrl}
             alt={listing.description}
             className="h-full w-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-text-tertiary">
