@@ -10,6 +10,7 @@ export interface Media {
   propertyPhotoUrls: string[]
   thumbnailPhotoUrls?: string[]
   photoBlurHashes?: string[]
+  primaryPhotoMicroThumb?: string
 }
 
 // Matches Firestore `listings/{id}` document schema
@@ -77,6 +78,7 @@ export interface ListingFirestoreDoc {
     propertyPhotoUrls: string[]
     thumbnailPhotoUrls?: string[]
     photoBlurHashes?: string[]
+    primaryPhotoMicroThumb?: string
   }
   wantsRealtorHelp: boolean
   maxRealtors: number

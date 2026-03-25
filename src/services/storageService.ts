@@ -16,6 +16,7 @@ const COMPRESSION_OPTIONS = {
 export interface PhotoUploadResult {
   url: string
   blurHash: string
+  microThumb: string
 }
 
 export const storageService = {
@@ -56,7 +57,25 @@ export const storageService = {
 
     const blurHash = await blurHashPromise
 
-    return { url, blurHash }
+    // Generate micro-thumbnail (50px base64 WebP) for Firestore embedding
+    let microThumb = ''
+    try {
+      const microCanvas = document.createElement('canvas')
+      const microCtx = microCanvas.getContext('2d')
+      if (microCtx) {
+        const img = await createImageBitmap(compressed)
+        const scale = 50 / Math.max(img.width, img.height)
+        microCanvas.width = Math.round(img.width * scale)
+        microCanvas.height = Math.round(img.height * scale)
+        microCtx.drawImage(img, 0, 0, microCanvas.width, microCanvas.height)
+        const dataUrl = microCanvas.toDataURL('image/webp', 0.6)
+        microThumb = dataUrl.split(',')[1] ?? ''
+      }
+    } catch {
+      // Non-critical — empty string means no micro-thumbnail
+    }
+
+    return { url, blurHash, microThumb }
   },
 
   async uploadUserPhoto(

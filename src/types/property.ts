@@ -24,6 +24,7 @@ export interface PropertyMedia {
   propertyPhotoUrls: string[]
   thumbnailPhotoUrls?: string[]
   photoBlurHashes?: string[]
+  primaryPhotoMicroThumb?: string
 }
 
 export interface PropertyPrice {
@@ -80,6 +81,7 @@ export interface PropertyFirestoreDoc {
     propertyPhotoUrls: string[]
     thumbnailPhotoUrls?: string[]
     photoBlurHashes?: string[]
+    primaryPhotoMicroThumb?: string
   }
   updatedAt: unknown // Firestore Timestamp
   isAvailable: boolean

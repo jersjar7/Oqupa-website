@@ -188,6 +188,7 @@ export default function WizardStep4() {
         // Upload photos
         let photoUrls: string[] = []
         let blurHashes: string[] = []
+        let microThumb = ''
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
           const results = await storageService.uploadMultiplePropertyPhotos(
@@ -197,12 +198,14 @@ export default function WizardStep4() {
           )
           photoUrls = results.map(r => r.url)
           blurHashes = results.map(r => r.blurHash)
+          microThumb = results[0]?.microThumb ?? ''
 
-          // Update property with photo URLs and BlurHash
+          // Update property with photo URLs, BlurHash, and micro-thumbnail
           await firestoreService.updateProperty(propertyId, {
             media: {
               propertyPhotoUrls: photoUrls,
               photoBlurHashes: blurHashes,
+              ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
             },
           })
         }
@@ -225,6 +228,7 @@ export default function WizardStep4() {
           media: {
             propertyPhotoUrls: photoUrls,
             photoBlurHashes: blurHashes,
+            ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
           },
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,

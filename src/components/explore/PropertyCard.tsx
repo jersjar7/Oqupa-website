@@ -14,8 +14,13 @@ interface PropertyCardProps {
 export default function PropertyCard({ item, isSelected, onClick }: PropertyCardProps) {
   const { listing, property } = item
   const thumbnail = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
+  // Micro-thumbnail is instant (loaded with Firestore data); blurHash is fallback
+  const placeholderUrl = microThumb
+    ? `data:image/webp;base64,${microThumb}`
+    : blurDataUrl
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
@@ -36,7 +41,7 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
       {/* Thumbnail */}
       <div
         className="relative aspect-[4/3] w-full bg-background-secondary"
-        style={blurDataUrl ? { backgroundImage: `url(${blurDataUrl})`, backgroundSize: 'cover' } : undefined}
+        style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
         {thumbnail ? (
           <img

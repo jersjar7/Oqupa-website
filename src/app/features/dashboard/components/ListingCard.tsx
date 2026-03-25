@@ -37,8 +37,12 @@ function formatPrice(amount: number, currency: string): string {
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
   const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
+  const placeholderUrl = microThumb
+    ? `data:image/webp;base64,${microThumb}`
+    : blurDataUrl
   const canToggle = listing.status === 'active' || listing.status === 'deactivated'
 
   return (
@@ -46,7 +50,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
       {/* Photo */}
       <div
         className="relative h-48 bg-gray-100"
-        style={blurDataUrl ? { backgroundImage: `url(${blurDataUrl})`, backgroundSize: 'cover' } : undefined}
+        style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
         {photoUrl ? (
           <img
