@@ -162,33 +162,37 @@ export default function ExploreFilters({
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-text-secondary">Precio:</span>
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
           name="priceMin"
           autoComplete="off"
           placeholder="Mín"
-          value={filters.priceMin ?? ''}
-          onChange={(e) =>
+          value={filters.priceMin != null ? filters.priceMin.toLocaleString('en-US') : ''}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9]/g, '')
             setFilters((prev) => ({
               ...prev,
-              priceMin: e.target.value ? Number(e.target.value) : null,
+              priceMin: raw ? Number(raw) : null,
             }))
-          }
-          className="w-24 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
+          }}
+          className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
         />
         <span className="text-text-tertiary">—</span>
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
           name="priceMax"
           autoComplete="off"
           placeholder="Máx"
-          value={filters.priceMax ?? ''}
-          onChange={(e) =>
+          value={filters.priceMax != null ? filters.priceMax.toLocaleString('en-US') : ''}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9]/g, '')
             setFilters((prev) => ({
               ...prev,
-              priceMax: e.target.value ? Number(e.target.value) : null,
+              priceMax: raw ? Number(raw) : null,
             }))
-          }
-          className="w-24 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
+          }}
+          className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
         />
       </div>
 
