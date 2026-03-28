@@ -5,6 +5,7 @@ import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
+import { shareListing } from '@/lib/shareUtils'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -278,6 +279,7 @@ export default function PropertyPage() {
   const { listing, property, isLoading, error } = useProperty(id)
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (listing?.description) {
@@ -292,6 +294,35 @@ export default function PropertyPage() {
       AnalyticsLogger.listingViewed(id)
     }
   }, [id, listing])
+
+  useEffect(() => {
+    if (!toastMessage) return
+    const timer = setTimeout(() => setToastMessage(null), 3000)
+    return () => clearTimeout(timer)
+  }, [toastMessage])
+
+  const handleShare = async () => {
+    if (!id || !listing || !property) return
+    const result = await shareListing({
+      listingId: id,
+      propertyType: property.propertyType,
+      operationType: property.operationType,
+      rentalDurationType: property.rentalDurationType,
+      priceAmount: listing.price.amount,
+      priceCurrency: listing.price.currency,
+      distrito: property.location?.distrito ?? '',
+      urbanizacion: property.location?.urbanizacion || undefined,
+      bedroomCount: property.specs?.bedroomCount,
+      bathroomCount: property.specs?.bathroomCount,
+      totalAreaInSquareMeters: property.specs?.totalAreaInSquareMeters,
+    })
+    if (result === 'copied') {
+      setToastMessage('Enlace copiado al portapapeles')
+    }
+    if (result !== 'failed') {
+      AnalyticsLogger.shareListing(id, result)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -366,7 +397,7 @@ export default function PropertyPage() {
 
       {/* Content */}
       <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
-        {/* Price + Destacado badge */}
+        {/* Price + Destacado badge + Share */}
         <div className="flex items-center gap-3">
           <p className="text-2xl font-bold text-primary">
             {formatPrice(listing.price?.amount)}
@@ -381,6 +412,15 @@ export default function PropertyPage() {
               Destacado
             </span>
           )}
+          <button
+            onClick={handleShare}
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:bg-black/5"
+            aria-label="Compartir"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+          </button>
         </div>
 
         {/* Location */}
@@ -521,6 +561,13 @@ export default function PropertyPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
+          {toastMessage}
+        </div>
+      )}
 
       {/* Auth required modal */}
       {showAuthModal && (

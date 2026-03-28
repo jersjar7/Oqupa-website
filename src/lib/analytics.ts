@@ -17,6 +17,12 @@ export const AnalyticsLogger = {
   registrationCompleted: () =>
     logEvent(analytics, 'sign_up'),
 
+  shareListing: (listingId: string, method: string) =>
+    logEvent(analytics, 'share_listing', {
+      listing_id: listingId,
+      share_method: method,
+    }),
+
   errorOccurred: (errorMessage: string, componentName: string) =>
     logEvent(analytics, 'app_error', {
       error_message: errorMessage.slice(0, 100),
