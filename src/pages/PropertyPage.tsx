@@ -301,6 +301,16 @@ export default function PropertyPage() {
     return () => clearTimeout(timer)
   }, [toastMessage])
 
+  const images = property?.media?.propertyPhotoUrls ?? []
+
+  // Prefetch all gallery images when property data loads
+  useEffect(() => {
+    for (const url of images) {
+      const img = new window.Image()
+      img.src = url
+    }
+  }, [images])
+
   const handleShare = async () => {
     if (!id || !listing || !property) return
     const result = await shareListing({
@@ -352,15 +362,6 @@ export default function PropertyPage() {
     )
   }
 
-  const images = property.media?.propertyPhotoUrls ?? []
-
-  // Prefetch all gallery images when property data loads
-  useEffect(() => {
-    for (const url of images) {
-      const img = new window.Image()
-      img.src = url
-    }
-  }, [images])
   const showExact = listing.showExactLocation !== false
   const location = showExact
     ? [
