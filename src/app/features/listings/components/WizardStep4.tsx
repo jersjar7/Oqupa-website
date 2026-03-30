@@ -9,6 +9,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
 import { Button, Input } from '@/app/components/ui'
+import Modal from '@/app/components/ui/Modal'
+import ShareFormatModal from '@/components/ShareFormatModal'
 import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
 import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
@@ -24,6 +26,13 @@ export default function WizardStep4() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
+  const [successData, setSuccessData] = useState<{
+    listing: Listing
+    property: Property
+    focusLat: number | null
+    focusLng: number | null
+  } | null>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   const {
     register,
@@ -215,14 +224,14 @@ export default function WizardStep4() {
         const now = new Date()
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-        await firestoreService.createListing({
+        const listingData = {
           role: data.role as Listing['role'],
           ownerId: user.id,
           propertyId,
           description: data.description,
           price: { amount: formData.amount, currency: formData.currency },
           contactInfo: user.contactInfo,
-          status: 'active',
+          status: 'active' as const,
           publishedAt: now,
           expiresAt,
           media: {
@@ -237,28 +246,72 @@ export default function WizardStep4() {
           isBoosted: false,
           boostScore: 1,
           showExactLocation: data.showExactLocation,
-        })
-      }
+        }
 
-      // Log analytics
-      if (!isEditMode) {
+        const listingId = await firestoreService.createListing(listingData)
+
+        // Build objects for the success modal share CTA
+        const createdListing: Listing = {
+          ...listingData,
+          id: listingId,
+          createdAt: now,
+          updatedAt: now,
+          viewCount: 0,
+        }
+        const createdProperty: Property = {
+          id: propertyId,
+          listedByUserId: user.id,
+          propertyType: data.propertyType as Property['propertyType'],
+          operationType: data.operationType as Property['operationType'],
+          ...(data.operationType === 'alquiler' && data.rentalDurationType
+            ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
+            : {}),
+          specs: {
+            totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
+            bedroomCount: data.bedroomCount ?? undefined,
+            bathroomCount: data.bathroomCount ?? undefined,
+            availableParkingSpaces: data.availableParkingSpaces,
+            propertyAmenities: data.propertyAmenities,
+            ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
+          },
+          location: {
+            latitude: data.latitude!,
+            longitude: data.longitude!,
+            calle: data.calle,
+            urbanizacion: data.urbanizacion,
+            distrito: data.distrito,
+            provincia: data.provincia,
+            departamento: data.departamento,
+            countryIsoCode: 'PE',
+          },
+          currentPrice: { amount: formData.amount, currency: formData.currency },
+          normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}`,
+          media: {
+            propertyPhotoUrls: photoUrls,
+            photoBlurHashes: blurHashes,
+            ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
+          },
+          updatedAt: now,
+          isAvailable: true,
+        }
+
         AnalyticsLogger.listingCreated(data.operationType)
+        await queryClient.invalidateQueries({ queryKey: ['listings'] })
+
+        // Show success modal with share CTA instead of navigating immediately
+        setSuccessData({
+          listing: createdListing,
+          property: createdProperty,
+          focusLat: data.latitude ?? null,
+          focusLng: data.longitude ?? null,
+        })
+        return
       }
 
-      // Capture location before resetting form
-      const focusLat = data.latitude
-      const focusLng = data.longitude
-
-      // Invalidate queries and navigate
+      // Edit mode: navigate immediately
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
       reset()
-
-      // Navigate to explore map centered on the new listing
-      if (focusLat != null && focusLng != null && !isEditMode) {
-        navigate('/explorar', { state: { focusLat, focusLng } })
-      } else {
-        navigate('/app')
-      }
+      navigate('/app')
     } catch (err) {
       console.error('Submission error:', err)
       // Invalidate queries even on error so dashboard reflects any partial changes
@@ -280,6 +333,57 @@ export default function WizardStep4() {
       setIsSubmitting(false)
       setUploadProgress(null)
     }
+  }
+
+  const handleNavigateAfterCreation = () => {
+    if (!successData) return
+    const { focusLat, focusLng } = successData
+    reset()
+    if (focusLat != null && focusLng != null) {
+      navigate('/explorar', { state: { focusLat, focusLng } })
+    } else {
+      navigate('/app')
+    }
+  }
+
+  // Show success modal after listing creation
+  if (successData) {
+    return (
+      <>
+        <Modal
+          isOpen={!showShareModal}
+          onClose={handleNavigateAfterCreation}
+          title="¡Publicado!"
+        >
+          <p className="text-text-secondary">
+            ¡Comparte tu anuncio en todas tus redes sociales!
+          </p>
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={handleNavigateAfterCreation}
+              className="flex-1 rounded-xl border border-border px-4 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+            >
+              Ahora no
+            </button>
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex-1 rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+            >
+              Compartir
+            </button>
+          </div>
+        </Modal>
+        <ShareFormatModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false)
+            handleNavigateAfterCreation()
+          }}
+          listing={successData.listing}
+          property={successData.property}
+        />
+      </>
+    )
   }
 
   return (

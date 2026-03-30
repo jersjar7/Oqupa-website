@@ -9,6 +9,15 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  server: {
+    proxy: {
+      '/__storage': {
+        target: 'https://firebasestorage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__storage/, ''),
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {

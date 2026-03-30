@@ -77,7 +77,7 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
         <p className="mt-0.5 text-xs font-medium text-text-secondary">
           {typeLabel} &middot; {property.location.distrito}
         </p>
-        <div className="mt-1 flex gap-2 text-xs text-text-tertiary">
+        <div className="mt-1 flex items-center gap-2 text-xs text-text-tertiary">
           {property.specs.bedroomCount != null && (
             <span>{property.specs.bedroomCount} hab.</span>
           )}
@@ -87,6 +87,13 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
           )}
+          <Link
+            to={`/property/${listing.id}`}
+            className="ml-auto text-xs font-medium text-primary hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Ver &rarr;
+          </Link>
         </div>
       </div>
     </Link>

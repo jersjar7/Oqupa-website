@@ -5,10 +5,10 @@ import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
-import { shareListing } from '@/lib/shareUtils'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
+import ShareFormatModal from '@/components/ShareFormatModal'
 
 function GalleryModal({
   images,
@@ -280,6 +280,7 @@ export default function PropertyPage() {
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   useEffect(() => {
     if (listing?.description) {
@@ -311,27 +312,9 @@ export default function PropertyPage() {
     }
   }, [images])
 
-  const handleShare = async () => {
-    if (!id || !listing || !property) return
-    const result = await shareListing({
-      listingId: id,
-      propertyType: property.propertyType,
-      operationType: property.operationType,
-      rentalDurationType: property.rentalDurationType,
-      priceAmount: listing.price.amount,
-      priceCurrency: listing.price.currency,
-      distrito: property.location?.distrito ?? '',
-      urbanizacion: property.location?.urbanizacion || undefined,
-      bedroomCount: property.specs?.bedroomCount,
-      bathroomCount: property.specs?.bathroomCount,
-      totalAreaInSquareMeters: property.specs?.totalAreaInSquareMeters,
-    })
-    if (result === 'copied') {
-      setToastMessage('Enlace copiado al portapapeles')
-    }
-    if (result !== 'failed') {
-      AnalyticsLogger.shareListing(id, result)
-    }
+  const handleShare = () => {
+    if (!listing || !property) return
+    setShowShareModal(true)
   }
 
   if (isLoading) {
@@ -568,6 +551,16 @@ export default function PropertyPage() {
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
           {toastMessage}
         </div>
+      )}
+
+      {/* Share format modal */}
+      {listing && property && (
+        <ShareFormatModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          listing={listing}
+          property={property}
+        />
       )}
 
       {/* Auth required modal */}

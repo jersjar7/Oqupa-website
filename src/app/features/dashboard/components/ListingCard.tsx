@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Power, PowerOff } from 'lucide-react'
+import { Eye, Pencil, Power, PowerOff, Share2 } from 'lucide-react'
+import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus } from '@/hooks/useListings'
 import { blurHashToDataUrl } from '@/lib/blurhash'
@@ -36,6 +37,7 @@ function formatPrice(amount: number, currency: string): string {
 
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
+  const [showShareModal, setShowShareModal] = useState(false)
   const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
@@ -125,6 +127,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               Editar
             </Button>
           </Link>
+          {listing.status === 'active' && (
+            <Button variant="text" onClick={() => setShowShareModal(true)}>
+              <Share2 className="h-4 w-4" />
+              Compartir
+            </Button>
+          )}
           {canToggle && (
             <Button
               variant="text"
@@ -150,6 +158,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             </Button>
           )}
         </div>
+
+        {/* Share format modal */}
+        <ShareFormatModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          listing={listing}
+          property={property}
+        />
       </div>
     </div>
   )

@@ -112,6 +112,17 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   habitacion: 'Habitación',
 }
 
+/** Abbreviated labels for compact contexts (branded card overlay). */
+export const PROPERTY_TYPE_SHORT_LABELS: Record<PropertyType, string> = {
+  casa: 'Casa',
+  departamento: 'Apto.',
+  terreno: 'Terreno',
+  oficina: 'Oficina',
+  local: 'Local',
+  hospedaje: 'Aloja.',
+  habitacion: 'Habita.',
+}
+
 export const PROPERTY_TYPE_DESCRIPTIONS: Record<PropertyType, string> = {
   casa: 'Casa completa',
   departamento: 'Departamento o piso',
