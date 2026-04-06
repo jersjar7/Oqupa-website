@@ -10,6 +10,7 @@ import {
   limit,
   startAfter,
   updateDoc,
+  deleteDoc,
   setDoc,
   serverTimestamp,
   type Timestamp,
@@ -413,5 +414,13 @@ export const firestoreService = {
       ...cleaned,
       updatedAt: serverTimestamp(),
     })
+  },
+
+  async deleteListing(listingId: string): Promise<void> {
+    await deleteDoc(doc(db, 'listings', listingId))
+  },
+
+  async deleteProperty(propertyId: string): Promise<void> {
+    await deleteDoc(doc(db, 'properties', propertyId))
   },
 }

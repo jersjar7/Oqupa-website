@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Power, PowerOff, Share2 } from 'lucide-react'
+import { Eye, Pencil, Power, PowerOff, Share2, Trash2 } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button } from '@/app/components/ui'
-import { useToggleListingStatus } from '@/hooks/useListings'
+import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
 import { blurHashToDataUrl } from '@/lib/blurhash'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -37,7 +37,9 @@ function formatPrice(amount: number, currency: string): string {
 
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
+  const deleteListing = useDeleteListing()
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
@@ -157,7 +159,47 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               )}
             </Button>
           )}
+          {listing.status === 'deactivated' && (
+            <Button
+              variant="text"
+              className="text-red-600 hover:text-red-700"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar
+            </Button>
+          )}
         </div>
+
+        {/* Delete confirmation */}
+        {showDeleteConfirm && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+            <p className="text-sm font-medium text-red-800">
+              ¿Eliminar esta publicacion? Esta accion no se puede deshacer.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                className="text-red-600 hover:text-red-700"
+                isLoading={deleteListing.isPending}
+                onClick={() =>
+                  deleteListing.mutate(
+                    { listingId: listing.id, propertyId: listing.propertyId },
+                    { onSuccess: () => setShowDeleteConfirm(false) }
+                  )
+                }
+              >
+                Eliminar
+              </Button>
+              <Button
+                variant="text"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Share format modal */}
         <ShareFormatModal

@@ -166,4 +166,15 @@ export const fullListingSchema = z.object({
   distrito: z.string().min(1, 'Distrito no ingresado (Paso 3)'),
   provincia: z.string().min(1, 'Provincia no ingresada (Paso 3)'),
   departamento: z.string().min(1, 'Departamento no ingresado (Paso 3)'),
+  // Step 4
+  amount: z
+    .number({ message: 'Precio no ingresado (Paso 4)' })
+    .positive('El precio debe ser mayor a 0 (Paso 4)'),
+  currency: z.enum(['PEN', 'USD'], {
+    message: 'Moneda no seleccionada (Paso 4)',
+  }),
+  wantsRealtorHelp: z.boolean({
+    message: 'Preferencia de agente no seleccionada (Paso 4)',
+  }),
+  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 4)' }).int(),
 })

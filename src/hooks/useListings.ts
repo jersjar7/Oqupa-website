@@ -40,3 +40,23 @@ export function useToggleListingStatus() {
     },
   })
 }
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      listingId,
+      propertyId,
+    }: {
+      listingId: string
+      propertyId: string
+    }) => {
+      await firestoreService.deleteListing(listingId)
+      await firestoreService.deleteProperty(propertyId)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    },
+  })
+}

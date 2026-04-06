@@ -83,6 +83,8 @@ export default function WizardStep4() {
     setIsSubmitting(true)
     setSubmitError(null)
 
+    let createdPropertyId: string | null = null
+
     try {
       updateData({
         amount: formData.amount,
@@ -193,6 +195,7 @@ export default function WizardStep4() {
           media: { propertyPhotoUrls: [] },
           isAvailable: true,
         })
+        createdPropertyId = propertyId
 
         // Upload photos
         let photoUrls: string[] = []
@@ -314,6 +317,16 @@ export default function WizardStep4() {
       navigate('/app')
     } catch (err) {
       console.error('Submission error:', err)
+
+      // Clean up orphaned Property if create flow failed after Property was created
+      if (createdPropertyId) {
+        try {
+          await firestoreService.deleteProperty(createdPropertyId)
+        } catch {
+          console.warn('Failed to cleanup orphaned property:', createdPropertyId)
+        }
+      }
+
       // Invalidate queries even on error so dashboard reflects any partial changes
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
 
