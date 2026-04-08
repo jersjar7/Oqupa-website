@@ -78,20 +78,30 @@ export function useWaitlistForm() {
 
     setIsSubmitting(true)
     try {
+      let submitted = false
+
       if (RECAPTCHA_ENABLED) {
-        // Use Cloud Function with reCAPTCHA verification
-        const token = await getRecaptchaToken('waitlist_signup')
-        const functions = getFunctions(undefined, 'southamerica-east1')
-        const submitWaitlist = httpsCallable(functions, 'submitWaitlistWithCaptcha')
-        await submitWaitlist({
-          token,
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          intent: formData.intent,
-          privacyConsent: formData.privacyConsent,
-        })
-      } else {
-        // Fallback: direct Firestore write (no reCAPTCHA configured)
+        try {
+          // Use Cloud Function with reCAPTCHA verification
+          const token = await getRecaptchaToken('waitlist_signup')
+          const functions = getFunctions(undefined, 'southamerica-east1')
+          const submitWaitlist = httpsCallable(functions, 'submitWaitlistWithCaptcha')
+          await submitWaitlist({
+            token,
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            intent: formData.intent,
+            privacyConsent: formData.privacyConsent,
+          })
+          submitted = true
+        } catch (recaptchaError) {
+          // reCAPTCHA failed (invalid key, network error, etc.) — fall through to direct write
+          console.warn('reCAPTCHA submission failed, falling back to direct write:', recaptchaError)
+        }
+      }
+
+      if (!submitted) {
+        // Fallback: direct Firestore write (no reCAPTCHA or reCAPTCHA failed)
         await firestoreService.addWaitlistEntry({
           name: formData.name.trim(),
           email: formData.email.trim(),

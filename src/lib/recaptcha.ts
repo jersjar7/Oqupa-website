@@ -7,7 +7,7 @@ export function loadRecaptchaScript(): Promise<void> {
 
   return new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_SITE_KEY}`
     script.async = true
     script.onload = () => {
       scriptLoaded = true
@@ -23,11 +23,16 @@ export async function getRecaptchaToken(action: string): Promise<string> {
 
   await loadRecaptchaScript()
 
-  return new Promise((resolve) => {
-    window.grecaptcha.ready(() => {
-      window.grecaptcha
+  if (!window.grecaptcha?.enterprise) {
+    throw new Error('reCAPTCHA Enterprise failed to load')
+  }
+
+  return new Promise((resolve, reject) => {
+    window.grecaptcha.enterprise.ready(() => {
+      window.grecaptcha.enterprise
         .execute(RECAPTCHA_SITE_KEY, { action })
         .then(resolve)
+        .catch(reject)
     })
   })
 }
@@ -38,6 +43,10 @@ declare global {
     grecaptcha: {
       ready: (cb: () => void) => void
       execute: (siteKey: string, options: { action: string }) => Promise<string>
+      enterprise: {
+        ready: (cb: () => void) => void
+        execute: (siteKey: string, options: { action: string }) => Promise<string>
+      }
     }
   }
 }
