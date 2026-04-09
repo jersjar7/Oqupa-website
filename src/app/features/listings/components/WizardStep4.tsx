@@ -112,7 +112,18 @@ export default function WizardStep4() {
           newBlurHashes = results.map(r => r.blurHash)
         }
 
-        const allPhotoUrls = [...data.existingPhotoUrls, ...newPhotoUrls]
+        // Build ordered URL array using photoOrder from Step 3
+        let allPhotoUrls: string[]
+        if (data.photoOrder.length > 0) {
+          allPhotoUrls = data.photoOrder.map(entry =>
+            entry.type === 'existing'
+              ? data.existingPhotoUrls[entry.index]!
+              : newPhotoUrls[entry.index]!
+          )
+        } else {
+          // Fallback for listings edited before photo ordering was added
+          allPhotoUrls = [...data.existingPhotoUrls, ...newPhotoUrls]
+        }
 
         setUploadProgress('Actualizando propiedad...')
         await firestoreService.updateProperty(editPropertyId, {

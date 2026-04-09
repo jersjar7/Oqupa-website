@@ -1,22 +1,37 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
 import { PIURA_CENTER } from '@/lib/constants'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button, Input } from '@/app/components/ui'
-import { Upload, X, ImagePlus } from 'lucide-react'
+import { Upload, X, ImagePlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import LocationPicker from './LocationPicker'
+
+type PhotoItem =
+  | { type: 'existing'; url: string }
+  | { type: 'new'; file: File }
 
 export default function WizardStep3() {
   const { data, updateData, nextStep, prevStep, isEditMode } =
     useListingFormStore()
 
   const [showExactLocation, setShowExactLocation] = useState(data.showExactLocation)
-  const [photos, setPhotos] = useState<File[]>(data.photos)
-  const [existingUrls] = useState<string[]>(data.existingPhotoUrls)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Unified ordered list of all photos
+  const [items, setItems] = useState<PhotoItem[]>(() => {
+    const existing: PhotoItem[] = data.existingPhotoUrls.map((url) => ({
+      type: 'existing',
+      url,
+    }))
+    const newPhotos: PhotoItem[] = data.photos.map((file) => ({
+      type: 'new',
+      file,
+    }))
+    return [...existing, ...newPhotos]
+  })
 
   const {
     register,
@@ -40,34 +55,72 @@ export default function WizardStep3() {
   const watchedLat = watch('latitude')
   const watchedLng = watch('longitude')
 
-  const totalPhotos = existingUrls.length + photos.length
-
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? [])
-      const remaining = 25 - totalPhotos
-      const newPhotos = files.slice(0, remaining)
-      setPhotos((prev) => [...prev, ...newPhotos])
+      const remaining = 25 - items.length
+      const newItems: PhotoItem[] = files
+        .slice(0, remaining)
+        .map((file) => ({ type: 'new', file }))
+      setItems((prev) => [...prev, ...newItems])
       setPhotoError(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     },
-    [totalPhotos]
+    [items.length]
   )
 
   const removePhoto = useCallback((index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
+    setItems((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
+  const movePhoto = useCallback((index: number, direction: -1 | 1) => {
+    setItems((prev) => {
+      const target = index + direction
+      if (target < 0 || target >= prev.length) return prev
+      const next = [...prev]
+      ;[next[index], next[target]] = [next[target]!, next[index]!]
+      return next
+    })
+  }, [])
+
+  // Generate preview URLs for new photos, memoized to avoid re-creating
+  const previewUrls = useMemo(() => {
+    const map = new Map<File, string>()
+    for (const item of items) {
+      if (item.type === 'new' && !map.has(item.file)) {
+        map.set(item.file, URL.createObjectURL(item.file))
+      }
+    }
+    return map
+  }, [items])
+
   function onSubmit(formData: Step3Data) {
-    if (!isEditMode && totalPhotos === 0) {
+    if (!isEditMode && items.length === 0) {
       setPhotoError('Selecciona al menos una foto')
       return
+    }
+
+    // Split ordered items back into two arrays for the store
+    const existingPhotoUrls: string[] = []
+    const photos: File[] = []
+    const photoOrder: Array<{ type: 'existing' | 'new'; index: number }> = []
+
+    for (const item of items) {
+      if (item.type === 'existing') {
+        photoOrder.push({ type: 'existing', index: existingPhotoUrls.length })
+        existingPhotoUrls.push(item.url)
+      } else {
+        photoOrder.push({ type: 'new', index: photos.length })
+        photos.push(item.file)
+      }
     }
 
     updateData({
       ...formData,
       showExactLocation,
       photos,
+      existingPhotoUrls,
+      photoOrder,
     })
     nextStep()
   }
@@ -162,50 +215,109 @@ export default function WizardStep3() {
       {/* Photos */}
       <div>
         <h3 className="text-sm font-medium uppercase text-text-primary">
-          Fotos ({totalPhotos}/25)
+          Fotos ({items.length}/25)
         </h3>
+        <p className="mt-1 text-xs text-text-tertiary">
+          La primera foto sera la portada de tu publicacion
+        </p>
         {photoError && (
           <p className="mt-1 text-sm text-error">{photoError}</p>
         )}
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-          {/* Existing photo URLs (edit mode) */}
-          {existingUrls.map((url, i) => (
-            <div
-              key={`existing-${i}`}
-              className="relative h-24 overflow-hidden rounded-xl border border-border"
-            >
-              <img
-                src={url}
-                alt={`Foto ${i + 1}`}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ))}
+          {items.map((item, i) => {
+            const src =
+              item.type === 'existing'
+                ? item.url
+                : previewUrls.get(item.file) ?? ''
 
-          {/* New photo previews */}
-          {photos.map((file, i) => (
-            <div
-              key={`new-${i}`}
-              className="group relative h-24 overflow-hidden rounded-xl border border-border"
-            >
-              <img
-                src={URL.createObjectURL(file)}
-                alt={`Nueva foto ${i + 1}`}
-                className="h-full w-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removePhoto(i)}
-                className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            return (
+              <div
+                key={`photo-${i}`}
+                className="group relative h-24 overflow-hidden rounded-xl border border-border"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+                <img
+                  src={src}
+                  alt={`Foto ${i + 1}`}
+                  className="h-full w-full object-cover"
+                />
+
+                {/* Cover badge */}
+                {i === 0 && (
+                  <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                    Portada
+                  </span>
+                )}
+
+                {/* Controls overlay */}
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-1 pt-3 pb-1 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  style={{ opacity: undefined }}
+                >
+                  <div className="flex gap-0.5">
+                    {i > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(i, -1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary transition-colors hover:bg-white"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {i < items.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(i, 1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary transition-colors hover:bg-white"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Mobile: always show controls on tap */}
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-1 pt-3 pb-1 sm:hidden">
+                  <div className="flex gap-0.5">
+                    {i > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(i, -1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {i < items.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(i, 1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
 
           {/* Add photo button */}
-          {totalPhotos < 25 && (
+          {items.length < 25 && (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -225,7 +337,7 @@ export default function WizardStep3() {
           className="hidden"
         />
 
-        {totalPhotos === 0 && (
+        {items.length === 0 && (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

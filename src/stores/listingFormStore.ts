@@ -29,6 +29,9 @@ export interface ListingFormData {
   photos: File[]
   existingPhotoUrls: string[] // for edit mode
 
+  // Photo ordering (maps final position to source)
+  photoOrder: Array<{ type: 'existing' | 'new'; index: number }>
+
   // Step 4: Price
   amount: number | null
   currency: Currency
@@ -72,6 +75,7 @@ const INITIAL_DATA: ListingFormData = {
   showExactLocation: true,
   photos: [],
   existingPhotoUrls: [],
+  photoOrder: [],
   amount: null,
   currency: 'PEN',
   wantsRealtorHelp: false,
