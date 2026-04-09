@@ -6,11 +6,7 @@ const SUCCESS_DISPLAY_MS = 3000
 
 export function useWaitlistPopup() {
   const [isReady, setIsReady] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(() => {
-    // On mobile, start collapsed to avoid full-screen takeover
-    if (typeof window !== 'undefined' && window.innerWidth < 640) return false
-    return !localStorage.getItem(COLLAPSED_KEY)
-  })
+  const [isExpanded, setIsExpanded] = useState(() => !localStorage.getItem(COLLAPSED_KEY))
 
   useEffect(() => {
     const timer = setTimeout(() => setIsReady(true), SHOW_DELAY_MS)
