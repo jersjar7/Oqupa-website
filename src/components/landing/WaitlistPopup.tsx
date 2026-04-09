@@ -195,29 +195,6 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                   )}
                 </div>
 
-                {/* Budget (optional) */}
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="popup-budget"
-                    className="text-xs font-medium uppercase text-text-primary"
-                  >
-                    Presupuesto{' '}
-                    <span className="normal-case font-normal text-text-tertiary">(opcional)</span>
-                  </label>
-                  <div className="flex items-center rounded-xl border border-border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                    <span className="shrink-0 pl-3 text-sm text-text-tertiary select-none">S/.</span>
-                    <input
-                      type="text"
-                      id="popup-budget"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleChange}
-                      placeholder="600"
-                      className="w-full bg-transparent px-2 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-tertiary"
-                    />
-                  </div>
-                </div>
-
                 {/* Contact Consent */}
                 <div className="flex flex-col gap-1">
                   <label className="flex items-start gap-2.5 cursor-pointer">

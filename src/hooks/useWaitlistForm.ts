@@ -9,7 +9,6 @@ interface FormData {
   phone: string
   email: string
   city: string
-  budget: string
   contactConsent: boolean
 }
 
@@ -18,7 +17,6 @@ interface FormErrors {
   phone?: string
   email?: string
   city?: string
-  budget?: string
   contactConsent?: string
 }
 
@@ -33,13 +31,6 @@ function formatPhone(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
 }
 
-function formatBudget(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 10)
-  if (!digits) return ''
-  const number = parseInt(digits, 10)
-  return number.toLocaleString('en-US')
-}
-
 const RECAPTCHA_ENABLED = !!import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 export function useWaitlistForm(options?: UseWaitlistFormOptions) {
@@ -48,7 +39,6 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
     phone: '',
     email: '',
     city: '',
-    budget: '',
     contactConsent: false,
   })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -100,8 +90,6 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
       formatted = checked
     } else if (name === 'phone') {
       formatted = formatPhone(value)
-    } else if (name === 'budget') {
-      formatted = formatBudget(value)
     } else {
       formatted = value
     }
@@ -123,7 +111,7 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
         phone: '+51 ' + formData.phone.trim(),
         email: formData.email.trim(),
         city: formData.city.trim(),
-        budget: formData.budget ? 'S/. ' + formData.budget + '.00' : '',
+        budget: '',
         contactConsent: formData.contactConsent,
       }
 
@@ -146,7 +134,7 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
         await firestoreService.addWaitlistEntry(entry)
       }
       setIsSuccess(true)
-      setFormData({ name: '', phone: '', email: '', city: '', budget: '', contactConsent: false })
+      setFormData({ name: '', phone: '', email: '', city: '', contactConsent: false })
       options?.onSuccess?.()
     } catch {
       setErrors({ name: 'Error al registrarse. Intentalo de nuevo.' })
