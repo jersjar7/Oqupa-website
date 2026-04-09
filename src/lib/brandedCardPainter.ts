@@ -173,15 +173,10 @@ export async function paintBrandedCard(
   // 4. Operation badge (top-left)
   paintBadge(ctx, layout, config.operationLabel)
 
-  // 5. Link placeholder (story format only)
-  if (config.format === 'story') {
-    paintLinkPlaceholder(ctx, layout)
-  }
-
-  // 6. Text overlay (price, specs, location — bottom-left)
+  // 5. Text overlay (price, specs, location — bottom-left)
   paintTextOverlay(ctx, layout, config)
 
-  // 7. Logo overlay (bottom-right)
+  // 6. Logo overlay (bottom-right)
   if (logo) {
     paintLogo(ctx, layout, logo)
   }
@@ -263,23 +258,13 @@ function paintBadge(
   ctx.roundRect(x, y, badgeWidth, badgeHeight, r)
   ctx.fill()
 
-  // Draw text
+  // Draw text centered vertically in the badge
   ctx.fillStyle = '#FFFFFF'
-  ctx.textBaseline = 'top'
-  ctx.fillText(label, x + layout.badgePaddingH, y + layout.badgePaddingV)
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, x + layout.badgePaddingH, y + badgeHeight / 2)
 
   // Reset letter spacing
   ctx.letterSpacing = '0px'
-}
-
-function paintLinkPlaceholder(
-  ctx: CanvasRenderingContext2D,
-  layout: CardLayout,
-): void {
-  ctx.font = gothamMedium(layout.linkPlaceholderFontSize)
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
-  ctx.textBaseline = 'top'
-  ctx.fillText('Enlace aquí', layout.badgeLeft, layout.linkPlaceholderTop)
 }
 
 function paintTextOverlay(
