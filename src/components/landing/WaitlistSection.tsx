@@ -1,14 +1,12 @@
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
-import { useWaitlistForm } from '@/hooks/useWaitlistForm'
+import { Bell } from 'lucide-react'
 
 interface WaitlistSectionProps {
-  onSuccess?: () => void
+  onExpandPopup: () => void
 }
 
-export default function WaitlistSection({ onSuccess }: WaitlistSectionProps) {
+export default function WaitlistSection({ onExpandPopup }: WaitlistSectionProps) {
   const { ref, isVisible } = useAnimateOnScroll()
-  const { formData, errors, isSubmitting, isSuccess, handleChange, handleSubmit } =
-    useWaitlistForm({ onSuccess })
 
   return (
     <section
@@ -18,239 +16,34 @@ export default function WaitlistSection({ onSuccess }: WaitlistSectionProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`mx-auto max-w-2xl transition-all duration-700 ease-out ${
+          className={`mx-auto max-w-2xl text-center transition-all duration-700 ease-out ${
             isVisible
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
           }`}
         >
-          {/* Heading */}
-          <div className="text-center">
-            <h2 className="text-3xl font-medium text-secondary sm:text-4xl">
-              Unete a la lista de espera
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-text-secondary">
-              Se de los primeros en acceder a Oqupa cuando lancemos en Piura.
-              Registrate y te avisaremos cuando estemos listos.
-            </p>
+          <div className="flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
+              <Bell className="h-7 w-7 text-secondary" />
+            </div>
           </div>
 
-          {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="mt-10 flex flex-col gap-5 rounded-2xl bg-white p-8 shadow-large sm:p-10"
-            noValidate
+          <h2 className="mt-6 text-3xl font-medium text-secondary sm:text-4xl">
+            Unete a la lista de espera
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-text-secondary">
+            Se de los primeros en acceder a Oqupa cuando lancemos en Piura.
+            Registrate y te avisaremos cuando estemos listos.
+          </p>
+
+          <button
+            onClick={onExpandPopup}
+            className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large cursor-pointer"
           >
-            {isSuccess ? (
-              <div className="flex flex-col items-center gap-4 py-8 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-text-primary">
-                  Registrado exitosamente!
-                </h3>
-                <p className="text-text-secondary">
-                  Te notificaremos cuando Oqupa este disponible en Piura.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Name */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="name"
-                    className="text-sm font-medium uppercase text-text-primary"
-                  >
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Tu nombre"
-                    className={`rounded-xl border px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-                      errors.name ? 'border-error' : 'border-border'
-                    }`}
-                  />
-                  {errors.name && (
-                    <span className="text-sm text-error">{errors.name}</span>
-                  )}
-                </div>
+            Registrarme
+          </button>
 
-                {/* Phone */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="phone"
-                    className="text-sm font-medium uppercase text-text-primary"
-                  >
-                    Telefono (WhatsApp)
-                  </label>
-                  <div className={`flex items-center rounded-xl border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 ${
-                    errors.phone ? 'border-error' : 'border-border'
-                  }`}>
-                    <span className="shrink-0 pl-4 text-base text-text-tertiary select-none">+51</span>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="999-999-999"
-                      className="w-full bg-transparent px-2 py-3 text-base text-text-primary outline-none placeholder:text-text-tertiary"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <span className="text-sm text-error">{errors.phone}</span>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium uppercase text-text-primary"
-                  >
-                    Correo electronico
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="tu@correo.com"
-                    className={`rounded-xl border px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-                      errors.email ? 'border-error' : 'border-border'
-                    }`}
-                  />
-                  {errors.email && (
-                    <span className="text-sm text-error">{errors.email}</span>
-                  )}
-                </div>
-
-                {/* City */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="city"
-                    className="text-sm font-medium uppercase text-text-primary"
-                  >
-                    Ciudad de interes
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="Ej: Sullana"
-                    className={`rounded-xl border px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-                      errors.city ? 'border-error' : 'border-border'
-                    }`}
-                  />
-                  {errors.city && (
-                    <span className="text-sm text-error">{errors.city}</span>
-                  )}
-                </div>
-
-                {/* Budget (optional) */}
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="budget"
-                    className="text-sm font-medium uppercase text-text-primary"
-                  >
-                    Presupuesto{' '}
-                    <span className="normal-case font-normal text-text-tertiary">(opcional)</span>
-                  </label>
-                  <div className="flex items-center rounded-xl border border-border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                    <span className="shrink-0 pl-4 text-base text-text-tertiary select-none">S/.</span>
-                    <input
-                      type="text"
-                      id="budget"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleChange}
-                      placeholder="600"
-                      className="w-full bg-transparent px-2 py-3 text-base text-text-primary outline-none placeholder:text-text-tertiary"
-                    />
-                  </div>
-                </div>
-
-                {/* Contact Consent */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="contactConsent"
-                      checked={formData.contactConsent}
-                      onChange={handleChange}
-                      className="mt-1 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary"
-                    />
-                    <span className="text-sm leading-relaxed text-text-secondary">
-                      Acepto ser contactado por WhatsApp y correo electronico
-                    </span>
-                  </label>
-                  {errors.contactConsent && (
-                    <span className="text-sm text-error">
-                      {errors.contactConsent}
-                    </span>
-                  )}
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="h-5 w-5 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Registrando...
-                    </>
-                  ) : (
-                    'Unirme a la Lista de Espera'
-                  )}
-                </button>
-              </>
-            )}
-          </form>
-
-          {/* Disclaimer */}
-          <p className="mt-6 text-center text-xs leading-relaxed text-text-tertiary">
+          <p className="mt-6 text-xs leading-relaxed text-text-tertiary">
             No compartiremos tu informacion con terceros. Solo te contactaremos
             para informarte sobre el lanzamiento de Oqupa.
           </p>

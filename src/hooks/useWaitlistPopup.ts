@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 
-const JOINED_KEY = 'oqupa_waitlist_joined'
 const COLLAPSED_KEY = 'oqupa_popup_collapsed'
 const SHOW_DELAY_MS = 5000
+const SUCCESS_DISPLAY_MS = 3000
 
 export function useWaitlistPopup() {
   const [isReady, setIsReady] = useState(false)
   const [isExpanded, setIsExpanded] = useState(() => !localStorage.getItem(COLLAPSED_KEY))
 
   useEffect(() => {
-    // Never show if user already joined the waitlist
-    if (localStorage.getItem(JOINED_KEY)) return
-
     const timer = setTimeout(() => setIsReady(true), SHOW_DELAY_MS)
     return () => clearTimeout(timer)
   }, [])
@@ -26,13 +23,12 @@ export function useWaitlistPopup() {
   }, [])
 
   const markJoined = useCallback(() => {
-    setIsReady(false)
-    localStorage.setItem(JOINED_KEY, 'true')
+    // Show success message for 3 seconds, then smoothly collapse
+    setTimeout(() => {
+      setIsExpanded(false)
+      localStorage.setItem(COLLAPSED_KEY, 'true')
+    }, SUCCESS_DISPLAY_MS)
   }, [])
 
-  const hide = useCallback(() => {
-    setIsExpanded(false)
-  }, [])
-
-  return { isReady, isExpanded, collapse, expand, markJoined, hide }
+  return { isReady, isExpanded, collapse, expand, markJoined }
 }

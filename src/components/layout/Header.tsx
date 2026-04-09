@@ -18,12 +18,13 @@ interface NavLink {
   label: string
   href: string
   isRoute?: boolean
+  action?: string
 }
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
   { label: 'Publica Gratis', href: '#precios' },
-  { label: 'Lista de Espera', href: '#lista-espera' },
+  { label: 'Lista de Espera', href: '#', action: 'expand-waitlist-popup' },
   { label: 'Contacto', href: '#contacto' },
 ]
 
@@ -146,6 +147,15 @@ export default function Header({
     [close]
   )
 
+  const handleAction = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, action: string) => {
+      e.preventDefault()
+      close()
+      window.dispatchEvent(new CustomEvent(action))
+    },
+    [close]
+  )
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 bg-[#FFFAF5]/95 backdrop-blur-xl transition-all duration-300 ${
@@ -190,7 +200,7 @@ export default function Header({
               {NAV_LINKS.map((link) =>
                 link.isRoute ? (
                   <Link
-                    key={link.href}
+                    key={link.label}
                     to={link.href}
                     className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
                       isScrolled ? 'text-text-primary' : 'text-text-primary'
@@ -200,9 +210,13 @@ export default function Header({
                   </Link>
                 ) : (
                   <a
-                    key={link.href}
+                    key={link.label}
                     href={link.href}
-                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    onClick={(e) =>
+                      link.action
+                        ? handleAction(e, link.action)
+                        : handleSmoothScroll(e, link.href)
+                    }
                     className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
                       isScrolled ? 'text-text-primary' : 'text-text-primary'
                     }`}
@@ -282,7 +296,7 @@ export default function Header({
               {NAV_LINKS.map((link) =>
                 link.isRoute ? (
                   <Link
-                    key={link.href}
+                    key={link.label}
                     to={link.href}
                     onClick={close}
                     className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
@@ -291,9 +305,13 @@ export default function Header({
                   </Link>
                 ) : (
                   <a
-                    key={link.href}
+                    key={link.label}
                     href={link.href}
-                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    onClick={(e) =>
+                      link.action
+                        ? handleAction(e, link.action)
+                        : handleSmoothScroll(e, link.href)
+                    }
                     className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
                   >
                     {link.label}

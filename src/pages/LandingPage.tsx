@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import HeroSection from '@/components/landing/HeroSection'
 import TrustStrip from '@/components/landing/TrustStrip'
@@ -16,26 +16,14 @@ interface LayoutContext {
 
 export default function LandingPage() {
   const { heroRef } = useOutletContext<LayoutContext>()
-  const waitlistSectionRef = useRef<HTMLDivElement>(null)
   const popup = useWaitlistPopup()
 
-  // Auto-close popup when user scrolls to WaitlistSection
+  // Listen for navbar "Lista de Espera" click
   useEffect(() => {
-    const el = waitlistSectionRef.current
-    if (!el) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry!.isIntersecting) {
-          popup.hide()
-        }
-      },
-      { threshold: 0.3 }
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [popup.hide])
+    const handler = () => popup.expand()
+    window.addEventListener('expand-waitlist-popup', handler)
+    return () => window.removeEventListener('expand-waitlist-popup', handler)
+  }, [popup.expand])
 
   const handleWaitlistSuccess = useCallback(() => {
     popup.markJoined()
@@ -82,9 +70,7 @@ export default function LandingPage() {
       <SolutionSection />
       <PricingSection />
       <PiuraOnlyBanner />
-      <div ref={waitlistSectionRef}>
-        <WaitlistSection onSuccess={handleWaitlistSuccess} />
-      </div>
+      <WaitlistSection onExpandPopup={popup.expand} />
 
       <WaitlistPopup
         isReady={popup.isReady}

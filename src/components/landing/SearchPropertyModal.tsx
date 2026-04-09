@@ -15,14 +15,9 @@ export default function SearchPropertyModal({ isOpen, onClose }: SearchPropertyM
     navigate('/explorar')
   }
 
-  const handleScrollToWaitlist = () => {
+  const handleOpenWaitlist = () => {
     onClose()
-    setTimeout(() => {
-      const element = document.getElementById('lista-espera')
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
-      }
-    }, 100)
+    window.dispatchEvent(new CustomEvent('expand-waitlist-popup'))
   }
 
   return (
@@ -51,7 +46,7 @@ export default function SearchPropertyModal({ isOpen, onClose }: SearchPropertyM
         </button>
 
         <button
-          onClick={handleScrollToWaitlist}
+          onClick={handleOpenWaitlist}
           className="text-sm font-medium text-primary transition-colors duration-200 hover:text-primary-hover"
         >
           Unirme a la lista de espera y que me avisen
