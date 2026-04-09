@@ -6,7 +6,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { SlidersHorizontal, X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
 
 export default function ExplorePage() {
@@ -43,6 +43,12 @@ export default function ExplorePage() {
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [toastDismissed, setToastDismissed] = useState(false)
+
+  // Reset toast dismissal when results appear, so it shows again on next empty view
+  useEffect(() => {
+    if (visible.length > 0) setToastDismissed(false)
+  }, [visible.length])
 
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id)
@@ -104,6 +110,24 @@ export default function ExplorePage() {
             initialCenter={initialCenter}
           />
 
+          {/* Mobile empty area toast */}
+          {!isLoading && visible.length === 0 && !toastDismissed && (
+            <div className="absolute bottom-20 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
+              <MapPin className="h-4 w-4 shrink-0 text-text-tertiary" />
+              <p className="flex-1 text-xs text-text-secondary">
+                {filtered.length > 0
+                  ? 'No hay propiedades aqui. Aleja el mapa o navega a otra zona.'
+                  : 'No hay propiedades con estos filtros.'}
+              </p>
+              <button
+                onClick={() => setToastDismissed(true)}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-black/5"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Mobile filter button */}
           <button
             onClick={() => setDrawerOpen(true)}
@@ -122,9 +146,14 @@ export default function ExplorePage() {
         {/* Desktop property cards panel */}
         <div className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block">
           {visible.length === 0 && !isLoading ? (
-            <p className="py-12 text-center text-sm text-text-tertiary">
-              No se encontraron propiedades
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <MapPin className="h-8 w-8 text-text-tertiary/40" />
+              <p className="text-sm text-text-tertiary">
+                {filtered.length > 0
+                  ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
+                  : 'No se encontraron propiedades con los filtros seleccionados.'}
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {visible.map((item) => (
