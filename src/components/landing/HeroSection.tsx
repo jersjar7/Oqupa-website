@@ -57,7 +57,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
               </div>
               <div className="flex flex-col gap-2">
                 <div>
-                  <p className="text-base font-bold text-accent sm:text-lg drop-shadow">13 de Mayo</p>
+                  <p className="text-base font-bold text-accent sm:text-lg drop-shadow">11 de Mayo</p>
                   <p className="text-xs text-white/80 sm:text-sm drop-shadow">Descarga la App</p>
                 </div>
                 <button

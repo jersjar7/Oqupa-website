@@ -33,7 +33,7 @@ export default function SearchPropertyModal({ isOpen, onClose }: SearchPropertyM
 
         <p className="text-base leading-relaxed text-text-secondary">
           El{' '}
-          <span className="font-bold text-text-primary">13 de mayo</span>{' '}
+          <span className="font-bold text-text-primary">11 de mayo</span>{' '}
           lanzamos la app movil para buscar propiedades. Mientras tanto, puedes
           explorar las opciones disponibles en la web, aunque aun son pocas.
         </p>
