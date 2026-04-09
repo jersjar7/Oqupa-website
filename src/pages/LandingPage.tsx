@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import HeroSection from '@/components/landing/HeroSection'
 import TrustStrip from '@/components/landing/TrustStrip'
@@ -7,8 +7,6 @@ import ShowcaseSection from '@/components/landing/ShowcaseSection'
 import PricingSection from '@/components/landing/PricingSection'
 import PiuraOnlyBanner from '@/components/landing/PiuraOnlyBanner'
 import WaitlistSection from '@/components/landing/WaitlistSection'
-import WaitlistPopup from '@/components/landing/WaitlistPopup'
-import { useWaitlistPopup } from '@/hooks/useWaitlistPopup'
 
 interface LayoutContext {
   heroRef: React.RefObject<HTMLElement | null>
@@ -16,18 +14,6 @@ interface LayoutContext {
 
 export default function LandingPage() {
   const { heroRef } = useOutletContext<LayoutContext>()
-  const popup = useWaitlistPopup()
-
-  // Listen for navbar "Lista de Espera" click
-  useEffect(() => {
-    const handler = () => popup.expand()
-    window.addEventListener('expand-waitlist-popup', handler)
-    return () => window.removeEventListener('expand-waitlist-popup', handler)
-  }, [popup.expand])
-
-  const handleWaitlistSuccess = useCallback(() => {
-    popup.markJoined()
-  }, [popup.markJoined])
 
   useEffect(() => {
     document.title = 'Oqupa - Todas las propiedades de Piura en un solo lugar'
@@ -70,15 +56,7 @@ export default function LandingPage() {
       <SolutionSection />
       <PricingSection />
       <PiuraOnlyBanner />
-      <WaitlistSection onExpandPopup={popup.expand} />
-
-      <WaitlistPopup
-        isReady={popup.isReady}
-        isExpanded={popup.isExpanded}
-        onCollapse={popup.collapse}
-        onExpand={popup.expand}
-        onSuccess={handleWaitlistSuccess}
-      />
+      <WaitlistSection />
     </>
   )
 }

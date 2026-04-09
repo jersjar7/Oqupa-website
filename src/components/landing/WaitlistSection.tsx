@@ -1,12 +1,12 @@
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import { Bell } from 'lucide-react'
 
-interface WaitlistSectionProps {
-  onExpandPopup: () => void
-}
-
-export default function WaitlistSection({ onExpandPopup }: WaitlistSectionProps) {
+export default function WaitlistSection() {
   const { ref, isVisible } = useAnimateOnScroll()
+
+  const handleExpand = () => {
+    window.dispatchEvent(new CustomEvent('expand-waitlist-popup'))
+  }
 
   return (
     <section
@@ -37,7 +37,7 @@ export default function WaitlistSection({ onExpandPopup }: WaitlistSectionProps)
           </p>
 
           <button
-            onClick={onExpandPopup}
+            onClick={handleExpand}
             className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large cursor-pointer"
           >
             Registrarme

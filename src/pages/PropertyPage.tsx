@@ -517,12 +517,12 @@ export default function PropertyPage() {
           <p className="mt-1 text-sm text-white/80">
             Pronto podras buscar propiedades y publicar las tuyas desde tu celular.
           </p>
-          <Link
-            to="/#lista-espera"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('expand-waitlist-popup'))}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover cursor-pointer"
           >
             Avisarme cuando este lista
-          </Link>
+          </button>
         </div>
       </div>
 
