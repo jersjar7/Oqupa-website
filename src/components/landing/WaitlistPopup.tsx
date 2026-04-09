@@ -52,7 +52,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-5 pt-5 pb-2 sm:px-6 sm:pt-6 rounded-t-2xl">
             <h3 className="text-lg font-medium text-text-primary">
-              Mantente informado
+              Unete a la Oqupa Family
             </h3>
             <button
               onClick={onCollapse}
@@ -62,6 +62,10 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
               <ChevronDown className="h-5 w-5" />
             </button>
           </div>
+
+          <p className="px-5 pb-2 text-sm text-text-secondary sm:px-6">
+            Se uno de los primeros miembros de la Oqupa Family y publica tus propiedades gratis.
+          </p>
 
           {/* Form */}
           <form
