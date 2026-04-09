@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+
 const STEP_LABELS = ['Tipo', 'Detalles', 'Ubicacion', 'Precio']
 
 interface WizardProgressProps {
@@ -7,14 +9,14 @@ interface WizardProgressProps {
 export default function WizardProgress({ currentStep }: WizardProgressProps) {
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start">
         {STEP_LABELS.map((label, i) => {
           const stepNum = i + 1
           const isActive = stepNum === currentStep
           const isCompleted = stepNum < currentStep
 
           return (
-            <div key={label} className="flex flex-1 items-center">
+            <Fragment key={label}>
               <div className="flex flex-col items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
@@ -43,12 +45,12 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
               </div>
               {i < STEP_LABELS.length - 1 && (
                 <div
-                  className={`mx-2 h-0.5 flex-1 ${
+                  className={`mt-4 h-0.5 flex-1 ${
                     isCompleted ? 'bg-primary/30' : 'bg-gray-200'
                   }`}
                 />
               )}
-            </div>
+            </Fragment>
           )
         })}
       </div>
