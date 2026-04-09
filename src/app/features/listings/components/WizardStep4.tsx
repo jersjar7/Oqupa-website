@@ -61,17 +61,21 @@ export default function WizardStep4() {
   async function onSubmit(formData: Step4Data) {
     if (!user) return
 
-    // Pre-submission validation of all steps
-    // Merge formData into store data since store hasn't been updated yet
-    const fullResult = fullListingSchema.safeParse({
-      ...data,
+    // Update store with Step 4 values BEFORE full validation
+    updateData({
       amount: formData.amount,
       currency: formData.currency,
       wantsRealtorHelp: formData.wantsRealtorHelp,
       maxRealtors: formData.maxRealtors,
-      totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
-      latitude: data.latitude ?? undefined,
-      longitude: data.longitude ?? undefined,
+    })
+
+    // Pre-submission validation of all steps using fresh store data
+    const latestData = useListingFormStore.getState().data
+    const fullResult = fullListingSchema.safeParse({
+      ...latestData,
+      totalAreaInSquareMeters: latestData.totalAreaInSquareMeters ?? undefined,
+      latitude: latestData.latitude ?? undefined,
+      longitude: latestData.longitude ?? undefined,
     })
 
     if (!fullResult.success) {
@@ -80,7 +84,7 @@ export default function WizardStep4() {
       return
     }
 
-    if (!isEditMode && data.photos.length === 0 && data.existingPhotoUrls.length === 0) {
+    if (!isEditMode && latestData.photos.length === 0 && latestData.existingPhotoUrls.length === 0) {
       setSubmitError('No hay fotos seleccionadas (Paso 3)')
       return
     }
@@ -91,12 +95,6 @@ export default function WizardStep4() {
     let createdPropertyId: string | null = null
 
     try {
-      updateData({
-        amount: formData.amount,
-        currency: formData.currency,
-        wantsRealtorHelp: formData.wantsRealtorHelp,
-        maxRealtors: formData.maxRealtors,
-      })
 
       if (isEditMode && editPropertyId && editListingId) {
         // UPDATE FLOW
