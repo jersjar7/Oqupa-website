@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import heroImage from '@/assets/images/hero-Piura-family-home.webp'
+import PostPropertyModal from '@/components/landing/PostPropertyModal'
+import SearchPropertyModal from '@/components/landing/SearchPropertyModal'
 
 interface HeroSectionProps {
   heroRef: React.RefObject<HTMLElement | null>
@@ -7,14 +10,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({ heroRef }: HeroSectionProps) {
   const { ref, isVisible } = useAnimateOnScroll()
-
-  const handleScrollToWaitlist = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const element = document.getElementById('lista-espera')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
+  const [showPostModal, setShowPostModal] = useState(false)
+  const [showSearchModal, setShowSearchModal] = useState(false)
 
   return (
     <section
@@ -32,10 +29,6 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         >
           {/* Text Column */}
           <div className="flex flex-col items-start gap-6">
-            <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm font-serif font-light italic text-white animate-pulse-badge">
-              *Proximamente 2026
-            </span>
-
             <h1 className="text-[32px] font-medium leading-tight text-secondary sm:text-[40px] lg:text-[48px]">
               Todas las propiedades de Piura, en un solo lugar confiable.
             </h1>
@@ -45,13 +38,36 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
               con propietarios y agentes verificados.
             </p>
 
-            <a
-              href="#lista-espera"
-              onClick={handleScrollToWaitlist}
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:text-lg"
-            >
-              Lista de Espera
-            </a>
+            {/* Divider */}
+            <div className="w-full max-w-lg border-t border-border" />
+
+            {/* Date Labels + CTAs in two columns */}
+            <div className="flex max-w-lg gap-4 sm:gap-6">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-lg font-bold text-primary">4 de Mayo</p>
+                  <p className="text-sm text-text-secondary">Publica tu propiedad</p>
+                </div>
+                <button
+                  onClick={() => setShowPostModal(true)}
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
+                >
+                  Publicar
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-lg font-bold text-primary">13 de Mayo</p>
+                  <p className="text-sm text-text-secondary">Descarga la App</p>
+                </div>
+                <button
+                  onClick={() => setShowSearchModal(true)}
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-secondary px-8 py-4 text-base font-bold uppercase tracking-wider text-secondary shadow-medium transition-all duration-200 hover:bg-secondary hover:text-white hover:shadow-large hover:-translate-y-0.5"
+                >
+                  Buscar
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Image Column */}
@@ -91,6 +107,16 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           </svg>
         </div>
       </div>
+
+      {/* Modals */}
+      <PostPropertyModal
+        isOpen={showPostModal}
+        onClose={() => setShowPostModal(false)}
+      />
+      <SearchPropertyModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+      />
     </section>
   )
 }

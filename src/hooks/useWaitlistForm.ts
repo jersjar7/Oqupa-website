@@ -6,26 +6,50 @@ import { getRecaptchaToken } from '@/lib/recaptcha'
 
 interface FormData {
   name: string
+  phone: string
   email: string
-  intent: string
-  privacyConsent: boolean
+  city: string
+  budget: string
+  contactConsent: boolean
 }
 
 interface FormErrors {
   name?: string
+  phone?: string
   email?: string
-  intent?: string
-  privacyConsent?: string
+  city?: string
+  budget?: string
+  contactConsent?: string
+}
+
+interface UseWaitlistFormOptions {
+  onSuccess?: () => void
+}
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 9)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+function formatBudget(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (!digits) return ''
+  const number = parseInt(digits, 10)
+  return number.toLocaleString('en-US')
 }
 
 const RECAPTCHA_ENABLED = !!import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
-export function useWaitlistForm() {
+export function useWaitlistForm(options?: UseWaitlistFormOptions) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    phone: '',
     email: '',
-    intent: '',
-    privacyConsent: false,
+    city: '',
+    budget: '',
+    contactConsent: false,
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -35,23 +59,30 @@ export function useWaitlistForm() {
     const newErrors: FormErrors = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Por favor ingresa tu nombre completo'
+      newErrors.name = 'Por favor ingresa tu nombre'
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'El nombre debe tener al menos 2 caracteres'
     }
 
+    const phoneDigits = formData.phone.replace(/\D/g, '')
+    if (!phoneDigits) {
+      newErrors.phone = 'Por favor ingresa tu numero de telefono'
+    } else if (phoneDigits.length < 9) {
+      newErrors.phone = 'El numero debe tener 9 digitos'
+    }
+
     if (!formData.email.trim()) {
-      newErrors.email = 'Por favor ingresa tu correo electrónico'
+      newErrors.email = 'Por favor ingresa tu correo electronico'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
-      newErrors.email = 'Por favor ingresa un correo electrónico válido'
+      newErrors.email = 'Por favor ingresa un correo electronico valido'
     }
 
-    if (!formData.intent) {
-      newErrors.intent = 'Por favor selecciona qué te interesa más'
+    if (!formData.city.trim()) {
+      newErrors.city = 'Por favor ingresa tu ciudad de interes'
     }
 
-    if (!formData.privacyConsent) {
-      newErrors.privacyConsent = 'Debes aceptar la política de privacidad'
+    if (!formData.contactConsent) {
+      newErrors.contactConsent = 'Debes aceptar ser contactado'
     }
 
     setErrors(newErrors)
@@ -63,10 +94,19 @@ export function useWaitlistForm() {
   ) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+
+    let formatted: string | boolean
+    if (type === 'checkbox') {
+      formatted = checked
+    } else if (name === 'phone') {
+      formatted = formatPhone(value)
+    } else if (name === 'budget') {
+      formatted = formatBudget(value)
+    } else {
+      formatted = value
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: formatted }))
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
@@ -78,31 +118,28 @@ export function useWaitlistForm() {
 
     setIsSubmitting(true)
     try {
+      const entry = {
+        name: formData.name.trim(),
+        phone: '+51 ' + formData.phone.trim(),
+        email: formData.email.trim(),
+        city: formData.city.trim(),
+        budget: formData.budget ? 'S/. ' + formData.budget + '.00' : '',
+        contactConsent: formData.contactConsent,
+      }
+
       if (RECAPTCHA_ENABLED) {
-        // Use Cloud Function with reCAPTCHA verification
         const token = await getRecaptchaToken('waitlist_signup')
         const functions = getFunctions(undefined, 'southamerica-east1')
         const submitWaitlist = httpsCallable(functions, 'submitWaitlistWithCaptcha')
-        await submitWaitlist({
-          token,
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          intent: formData.intent,
-          privacyConsent: formData.privacyConsent,
-        })
+        await submitWaitlist({ token, ...entry })
       } else {
-        // Fallback: direct Firestore write (no reCAPTCHA configured)
-        await firestoreService.addWaitlistEntry({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          intent: formData.intent as 'buscar' | 'publicar' | 'ambos',
-          privacyConsent: formData.privacyConsent,
-        })
+        await firestoreService.addWaitlistEntry(entry)
       }
       setIsSuccess(true)
-      setFormData({ name: '', email: '', intent: '', privacyConsent: false })
+      setFormData({ name: '', phone: '', email: '', city: '', budget: '', contactConsent: false })
+      options?.onSuccess?.()
     } catch {
-      setErrors({ name: 'Error al registrarse. Inténtalo de nuevo.' })
+      setErrors({ name: 'Error al registrarse. Intentalo de nuevo.' })
     } finally {
       setIsSubmitting(false)
     }

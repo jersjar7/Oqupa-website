@@ -1,11 +1,14 @@
-import { Link } from 'react-router-dom'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import { useWaitlistForm } from '@/hooks/useWaitlistForm'
 
-export default function WaitlistSection() {
+interface WaitlistSectionProps {
+  onSuccess?: () => void
+}
+
+export default function WaitlistSection({ onSuccess }: WaitlistSectionProps) {
   const { ref, isVisible } = useAnimateOnScroll()
   const { formData, errors, isSubmitting, isSuccess, handleChange, handleSubmit } =
-    useWaitlistForm()
+    useWaitlistForm({ onSuccess })
 
   return (
     <section
@@ -71,7 +74,7 @@ export default function WaitlistSection() {
                     htmlFor="name"
                     className="text-sm font-medium uppercase text-text-primary"
                   >
-                    Nombre completo
+                    Nombre
                   </label>
                   <input
                     type="text"
@@ -79,13 +82,40 @@ export default function WaitlistSection() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Tu nombre completo"
+                    placeholder="Tu nombre"
                     className={`rounded-xl border px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
                       errors.name ? 'border-error' : 'border-border'
                     }`}
                   />
                   {errors.name && (
                     <span className="text-sm text-error">{errors.name}</span>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="phone"
+                    className="text-sm font-medium uppercase text-text-primary"
+                  >
+                    Telefono (WhatsApp)
+                  </label>
+                  <div className={`flex items-center rounded-xl border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 ${
+                    errors.phone ? 'border-error' : 'border-border'
+                  }`}>
+                    <span className="shrink-0 pl-4 text-base text-text-tertiary select-none">+51</span>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="999-999-999"
+                      className="w-full bg-transparent px-2 py-3 text-base text-text-primary outline-none placeholder:text-text-tertiary"
+                    />
+                  </div>
+                  {errors.phone && (
+                    <span className="text-sm text-error">{errors.phone}</span>
                   )}
                 </div>
 
@@ -113,59 +143,70 @@ export default function WaitlistSection() {
                   )}
                 </div>
 
-                {/* Intent */}
+                {/* City */}
                 <div className="flex flex-col gap-1.5">
                   <label
-                    htmlFor="intent"
+                    htmlFor="city"
                     className="text-sm font-medium uppercase text-text-primary"
                   >
-                    Que te interesa mas?
+                    Ciudad de interes
                   </label>
-                  <select
-                    id="intent"
-                    name="intent"
-                    value={formData.intent}
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={formData.city}
                     onChange={handleChange}
-                    className={`rounded-xl border bg-white px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-                      errors.intent ? 'border-error' : 'border-border'
-                    } ${!formData.intent ? 'text-text-tertiary' : ''}`}
-                  >
-                    <option value="" disabled>
-                      Selecciona una opcion
-                    </option>
-                    <option value="buscar">Buscar propiedades</option>
-                    <option value="publicar">Publicar propiedades</option>
-                    <option value="ambos">Ambos</option>
-                  </select>
-                  {errors.intent && (
-                    <span className="text-sm text-error">{errors.intent}</span>
+                    placeholder="Ej: Sullana"
+                    className={`rounded-xl border px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                      errors.city ? 'border-error' : 'border-border'
+                    }`}
+                  />
+                  {errors.city && (
+                    <span className="text-sm text-error">{errors.city}</span>
                   )}
                 </div>
 
-                {/* Privacy Consent */}
+                {/* Budget (optional) */}
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="budget"
+                    className="text-sm font-medium uppercase text-text-primary"
+                  >
+                    Presupuesto{' '}
+                    <span className="normal-case font-normal text-text-tertiary">(opcional)</span>
+                  </label>
+                  <div className="flex items-center rounded-xl border border-border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <span className="shrink-0 pl-4 text-base text-text-tertiary select-none">S/.</span>
+                    <input
+                      type="text"
+                      id="budget"
+                      name="budget"
+                      value={formData.budget}
+                      onChange={handleChange}
+                      placeholder="600"
+                      className="w-full bg-transparent px-2 py-3 text-base text-text-primary outline-none placeholder:text-text-tertiary"
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Consent */}
                 <div className="flex flex-col gap-1.5">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      name="privacyConsent"
-                      checked={formData.privacyConsent}
+                      name="contactConsent"
+                      checked={formData.contactConsent}
                       onChange={handleChange}
                       className="mt-1 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary"
                     />
                     <span className="text-sm leading-relaxed text-text-secondary">
-                      Acepto la{' '}
-                      <Link
-                        to="/privacy"
-                        className="font-medium text-primary underline transition-colors duration-200 hover:text-primary-hover"
-                      >
-                        politica de privacidad
-                      </Link>{' '}
-                      y el tratamiento de mis datos personales.
+                      Acepto ser contactado por WhatsApp y correo electronico
                     </span>
                   </label>
-                  {errors.privacyConsent && (
+                  {errors.contactConsent && (
                     <span className="text-sm text-error">
-                      {errors.privacyConsent}
+                      {errors.contactConsent}
                     </span>
                   )}
                 </div>
