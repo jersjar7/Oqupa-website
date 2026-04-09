@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import showcaseImage from '@/assets/images/Showcase-image.webp'
 
@@ -70,14 +71,6 @@ const FEATURES = [
 export default function ShowcaseSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
-  const handleScrollToWaitlist = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const element = document.getElementById('lista-espera')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
   return (
     <section id="caracteristicas" className="bg-[#FFFAF5] py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -102,7 +95,7 @@ export default function ShowcaseSection() {
           {/* Text Column */}
           <div className="flex flex-col gap-8">
             <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
-              La nueva forma de encontrar propiedades llega pronto
+              La nueva forma de encontrar propiedades en Piura
             </h2>
 
             <p className="text-lg leading-relaxed text-text-secondary">
@@ -128,12 +121,11 @@ export default function ShowcaseSection() {
               ))}
             </div>
 
-            <a
-              href="#lista-espera"
-              onClick={handleScrollToWaitlist}
+            <Link
+              to="/explorar"
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 sm:w-auto sm:px-8 sm:text-lg"
             >
-              Se el primero en probarlo
+              Explorar propiedades
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -148,7 +140,7 @@ export default function ShowcaseSection() {
                   d="M17 8l4 4m0 0l-4 4m4-4H3"
                 />
               </svg>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

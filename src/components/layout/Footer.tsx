@@ -22,10 +22,10 @@ export default function Footer() {
 
           {/* Middle: Link sections */}
           <div className="grid grid-cols-2 gap-8">
-            {/* Proximamente */}
+            {/* Lanzamiento */}
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
-                Proximamente
+                Lanzamiento
               </h3>
               <ul className="space-y-3">
                 <li>
@@ -94,7 +94,7 @@ export default function Footer() {
             {/* Trust badges */}
             <div className="mb-6 flex flex-wrap gap-3">
               <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
-                Proximamente 2026
+                Lanzamiento Mayo 2026
               </span>
               <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
                 Hecho en Piura

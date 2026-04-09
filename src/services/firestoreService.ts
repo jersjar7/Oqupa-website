@@ -181,8 +181,10 @@ export const firestoreService = {
           <h2>Nueva inscripcion en la lista de espera</h2>
           <table style="border-collapse:collapse;font-family:sans-serif;">
             <tr><td style="padding:8px;font-weight:bold;">Nombre:</td><td style="padding:8px;">${entry.name}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Telefono:</td><td style="padding:8px;">${entry.phone}</td></tr>
             <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${entry.email}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Interes:</td><td style="padding:8px;">${entry.intent}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Ciudad:</td><td style="padding:8px;">${entry.city}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Presupuesto:</td><td style="padding:8px;">${entry.budget || 'No especificado'}</td></tr>
           </table>
         `,
       },
