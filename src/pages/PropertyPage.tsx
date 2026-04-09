@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
-import { PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
 import ShareFormatModal from '@/components/ShareFormatModal'
 
@@ -513,36 +512,17 @@ export default function PropertyPage() {
         {/* App download banner */}
         <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">
           <h3 className="text-lg font-bold">
-            Descarga la app de Oqupa
+            App movil disponible el 11 de Mayo
           </h3>
           <p className="mt-1 text-sm text-white/80">
-            Encuentra más propiedades y publica las tuyas desde tu celular.
+            Pronto podras buscar propiedades y publicar las tuyas desde tu celular.
           </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
-            >
-              Abrir en la App
-            </Link>
-            <a
-              href={PLAY_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/10"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.4l2.651 1.535a1 1 0 010 1.73l-2.651 1.534-2.534-2.534 2.534-2.265zM5.864 3.458L16.8 9.79l-2.302 2.302-8.635-8.635z" />
-              </svg>
-              Google Play
-            </a>
-          </div>
+          <Link
+            to="/#lista-espera"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+          >
+            Avisarme cuando este lista
+          </Link>
         </div>
       </div>
 
