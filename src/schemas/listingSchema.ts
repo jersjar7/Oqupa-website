@@ -101,6 +101,7 @@ export const step4Schema = z
     const isVenta = data.operationType === 'venta'
     const isShortTerm = data.rentalDurationType === 'shortTerm'
     const isRoom = data.propertyType === 'habitacion'
+    const isHospedaje = data.propertyType === 'hospedaje'
     const isPEN = data.currency === 'PEN'
     const symbol = isPEN ? 'S/.' : 'US$'
 
@@ -117,7 +118,9 @@ export const step4Schema = z
       // Short-term rental (nightly)
       const max = isRoom
         ? (isPEN ? 500 : 150)
-        : (isPEN ? 2_000 : 500)
+        : isHospedaje
+          ? (isPEN ? 50_000 : 15_000)
+          : (isPEN ? 2_000 : 500)
       if (data.amount > max) {
         ctx.addIssue({
           code: 'custom',
