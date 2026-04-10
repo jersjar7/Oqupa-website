@@ -44,7 +44,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           }`}
         >
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h1 className="font-serif font-bold leading-tight text-white drop-shadow-lg text-[28px] sm:text-[54px] lg:text-[64px]">
+            <h1 className="font-serif font-normal leading-tight text-white drop-shadow-lg text-[28px] sm:text-[54px] lg:text-[64px]">
               Todas las Propiedades<br />
               de Piura, en un<br />
               Solo Lugar.
@@ -82,7 +82,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       </div>
 
       {/* Date labels + CTAs — mobile only, below the image */}
-      <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-6 sm:hidden">
+      <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-10 sm:hidden">
         <div className="flex flex-col items-center gap-3">
           <div className="text-center">
             <p className="text-xl font-bold text-accent">4 de Mayo</p>

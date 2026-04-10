@@ -93,7 +93,7 @@ export default function ShowcaseSection() {
           </div>
 
           {/* Text Column */}
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 rounded-2xl bg-secondary/5 p-6 sm:bg-transparent sm:p-0 sm:rounded-none">
             <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
               La Nueva Forma de Encontrar Propiedades en Piura
             </h2>
