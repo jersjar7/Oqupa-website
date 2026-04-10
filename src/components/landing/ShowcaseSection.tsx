@@ -94,11 +94,11 @@ export default function ShowcaseSection() {
 
           {/* Text Column */}
           <div className="flex flex-col gap-8 rounded-2xl bg-secondary/5 p-6 md:bg-transparent md:p-0 md:rounded-none">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
+            <h2 className="font-serif text-2xl font-normal leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               La Nueva Forma de Encontrar Propiedades en Piura
             </h2>
 
-            <p className="text-lg leading-relaxed text-text-secondary">
+            <p className="font-sans font-normal text-lg leading-relaxed text-text-secondary">
               Oqupa combina tecnología moderna con un enfoque local para
               ofrecerte la mejor experiencia de búsqueda de propiedades en Piura.
             </p>
@@ -113,7 +113,7 @@ export default function ShowcaseSection() {
                     <h3 className="font-sans font-medium uppercase text-secondary">
                       {feature.title}
                     </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                    <p className="font-sans font-normal mt-1 text-sm leading-relaxed text-text-secondary">
                       {feature.description}
                     </p>
                   </div>

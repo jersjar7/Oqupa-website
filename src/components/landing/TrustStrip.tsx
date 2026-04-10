@@ -92,10 +92,10 @@ export default function TrustStrip() {
               style={{ transitionDelay: `${index * 100}ms` }}
             >
               {card.icon}
-              <h3 className="text-lg font-medium uppercase text-secondary">
+              <h3 className="font-sans font-medium uppercase text-lg text-secondary">
                 {card.title}
               </h3>
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="font-sans font-normal text-sm leading-relaxed text-text-secondary">
                 {card.description}
               </p>
             </div>

@@ -51,7 +51,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
         <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white shadow-large md:rounded-2xl animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-5 pt-5 pb-2 sm:px-6 sm:pt-6 rounded-t-2xl">
-            <h3 className="text-lg font-medium text-text-primary">
+            <h3 className="font-serif font-medium text-lg text-secondary">
               Únete a la familia Oqupa
             </h3>
             <button
@@ -63,7 +63,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
             </button>
           </div>
 
-          <p className="px-5 pb-2 text-sm text-text-secondary sm:px-6">
+          <p className="font-sans font-normal px-5 pb-2 text-sm text-text-secondary sm:px-6">
             Sé uno de los primeros miembros de la familia Oqupa y publica tus propiedades gratis.
           </p>
 
@@ -104,7 +104,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor="popup-name"
-                    className="text-xs font-medium uppercase text-text-primary"
+                    className="font-sans font-medium uppercase text-xs text-secondary"
                   >
                     Nombre
                   </label>
@@ -128,7 +128,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor="popup-phone"
-                    className="text-xs font-medium uppercase text-text-primary"
+                    className="font-sans font-medium uppercase text-xs text-secondary"
                   >
                     Teléfono (WhatsApp)
                   </label>
@@ -155,7 +155,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor="popup-email"
-                    className="text-xs font-medium uppercase text-text-primary"
+                    className="font-sans font-medium uppercase text-xs text-secondary"
                   >
                     Correo electrónico
                   </label>
@@ -179,7 +179,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor="popup-city"
-                    className="text-xs font-medium uppercase text-text-primary"
+                    className="font-sans font-medium uppercase text-xs text-secondary"
                   >
                     Ciudad de interés
                   </label>
@@ -209,7 +209,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                       onChange={handleChange}
                       className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary"
                     />
-                    <span className="text-xs leading-relaxed text-text-secondary">
+                    <span className="font-sans font-normal text-xs leading-relaxed text-text-secondary">
                       Acepto ser contactado por WhatsApp y correo electrónico
                     </span>
                   </label>
@@ -255,7 +255,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                   )}
                 </button>
 
-                <p className="text-center text-[10px] leading-relaxed text-text-tertiary">
+                <p className="font-sans font-normal text-center text-[10px] leading-relaxed text-text-tertiary">
                   No compartiremos tu información con terceros. Solo te contactaremos
                   para informarte sobre el lanzamiento de Oqupa.
                 </p>

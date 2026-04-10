@@ -1,0 +1,65 @@
+/* Gotham */
+@font-face {
+  font-family: 'Gotham';
+  src: url('/fonts/GothamBook.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('/fonts/GothamMedium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('/fonts/GothamBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Roboto Serif */
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('/fonts/RobotoSerif-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('/fonts/RobotoSerif-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('/fonts/RobotoSerif-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('/fonts/RobotoSerif-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto Serif';
+  src: url('/fonts/RobotoSerif-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

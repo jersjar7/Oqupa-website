@@ -158,10 +158,10 @@ export default function MagicLinkPage() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
+        <h1 className="text-center font-serif text-[28px] font-normal text-secondary">
           Iniciar Sesion
         </h1>
-        <p className="mt-2 text-center text-base text-text-secondary">
+        <p className="font-sans font-normal mt-2 text-center text-base text-text-secondary">
           Te enviaremos un enlace para acceder a tu cuenta
         </p>
 
@@ -191,7 +191,7 @@ export default function MagicLinkPage() {
         {/* OAuth divider */}
         <div className="mt-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-sm text-text-tertiary">o continuar con</span>
+          <span className="font-sans font-normal text-sm text-text-tertiary">o continuar con</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 

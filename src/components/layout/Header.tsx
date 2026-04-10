@@ -39,7 +39,7 @@ function AuthBlock() {
       <Link
         to="/app/login"
         onClick={() => setReturnUrl(location.pathname)}
-        className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+        className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
       >
         Iniciar Sesion
       </Link>
@@ -84,7 +84,7 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
       <Link
         to="/app/login"
         onClick={() => { setReturnUrl(location.pathname); onNavigate() }}
-        className="mt-4 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+        className="mt-4 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
       >
         Iniciar Sesion
       </Link>
@@ -202,8 +202,8 @@ export default function Header({
                   <Link
                     key={link.label}
                     to={link.href}
-                    className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
-                      isScrolled ? 'text-text-primary' : 'text-text-primary'
+                    className={`font-sans text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                      isScrolled ? 'text-secondary' : 'text-secondary'
                     }`}
                   >
                     {link.label}
@@ -217,8 +217,8 @@ export default function Header({
                         ? handleAction(e, link.action)
                         : handleSmoothScroll(e, link.href)
                     }
-                    className={`text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
-                      isScrolled ? 'text-text-primary' : 'text-text-primary'
+                    className={`font-sans text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                      isScrolled ? 'text-secondary' : 'text-secondary'
                     }`}
                   >
                     {link.label}
@@ -299,7 +299,7 @@ export default function Header({
                     key={link.label}
                     to={link.href}
                     onClick={close}
-                    className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
+                    className="block border-b border-border py-4 font-sans text-base font-medium uppercase text-secondary transition-colors duration-200 hover:text-primary"
                   >
                     {link.label}
                   </Link>
@@ -312,7 +312,7 @@ export default function Header({
                         ? handleAction(e, link.action)
                         : handleSmoothScroll(e, link.href)
                     }
-                    className="block border-b border-border py-4 text-base font-medium uppercase text-text-primary transition-colors duration-200 hover:text-primary"
+                    className="block border-b border-border py-4 font-sans text-base font-medium uppercase text-secondary transition-colors duration-200 hover:text-primary"
                   >
                     {link.label}
                   </a>

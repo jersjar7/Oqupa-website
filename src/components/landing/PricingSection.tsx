@@ -95,7 +95,7 @@ export default function PricingSection() {
             <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               Publica tus Propiedades <span className="underline uppercase">GRATIS</span>
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-text-secondary">
+            <p className="font-sans font-normal mt-4 text-lg leading-relaxed text-text-secondary">
               En Oqupa creemos que publicar tu propiedad no debería tener costo.
               Nuestro servicio es completamente gratuito para propietarios y
               agentes.
@@ -123,10 +123,10 @@ export default function PricingSection() {
                 className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)]"
               >
                 {feature.icon}
-                <h3 className="text-lg font-medium uppercase text-secondary">
+                <h3 className="font-sans font-medium uppercase text-lg text-secondary">
                   {feature.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-text-secondary">
+                <p className="font-sans font-normal text-sm leading-relaxed text-text-secondary">
                   {feature.description}
                 </p>
               </div>

@@ -52,10 +52,10 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
 
             {/* Date labels + CTAs — hidden on mobile/tablet, shown on lg+ */}
             <div className="mt-6 hidden gap-16 lg:flex lg:mt-8">
-              <div className="flex flex-col items-start gap-3">
-                <div>
-                  <p className="text-[clamp(20px,1.8vw,30px)] font-bold text-accent drop-shadow">4 de Mayo</p>
-                  <p className="text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Publica tu propiedad</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="text-center">
+                  <p className="text-[clamp(20px,1.8vw,30px)] font-sans font-medium uppercase text-accent drop-shadow">4 de Mayo</p>
+                  <p className="font-sans font-normal text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Publica tu propiedad</p>
                 </div>
                 <button
                   onClick={() => setShowPostModal(true)}
@@ -64,10 +64,10 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
                   Publicar
                 </button>
               </div>
-              <div className="flex flex-col items-start gap-3">
-                <div>
-                  <p className="text-[clamp(20px,1.8vw,30px)] font-bold text-accent drop-shadow">11 de Mayo</p>
-                  <p className="text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Descarga la App</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="text-center">
+                  <p className="text-[clamp(20px,1.8vw,30px)] font-sans font-medium uppercase text-accent drop-shadow">11 de Mayo</p>
+                  <p className="font-sans font-normal text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Descarga la App</p>
                 </div>
                 <button
                   onClick={() => setShowSearchModal(true)}
@@ -85,8 +85,8 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-10 lg:hidden">
         <div className="flex flex-col items-center gap-3">
           <div className="text-center">
-            <p className="text-xl font-bold text-accent">4 de Mayo</p>
-            <p className="text-base text-text-secondary">Publica tu propiedad</p>
+            <p className="text-xl font-sans font-medium uppercase text-accent">4 de Mayo</p>
+            <p className="font-sans font-normal text-base text-text-secondary">Publica tu propiedad</p>
           </div>
           <button
             onClick={() => setShowPostModal(true)}
@@ -97,8 +97,8 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         </div>
         <div className="flex flex-col items-center gap-3">
           <div className="text-center">
-            <p className="text-xl font-bold text-accent">11 de Mayo</p>
-            <p className="text-base text-text-secondary">Descarga la App</p>
+            <p className="text-xl font-sans font-medium uppercase text-accent">11 de Mayo</p>
+            <p className="font-sans font-normal text-base text-text-secondary">Descarga la App</p>
           </div>
           <button
             onClick={() => setShowSearchModal(true)}

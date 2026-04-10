@@ -24,7 +24,7 @@ export default function SolutionSection() {
         >
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
+            <h2 className="font-serif text-2xl font-normal leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               Encuentra tu Propiedad Ideal sin Perder Tiempo en Avisos
               Incompletos
             </h2>
@@ -46,7 +46,7 @@ export default function SolutionSection() {
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="text-lg text-text-secondary">{benefit}</span>
+                  <span className="font-sans font-normal text-lg text-text-secondary">{benefit}</span>
                 </li>
               ))}
             </ul>
