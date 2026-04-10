@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
 
+export function useAgentAssignments(agentId: string | undefined) {
+  return useQuery({
+    queryKey: ['leads', 'agent-assignments', agentId],
+    queryFn: () => firestoreService.getAgentAssignedListingsWithProperties(agentId!),
+    enabled: !!agentId,
+  })
+}
+
 export function useAvailableLeads(enabled: boolean) {
   return useQuery({
     queryKey: ['leads', 'available'],
@@ -61,6 +69,46 @@ export function useAssignRealtor() {
       realtorId: string
       realtorPhone: string
     }) => firestoreService.assignRealtorToListing(data.listingId, data.realtorId, data.realtorPhone),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    },
+  })
+}
+
+export function useUnassignRealtor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (listingId: string) => firestoreService.unassignRealtor(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    },
+  })
+}
+
+export function useAcceptAssignment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (listingId: string) => firestoreService.acceptAssignment(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    },
+  })
+}
+
+export function useDeclineAssignment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: {
+      listingId: string
+      currentDeclinedIds: string[]
+      agentId: string
+    }) => firestoreService.declineAssignment(data.listingId, data.currentDeclinedIds, data.agentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })

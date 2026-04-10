@@ -6,7 +6,7 @@ interface RealtorClaimCardProps {
   claim: RealtorClaim
   isAssigned: boolean
   hasAssignedRealtor: boolean
-  onAssign: () => void
+  onAssign?: () => void
   isAssigning: boolean
 }
 

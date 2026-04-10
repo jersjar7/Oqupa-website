@@ -20,6 +20,7 @@ import VerifiedGuard from '@/app/components/guards/VerifiedGuard'
 import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
 import EditListingPage from '@/app/features/listings/pages/EditListingPage'
+import AgentEditListingPage from '@/app/features/listings/pages/AgentEditListingPage'
 import ProfilePage from '@/app/features/profile/pages/ProfilePage'
 import RealtorRegistrationPage from '@/app/features/realtor/pages/RealtorRegistrationPage'
 import AdminGuard from '@/app/components/guards/AdminGuard'
@@ -101,6 +102,16 @@ export default function App() {
               <AuthGuard>
                 <VerifiedGuard>
                   <EditListingPage />
+                </VerifiedGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="listings/:id/agent-edit"
+            element={
+              <AuthGuard>
+                <VerifiedGuard>
+                  <AgentEditListingPage />
                 </VerifiedGuard>
               </AuthGuard>
             }

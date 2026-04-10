@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus } from '@/hooks/useRealtorLeads'
+import { useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
 import { Modal, Spinner, Button } from '@/app/components/ui'
 import ClaimLimitBanner from '../components/ClaimLimitBanner'
 import LeadCard from '../components/LeadCard'
@@ -21,6 +21,8 @@ export default function LeadsPage() {
   const availableLeads = useAvailableLeads(activeTab === 'available')
   const claimedLeads = useClaimedLeads(activeTab === 'claimed' ? user?.id : undefined)
   const claimLead = useClaimLead()
+  const acceptAssignment = useAcceptAssignment()
+  const declineAssignment = useDeclineAssignment()
 
   function handleClaimConfirm() {
     if (!confirmLead || !user) return
@@ -127,14 +129,25 @@ export default function LeadsPage() {
             )}
             {claimedLeads.data && claimedLeads.data.length > 0 && (
               <div className="flex flex-col gap-4">
-                {claimedLeads.data.map(({ claim, listing, property }) => (
-                  <ClaimedLeadCard
-                    key={claim.id}
-                    claim={claim}
-                    listing={listing}
-                    property={property}
-                  />
-                ))}
+                {claimedLeads.data.map(({ claim, listing, property }) => {
+                  const isPending = listing.assignedRealtorId === claim.realtorId && listing.assignmentStatus === 'pending_acceptance'
+                  return (
+                    <ClaimedLeadCard
+                      key={claim.id}
+                      claim={claim}
+                      listing={listing}
+                      property={property}
+                      onAccept={isPending ? () => acceptAssignment.mutate(listing.id) : undefined}
+                      onDecline={isPending && user ? () => declineAssignment.mutate({
+                        listingId: listing.id,
+                        currentDeclinedIds: listing.declinedRealtorIds ?? [],
+                        agentId: user.id,
+                      }) : undefined}
+                      isAccepting={acceptAssignment.isPending}
+                      isDeclining={declineAssignment.isPending}
+                    />
+                  )
+                })}
               </div>
             )}
           </>

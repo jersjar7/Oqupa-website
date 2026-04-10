@@ -107,6 +107,8 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     currentClaimsCount: (data['currentClaimsCount'] as number) ?? 0,
     assignedRealtorId: data['assignedRealtorId'] as string | undefined,
     assignedRealtorPhoneNumber: data['assignedRealtorPhoneNumber'] as string | undefined,
+    assignmentStatus: data['assignmentStatus'] as Listing['assignmentStatus'],
+    declinedRealtorIds: data['declinedRealtorIds'] as string[] | undefined,
     // Boost fields
     isBoosted: (data['isBoosted'] as boolean) ?? false,
     boostedUntil: data['boostedUntil'] ? toDate(data['boostedUntil']) : undefined,
@@ -321,6 +323,42 @@ export const firestoreService = {
     return snapshot.docs.map((d) =>
       listingFromDoc(d.id, d.data() as Record<string, unknown>)
     )
+  },
+
+  async getAgentAssignedListingsWithProperties(agentId: string): Promise<{ listing: Listing; property: Property }[]> {
+    const q = query(
+      collection(db, 'listings'),
+      where('assignedRealtorId', '==', agentId),
+      orderBy('createdAt', 'desc')
+    )
+    const snapshot = await getDocs(q)
+    const listings = snapshot.docs.map((d) =>
+      listingFromDoc(d.id, d.data() as Record<string, unknown>)
+    )
+
+    if (listings.length === 0) return []
+
+    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyMap = new Map<string, Property>()
+    const batchSize = 30
+    for (let i = 0; i < propertyIds.length; i += batchSize) {
+      const batch = propertyIds.slice(i, i + batchSize)
+      const propQuery = query(
+        collection(db, 'properties'),
+        where('__name__', 'in', batch)
+      )
+      const propSnapshot = await getDocs(propQuery)
+      propSnapshot.docs.forEach((d) => {
+        propertyMap.set(d.id, propertyFromDoc(d.id, d.data() as Record<string, unknown>))
+      })
+    }
+
+    return listings
+      .filter((l) => propertyMap.has(l.propertyId))
+      .map((listing) => ({
+        listing,
+        property: propertyMap.get(listing.propertyId)!,
+      }))
   },
 
   async getListingById(listingId: string): Promise<Listing | null> {
@@ -739,6 +777,38 @@ export const firestoreService = {
     await updateDoc(doc(db, 'listings', listingId), {
       assignedRealtorId: realtorId,
       assignedRealtorPhoneNumber: realtorPhone,
+      assignmentStatus: 'pending_acceptance',
+      updatedAt: serverTimestamp(),
+    })
+  },
+
+  async acceptAssignment(listingId: string): Promise<void> {
+    await updateDoc(doc(db, 'listings', listingId), {
+      assignmentStatus: 'accepted',
+      updatedAt: serverTimestamp(),
+    })
+  },
+
+  async declineAssignment(
+    listingId: string,
+    currentDeclinedIds: string[],
+    agentId: string,
+  ): Promise<void> {
+    await updateDoc(doc(db, 'listings', listingId), {
+      assignedRealtorId: null,
+      assignedRealtorPhoneNumber: null,
+      assignmentStatus: null,
+      declinedRealtorIds: [...currentDeclinedIds, agentId],
+      updatedAt: serverTimestamp(),
+    })
+  },
+
+  async unassignRealtor(listingId: string): Promise<void> {
+    const { deleteField } = await import('firebase/firestore')
+    await updateDoc(doc(db, 'listings', listingId), {
+      assignedRealtorId: deleteField(),
+      assignedRealtorPhoneNumber: deleteField(),
+      assignmentStatus: deleteField(),
       updatedAt: serverTimestamp(),
     })
   },

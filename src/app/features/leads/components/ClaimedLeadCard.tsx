@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Bell, CheckCircle } from 'lucide-react'
 import { Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -15,6 +15,10 @@ interface ClaimedLeadCardProps {
   claim: RealtorClaim
   listing: Listing
   property: Property
+  onAccept?: () => void
+  onDecline?: () => void
+  isAccepting?: boolean
+  isDeclining?: boolean
 }
 
 function formatPrice(amount: number, currency: string): string {
@@ -41,7 +45,7 @@ function formatRelativeDate(date: Date): string {
   return `Hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`
 }
 
-export default function ClaimedLeadCard({ claim, listing, property }: ClaimedLeadCardProps) {
+export default function ClaimedLeadCard({ claim, listing, property, onAccept, onDecline, isAccepting, isDeclining }: ClaimedLeadCardProps) {
   const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
@@ -50,10 +54,56 @@ export default function ClaimedLeadCard({ claim, listing, property }: ClaimedLea
     ? `data:image/webp;base64,${microThumb}`
     : blurDataUrl
   const isAssigned = listing.assignedRealtorId === claim.realtorId
+  const isPendingAssignment = isAssigned && listing.assignmentStatus === 'pending_acceptance'
+  const isAcceptedAssignment = isAssigned && listing.assignmentStatus === 'accepted'
   const whatsappPhone = listing.contactInfo?.whatsappPhoneNumber?.replace(/[^\d+]/g, '')
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light">
+      {/* Pending assignment banner */}
+      {isPendingAssignment && (
+        <div className="border-b border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 shrink-0 text-amber-700" />
+            <p className="text-sm font-semibold text-text-primary">
+              ¡El propietario te ha seleccionado!
+            </p>
+          </div>
+          <p className="mt-1 text-xs text-text-secondary">
+            Acepta para comenzar a manejar los contactos de esta propiedad.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={onAccept}
+              isLoading={isAccepting}
+              disabled={isDeclining}
+            >
+              Aceptar
+            </Button>
+            <Button
+              variant="text"
+              className="flex-1 !text-red-600 hover:!text-red-700"
+              onClick={onDecline}
+              isLoading={isDeclining}
+              disabled={isAccepting}
+            >
+              Rechazar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Accepted assignment banner */}
+      {isAcceptedAssignment && (
+        <div className="flex items-center gap-2 border-b border-green-200 bg-green-50 px-4 py-3">
+          <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+          <p className="text-sm font-semibold text-primary">
+            Estás asignado a esta propiedad
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row">
         {/* Photo */}
         <div
@@ -103,7 +153,8 @@ export default function ClaimedLeadCard({ claim, listing, property }: ClaimedLea
             {/* Badges */}
             <div className="flex flex-col gap-1">
               <Badge variant="success">Reclamado</Badge>
-              {isAssigned && <Badge variant="info">Asignado</Badge>}
+              {isPendingAssignment && <Badge variant="warning">Pendiente</Badge>}
+              {isAcceptedAssignment && <Badge variant="info">Asignado</Badge>}
             </div>
           </div>
 

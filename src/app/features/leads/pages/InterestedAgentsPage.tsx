@@ -3,7 +3,7 @@ import { useParams, Navigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
-import { useListingClaims, useAssignRealtor } from '@/hooks/useRealtorLeads'
+import { useListingClaims, useAssignRealtor, useUnassignRealtor } from '@/hooks/useRealtorLeads'
 import { Modal, Spinner, Button, Badge } from '@/app/components/ui'
 import RealtorClaimCard from '../components/RealtorClaimCard'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
@@ -24,6 +24,8 @@ export default function InterestedAgentsPage() {
     listingId,
   )
   const assignRealtor = useAssignRealtor()
+  const unassignRealtor = useUnassignRealtor()
+  const [confirmUnassign, setConfirmUnassign] = useState(false)
 
   // Loading state
   if (listingDetails.isLoading) {
@@ -52,6 +54,14 @@ export default function InterestedAgentsPage() {
         onSuccess: () => setConfirmAssign(null),
       },
     )
+  }
+
+  function handleUnassignConfirm() {
+    if (!listingId) return
+
+    unassignRealtor.mutate(listingId, {
+      onSuccess: () => setConfirmUnassign(false),
+    })
   }
 
   return (
@@ -117,13 +127,28 @@ export default function InterestedAgentsPage() {
 
       {/* Assigned realtor banner */}
       {listing.assignedRealtorId && (
-        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+        <div className={`mt-4 rounded-xl border p-4 ${
+          listing.assignmentStatus === 'pending_acceptance'
+            ? 'border-amber-300 bg-amber-50'
+            : 'border-primary/20 bg-primary/5'
+        }`}>
           <div className="flex items-center gap-2">
-            <Badge variant="info">Agente asignado</Badge>
+            <Badge variant={listing.assignmentStatus === 'pending_acceptance' ? 'warning' : 'info'}>
+              {listing.assignmentStatus === 'pending_acceptance'
+                ? 'Pendiente de aceptación'
+                : 'Agente asignado'}
+            </Badge>
             <span className="text-sm text-text-secondary">
               {claims.data?.find((c) => c.realtorId === listing.assignedRealtorId)?.realtorName ?? 'Agente'}
             </span>
           </div>
+          <button
+            type="button"
+            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+            onClick={() => setConfirmUnassign(true)}
+          >
+            Quitar Agente
+          </button>
         </div>
       )}
 
@@ -151,20 +176,44 @@ export default function InterestedAgentsPage() {
           </div>
         )}
 
-        {claims.data && claims.data.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {claims.data.map((claim) => (
-              <RealtorClaimCard
-                key={claim.id}
-                claim={claim}
-                isAssigned={listing.assignedRealtorId === claim.realtorId}
-                hasAssignedRealtor={!!listing.assignedRealtorId}
-                onAssign={() => setConfirmAssign(claim)}
-                isAssigning={assignRealtor.isPending && confirmAssign?.id === claim.id}
-              />
-            ))}
-          </div>
-        )}
+        {claims.data && claims.data.length > 0 && (() => {
+          const declinedIds = listing.declinedRealtorIds ?? []
+          const activeClaims = claims.data.filter((c) => !declinedIds.includes(c.realtorId))
+          const declinedClaims = claims.data.filter((c) => declinedIds.includes(c.realtorId))
+
+          return (
+            <div className="flex flex-col gap-3">
+              {activeClaims.map((claim) => (
+                <RealtorClaimCard
+                  key={claim.id}
+                  claim={claim}
+                  isAssigned={listing.assignedRealtorId === claim.realtorId}
+                  hasAssignedRealtor={!!listing.assignedRealtorId}
+                  onAssign={() => setConfirmAssign(claim)}
+                  isAssigning={assignRealtor.isPending && confirmAssign?.id === claim.id}
+                />
+              ))}
+              {declinedClaims.length > 0 && (
+                <>
+                  <p className="mt-4 text-xs font-medium uppercase tracking-wider text-text-tertiary">
+                    Rechazados
+                  </p>
+                  {declinedClaims.map((claim) => (
+                    <div key={claim.id} className="opacity-50">
+                      <RealtorClaimCard
+                        claim={claim}
+                        isAssigned={false}
+                        hasAssignedRealtor={!!listing.assignedRealtorId}
+                        onAssign={undefined}
+                        isAssigning={false}
+                      />
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Assign confirmation modal */}
@@ -214,6 +263,36 @@ export default function InterestedAgentsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Unassign confirmation modal */}
+      <Modal
+        isOpen={confirmUnassign}
+        onClose={() => !unassignRealtor.isPending && setConfirmUnassign(false)}
+        title="Quitar agente"
+      >
+        <div>
+          <p className="text-sm text-text-secondary">
+            El agente dejará de manejar los contactos de esta propiedad. Podrás elegir otro agente.
+          </p>
+          <div className="mt-6 flex gap-3">
+            <Button
+              className="flex-1 !bg-red-600 hover:!bg-red-700"
+              onClick={handleUnassignConfirm}
+              isLoading={unassignRealtor.isPending}
+            >
+              Quitar
+            </Button>
+            <Button
+              variant="text"
+              className="flex-1"
+              onClick={() => setConfirmUnassign(false)}
+              disabled={unassignRealtor.isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

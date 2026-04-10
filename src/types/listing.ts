@@ -40,6 +40,8 @@ export interface Listing {
   // Assignment fields
   assignedRealtorId?: string
   assignedRealtorPhoneNumber?: string
+  assignmentStatus?: 'pending_acceptance' | 'accepted'
+  declinedRealtorIds?: string[]
 
   // Boost fields
   isBoosted: boolean
@@ -87,6 +89,8 @@ export interface ListingFirestoreDoc {
   currentClaimsCount: number
   assignedRealtorId?: string
   assignedRealtorPhoneNumber?: string
+  assignmentStatus?: string
+  declinedRealtorIds?: string[]
   isBoosted?: boolean
   boostedUntil?: unknown // Firestore Timestamp
   boostTier?: string
