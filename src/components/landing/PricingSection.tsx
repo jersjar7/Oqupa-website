@@ -120,7 +120,7 @@ export default function PricingSection() {
             {FREE_BENEFITS.map((feature) => (
               <div
                 key={feature.title}
-                className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-light transition-all duration-700 ease-out hover:shadow-medium"
+                className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)]"
               >
                 {feature.icon}
                 <h3 className="text-lg font-medium uppercase text-secondary">

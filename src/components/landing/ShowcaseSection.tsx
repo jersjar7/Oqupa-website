@@ -76,18 +76,18 @@ export default function ShowcaseSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`grid grid-cols-1 items-center gap-8 lg:gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
+          className={`grid grid-cols-1 items-stretch gap-8 lg:gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
             isVisible
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
           }`}
         >
           {/* Image Column — below text on mobile, left on desktop */}
-          <div className="order-last flex items-center justify-center lg:order-first">
+          <div className="order-last overflow-hidden rounded-2xl shadow-large lg:order-first">
             <img
               src={showcaseImage}
               alt="Oqupa showcase"
-              className="w-full rounded-2xl object-cover shadow-large"
+              className="h-full w-full rounded-2xl object-cover object-center"
               loading="lazy"
             />
           </div>
