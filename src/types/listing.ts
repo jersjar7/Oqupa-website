@@ -25,6 +25,7 @@ export interface Listing {
   contactInfo?: ContactInfo
   status: ListingStatus
   viewCount: number
+  contactClickCount: number
   createdAt: Date
   publishedAt?: Date
   expiresAt?: Date
@@ -70,6 +71,7 @@ export interface ListingFirestoreDoc {
   }
   status: string
   viewCount: number
+  contactClickCount?: number
   createdAt: unknown // Firestore Timestamp
   publishedAt?: unknown
   expiresAt?: unknown

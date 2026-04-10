@@ -13,6 +13,8 @@ import {
   deleteDoc,
   setDoc,
   serverTimestamp,
+  increment,
+  writeBatch,
   type Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
@@ -22,6 +24,8 @@ import type { Property } from '@/types/property'
 import type { WaitlistEntry } from '@/types/waitlist'
 import type { ContactTimeSlot, SupportedCountryCode, OperationType } from '@/types/enums'
 import type { ListingWithProperty, ExploreListingsPage } from '@/types/explore'
+import type { RealtorApplication } from '@/types/realtorApplication'
+import type { RealtorClaim } from '@/types/realtorClaim'
 
 // Strip undefined values recursively (Firestore rejects undefined)
 // Omits undefined keys entirely to avoid writing null for fields that don't exist
@@ -87,6 +91,7 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
       : undefined,
     status: (data['status'] as Listing['status']) ?? 'draft',
     viewCount: (data['viewCount'] as number) ?? 0,
+    contactClickCount: (data['contactClickCount'] as number) ?? 0,
     createdAt: toDate(data['createdAt']),
     publishedAt: data['publishedAt'] ? toDate(data['publishedAt']) : undefined,
     expiresAt: data['expiresAt'] ? toDate(data['expiresAt']) : undefined,
@@ -425,4 +430,351 @@ export const firestoreService = {
   async deleteProperty(propertyId: string): Promise<void> {
     await deleteDoc(doc(db, 'properties', propertyId))
   },
+
+  async submitRealtorApplication(
+    userId: string,
+    data: {
+      fullName: string
+      phone: string
+      email: string
+      businessName: string
+      yearsExperience: number
+      serviceZones: string[]
+      motivation: string
+    }
+  ): Promise<void> {
+    const batch = writeBatch(db)
+
+    // 1. Create realtorApplications/{userId} document
+    const applicationRef = doc(db, 'realtorApplications', userId)
+    batch.set(applicationRef, {
+      userId,
+      fullName: data.fullName,
+      phone: data.phone,
+      email: data.email,
+      businessName: data.businessName,
+      yearsExperience: data.yearsExperience,
+      serviceZones: data.serviceZones,
+      motivation: data.motivation,
+      status: 'pending',
+      submittedAt: serverTimestamp(),
+    })
+
+    // 2. Update users/{userId} with application status + denormalized realtor data
+    const userRef = doc(db, 'users', userId)
+    batch.update(userRef, {
+      realtorApplicationStatus: 'pending',
+      realtorApplicationDate: serverTimestamp(),
+      realtorBusinessName: data.businessName,
+      realtorYearsExperience: data.yearsExperience,
+      realtorServiceZones: data.serviceZones,
+      updatedAt: serverTimestamp(),
+    })
+
+    await batch.commit()
+  },
+
+  async getUserRealtorApplication(
+    userId: string
+  ): Promise<RealtorApplication | null> {
+    const snap = await getDoc(doc(db, 'realtorApplications', userId))
+    if (!snap.exists()) return null
+
+    const data = snap.data() as Record<string, unknown>
+    return {
+      id: snap.id,
+      userId: data['userId'] as string,
+      fullName: data['fullName'] as string,
+      phone: data['phone'] as string,
+      email: data['email'] as string,
+      businessName: (data['businessName'] as string) ?? '',
+      yearsExperience: (data['yearsExperience'] as number) ?? 0,
+      serviceZones: (data['serviceZones'] as string[]) ?? [],
+      motivation: data['motivation'] as string,
+      status: (data['status'] as RealtorApplication['status']) ?? 'pending',
+      submittedAt: toDate(data['submittedAt']),
+      reviewedAt: data['reviewedAt'] ? toDate(data['reviewedAt']) : undefined,
+      reviewedBy: data['reviewedBy'] as string | undefined,
+    }
+  },
+
+  async getAllRealtorApplications(
+    statusFilter?: RealtorApplication['status']
+  ): Promise<RealtorApplication[]> {
+    const constraints = [
+      ...(statusFilter ? [where('status', '==', statusFilter)] : []),
+      orderBy('submittedAt', 'desc'),
+    ]
+    const q = query(collection(db, 'realtorApplications'), ...constraints)
+    const snapshot = await getDocs(q)
+
+    return snapshot.docs.map((d) => {
+      const data = d.data() as Record<string, unknown>
+      return {
+        id: d.id,
+        userId: data['userId'] as string,
+        fullName: data['fullName'] as string,
+        phone: data['phone'] as string,
+        email: data['email'] as string,
+        businessName: (data['businessName'] as string) ?? '',
+        yearsExperience: (data['yearsExperience'] as number) ?? 0,
+        serviceZones: (data['serviceZones'] as string[]) ?? [],
+        motivation: data['motivation'] as string,
+        status: (data['status'] as RealtorApplication['status']) ?? 'pending',
+        submittedAt: toDate(data['submittedAt']),
+        reviewedAt: data['reviewedAt'] ? toDate(data['reviewedAt']) : undefined,
+        reviewedBy: data['reviewedBy'] as string | undefined,
+      }
+    })
+  },
+
+  async approveRealtorApplication(
+    userId: string,
+    reviewerId: string
+  ): Promise<void> {
+    const batch = writeBatch(db)
+
+    batch.update(doc(db, 'users', userId), {
+      isVerifiedRealtor: true,
+      realtorApplicationStatus: 'approved',
+      updatedAt: serverTimestamp(),
+    })
+
+    batch.update(doc(db, 'realtorApplications', userId), {
+      status: 'approved',
+      reviewedAt: serverTimestamp(),
+      reviewedBy: reviewerId,
+    })
+
+    await batch.commit()
+  },
+
+  async rejectRealtorApplication(
+    userId: string,
+    reviewerId: string
+  ): Promise<void> {
+    const batch = writeBatch(db)
+
+    batch.update(doc(db, 'users', userId), {
+      realtorApplicationStatus: 'rejected',
+      updatedAt: serverTimestamp(),
+    })
+
+    batch.update(doc(db, 'realtorApplications', userId), {
+      status: 'rejected',
+      reviewedAt: serverTimestamp(),
+      reviewedBy: reviewerId,
+    })
+
+    await batch.commit()
+  },
+
+  // =========================================================================
+  // REALTOR LEADS
+  // =========================================================================
+
+  async getAvailableLeads(): Promise<ListingWithProperty[]> {
+    const q = query(
+      collection(db, 'listings'),
+      where('status', '==', 'active'),
+      where('wantsRealtorHelp', '==', true),
+      orderBy('boostScore', 'desc'),
+      orderBy('publishedAt', 'desc'),
+    )
+    const snapshot = await getDocs(q)
+    const listings = snapshot.docs.map((d) =>
+      listingFromDoc(d.id, d.data() as Record<string, unknown>)
+    )
+
+    // Batch-fetch unique properties
+    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyDocs = await Promise.all(
+      propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
+    )
+    const propertyMap = new Map<string, Property>()
+    for (const snap of propertyDocs) {
+      if (snap.exists()) {
+        propertyMap.set(
+          snap.id,
+          propertyFromDoc(snap.id, snap.data() as Record<string, unknown>)
+        )
+      }
+    }
+
+    return listings
+      .filter((l) => propertyMap.has(l.propertyId))
+      .map((listing) => ({
+        listing,
+        property: propertyMap.get(listing.propertyId)!,
+      }))
+  },
+
+  async createRealtorClaim(data: {
+    listingId: string
+    realtorId: string
+    listingOwnerId: string
+    realtorName: string
+    realtorPhone: string
+    realtorBusinessName: string
+  }): Promise<void> {
+    const batch = writeBatch(db)
+    const now = new Date()
+    const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const claimId = `claim_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+
+    // 1. Create claim document
+    const claimRef = doc(db, 'realtorClaims', claimId)
+    batch.set(claimRef, {
+      listingId: data.listingId,
+      realtorId: data.realtorId,
+      listingOwnerId: data.listingOwnerId,
+      claimedAt: serverTimestamp(),
+      claimMonth,
+      realtorName: data.realtorName,
+      realtorPhone: data.realtorPhone,
+      realtorBusinessName: data.realtorBusinessName,
+      ownerContacted: false,
+      assignedByOwner: false,
+    })
+
+    // 2. Read user doc for current month count
+    const userDoc = await getDoc(doc(db, 'users', data.realtorId))
+    const userData = userDoc.data() as Record<string, unknown> | undefined
+    const storedClaimMonth = userData?.['claimMonth'] as string | undefined
+    const currentClaimCount = (userData?.['claimsThisMonth'] as number) ?? 0
+    const newClaimCount = storedClaimMonth !== claimMonth ? 1 : currentClaimCount + 1
+
+    // 3. Update user claim count
+    const userRef = doc(db, 'users', data.realtorId)
+    batch.update(userRef, {
+      claimsThisMonth: newClaimCount,
+      claimMonth,
+      updatedAt: serverTimestamp(),
+    })
+
+    // 4. Increment listing's currentClaimsCount
+    const listingRef = doc(db, 'listings', data.listingId)
+    batch.update(listingRef, {
+      currentClaimsCount: increment(1),
+    })
+
+    await batch.commit()
+  },
+
+  async getClaimedLeadsWithDetails(
+    realtorId: string
+  ): Promise<{ claim: RealtorClaim; listing: Listing; property: Property }[]> {
+    const q = query(
+      collection(db, 'realtorClaims'),
+      where('realtorId', '==', realtorId),
+      orderBy('claimedAt', 'desc'),
+    )
+    const snapshot = await getDocs(q)
+    const claims: RealtorClaim[] = snapshot.docs.map((d) => {
+      const data = d.data() as Record<string, unknown>
+      return realtorClaimFromDoc(d.id, data)
+    })
+
+    if (claims.length === 0) return []
+
+    // Batch-fetch listings
+    const listingIds = [...new Set(claims.map((c) => c.listingId))]
+    const listingDocs = await Promise.all(
+      listingIds.map((id) => getDoc(doc(db, 'listings', id)))
+    )
+    const listingMap = new Map<string, Listing>()
+    for (const snap of listingDocs) {
+      if (snap.exists()) {
+        listingMap.set(snap.id, listingFromDoc(snap.id, snap.data() as Record<string, unknown>))
+      }
+    }
+
+    // Batch-fetch properties
+    const propertyIds = [...new Set(
+      [...listingMap.values()].map((l) => l.propertyId)
+    )]
+    const propertyDocs = await Promise.all(
+      propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
+    )
+    const propertyMap = new Map<string, Property>()
+    for (const snap of propertyDocs) {
+      if (snap.exists()) {
+        propertyMap.set(snap.id, propertyFromDoc(snap.id, snap.data() as Record<string, unknown>))
+      }
+    }
+
+    return claims
+      .filter((c) => listingMap.has(c.listingId))
+      .filter((c) => propertyMap.has(listingMap.get(c.listingId)!.propertyId))
+      .map((claim) => {
+        const listing = listingMap.get(claim.listingId)!
+        const property = propertyMap.get(listing.propertyId)!
+        return { claim, listing, property }
+      })
+  },
+
+  async getClaimsForListing(
+    listingOwnerId: string,
+    listingId: string,
+  ): Promise<RealtorClaim[]> {
+    // Security rule requires listingOwnerId match on read
+    const q = query(
+      collection(db, 'realtorClaims'),
+      where('listingOwnerId', '==', listingOwnerId),
+    )
+    const snapshot = await getDocs(q)
+    const allClaims = snapshot.docs.map((d) => {
+      const data = d.data() as Record<string, unknown>
+      return realtorClaimFromDoc(d.id, data)
+    })
+    // Filter by listingId client-side
+    return allClaims.filter((c) => c.listingId === listingId)
+  },
+
+  async assignRealtorToListing(
+    listingId: string,
+    realtorId: string,
+    realtorPhone: string,
+  ): Promise<void> {
+    await updateDoc(doc(db, 'listings', listingId), {
+      assignedRealtorId: realtorId,
+      assignedRealtorPhoneNumber: realtorPhone,
+      updatedAt: serverTimestamp(),
+    })
+  },
+
+  getClaimStatus(
+    user: { claimsThisMonth: number; claimMonth: string },
+  ): { canClaim: boolean; remaining: number; limit: number } {
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthlyLimit = 5
+
+    if (user.claimMonth !== currentMonth) {
+      return { canClaim: true, remaining: monthlyLimit, limit: monthlyLimit }
+    }
+
+    const remaining = Math.max(0, monthlyLimit - user.claimsThisMonth)
+    return {
+      canClaim: user.claimsThisMonth < monthlyLimit,
+      remaining,
+      limit: monthlyLimit,
+    }
+  },
+}
+
+function realtorClaimFromDoc(id: string, data: Record<string, unknown>): RealtorClaim {
+  return {
+    id,
+    listingId: data['listingId'] as string,
+    realtorId: data['realtorId'] as string,
+    listingOwnerId: (data['listingOwnerId'] as string) ?? '',
+    claimedAt: toDate(data['claimedAt']),
+    claimMonth: data['claimMonth'] as string,
+    realtorName: data['realtorName'] as string,
+    realtorPhone: data['realtorPhone'] as string,
+    realtorBusinessName: (data['realtorBusinessName'] as string) ?? '',
+    ownerContacted: (data['ownerContacted'] as boolean) ?? false,
+    assignedByOwner: (data['assignedByOwner'] as boolean) ?? false,
+  }
 }

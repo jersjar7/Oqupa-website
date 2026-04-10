@@ -259,6 +259,7 @@ export default function WizardStep4() {
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           currentClaimsCount: 0,
+          contactClickCount: 0,
           operationType: data.operationType as Listing['operationType'],
           isBoosted: false,
           boostScore: 1,
@@ -274,6 +275,7 @@ export default function WizardStep4() {
           createdAt: now,
           updatedAt: now,
           viewCount: 0,
+          contactClickCount: 0,
         }
         const createdProperty: Property = {
           id: propertyId,
