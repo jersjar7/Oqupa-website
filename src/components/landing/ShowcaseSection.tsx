@@ -82,8 +82,8 @@ export default function ShowcaseSection() {
               : 'opacity-0 translate-y-8'
           }`}
         >
-          {/* Image Column */}
-          <div className="flex items-center justify-center">
+          {/* Image Column — below text on mobile, left on desktop */}
+          <div className="order-last flex items-center justify-center lg:order-first">
             <img
               src={showcaseImage}
               alt="Oqupa showcase"
