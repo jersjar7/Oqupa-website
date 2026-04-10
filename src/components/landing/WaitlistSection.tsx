@@ -26,7 +26,7 @@ export default function WaitlistSection() {
             <Bell className="h-8 w-8 text-secondary" />
           </div>
 
-          <h2 className="mt-6 font-serif text-2xl font-bold text-secondary sm:text-4xl">
+          <h2 className="mt-6 font-serif text-2xl font-bold text-secondary md:text-[clamp(24px,2.5vw,36px)]">
             Únete a la Lista de Espera
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-text-secondary">

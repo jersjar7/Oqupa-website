@@ -76,14 +76,14 @@ export default function ShowcaseSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`grid grid-cols-1 items-stretch gap-8 lg:gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
+          className={`grid grid-cols-1 items-stretch gap-8 md:gap-12 md:grid-cols-2 transition-all duration-700 ease-out ${
             isVisible
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
           }`}
         >
           {/* Image Column — below text on mobile, left on desktop */}
-          <div className="order-last overflow-hidden rounded-2xl shadow-large lg:order-first">
+          <div className="order-last overflow-hidden rounded-2xl shadow-large md:order-first">
             <img
               src={showcaseImage}
               alt="Oqupa showcase"
@@ -93,8 +93,8 @@ export default function ShowcaseSection() {
           </div>
 
           {/* Text Column */}
-          <div className="flex flex-col gap-8 rounded-2xl bg-secondary/5 p-6 sm:bg-transparent sm:p-0 sm:rounded-none">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+          <div className="flex flex-col gap-8 rounded-2xl bg-secondary/5 p-6 md:bg-transparent md:p-0 md:rounded-none">
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               La Nueva Forma de Encontrar Propiedades en Piura
             </h2>
 

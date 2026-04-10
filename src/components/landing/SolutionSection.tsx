@@ -16,7 +16,7 @@ export default function SolutionSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`grid grid-cols-1 items-center gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
+          className={`grid grid-cols-1 items-center gap-12 md:grid-cols-2 transition-all duration-700 ease-out ${
             isVisible
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
@@ -24,7 +24,7 @@ export default function SolutionSection() {
         >
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               Encuentra tu Propiedad Ideal sin Perder Tiempo en Avisos
               Incompletos
             </h2>

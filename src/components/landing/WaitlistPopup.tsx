@@ -28,7 +28,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
 
   return (
     <div
-      className={`fixed z-50 bottom-0 left-0 right-0 sm:bottom-4 sm:left-auto sm:right-4 sm:w-[420px]
+      className={`fixed z-50 bottom-0 left-0 right-0 md:bottom-4 md:left-auto md:right-4 md:w-[420px]
         transition-transform duration-500 ease-out
         ${mounted ? 'translate-y-0' : 'translate-y-full'}`}
     >
@@ -37,7 +37,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
         <button
           onClick={onExpand}
           className="flex w-full items-center justify-between gap-3 bg-primary px-5 py-3.5 text-white shadow-large
-            sm:rounded-xl rounded-t-xl transition-colors duration-200 hover:bg-primary-hover cursor-pointer"
+            md:rounded-xl rounded-t-xl transition-colors duration-200 hover:bg-primary-hover cursor-pointer"
         >
           <span className="text-sm font-bold uppercase tracking-wider">
             Unirme a la Lista de Espera
@@ -48,7 +48,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
 
       {/* Expanded form */}
       {isExpanded && (
-        <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white shadow-large sm:rounded-2xl animate-slide-up">
+        <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white shadow-large md:rounded-2xl animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-5 pt-5 pb-2 sm:px-6 sm:pt-6 rounded-t-2xl">
             <h3 className="text-lg font-medium text-text-primary">

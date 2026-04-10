@@ -203,7 +203,7 @@ export default function MagicLinkPage() {
             disabled={oauthLoading}
             className="flex h-12 w-full items-center justify-center gap-3 rounded-full border-[1.5px] border-black bg-black text-base font-medium text-white hover:bg-black/90 disabled:opacity-50"
           >
-            <img src={appleLogo} alt="Apple" className="h-5 w-5 brightness-0 invert" />
+            <img src={appleLogo} alt="Apple" className="h-5 w-auto brightness-0 invert" />
             Continuar con Apple
           </button>
           <button

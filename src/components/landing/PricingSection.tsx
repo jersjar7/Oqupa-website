@@ -92,7 +92,7 @@ export default function PricingSection() {
         >
           {/* Heading */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               Publica tus Propiedades <span className="underline uppercase">GRATIS</span>
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-text-secondary">
@@ -116,7 +116,7 @@ export default function PricingSection() {
           </div>
 
           {/* Feature Cards */}
-          <div className="mt-14 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {FREE_BENEFITS.map((feature) => (
               <div
                 key={feature.title}

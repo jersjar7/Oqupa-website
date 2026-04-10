@@ -79,7 +79,7 @@ export default function TrustStrip() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3"
         >
           {TRUST_CARDS.map((card, index) => (
             <div

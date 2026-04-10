@@ -21,13 +21,13 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         <img
           src={heroCoverMobile}
           alt="Propiedades en Piura"
-          className="w-full sm:hidden"
+          className="w-full lg:hidden"
           loading="eager"
         />
         <img
           src={heroCover}
           alt="Propiedades en Piura"
-          className="hidden w-full sm:block"
+          className="hidden w-full lg:block"
           loading="eager"
         />
 
@@ -44,34 +44,34 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           }`}
         >
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h1 className="font-serif font-normal leading-tight text-white drop-shadow-lg text-[28px] sm:text-[54px] lg:text-[64px]">
+            <h1 className="font-serif font-normal leading-tight text-white drop-shadow-lg text-[28px] sm:text-[36px] md:text-[44px] lg:text-[clamp(36px,3.5vw,64px)]">
               Todas las Propiedades<br />
               de Piura, en un<br />
               Solo Lugar.
             </h1>
 
-            {/* Date labels + CTAs — hidden on mobile, shown on sm+ */}
-            <div className="mt-6 hidden gap-16 sm:flex lg:mt-8">
+            {/* Date labels + CTAs — hidden on mobile/tablet, shown on lg+ */}
+            <div className="mt-6 hidden gap-16 lg:flex lg:mt-8">
               <div className="flex flex-col items-start gap-3">
                 <div>
-                  <p className="text-3xl font-bold text-accent drop-shadow">4 de Mayo</p>
-                  <p className="text-lg text-white/80 drop-shadow">Publica tu propiedad</p>
+                  <p className="text-[clamp(20px,1.8vw,30px)] font-bold text-accent drop-shadow">4 de Mayo</p>
+                  <p className="text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Publica tu propiedad</p>
                 </div>
                 <button
                   onClick={() => setShowPostModal(true)}
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-12 py-4 text-xl font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-[clamp(32px,2.5vw,48px)] py-[clamp(12px,1vw,16px)] text-[clamp(14px,1.2vw,20px)] font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
                 >
                   Publicar
                 </button>
               </div>
               <div className="flex flex-col items-start gap-3">
                 <div>
-                  <p className="text-3xl font-bold text-accent drop-shadow">11 de Mayo</p>
-                  <p className="text-lg text-white/80 drop-shadow">Descarga la App</p>
+                  <p className="text-[clamp(20px,1.8vw,30px)] font-bold text-accent drop-shadow">11 de Mayo</p>
+                  <p className="text-[clamp(14px,1vw,18px)] text-white/80 drop-shadow">Descarga la App</p>
                 </div>
                 <button
                   onClick={() => setShowSearchModal(true)}
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-white px-12 py-4 text-xl font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-white hover:text-secondary hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-white px-[clamp(32px,2.5vw,48px)] py-[clamp(12px,1vw,16px)] text-[clamp(14px,1.2vw,20px)] font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-white hover:text-secondary hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
                 >
                   Buscar
                 </button>
@@ -81,8 +81,8 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Date labels + CTAs — mobile only, below the image */}
-      <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-10 sm:hidden">
+      {/* Date labels + CTAs — mobile + tablet, below the image */}
+      <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-10 lg:hidden">
         <div className="flex flex-col items-center gap-3">
           <div className="text-center">
             <p className="text-xl font-bold text-accent">4 de Mayo</p>
