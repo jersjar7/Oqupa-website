@@ -29,7 +29,7 @@ export default function PostPropertyModal({ isOpen, onClose }: PostPropertyModal
         </h2>
 
         <p className="text-base leading-relaxed text-text-secondary">
-          El dia oficial de publicacion es el{' '}
+          El día oficial de publicación es el{' '}
           <span className="font-bold text-text-primary">4 de mayo</span>, pero
           puedes adelantarte a todos y publicar en este sitio web ahora mientras
           es completamente gratis.
@@ -43,7 +43,7 @@ export default function PostPropertyModal({ isOpen, onClose }: PostPropertyModal
         </button>
 
         <p className="text-sm text-text-tertiary">
-          Es gratis. Sin comisiones. Sin limites.
+          Es gratis. Sin comisiones. Sin límites.
         </p>
       </div>
     </Modal>

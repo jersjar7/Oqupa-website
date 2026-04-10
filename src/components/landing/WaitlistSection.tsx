@@ -23,17 +23,15 @@ export default function WaitlistSection() {
           }`}
         >
           <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/10">
-              <Bell className="h-7 w-7 text-secondary" />
-            </div>
+            <Bell className="h-8 w-8 text-secondary" />
           </div>
 
-          <h2 className="mt-6 text-3xl font-medium text-secondary sm:text-4xl">
-            Unete a la lista de espera
+          <h2 className="mt-6 font-serif text-2xl font-bold text-secondary sm:text-4xl">
+            Únete a la Lista de Espera
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-text-secondary">
-            Se de los primeros en acceder a Oqupa cuando lancemos en Piura.
-            Registrate y te avisaremos cuando estemos listos.
+            Sé de los primeros en acceder a Oqupa cuando lancemos en Piura.
+            Regístrate y te avisaremos cuando estemos listos.
           </p>
 
           <button
@@ -44,7 +42,7 @@ export default function WaitlistSection() {
           </button>
 
           <p className="mt-6 text-xs leading-relaxed text-text-tertiary">
-            No compartiremos tu informacion con terceros. Solo te contactaremos
+            No compartiremos tu información con terceros. Solo te contactaremos
             para informarte sobre el lanzamiento de Oqupa.
           </p>
         </div>

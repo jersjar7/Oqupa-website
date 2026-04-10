@@ -3,9 +3,9 @@ import messyListings from '@/assets/images/messy-listings-collage.webp'
 import cleanInterface from '@/assets/images/ubiqa-clean-interface.webp'
 
 const BENEFITS = [
-  'Evita avisos con informacion incompleta',
+  'Evita avisos con información incompleta',
   'Accede a propiedades con datos verificados',
-  'Disfruta de una busqueda clara y organizada',
+  'Disfruta de una búsqueda clara y organizada',
 ] as const
 
 export default function SolutionSection() {
@@ -24,9 +24,9 @@ export default function SolutionSection() {
         >
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
-              Encuentra tu propiedad ideal sin perder tiempo en avisos
-              incompletos
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+              Encuentra tu Propiedad Ideal sin Perder Tiempo en Avisos
+              Incompletos
             </h2>
 
             <ul className="flex flex-col gap-4">
@@ -58,7 +58,7 @@ export default function SolutionSection() {
             <div className="group relative overflow-hidden rounded-2xl shadow-medium">
               <img
                 src={messyListings}
-                alt="Avisos desordenados en metodos tradicionales"
+                alt="Avisos desordenados en métodos tradicionales"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />

@@ -52,7 +52,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-5 pt-5 pb-2 sm:px-6 sm:pt-6 rounded-t-2xl">
             <h3 className="text-lg font-medium text-text-primary">
-              Unete a la familia Oqupa
+              Únete a la familia Oqupa
             </h3>
             <button
               onClick={onCollapse}
@@ -64,7 +64,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
           </div>
 
           <p className="px-5 pb-2 text-sm text-text-secondary sm:px-6">
-            Se uno de los primeros miembros de la familia Oqupa y publica tus propiedades gratis.
+            Sé uno de los primeros miembros de la familia Oqupa y publica tus propiedades gratis.
           </p>
 
           {/* Form */}
@@ -92,10 +92,10 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                   </svg>
                 </div>
                 <p className="font-bold text-text-primary">
-                  Registrado exitosamente!
+                  ¡Registrado exitosamente!
                 </p>
                 <p className="text-sm text-text-secondary">
-                  Te notificaremos cuando Oqupa este disponible.
+                  Te notificaremos cuando Oqupa esté disponible.
                 </p>
               </div>
             ) : (
@@ -130,7 +130,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                     htmlFor="popup-phone"
                     className="text-xs font-medium uppercase text-text-primary"
                   >
-                    Telefono (WhatsApp)
+                    Teléfono (WhatsApp)
                   </label>
                   <div className={`flex items-center rounded-xl border transition-colors duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 ${
                     errors.phone ? 'border-error' : 'border-border'
@@ -157,7 +157,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                     htmlFor="popup-email"
                     className="text-xs font-medium uppercase text-text-primary"
                   >
-                    Correo electronico
+                    Correo electrónico
                   </label>
                   <input
                     type="email"
@@ -181,7 +181,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                     htmlFor="popup-city"
                     className="text-xs font-medium uppercase text-text-primary"
                   >
-                    Ciudad de interes
+                    Ciudad de interés
                   </label>
                   <input
                     type="text"
@@ -210,7 +210,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                       className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary"
                     />
                     <span className="text-xs leading-relaxed text-text-secondary">
-                      Acepto ser contactado por WhatsApp y correo electronico
+                      Acepto ser contactado por WhatsApp y correo electrónico
                     </span>
                   </label>
                   {errors.contactConsent && (
@@ -256,7 +256,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                 </button>
 
                 <p className="text-center text-[10px] leading-relaxed text-text-tertiary">
-                  No compartiremos tu informacion con terceros. Solo te contactaremos
+                  No compartiremos tu información con terceros. Solo te contactaremos
                   para informarte sobre el lanzamiento de Oqupa.
                 </p>
               </>

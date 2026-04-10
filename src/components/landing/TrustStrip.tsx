@@ -4,7 +4,7 @@ const TRUST_CARDS = [
   {
     title: 'Avisos verificados',
     description:
-      'Cada aviso pasa por un proceso de verificacion para garantizar informacion real y confiable.',
+      'Cada aviso pasa por un proceso de verificación para garantizar información real y confiable.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +25,7 @@ const TRUST_CARDS = [
   {
     title: 'Cobertura completa en Piura',
     description:
-      'Encontraras propiedades de toda la region, desde el centro hasta las zonas de expansion.',
+      'Encontrarás propiedades de toda la región, desde el centro hasta las zonas de expansión.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +49,7 @@ const TRUST_CARDS = [
     ),
   },
   {
-    title: 'Informacion transparente y confiable',
+    title: 'Información transparente y confiable',
     description:
       'Datos claros, fotos reales y contacto directo con propietarios y agentes verificados.',
     icon: (
@@ -91,9 +91,7 @@ export default function TrustStrip() {
               }`}
               style={{ transitionDelay: `${index * 100}ms` }}
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                {card.icon}
-              </div>
+              {card.icon}
               <h3 className="text-lg font-medium uppercase text-secondary">
                 {card.title}
               </h3>

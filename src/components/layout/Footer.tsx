@@ -16,7 +16,7 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-4 text-sm text-white/80">
-              El portal inmobiliario de confianza en Peru.
+              Tu próximo hogar ya está en el mapa.
             </p>
           </div>
 
@@ -49,7 +49,7 @@ export default function Footer() {
                     href="#caracteristicas"
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Caracteristicas
+                    Características
                   </a>
                 </li>
               </ul>
@@ -58,7 +58,7 @@ export default function Footer() {
             {/* Informacion */}
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
-                Informacion
+                Información
               </h3>
               <ul className="space-y-3">
                 <li>
@@ -74,7 +74,7 @@ export default function Footer() {
                     to="/privacy"
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Politica de Privacidad
+                    Política de Privacidad
                   </Link>
                 </li>
                 <li>
@@ -82,7 +82,7 @@ export default function Footer() {
                     to="/terms"
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Terminos de Servicio
+                    Términos de Servicio
                   </Link>
                 </li>
               </ul>
@@ -94,10 +94,7 @@ export default function Footer() {
             {/* Trust badges */}
             <div className="mb-6 flex flex-wrap gap-3">
               <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
-                Lanzamiento Mayo 2026
-              </span>
-              <span className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium text-white/80">
-                Hecho en Piura
+                Hecho por piuranos.
               </span>
             </div>
 
@@ -128,7 +125,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 border-t border-white/10 pt-8">
           <p className="text-center text-sm text-white/60">
-            &copy; 2026 Oqupa LLC - El portal inmobiliario de confianza en Peru
+            &copy; 2026 Oqupa LLC
           </p>
         </div>
       </div>

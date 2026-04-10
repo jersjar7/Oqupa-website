@@ -23,9 +23,9 @@ const FREE_BENEFITS = [
     ),
   },
   {
-    title: 'Maxima visibilidad',
+    title: 'Máxima visibilidad',
     description:
-      'Tu propiedad sera vista por miles de personas buscando en Piura. Llega a mas interesados sin gastar un sol.',
+      'Tu propiedad será vista por miles de personas buscando en Piura. Llega a más interesados sin gastar un sol.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -92,11 +92,11 @@ export default function PricingSection() {
         >
           {/* Heading */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
-              Publica tus propiedades gratis
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+              Publica tus Propiedades <span className="underline uppercase">GRATIS</span>
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-text-secondary">
-              En Oqupa creemos que publicar tu propiedad no deberia tener costo.
+              En Oqupa creemos que publicar tu propiedad no debería tener costo.
               Nuestro servicio es completamente gratuito para propietarios y
               agentes.
             </p>
@@ -111,7 +111,7 @@ export default function PricingSection() {
               S/.0<sup className="text-3xl sm:text-4xl">.00</sup>
             </span>
             <p className="text-center text-base font-medium text-text-secondary">
-              Sin costos ocultos. Sin comisiones. Sin limites.
+              Sin costos ocultos. Sin comisiones. Sin límites.
             </p>
           </div>
 
@@ -122,9 +122,7 @@ export default function PricingSection() {
                 key={feature.title}
                 className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-light transition-all duration-700 ease-out hover:shadow-medium"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                  {feature.icon}
-                </div>
+                {feature.icon}
                 <h3 className="text-lg font-medium uppercase text-secondary">
                   {feature.title}
                 </h3>

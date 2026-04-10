@@ -6,7 +6,7 @@ const FEATURES = [
   {
     title: 'Búsqueda inteligente',
     description:
-      'Filtra por ubicacion, precio, tipo de propiedad y mas para encontrar exactamente lo que necesitas.',
+      'Filtra por ubicación, precio, tipo de propiedad y más para encontrar exactamente lo que necesitas.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -48,7 +48,7 @@ const FEATURES = [
   {
     title: 'Información completa',
     description:
-      'Cada aviso incluye fotos, ubicacion exacta, caracteristicas y datos de contacto verificados.',
+      'Cada aviso incluye fotos, ubicación exacta, características y datos de contacto verificados.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -72,11 +72,11 @@ export default function ShowcaseSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section id="caracteristicas" className="bg-[#FFFAF5] py-8 lg:py-14">
+    <section id="caracteristicas" className="bg-[#FFFAF5] pt-4 pb-8 lg:pt-8 lg:pb-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`grid grid-cols-1 items-center gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
+          className={`grid grid-cols-1 items-center gap-8 lg:gap-12 lg:grid-cols-2 transition-all duration-700 ease-out ${
             isVisible
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
@@ -94,19 +94,19 @@ export default function ShowcaseSection() {
 
           {/* Text Column */}
           <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-medium leading-tight text-secondary sm:text-4xl">
-              La nueva forma de encontrar propiedades en Piura
+            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary sm:text-4xl">
+              La Nueva Forma de Encontrar Propiedades en Piura
             </h2>
 
             <p className="text-lg leading-relaxed text-text-secondary">
-              Oqupa combina tecnologia moderna con un enfoque local para
-              ofrecerte la mejor experiencia de busqueda de propiedades en Piura.
+              Oqupa combina tecnología moderna con un enfoque local para
+              ofrecerte la mejor experiencia de búsqueda de propiedades en Piura.
             </p>
 
             <div className="flex flex-col gap-6">
               {FEATURES.map((feature) => (
                 <div key={feature.title} className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <div className="shrink-0">
                     {feature.icon}
                   </div>
                   <div>

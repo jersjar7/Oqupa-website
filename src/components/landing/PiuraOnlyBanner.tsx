@@ -19,7 +19,7 @@ export default function PiuraOnlyBanner() {
         <p className="mt-4 text-lg leading-relaxed text-text-secondary">
           Estamos lanzando en{' '}
           <span className="font-bold text-text-primary">Piura</span>{' '}
-          mientras aprendemos de nuestros clientes antes de expandirnos a mas
+          mientras aprendemos de nuestros clientes antes de expandirnos a más
           departamentos.
         </p>
 
@@ -27,7 +27,7 @@ export default function PiuraOnlyBanner() {
           href="mailto:admin@oqupa.com?subject=Quiero Oqupa en mi ciudad"
           className="mt-4 inline-block text-sm font-medium text-primary transition-colors duration-200 hover:text-primary-hover"
         >
-          Fuera de Piura? Cuentanos que quieres Oqupa en tu ciudad!
+          ¿Estás fuera de Piura? ¡Cuéntanos que quieres Oqupa en tu ciudad!
         </a>
       </div>
     </section>

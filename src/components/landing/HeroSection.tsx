@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import heroCover from '@/assets/images/hero-cover.webp'
+import heroCoverMobile from '@/assets/images/hero-cover-mobile.webp'
 import PostPropertyModal from '@/components/landing/PostPropertyModal'
 import SearchPropertyModal from '@/components/landing/SearchPropertyModal'
 
@@ -18,16 +19,22 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       {/* Full-bleed hero image with text overlay */}
       <div className="relative pt-20">
         <img
+          src={heroCoverMobile}
+          alt="Propiedades en Piura"
+          className="w-full sm:hidden"
+          loading="eager"
+        />
+        <img
           src={heroCover}
           alt="Propiedades en Piura"
-          className="w-full object-cover object-[75%_center] sm:object-center h-[280px] sm:h-[360px] lg:h-[420px]"
+          className="hidden w-full sm:block"
           loading="eager"
         />
 
         {/* Dark gradient overlay */}
         <div className="absolute inset-0 top-20 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
 
-        {/* Content overlay */}
+        {/* Content overlay — headline only on mobile, headline + CTAs on desktop */}
         <div
           ref={ref}
           className={`absolute inset-0 top-20 flex items-center transition-all duration-700 ease-out ${
@@ -37,38 +44,68 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           }`}
         >
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h1 className="max-w-lg text-[28px] font-medium leading-tight text-white sm:text-[36px] lg:text-[44px] drop-shadow-lg">
-              Todas las propiedades de Piura, en un solo lugar confiable.
+            <h1 className="font-serif font-bold leading-tight text-white drop-shadow-lg text-[28px] sm:text-[54px] lg:text-[64px]">
+              Todas las Propiedades<br />
+              de Piura, en un<br />
+              Solo Lugar.
             </h1>
 
-            {/* Date labels + CTAs */}
-            <div className="mt-6 flex gap-4 sm:gap-8 lg:mt-8">
-              <div className="flex flex-col gap-2">
+            {/* Date labels + CTAs — hidden on mobile, shown on sm+ */}
+            <div className="mt-6 hidden gap-16 sm:flex lg:mt-8">
+              <div className="flex flex-col items-start gap-3">
                 <div>
-                  <p className="text-base font-bold text-accent sm:text-lg drop-shadow">4 de Mayo</p>
-                  <p className="text-xs text-white/80 sm:text-sm drop-shadow">Publica tu propiedad</p>
+                  <p className="text-3xl font-bold text-accent drop-shadow">4 de Mayo</p>
+                  <p className="text-lg text-white/80 drop-shadow">Publica tu propiedad</p>
                 </div>
                 <button
                   onClick={() => setShowPostModal(true)}
-                  className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 cursor-pointer sm:px-8 sm:py-4 sm:text-base"
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-12 py-4 text-xl font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
                 >
                   Publicar
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col items-start gap-3">
                 <div>
-                  <p className="text-base font-bold text-accent sm:text-lg drop-shadow">11 de Mayo</p>
-                  <p className="text-xs text-white/80 sm:text-sm drop-shadow">Descarga la App</p>
+                  <p className="text-3xl font-bold text-accent drop-shadow">11 de Mayo</p>
+                  <p className="text-lg text-white/80 drop-shadow">Descarga la App</p>
                 </div>
                 <button
                   onClick={() => setShowSearchModal(true)}
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-white px-6 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-white hover:text-secondary hover:shadow-large hover:-translate-y-0.5 cursor-pointer sm:px-8 sm:py-4 sm:text-base"
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-white px-12 py-4 text-xl font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-white hover:text-secondary hover:shadow-large hover:-translate-y-0.5 cursor-pointer"
                 >
                   Buscar
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Date labels + CTAs — mobile only, below the image */}
+      <div className="flex justify-center gap-8 bg-[#FFFAF5] px-4 py-6 sm:hidden">
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-center">
+            <p className="text-xl font-bold text-accent">4 de Mayo</p>
+            <p className="text-base text-text-secondary">Publica tu propiedad</p>
+          </div>
+          <button
+            onClick={() => setShowPostModal(true)}
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-3.5 text-lg font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover cursor-pointer"
+          >
+            Publicar
+          </button>
+        </div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-center">
+            <p className="text-xl font-bold text-accent">11 de Mayo</p>
+            <p className="text-base text-text-secondary">Descarga la App</p>
+          </div>
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="inline-flex items-center justify-center rounded-xl border-2 border-secondary px-8 py-3.5 text-lg font-bold uppercase tracking-wider text-secondary shadow-medium transition-all duration-200 hover:bg-secondary hover:text-white cursor-pointer"
+          >
+            Buscar
+          </button>
         </div>
       </div>
 
