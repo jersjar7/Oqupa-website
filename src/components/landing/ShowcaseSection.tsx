@@ -72,7 +72,7 @@ export default function ShowcaseSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section id="caracteristicas" className="bg-[#FFFAF5] py-20 lg:py-28">
+    <section id="caracteristicas" className="bg-[#FFFAF5] py-12 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}

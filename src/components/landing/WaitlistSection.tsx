@@ -11,7 +11,7 @@ export default function WaitlistSection() {
   return (
     <section
       id="lista-espera"
-      className="bg-[#FFFAF5] py-20 lg:py-28"
+      className="bg-[#FFFAF5] py-12 lg:py-20"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div

@@ -75,7 +75,7 @@ export default function TrustStrip() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="bg-[#FFFAF5] py-16 lg:py-20">
+    <section className="bg-[#FFFAF5] py-10 lg:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
