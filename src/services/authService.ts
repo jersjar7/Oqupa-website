@@ -149,9 +149,11 @@ export const authService = {
 
   async sendMagicLink(email: string) {
     const actionCodeSettings = {
-      url: 'https://oqupa.com/app/auth/complete',
+      url: import.meta.env.DEV
+        ? 'http://localhost:5173/app/auth/complete'
+        : 'https://oqupa.com/app/auth/complete',
       handleCodeInApp: true,
-      linkDomain: 'oqupa.com',
+      ...(import.meta.env.DEV ? {} : { linkDomain: 'oqupa.com' }),
     }
     await sendSignInLinkToEmail(auth, email, actionCodeSettings)
     localStorage.setItem('oqupa_signInEmail', email)

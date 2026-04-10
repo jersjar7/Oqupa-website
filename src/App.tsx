@@ -21,6 +21,13 @@ import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
 import EditListingPage from '@/app/features/listings/pages/EditListingPage'
 import ProfilePage from '@/app/features/profile/pages/ProfilePage'
+import RealtorRegistrationPage from '@/app/features/realtor/pages/RealtorRegistrationPage'
+import AdminGuard from '@/app/components/guards/AdminGuard'
+import RealtorGuard from '@/app/components/guards/RealtorGuard'
+import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsPage'
+import LeadsPage from '@/app/features/leads/pages/LeadsPage'
+import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
+import InterestedAgentsPage from '@/app/features/leads/pages/InterestedAgentsPage'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -103,6 +110,58 @@ export default function App() {
             element={
               <AuthGuard>
                 <ProfilePage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="realtor-registration"
+            element={
+              <AuthGuard>
+                <RealtorRegistrationPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="leads"
+            element={
+              <AuthGuard>
+                <VerifiedGuard>
+                  <RealtorGuard>
+                    <LeadsPage />
+                  </RealtorGuard>
+                </VerifiedGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="leads/:id"
+            element={
+              <AuthGuard>
+                <VerifiedGuard>
+                  <RealtorGuard>
+                    <LeadDetailPage />
+                  </RealtorGuard>
+                </VerifiedGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="listings/:id/agents"
+            element={
+              <AuthGuard>
+                <VerifiedGuard>
+                  <InterestedAgentsPage />
+                </VerifiedGuard>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="admin/applications"
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <AdminApplicationsPage />
+                </AdminGuard>
               </AuthGuard>
             }
           />

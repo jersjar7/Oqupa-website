@@ -92,7 +92,7 @@ export default function PricingSection() {
         >
           {/* Heading */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-2xl font-bold leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
+            <h2 className="font-serif text-2xl font-normal leading-tight text-secondary md:text-[clamp(24px,2.5vw,36px)]">
               Publica tus Propiedades <span className="underline uppercase">GRATIS</span>
             </h2>
             <p className="font-sans font-normal mt-4 text-lg leading-relaxed text-text-secondary">

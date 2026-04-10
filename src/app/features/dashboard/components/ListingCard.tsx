@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Power, PowerOff, Share2, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Power, PowerOff, Share2, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
@@ -120,6 +120,25 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           <Eye className="h-3.5 w-3.5" />
           <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
         </div>
+
+        {/* Realtor agents */}
+        {listing.wantsRealtorHelp && listing.status === 'active' && (
+          <div className="mt-2">
+            {listing.assignedRealtorId ? (
+              <Badge variant="info">Agente asignado</Badge>
+            ) : (
+              <Link
+                to={`/app/listings/${listing.id}/agents`}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {listing.currentClaimsCount > 0
+                  ? `${listing.currentClaimsCount} agente${listing.currentClaimsCount !== 1 ? 's' : ''} interesado${listing.currentClaimsCount !== 1 ? 's' : ''}`
+                  : 'Esperando agentes...'}
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="mt-4 flex gap-2">

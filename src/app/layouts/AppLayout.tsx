@@ -1,7 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Home, LogOut, User } from 'lucide-react'
+import { Home, LogOut, User, Briefcase, Clock, ShieldCheck, Star } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
+import { isAdminEmail } from '@/app/components/guards/AdminGuard'
 import { Spinner } from '@/app/components/ui'
 import UserMenu from '@/components/layout/UserMenu'
 import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
@@ -61,6 +62,46 @@ export default function AppLayout() {
                             label: 'Mis Publicaciones',
                             icon: <Home className="h-4 w-4" />,
                             to: '/app',
+                          },
+                        ]
+                      : []),
+                    // Admin menu item
+                    ...(isAdminEmail(user?.email)
+                      ? [
+                          {
+                            label: 'Solicitudes de Agentes',
+                            icon: <ShieldCheck className="h-4 w-4" />,
+                            to: '/app/admin/applications',
+                          },
+                        ]
+                      : []),
+                    // Verified realtor menu item
+                    ...(user?.isVerifiedRealtor
+                      ? [
+                          {
+                            label: 'Oportunidades',
+                            icon: <Star className="h-4 w-4" />,
+                            to: '/app/leads',
+                          },
+                        ]
+                      : []),
+                    // Realtor registration menu item
+                    ...(!user?.isVerifiedRealtor && user?.realtorApplicationStatus !== 'pending'
+                      ? [
+                          {
+                            label: 'Registrate como Agente',
+                            icon: <Briefcase className="h-4 w-4" />,
+                            to: '/app/realtor-registration',
+                          },
+                        ]
+                      : []),
+                    ...(user?.realtorApplicationStatus === 'pending'
+                      ? [
+                          {
+                            label: 'Solicitud en Revision',
+                            icon: <Clock className="h-4 w-4" />,
+                            to: '/app/realtor-registration',
+                            className: 'text-text-tertiary',
                           },
                         ]
                       : []),

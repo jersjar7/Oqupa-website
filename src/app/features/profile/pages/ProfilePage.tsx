@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
-import { Button, Input, Select, Card, Modal } from '@/app/components/ui'
+import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
-import { CheckCircle, Shield } from 'lucide-react'
+import { CheckCircle, Shield, Clock, XCircle } from 'lucide-react'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -103,6 +103,66 @@ export default function ProfilePage() {
               Identidad {user.isIdentityVerified ? 'verificada' : 'no verificada'}
             </span>
           </div>
+        </div>
+      </Card>
+
+      {/* Realtor status */}
+      <Card className="mt-6">
+        <h2 className="text-sm font-medium uppercase text-text-primary">
+          Agente inmobiliario
+        </h2>
+        <div className="mt-3">
+          {user.isVerifiedRealtor ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-success" />
+              <span className="text-sm text-text-secondary">Agente verificado</span>
+              <Badge variant="success">Verificado</Badge>
+            </div>
+          ) : user.realtorApplicationStatus === 'pending' ? (
+            <div className="flex items-start gap-2">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div>
+                <span className="text-sm text-text-secondary">
+                  Solicitud de agente en revision
+                </span>
+                {user.realtorApplicationDate && (
+                  <p className="text-xs text-text-tertiary">
+                    Enviada el{' '}
+                    {user.realtorApplicationDate.toLocaleDateString('es-PE')}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : user.realtorApplicationStatus === 'rejected' ? (
+            <div className="flex items-start gap-2">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-error" />
+              <div>
+                <span className="text-sm text-text-secondary">
+                  Solicitud rechazada
+                </span>
+                <p className="mt-1">
+                  <Link
+                    to="/app/realtor-registration"
+                    className="text-sm font-medium text-secondary hover:text-secondary-hover"
+                  >
+                    Enviar nueva solicitud
+                  </Link>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-secondary">
+                ¿Eres agente inmobiliario?
+              </span>
+              <Link
+                to="/app/realtor-registration"
+                className="text-sm font-medium text-secondary hover:text-secondary-hover"
+              >
+                Registrate como Agente
+              </Link>
+            </div>
+          )}
         </div>
       </Card>
 
