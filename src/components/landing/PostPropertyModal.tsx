@@ -31,8 +31,8 @@ export default function PostPropertyModal({ isOpen, onClose }: PostPropertyModal
         <p className="text-base leading-relaxed text-text-secondary">
           El dia oficial de publicacion es el{' '}
           <span className="font-bold text-text-primary">4 de mayo</span>, pero
-          puedes adelantarte a todos y publicar ahora mientras es completamente
-          gratis.
+          puedes adelantarte a todos y publicar en este sitio web ahora mientras
+          es completamente gratis.
         </p>
 
         <button
