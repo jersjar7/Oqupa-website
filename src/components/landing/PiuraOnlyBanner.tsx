@@ -5,7 +5,7 @@ export default function PiuraOnlyBanner() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="bg-secondary/5 py-10 lg:py-16">
+    <section className="bg-secondary/5 py-6 lg:py-10">
       <div
         ref={ref}
         className={`mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8 transition-all duration-700 ease-out ${
