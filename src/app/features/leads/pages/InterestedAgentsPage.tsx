@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { useListingClaims, useAssignRealtor, useUnassignRealtor } from '@/hooks/useRealtorLeads'
+import { thumbnail as thumbnailUrl } from '@/lib/imageUrl'
 import { Modal, Spinner, Button, Badge } from '@/app/components/ui'
 import RealtorClaimCard from '../components/RealtorClaimCard'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
@@ -98,17 +99,20 @@ export default function InterestedAgentsPage() {
 
       {/* Listing summary */}
       <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-white p-4 shadow-light">
-        {property.media.thumbnailPhotoUrls?.[0] || property.media.propertyPhotoUrls[0] ? (
-          <img
-            src={property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]}
-            alt={listing.description}
-            className="h-16 w-16 shrink-0 rounded-lg object-cover"
-          />
-        ) : (
+        {(() => {
+          const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+          return photoRef ? (
+            <img
+              src={thumbnailUrl(photoRef)}
+              alt={listing.description}
+              className="h-16 w-16 shrink-0 rounded-lg object-cover"
+            />
+          ) : (
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs text-text-tertiary">
             Sin foto
           </div>
-        )}
+          )
+        })()}
         <div>
           <p className="font-bold text-primary">
             {CURRENCY_SYMBOLS[listing.price.currency as keyof typeof CURRENCY_SYMBOLS]}{' '}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import { card as cardUrl, fullSize as fullSizeUrl } from '@/lib/imageUrl'
 import { getPriceSuffix } from '@/lib/formatters'
 import { useGallery } from '@/hooks/useGallery'
 import GalleryModal from '@/app/components/GalleryModal'
@@ -26,9 +27,9 @@ function formatPrice(amount: number, currency: string): string {
 }
 
 export default function LeadCard({ listing, property, canClaim, onClaim, isClaiming }: LeadCardProps) {
-  const photos = property.media.propertyPhotoUrls.length > 0
-    ? property.media.propertyPhotoUrls
-    : property.media.thumbnailPhotoUrls ?? []
+  const photoRefs = property.media.photoKeys ?? property.media.propertyPhotoUrls
+  const cardPhotos = photoRefs.map(cardUrl)
+  const fullSizePhotos = photoRefs.map(fullSizeUrl)
   const blurHash = property.media.photoBlurHashes?.[0]
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
@@ -37,7 +38,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
     : blurDataUrl
   const slotsFull = listing.currentClaimsCount >= listing.maxRealtors
 
-  const carousel = useGallery(photos.length)
+  const carousel = useGallery(cardPhotos.length)
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -47,7 +48,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
         className="group relative h-44 bg-gray-100"
         style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
-        {photos.length > 0 ? (
+        {cardPhotos.length > 0 ? (
           <>
             <div
               ref={carousel.trackRef}
@@ -56,7 +57,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
               onTouchStart={carousel.onTouchStart}
               onTouchEnd={carousel.onTouchEnd}
             >
-              {photos.map((url, i) => (
+              {cardPhotos.map((url, i) => (
                 <div
                   key={i}
                   className="h-full w-full shrink-0 cursor-pointer"
@@ -74,14 +75,14 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
             </div>
 
             {/* Photo count badge */}
-            {photos.length > 1 && (
+            {cardPhotos.length > 1 && (
               <div className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
-                {carousel.currentSlide + 1}/{photos.length}
+                {carousel.currentSlide + 1}/{cardPhotos.length}
               </div>
             )}
 
             {/* Prev/Next buttons (visible on hover) */}
-            {photos.length > 1 && (
+            {cardPhotos.length > 1 && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); carousel.prev() }}
@@ -105,9 +106,9 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
             )}
 
             {/* Dot indicators */}
-            {photos.length > 1 && photos.length <= 6 && (
+            {cardPhotos.length > 1 && cardPhotos.length <= 6 && (
               <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-                {photos.map((_, i) => (
+                {cardPhotos.map((_, i) => (
                   <span
                     key={i}
                     className={`block h-1.5 w-1.5 rounded-full transition-colors ${
@@ -192,7 +193,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
       {/* Gallery modal */}
       {modalOpen && (
         <GalleryModal
-          images={photos}
+          images={fullSizePhotos}
           startIndex={carousel.currentSlide}
           onClose={() => setModalOpen(false)}
         />

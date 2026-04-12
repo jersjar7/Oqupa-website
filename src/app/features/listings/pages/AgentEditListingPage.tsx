@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { storageService } from '@/services/storageService'
+import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Spinner } from '@/app/components/ui'
 
 export default function AgentEditListingPage() {
@@ -41,17 +42,17 @@ export default function AgentEditListingPage() {
   useEffect(() => {
     if (!result || initialized) return
     setDescription(result.listing.description)
-    setExistingPhotoUrls(result.property.media.propertyPhotoUrls)
+    setExistingPhotoUrls(result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls)
     setInitialized(true)
   }, [result, initialized])
 
   const hasChanges = (() => {
     if (!result) return false
     const descChanged = description.trim() !== result.listing.description
-    const origUrls = result.property.media.propertyPhotoUrls
-    const urlsChanged = existingPhotoUrls.length !== origUrls.length ||
-      existingPhotoUrls.some((url, i) => url !== origUrls[i])
-    return descChanged || urlsChanged || newPhotos.length > 0
+    const origRefs = result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls
+    const refsChanged = existingPhotoUrls.length !== origRefs.length ||
+      existingPhotoUrls.some((ref, i) => ref !== origRefs[i])
+    return descChanged || refsChanged || newPhotos.length > 0
   })()
 
   const handleRemoveExisting = (index: number) => {
@@ -109,10 +110,10 @@ export default function AgentEditListingPage() {
         params.description = trimmedDesc
       }
 
-      const origUrls = result.property.media.propertyPhotoUrls
-      const urlsChanged = finalPhotoUrls.length !== origUrls.length ||
-        finalPhotoUrls.some((url, i) => url !== origUrls[i])
-      if (urlsChanged) {
+      const origRefs = result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls
+      const refsChanged = finalPhotoUrls.length !== origRefs.length ||
+        finalPhotoUrls.some((ref, i) => ref !== origRefs[i])
+      if (refsChanged) {
         params.propertyPhotoUrls = finalPhotoUrls
       }
 
@@ -216,10 +217,10 @@ export default function AgentEditListingPage() {
 
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {/* Existing photos */}
-              {existingPhotoUrls.map((url, index) => (
+              {existingPhotoUrls.map((ref, index) => (
                 <div key={`existing-${index}`} className="group relative aspect-square">
                   <img
-                    src={url}
+                    src={cardUrl(ref)}
                     alt={`Foto ${index + 1}`}
                     className="h-full w-full rounded-lg object-cover"
                   />
