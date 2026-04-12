@@ -28,32 +28,41 @@ export const storageService = {
   async uploadPropertyPhoto(
     propertyId: string,
     file: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    presignedUpload?: { uploadUrl: string; objectKey: string }
   ): Promise<PhotoUploadResult> {
     const compressed = await this.compressImage(file)
 
     // Generate BlurHash from compressed image (runs in parallel with upload)
     const blurHashPromise = generateBlurHash(compressed)
 
-    const filename = `${Date.now()}_${file.name}`
-    const objectKey = `property-photos/${propertyId}/${filename}`
+    // Use presigned URL if provided, otherwise request one
+    let uploadUrl: string
+    let objectKey: string
+    if (presignedUpload) {
+      uploadUrl = presignedUpload.uploadUrl
+      objectKey = presignedUpload.objectKey
+    } else {
+      const getUploadUrlFn = httpsCallable<
+        { category: string; entityId: string; fileCount: number; contentType: string },
+        { uploads: Array<{ uploadUrl: string; objectKey: string }> }
+      >(functions, 'getUploadUrl')
 
-    // Get presigned upload URL from Cloud Function
-    const getUploadUrl = httpsCallable<
-      { objectKey: string; contentType: string },
-      { uploadUrl: string; objectKey: string }
-    >(functions, 'getUploadUrl')
-
-    const { data: urlData } = await getUploadUrl({
-      objectKey,
-      contentType: compressed.type || 'image/jpeg',
-    })
+      const { data: urlData } = await getUploadUrlFn({
+        category: 'property',
+        entityId: propertyId,
+        fileCount: 1,
+        contentType: compressed.type || 'image/webp',
+      })
+      uploadUrl = urlData.uploads[0]!.uploadUrl
+      objectKey = urlData.uploads[0]!.objectKey
+    }
 
     // Upload via XMLHttpRequest PUT for progress tracking
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
-      xhr.open('PUT', urlData.uploadUrl)
-      xhr.setRequestHeader('Content-Type', compressed.type || 'image/jpeg')
+      xhr.open('PUT', uploadUrl)
+      xhr.setRequestHeader('Content-Type', compressed.type || 'image/webp')
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -94,7 +103,7 @@ export const storageService = {
       // Non-critical — empty string means no micro-thumbnail
     }
 
-    return { objectKey: urlData.objectKey, blurHash, microThumb }
+    return { objectKey, blurHash, microThumb }
   },
 
   async uploadUserPhoto(
@@ -130,6 +139,19 @@ export const storageService = {
     files: File[],
     onProgress?: (overallProgress: number) => void
   ): Promise<PhotoUploadResult[]> {
+    // Batch-request all presigned URLs in a single call
+    const getUploadUrlFn = httpsCallable<
+      { category: string; entityId: string; fileCount: number; contentType: string },
+      { uploads: Array<{ uploadUrl: string; objectKey: string }> }
+    >(functions, 'getUploadUrl')
+
+    const { data: urlData } = await getUploadUrlFn({
+      category: 'property',
+      entityId: propertyId,
+      fileCount: files.length,
+      contentType: 'image/webp',
+    })
+
     const progressPerFile = new Array<number>(files.length).fill(0)
 
     const uploads = files.map((file, i) =>
@@ -137,7 +159,7 @@ export const storageService = {
         progressPerFile[i] = progress
         const overall = progressPerFile.reduce((a, b) => a + b, 0) / files.length
         onProgress?.(overall)
-      })
+      }, urlData.uploads[i])
     )
 
     return Promise.all(uploads)

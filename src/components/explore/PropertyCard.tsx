@@ -89,13 +89,9 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
           )}
-          <Link
-            to={`/property/${listing.id}`}
-            className="ml-auto text-xs font-medium text-primary hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <span className="ml-auto text-xs font-medium text-primary">
             Ver &rarr;
-          </Link>
+          </span>
         </div>
       </div>
     </Link>

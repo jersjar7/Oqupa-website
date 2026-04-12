@@ -10,20 +10,20 @@ describe('imageUrl', () => {
   // ─── buildImageUrl ──────────────────────────────────────────────────
 
   describe('buildImageUrl', () => {
-    it('constructs a CDN URL with the correct width and default quality', () => {
+    it('constructs a URL with host and key', () => {
       const url = buildImageUrl('property-photos/abc/123.webp', { width: 300 })
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=300,f=auto,q=80/property-photos/abc/123.webp`,
+        `https://${STAGING_HOST}/property-photos/abc/123.webp`,
       )
     })
 
-    it('constructs a CDN URL with a custom quality', () => {
+    it('constructs a URL without cdn-cgi prefix', () => {
       const url = buildImageUrl('property-photos/abc/123.webp', {
         width: 1200,
         quality: 90,
       })
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=1200,f=auto,q=90/property-photos/abc/123.webp`,
+        `https://${STAGING_HOST}/property-photos/abc/123.webp`,
       )
     })
 
@@ -46,7 +46,7 @@ describe('imageUrl', () => {
       const key = 'profile-photos/user123/avatar.webp'
       const url = buildImageUrl(key, { width: 400 })
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/${key}`,
+        `https://${STAGING_HOST}/${key}`,
       )
     })
 
@@ -54,7 +54,7 @@ describe('imageUrl', () => {
       const key = 'property-photos/abc/photo (1).webp'
       const url = buildImageUrl(key, { width: 300 })
       expect(url).toContain(key)
-      expect(url.startsWith(`https://${STAGING_HOST}/cdn-cgi/image/`)).toBe(true)
+      expect(url.startsWith(`https://${STAGING_HOST}/`)).toBe(true)
     })
   })
 
@@ -86,10 +86,10 @@ describe('imageUrl', () => {
   // ─── Preset methods ────────────────────────────────────────────────
 
   describe('thumbnail', () => {
-    it('produces a 300px wide image with quality 80', () => {
+    it('constructs URL with host and key', () => {
       const url = thumbnail('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=300,f=auto,q=80/photos/abc.webp`,
+        `https://${STAGING_HOST}/photos/abc.webp`,
       )
     })
 
@@ -104,10 +104,10 @@ describe('imageUrl', () => {
   })
 
   describe('card', () => {
-    it('produces a 400px wide image with quality 80', () => {
+    it('constructs URL with host and key', () => {
       const url = card('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/photos/abc.webp`,
+        `https://${STAGING_HOST}/photos/abc.webp`,
       )
     })
 
@@ -122,10 +122,10 @@ describe('imageUrl', () => {
   })
 
   describe('fullSize', () => {
-    it('produces a 1200px wide image with quality 85', () => {
+    it('constructs URL with host and key', () => {
       const url = fullSize('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=1200,f=auto,q=85/photos/abc.webp`,
+        `https://${STAGING_HOST}/photos/abc.webp`,
       )
     })
 
@@ -140,10 +140,10 @@ describe('imageUrl', () => {
   })
 
   describe('profilePhoto', () => {
-    it('produces a 400px wide image with quality 80', () => {
+    it('constructs URL with host and key', () => {
       const url = profilePhoto('profile-photos/user1/avatar.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/profile-photos/user1/avatar.webp`,
+        `https://${STAGING_HOST}/profile-photos/user1/avatar.webp`,
       )
     })
 
@@ -157,13 +157,13 @@ describe('imageUrl', () => {
     })
   })
 
-  // ─── CDN URL format verification ──────────────────────────────────
+  // ─── URL format verification ─────────────────────────────────────
 
-  describe('CDN URL format', () => {
-    it('follows the Cloudflare Image Resizing URL pattern', () => {
+  describe('URL format', () => {
+    it('follows the https://{host}/{key} pattern', () => {
       const url = buildImageUrl('photos/test.webp', { width: 500, quality: 75 })
-      // Pattern: https://<host>/cdn-cgi/image/<options>/<path>
-      const pattern = /^https:\/\/[^/]+\/cdn-cgi\/image\/w=\d+,f=auto,q=\d+\/.+$/
+      // Pattern: https://<host>/<key>
+      const pattern = /^https:\/\/[^/]+\/.+$/
       expect(url).toMatch(pattern)
     })
 
@@ -173,14 +173,14 @@ describe('imageUrl', () => {
       expect(url).not.toContain(PRODUCTION_HOST)
     })
 
-    it('always includes f=auto for format negotiation', () => {
+    it('does not include cdn-cgi prefix', () => {
       const url = buildImageUrl('photos/test.webp', { width: 300 })
-      expect(url).toContain('f=auto')
+      expect(url).not.toContain('cdn-cgi')
     })
 
-    it('encodes width and quality as comma-separated params', () => {
+    it('URL is simply host plus key', () => {
       const url = buildImageUrl('photos/test.webp', { width: 800, quality: 70 })
-      expect(url).toContain('w=800,f=auto,q=70')
+      expect(url).toBe(`https://${STAGING_HOST}/photos/test.webp`)
     })
 
     it('appends the R2 object key as the path suffix', () => {

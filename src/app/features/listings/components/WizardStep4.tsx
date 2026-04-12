@@ -62,8 +62,10 @@ export default function WizardStep4() {
     if (!user) return
 
     // Pre-submission validation of all steps
+    // Merge formData (current Step 4 values) since they haven't been saved to the store yet
     const fullResult = fullListingSchema.safeParse({
       ...data,
+      ...formData,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
       latitude: data.latitude ?? undefined,
       longitude: data.longitude ?? undefined,

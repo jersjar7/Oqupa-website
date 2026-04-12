@@ -16,14 +16,14 @@ function isLegacyUrl(ref: string): boolean {
   return ref.startsWith('https://')
 }
 
-/** Build a CDN URL with the given width and quality. Returns legacy URLs unchanged. */
+/** Build a CDN URL from an R2 key. Returns legacy URLs unchanged. */
 export function buildImageUrl(
   ref: string,
-  { width, quality = 80 }: { width: number; quality?: number },
+  _opts?: { width?: number; quality?: number },
 ): string {
   if (!ref) return ''
   if (isLegacyUrl(ref)) return ref
-  return `https://${getHost()}/cdn-cgi/image/w=${width},f=auto,q=${quality}/${ref}`
+  return `https://${getHost()}/${ref}`
 }
 
 /** 300px thumbnail for listing cards and grids */
