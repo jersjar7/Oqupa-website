@@ -20,7 +20,7 @@ export default function WizardStep4() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
-  const { data, updateData, prevStep, isEditMode, editListingId, editPropertyId, reset } =
+  const { data, prevStep, isEditMode, editListingId, editPropertyId, reset } =
     useListingFormStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,21 +61,14 @@ export default function WizardStep4() {
   async function onSubmit(formData: Step4Data) {
     if (!user) return
 
-    // Update store with Step 4 values BEFORE full validation
-    updateData({
-      amount: formData.amount,
-      currency: formData.currency,
-      wantsRealtorHelp: formData.wantsRealtorHelp,
-      maxRealtors: formData.maxRealtors,
-    })
-
-    // Pre-submission validation of all steps using fresh store data
-    const latestData = useListingFormStore.getState().data
+    // Pre-submission validation of all steps
+    // Merge formData (current Step 4 values) since they haven't been saved to the store yet
     const fullResult = fullListingSchema.safeParse({
-      ...latestData,
-      totalAreaInSquareMeters: latestData.totalAreaInSquareMeters ?? undefined,
-      latitude: latestData.latitude ?? undefined,
-      longitude: latestData.longitude ?? undefined,
+      ...data,
+      ...formData,
+      totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
+      latitude: data.latitude ?? undefined,
+      longitude: data.longitude ?? undefined,
     })
 
     if (!fullResult.success) {
@@ -84,7 +77,7 @@ export default function WizardStep4() {
       return
     }
 
-    if (!isEditMode && latestData.photos.length === 0 && latestData.existingPhotoUrls.length === 0) {
+    if (!isEditMode && data.photos.length === 0 && data.existingPhotoUrls.length === 0) {
       setSubmitError('No hay fotos seleccionadas (Paso 3)')
       return
     }
@@ -99,7 +92,7 @@ export default function WizardStep4() {
       if (isEditMode && editPropertyId && editListingId) {
         // UPDATE FLOW
         // Upload new photos if any
-        let newPhotoUrls: string[] = []
+        let newPhotoKeys: string[] = []
         let newBlurHashes: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
@@ -108,21 +101,21 @@ export default function WizardStep4() {
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
-          newPhotoUrls = results.map(r => r.url)
+          newPhotoKeys = results.map(r => r.objectKey)
           newBlurHashes = results.map(r => r.blurHash)
         }
 
-        // Build ordered URL array using photoOrder from Step 3
-        let allPhotoUrls: string[]
+        // Build ordered photo key array using photoOrder from Step 3
+        let allPhotoKeys: string[]
         if (data.photoOrder.length > 0) {
-          allPhotoUrls = data.photoOrder.map(entry =>
+          allPhotoKeys = data.photoOrder.map(entry =>
             entry.type === 'existing'
               ? data.existingPhotoUrls[entry.index]!
-              : newPhotoUrls[entry.index]!
+              : newPhotoKeys[entry.index]!
           )
         } else {
           // Fallback for listings edited before photo ordering was added
-          allPhotoUrls = [...data.existingPhotoUrls, ...newPhotoUrls]
+          allPhotoKeys = [...data.existingPhotoUrls, ...newPhotoKeys]
         }
 
         setUploadProgress('Actualizando propiedad...')
@@ -155,7 +148,8 @@ export default function WizardStep4() {
             currency: formData.currency,
           },
           media: {
-            propertyPhotoUrls: allPhotoUrls,
+            propertyPhotoUrls: allPhotoKeys,
+            photoKeys: allPhotoKeys,
             ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
           },
         })
@@ -167,7 +161,8 @@ export default function WizardStep4() {
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           media: {
-            propertyPhotoUrls: allPhotoUrls,
+            propertyPhotoUrls: allPhotoKeys,
+            photoKeys: allPhotoKeys,
             ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
           },
           contactInfo: user.contactInfo,
@@ -212,7 +207,7 @@ export default function WizardStep4() {
         createdPropertyId = propertyId
 
         // Upload photos
-        let photoUrls: string[] = []
+        let photoKeys: string[] = []
         let blurHashes: string[] = []
         let microThumb = ''
         if (data.photos.length > 0) {
@@ -222,14 +217,15 @@ export default function WizardStep4() {
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
-          photoUrls = results.map(r => r.url)
+          photoKeys = results.map(r => r.objectKey)
           blurHashes = results.map(r => r.blurHash)
           microThumb = results[0]?.microThumb ?? ''
 
-          // Update property with photo URLs, BlurHash, and micro-thumbnail
+          // Update property with photo keys, BlurHash, and micro-thumbnail
           await firestoreService.updateProperty(propertyId, {
             media: {
-              propertyPhotoUrls: photoUrls,
+              propertyPhotoUrls: photoKeys,
+              photoKeys,
               photoBlurHashes: blurHashes,
               ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
             },
@@ -252,7 +248,8 @@ export default function WizardStep4() {
           publishedAt: now,
           expiresAt,
           media: {
-            propertyPhotoUrls: photoUrls,
+            propertyPhotoUrls: photoKeys,
+            photoKeys,
             photoBlurHashes: blurHashes,
             ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
           },
@@ -306,7 +303,8 @@ export default function WizardStep4() {
           currentPrice: { amount: formData.amount, currency: formData.currency },
           normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}`,
           media: {
-            propertyPhotoUrls: photoUrls,
+            propertyPhotoUrls: photoKeys,
+            photoKeys,
             photoBlurHashes: blurHashes,
             ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
           },

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
 import { PIURA_CENTER } from '@/lib/constants'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Input } from '@/app/components/ui'
 import { Upload, X, ImagePlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import LocationPicker from './LocationPicker'
@@ -228,7 +229,7 @@ export default function WizardStep3() {
           {items.map((item, i) => {
             const src =
               item.type === 'existing'
-                ? item.url
+                ? cardUrl(item.url)
                 : previewUrls.get(item.file) ?? ''
 
             return (

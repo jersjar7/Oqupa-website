@@ -5,6 +5,7 @@ import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import { card as cardUrl } from '@/lib/imageUrl'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import type { Listing } from '@/types/listing'
@@ -42,7 +43,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const deleteListing = useDeleteListing()
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoUrl = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])

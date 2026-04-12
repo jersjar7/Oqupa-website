@@ -94,7 +94,7 @@ export default function AgentEditListingPage() {
           newPhotos,
           (p) => setSubmitStatus(`Subiendo fotos... (${Math.round(p)}%)`)
         )
-        finalPhotoUrls = [...finalPhotoUrls, ...uploadResults.map(r => r.url)]
+        finalPhotoUrls = [...finalPhotoUrls, ...uploadResults.map(r => r.objectKey)]
       }
 
       setSubmitStatus('Guardando cambios...')

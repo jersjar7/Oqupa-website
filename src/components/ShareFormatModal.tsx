@@ -4,6 +4,7 @@ import Modal from '@/app/components/ui/Modal'
 import { buildBrandedCardConfig } from '@/lib/brandedCardConfig'
 import { paintBrandedCard } from '@/lib/brandedCardPainter'
 import { shareListing, type ShareListingParams } from '@/lib/shareUtils'
+import { fullSize } from '@/lib/imageUrl'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { CardFormat } from '@/lib/cardLayout'
@@ -45,7 +46,8 @@ export default function ShareFormatModal({
     setGeneratingFormat(format)
     try {
       const config = buildBrandedCardConfig(listing, property, format)
-      const photoUrls = listing.media.propertyPhotoUrls ?? []
+      const photoRefs = listing.media.photoKeys ?? listing.media.propertyPhotoUrls ?? []
+      const photoUrls = photoRefs.map(fullSize)
       const blob = await paintBrandedCard(config, photoUrls)
       const file = new File(
         [blob],

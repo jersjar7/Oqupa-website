@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
+import { getFunctions } from 'firebase/functions'
 import { getAnalytics } from 'firebase/analytics'
 import { getPerformance } from 'firebase/performance'
 
@@ -20,5 +21,6 @@ export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],
 })
 export const storage = getStorage(app)
+export const functions = getFunctions(app, 'southamerica-east1')
 export const analytics = getAnalytics(app)
 export const performance = getPerformance(app)

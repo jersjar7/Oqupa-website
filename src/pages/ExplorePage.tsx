@@ -6,6 +6,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
+import { thumbnail } from '@/lib/imageUrl'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
 
@@ -62,10 +63,10 @@ export default function ExplorePage() {
   useEffect(() => {
     if (!items?.length) return
     for (const item of items) {
-      const url = item.property.media.thumbnailPhotoUrls?.[0] ?? item.property.media.propertyPhotoUrls[0]
-      if (url) {
+      const ref = item.property.media.photoKeys?.[0] ?? item.property.media.propertyPhotoUrls[0]
+      if (ref) {
         const img = new Image()
-        img.src = url
+        img.src = thumbnail(ref)
       }
     }
   }, [items])
