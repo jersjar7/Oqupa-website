@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Clock, CheckCircle, Eye, Phone, Pencil } from 'lucide-react'
 import { Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import { card as cardUrl } from '@/lib/imageUrl'
 import { getPriceSuffix } from '@/lib/formatters'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -27,7 +28,8 @@ export default function AgentAssignmentCard({
 }: AgentAssignmentCardProps) {
   const isPending = listing.assignmentStatus === 'pending_acceptance'
   const isAccepted = listing.assignmentStatus === 'accepted'
-  const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoUrl = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
