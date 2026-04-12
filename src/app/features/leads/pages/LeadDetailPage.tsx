@@ -4,6 +4,7 @@ import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useClaimStatus, useClaimLead } from '@/hooks/useRealtorLeads'
 import { useAuthStore } from '@/stores/authStore'
+import { card as cardUrl, fullSize as fullSizeUrl } from '@/lib/imageUrl'
 import { getPriceSuffix } from '@/lib/formatters'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { Button, Modal, Spinner } from '@/app/components/ui'
@@ -24,8 +25,10 @@ export default function LeadDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const images = property?.media?.propertyPhotoUrls ?? []
-  const mobileCarousel = useGallery(images.length)
+  const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
+  const cardImages = photoRefs.map(cardUrl)
+  const fullSizeImages = photoRefs.map(fullSizeUrl)
+  const mobileCarousel = useGallery(photoRefs.length)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalStartIndex, setModalStartIndex] = useState(0)
 
@@ -113,8 +116,8 @@ export default function LeadDetailPage() {
     .join(', ')
   const propertyTypeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
 
-  const visibleDesktopImages = images.slice(0, 5)
-  const hasMoreImages = images.length > 5
+  const visibleDesktopImages = fullSizeImages.slice(0, 5)
+  const hasMoreImages = photoRefs.length > 5
 
   const getRightImageClass = (index: number, totalRight: number): string => {
     if (totalRight === 1) return 'col-span-2 row-span-2'
@@ -139,7 +142,7 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Gallery — mobile carousel */}
-      {images.length > 0 && (
+      {cardImages.length > 0 && (
         <div className="relative mt-4 w-full overflow-hidden bg-black md:hidden">
           <div
             ref={mobileCarousel.trackRef}
@@ -148,7 +151,7 @@ export default function LeadDetailPage() {
             onTouchStart={mobileCarousel.onTouchStart}
             onTouchEnd={mobileCarousel.onTouchEnd}
           >
-            {images.map((url, i) => (
+            {cardImages.map((url, i) => (
               <div
                 key={i}
                 className="h-[300px] w-full shrink-0 cursor-pointer"
@@ -165,13 +168,13 @@ export default function LeadDetailPage() {
             ))}
           </div>
 
-          {images.length > 1 && (
+          {cardImages.length > 1 && (
             <div className="absolute top-4 right-4 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
-              {mobileCarousel.currentSlide + 1} / {images.length}
+              {mobileCarousel.currentSlide + 1} / {cardImages.length}
             </div>
           )}
 
-          {images.length > 1 && (
+          {cardImages.length > 1 && (
             <>
               <button
                 onClick={mobileCarousel.prev}
@@ -197,14 +200,14 @@ export default function LeadDetailPage() {
       )}
 
       {/* Gallery — desktop grid */}
-      {images.length > 0 && (
+      {fullSizeImages.length > 0 && (
         <div className="mx-auto mt-4 hidden max-w-4xl px-4 sm:px-6 md:block">
-          {images.length === 1 ? (
+          {fullSizeImages.length === 1 ? (
             <div
               className="h-[420px] cursor-pointer overflow-hidden rounded-xl"
               onClick={() => openModal(0)}
             >
-              <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
+              <img src={fullSizeImages[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
             </div>
           ) : (
             <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
@@ -212,7 +215,7 @@ export default function LeadDetailPage() {
                 className="col-span-2 row-span-2 cursor-pointer"
                 onClick={() => openModal(0)}
               >
-                <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
+                <img src={fullSizeImages[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
               </div>
               {visibleDesktopImages.slice(1).map((url, i) => {
                 const imageIndex = i + 1
@@ -236,7 +239,7 @@ export default function LeadDetailPage() {
                     {isLast && hasMoreImages && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                         <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900">
-                          Ver todas las {images.length} fotos
+                          Ver todas las {photoRefs.length} fotos
                         </span>
                       </div>
                     )}
@@ -249,7 +252,7 @@ export default function LeadDetailPage() {
       )}
 
       {/* No images placeholder */}
-      {images.length === 0 && (
+      {photoRefs.length === 0 && (
         <div className="mx-auto mt-4 flex h-[200px] max-w-4xl items-center justify-center rounded-xl bg-gray-100 px-4">
           <span className="text-text-secondary">Sin imágenes</span>
         </div>
@@ -396,7 +399,7 @@ export default function LeadDetailPage() {
       {/* Gallery modal */}
       {modalOpen && (
         <GalleryModal
-          images={images}
+          images={fullSizeImages}
           startIndex={modalStartIndex}
           onClose={() => setModalOpen(false)}
         />

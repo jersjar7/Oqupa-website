@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { MessageCircle, Bell, CheckCircle } from 'lucide-react'
 import { Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import { card as cardUrl } from '@/lib/imageUrl'
 import { getPriceSuffix } from '@/lib/formatters'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -47,7 +48,8 @@ function formatRelativeDate(date: Date): string {
 }
 
 export default function ClaimedLeadCard({ claim, listing, property, onAccept, onDecline, isAccepting, isDeclining }: ClaimedLeadCardProps) {
-  const photoUrl = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoUrl = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
