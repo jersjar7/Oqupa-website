@@ -8,6 +8,7 @@ export interface Price {
 
 export interface Media {
   propertyPhotoUrls: string[]
+  photoKeys?: string[]
   thumbnailPhotoUrls?: string[]
   photoBlurHashes?: string[]
   primaryPhotoMicroThumb?: string
@@ -76,6 +77,7 @@ export interface ListingFirestoreDoc {
   updatedAt: unknown
   media: {
     propertyPhotoUrls: string[]
+    photoKeys?: string[]
     thumbnailPhotoUrls?: string[]
     photoBlurHashes?: string[]
     primaryPhotoMicroThumb?: string

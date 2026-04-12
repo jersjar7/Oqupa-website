@@ -93,6 +93,7 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     updatedAt: toDate(data['updatedAt']),
     media: {
       propertyPhotoUrls: (mediaData?.['propertyPhotoUrls'] as string[]) ?? [],
+      photoKeys: (mediaData?.['photoKeys'] as string[]) ?? undefined,
       thumbnailPhotoUrls: (mediaData?.['thumbnailPhotoUrls'] as string[]) ?? undefined,
       photoBlurHashes: (mediaData?.['photoBlurHashes'] as string[]) ?? undefined,
       primaryPhotoMicroThumb: (mediaData?.['primaryPhotoMicroThumb'] as string) ?? undefined,
@@ -152,6 +153,7 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
     normalizedAddress: (data['normalizedAddress'] as string) ?? '',
     media: {
       propertyPhotoUrls: (mediaData?.['propertyPhotoUrls'] as string[]) ?? [],
+      photoKeys: (mediaData?.['photoKeys'] as string[]) ?? undefined,
       thumbnailPhotoUrls: (mediaData?.['thumbnailPhotoUrls'] as string[]) ?? undefined,
       photoBlurHashes: (mediaData?.['photoBlurHashes'] as string[]) ?? undefined,
       primaryPhotoMicroThumb: (mediaData?.['primaryPhotoMicroThumb'] as string) ?? undefined,

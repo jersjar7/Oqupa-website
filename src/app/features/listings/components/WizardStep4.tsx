@@ -96,7 +96,7 @@ export default function WizardStep4() {
       if (isEditMode && editPropertyId && editListingId) {
         // UPDATE FLOW
         // Upload new photos if any
-        let newPhotoUrls: string[] = []
+        let newPhotoKeys: string[] = []
         let newBlurHashes: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
@@ -105,11 +105,11 @@ export default function WizardStep4() {
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
-          newPhotoUrls = results.map(r => r.url)
+          newPhotoKeys = results.map(r => r.objectKey)
           newBlurHashes = results.map(r => r.blurHash)
         }
 
-        const allPhotoUrls = [...data.existingPhotoUrls, ...newPhotoUrls]
+        const allPhotoKeys = [...data.existingPhotoUrls, ...newPhotoKeys]
 
         setUploadProgress('Actualizando propiedad...')
         await firestoreService.updateProperty(editPropertyId, {
@@ -141,7 +141,8 @@ export default function WizardStep4() {
             currency: formData.currency,
           },
           media: {
-            propertyPhotoUrls: allPhotoUrls,
+            propertyPhotoUrls: allPhotoKeys,
+            photoKeys: allPhotoKeys,
             ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
           },
         })
@@ -153,7 +154,8 @@ export default function WizardStep4() {
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
           media: {
-            propertyPhotoUrls: allPhotoUrls,
+            propertyPhotoUrls: allPhotoKeys,
+            photoKeys: allPhotoKeys,
             ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
           },
           contactInfo: user.contactInfo,
@@ -198,7 +200,7 @@ export default function WizardStep4() {
         createdPropertyId = propertyId
 
         // Upload photos
-        let photoUrls: string[] = []
+        let photoKeys: string[] = []
         let blurHashes: string[] = []
         let microThumb = ''
         if (data.photos.length > 0) {
@@ -208,14 +210,15 @@ export default function WizardStep4() {
             data.photos,
             (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
-          photoUrls = results.map(r => r.url)
+          photoKeys = results.map(r => r.objectKey)
           blurHashes = results.map(r => r.blurHash)
           microThumb = results[0]?.microThumb ?? ''
 
-          // Update property with photo URLs, BlurHash, and micro-thumbnail
+          // Update property with photo keys, BlurHash, and micro-thumbnail
           await firestoreService.updateProperty(propertyId, {
             media: {
-              propertyPhotoUrls: photoUrls,
+              propertyPhotoUrls: photoKeys,
+              photoKeys,
               photoBlurHashes: blurHashes,
               ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
             },
@@ -238,7 +241,8 @@ export default function WizardStep4() {
           publishedAt: now,
           expiresAt,
           media: {
-            propertyPhotoUrls: photoUrls,
+            propertyPhotoUrls: photoKeys,
+            photoKeys,
             photoBlurHashes: blurHashes,
             ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
           },
@@ -290,7 +294,8 @@ export default function WizardStep4() {
           currentPrice: { amount: formData.amount, currency: formData.currency },
           normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}`,
           media: {
-            propertyPhotoUrls: photoUrls,
+            propertyPhotoUrls: photoKeys,
+            photoKeys,
             photoBlurHashes: blurHashes,
             ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
           },

@@ -22,6 +22,7 @@ export interface PropertyLocation {
 
 export interface PropertyMedia {
   propertyPhotoUrls: string[]
+  photoKeys?: string[]
   thumbnailPhotoUrls?: string[]
   photoBlurHashes?: string[]
   primaryPhotoMicroThumb?: string
@@ -79,6 +80,7 @@ export interface PropertyFirestoreDoc {
   normalizedAddress: string
   media: {
     propertyPhotoUrls: string[]
+    photoKeys?: string[]
     thumbnailPhotoUrls?: string[]
     photoBlurHashes?: string[]
     primaryPhotoMicroThumb?: string

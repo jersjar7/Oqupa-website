@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
 import { PIURA_CENTER } from '@/lib/constants'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Input } from '@/app/components/ui'
 import { Upload, X, ImagePlus } from 'lucide-react'
 import LocationPicker from './LocationPicker'
@@ -176,7 +177,7 @@ export default function WizardStep3() {
               className="relative h-24 overflow-hidden rounded-xl border border-border"
             >
               <img
-                src={url}
+                src={cardUrl(url)}
                 alt={`Foto ${i + 1}`}
                 className="h-full w-full object-cover"
               />

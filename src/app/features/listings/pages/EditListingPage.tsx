@@ -43,7 +43,7 @@ export default function EditListingPage() {
       distrito: property.location.distrito,
       provincia: property.location.provincia,
       departamento: property.location.departamento,
-      existingPhotoUrls: property.media.propertyPhotoUrls,
+      existingPhotoUrls: property.media.photoKeys ?? property.media.propertyPhotoUrls,
       photos: [],
       amount: listing.price.amount,
       currency: listing.price.currency,

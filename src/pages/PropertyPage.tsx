@@ -5,6 +5,7 @@ import { useGallery } from '@/hooks/useGallery'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
+import { fullSize } from '@/lib/imageUrl'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { PLAY_STORE_URL } from '@/lib/constants'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -302,7 +303,8 @@ export default function PropertyPage() {
     return () => clearTimeout(timer)
   }, [toastMessage])
 
-  const images = property?.media?.propertyPhotoUrls ?? []
+  const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
+  const images = photoRefs.map(fullSize)
 
   // Prefetch all gallery images when property data loads
   useEffect(() => {

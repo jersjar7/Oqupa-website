@@ -3,8 +3,9 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from 'firebase/storage'
+import { httpsCallable } from 'firebase/functions'
 import imageCompression from 'browser-image-compression'
-import { storage } from '@/lib/firebase'
+import { storage, functions } from '@/lib/firebase'
 import { generateBlurHash } from '@/lib/blurhash'
 
 const COMPRESSION_OPTIONS = {
@@ -14,7 +15,7 @@ const COMPRESSION_OPTIONS = {
 }
 
 export interface PhotoUploadResult {
-  url: string
+  objectKey: string
   blurHash: string
   microThumb: string
 }
@@ -35,24 +36,42 @@ export const storageService = {
     const blurHashPromise = generateBlurHash(compressed)
 
     const filename = `${Date.now()}_${file.name}`
-    const storageRef = ref(storage, `property-photos/${propertyId}/${filename}`)
+    const objectKey = `property-photos/${propertyId}/${filename}`
 
-    const url = await new Promise<string>((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, compressed)
+    // Get presigned upload URL from Cloud Function
+    const getUploadUrl = httpsCallable<
+      { objectKey: string; contentType: string },
+      { uploadUrl: string; objectKey: string }
+    >(functions, 'getUploadUrl')
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+    const { data: urlData } = await getUploadUrl({
+      objectKey,
+      contentType: compressed.type || 'image/jpeg',
+    })
+
+    // Upload via XMLHttpRequest PUT for progress tracking
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('PUT', urlData.uploadUrl)
+      xhr.setRequestHeader('Content-Type', compressed.type || 'image/jpeg')
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100
           onProgress?.(progress)
-        },
-        reject,
-        async () => {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref)
-          resolve(downloadUrl)
         }
-      )
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve()
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`))
+        }
+      }
+
+      xhr.onerror = () => reject(new Error('Upload failed'))
+      xhr.send(compressed)
     })
 
     const blurHash = await blurHashPromise
@@ -75,7 +94,7 @@ export const storageService = {
       // Non-critical — empty string means no micro-thumbnail
     }
 
-    return { url, blurHash, microThumb }
+    return { objectKey: urlData.objectKey, blurHash, microThumb }
   },
 
   async uploadUserPhoto(

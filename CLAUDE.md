@@ -121,7 +121,8 @@ Firebase is used for:
 - Firebase Hosting (website deployment)
 - Firestore (database)
 - Firebase Auth (authentication)
-- Firebase Storage (listing images)
+- Cloudflare R2 (listing/user images via `src/lib/imageUrl.ts` utility and `src/services/storageService.ts`)
+- Firebase Storage (legacy image reads only)
 - Trigger Email extension
 - Secret Manager (SMTP password)
 

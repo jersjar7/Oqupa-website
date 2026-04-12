@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import { card as cardUrl } from '@/lib/imageUrl'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyCardProps {
@@ -13,7 +14,8 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ item, isSelected, onClick }: PropertyCardProps) {
   const { listing, property } = item
-  const thumbnail = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+  const thumbnail = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])

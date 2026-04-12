@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { InfoWindow } from '@vis.gl/react-google-maps'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
+import { card as cardUrl } from '@/lib/imageUrl'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyInfoCardProps {
@@ -11,7 +12,8 @@ interface PropertyInfoCardProps {
 
 export default function PropertyInfoCard({ item, onClose }: PropertyInfoCardProps) {
   const { listing, property } = item
-  const thumbnail = property.media.thumbnailPhotoUrls?.[0] ?? property.media.propertyPhotoUrls[0]
+  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
+  const thumbnail = photoRef ? cardUrl(photoRef) : undefined
   const symbol = CURRENCY_SYMBOLS[listing.price.currency]
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
   const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
