@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Briefcase } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const agentAssignments = useAgentAssignments(isVerifiedRealtor ? user?.id : undefined)
   const acceptAssignment = useAcceptAssignment()
   const declineAssignment = useDeclineAssignment()
+  const [mutatingListingId, setMutatingListingId] = useState<string | null>(null)
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -93,17 +95,27 @@ export default function DashboardPage() {
                 listing={listing}
                 property={property}
                 onAccept={listing.assignmentStatus === 'pending_acceptance'
-                  ? () => acceptAssignment.mutate(listing.id)
+                  ? () => {
+                      setMutatingListingId(listing.id)
+                      acceptAssignment.mutate(listing.id, {
+                        onSettled: () => setMutatingListingId(null),
+                      })
+                    }
                   : undefined}
                 onDecline={listing.assignmentStatus === 'pending_acceptance' && user
-                  ? () => declineAssignment.mutate({
-                      listingId: listing.id,
-                      currentDeclinedIds: listing.declinedRealtorIds ?? [],
-                      agentId: user.id,
-                    })
+                  ? () => {
+                      setMutatingListingId(listing.id)
+                      declineAssignment.mutate({
+                        listingId: listing.id,
+                        currentDeclinedIds: listing.declinedRealtorIds ?? [],
+                        agentId: user.id,
+                      }, {
+                        onSettled: () => setMutatingListingId(null),
+                      })
+                    }
                   : undefined}
-                isAccepting={acceptAssignment.isPending}
-                isDeclining={declineAssignment.isPending}
+                isAccepting={acceptAssignment.isPending && mutatingListingId === listing.id}
+                isDeclining={declineAssignment.isPending && mutatingListingId === listing.id}
               />
             ))}
           </div>

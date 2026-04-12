@@ -96,6 +96,8 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `mail` | Trigger Email extension queue | Public create only |
 | `listings` | Property data (read by PropertyPage) | Public read |
 | `properties` | Property specs/photos (read by PropertyPage) | Public read |
+| `config` | Platform configuration (pricing, feature flags) | Public read |
+| `payments` | Boost payment records | Owner read only |
 
 **Firestore rules** are version-controlled at the repo root (`firestore.rules`, `storage.rules`). Deploy from the repo root:
 ```bash
@@ -167,6 +169,11 @@ Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite'
 - `.env.development` — Staging Firebase overrides for dev mode (gitignored)
 - `.env.staging` — Staging API keys (gitignored, reference copy)
 - `.env.example` — Template with placeholder values (committed)
+
+### Stripe Configuration
+- `VITE_STRIPE_PUBLISHABLE_KEY` — Stripe publishable key for Payment Element
+- Set `pk_test_*` in `.env.development` for staging, `pk_live_*` in `.env` for production
+- Without this key, boost payment UI will display but Stripe will not load (logged warning)
 
 > **CRITICAL: NEVER delete `.env`, `.env.development`, or `.env.staging` files.** These contain real API keys and Firebase config that are gitignored and cannot be recovered from version control. Do not `rm`, overwrite, or `touch` these files under any circumstances. If you need a temporary file for testing, use a different name (e.g., `.env.test.tmp`). Deleting these files breaks the build completely.
 

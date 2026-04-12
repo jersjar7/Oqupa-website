@@ -19,9 +19,10 @@ function formatRelativeDate(date: Date): string {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     if (diffHours === 0) {
       const diffMinutes = Math.floor(diffMs / (1000 * 60))
-      return `Hace ${diffMinutes} minutos`
+      if (diffMinutes <= 0) return 'Ahora mismo'
+      return `Hace ${diffMinutes} ${diffMinutes === 1 ? 'minuto' : 'minutos'}`
     }
-    return `Hace ${diffHours} horas`
+    return `Hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`
   }
   if (diffDays === 1) return 'Ayer'
   if (diffDays < 7) return `Hace ${diffDays} dias`

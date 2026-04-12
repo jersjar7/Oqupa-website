@@ -26,6 +26,7 @@ export default defineConfig({
           firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
           vendor: ['react', 'react-dom', 'react-router-dom'],
           maps: ['@vis.gl/react-google-maps'],
+          stripe: ['@stripe/stripe-js'],
         },
       },
     },

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
 import { Modal, Spinner, Button } from '@/app/components/ui'
@@ -16,6 +16,7 @@ export default function LeadsPage() {
   const user = useAuthStore((s) => s.user)
   const [activeTab, setActiveTab] = useState<Tab>('available')
   const [confirmLead, setConfirmLead] = useState<{ listing: Listing; property: Property } | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const claimStatus = useClaimStatus()
   const availableLeads = useAvailableLeads(activeTab === 'available')
@@ -23,6 +24,13 @@ export default function LeadsPage() {
   const claimLead = useClaimLead()
   const acceptAssignment = useAcceptAssignment()
   const declineAssignment = useDeclineAssignment()
+
+  // Auto-dismiss error toast
+  useEffect(() => {
+    if (!errorMessage) return
+    const timer = setTimeout(() => setErrorMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [errorMessage])
 
   function handleClaimConfirm() {
     if (!confirmLead || !user) return
@@ -40,6 +48,14 @@ export default function LeadsPage() {
         onSuccess: () => {
           setConfirmLead(null)
           setActiveTab('claimed')
+        },
+        onError: (error) => {
+          setConfirmLead(null)
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : 'Error al reclamar la oportunidad. Intenta de nuevo.',
+          )
         },
       },
     )
@@ -83,6 +99,19 @@ export default function LeadsPage() {
                 <Spinner size="lg" />
               </div>
             )}
+            {availableLeads.isError && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
+                <p className="text-red-700">
+                  Error al cargar las oportunidades.
+                </p>
+                <button
+                  onClick={() => availableLeads.refetch()}
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-hover"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
             {availableLeads.data && availableLeads.data.length === 0 && (
               <div className="rounded-2xl border border-border bg-white p-12 text-center">
                 <p className="text-text-secondary">
@@ -117,13 +146,26 @@ export default function LeadsPage() {
                 <Spinner size="lg" />
               </div>
             )}
+            {claimedLeads.isError && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
+                <p className="text-red-700">
+                  Error al cargar las oportunidades reclamadas.
+                </p>
+                <button
+                  onClick={() => claimedLeads.refetch()}
+                  className="mt-2 text-sm font-medium text-primary hover:text-primary-hover"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
             {claimedLeads.data && claimedLeads.data.length === 0 && (
               <div className="rounded-2xl border border-border bg-white p-12 text-center">
                 <p className="text-text-secondary">
                   Aun no has reclamado ninguna oportunidad.
                 </p>
                 <p className="mt-1 text-sm text-text-tertiary">
-                  Ve a la pestaña "Disponibles" para encontrar propiedades.
+                  Ve a la pestana "Disponibles" para encontrar propiedades.
                 </p>
               </div>
             )}
@@ -137,11 +179,15 @@ export default function LeadsPage() {
                       claim={claim}
                       listing={listing}
                       property={property}
-                      onAccept={isPending ? () => acceptAssignment.mutate(listing.id) : undefined}
+                      onAccept={isPending ? () => acceptAssignment.mutate(listing.id, {
+                        onError: () => setErrorMessage('Error al aceptar la asignacion. Intenta de nuevo.'),
+                      }) : undefined}
                       onDecline={isPending && user ? () => declineAssignment.mutate({
                         listingId: listing.id,
                         currentDeclinedIds: listing.declinedRealtorIds ?? [],
                         agentId: user.id,
+                      }, {
+                        onError: () => setErrorMessage('Error al rechazar la asignacion. Intenta de nuevo.'),
                       }) : undefined}
                       isAccepting={acceptAssignment.isPending}
                       isDeclining={declineAssignment.isPending}
@@ -206,6 +252,13 @@ export default function LeadsPage() {
           </div>
         )}
       </Modal>
+
+      {/* Error toast */}
+      {errorMessage && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+          {errorMessage}
+        </div>
+      )}
     </div>
   )
 }

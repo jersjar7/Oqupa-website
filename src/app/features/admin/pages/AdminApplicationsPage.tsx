@@ -26,10 +26,14 @@ function formatRelativeDate(date: Date): string {
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
+  if (diffDays < 0) return 'Hoy' // Future date (clock skew or serverTimestamp pending)
   if (diffDays === 0) return 'Hoy'
   if (diffDays === 1) return 'Ayer'
   if (diffDays < 7) return `Hace ${diffDays} dias`
-  if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7)
+    return `Hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`
+  }
   return date.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -54,6 +58,7 @@ export default function AdminApplicationsPage() {
     application: RealtorApplication
   } | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const loadApplications = useCallback(async () => {
     setIsLoading(true)
@@ -82,6 +87,7 @@ export default function AdminApplicationsPage() {
     if (!confirmAction || !user) return
 
     setIsProcessing(true)
+    setActionError(null)
     try {
       if (confirmAction.type === 'approve') {
         await firestoreService.approveRealtorApplication(
@@ -112,10 +118,10 @@ export default function AdminApplicationsPage() {
       setConfirmAction(null)
     } catch (err) {
       console.error('[AdminApplicationsPage] Action failed:', err)
-      setError(
+      setActionError(
         confirmAction.type === 'approve'
-          ? 'Error al aprobar la solicitud.'
-          : 'Error al rechazar la solicitud.'
+          ? 'Error al aprobar la solicitud. Intenta de nuevo.'
+          : 'Error al rechazar la solicitud. Intenta de nuevo.'
       )
     } finally {
       setIsProcessing(false)
@@ -125,7 +131,7 @@ export default function AdminApplicationsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <h1 className="text-[28px] font-medium text-text-primary">
+      <h1 className="font-sans text-[28px] font-medium text-text-primary">
         Solicitudes de Agentes
       </h1>
 
@@ -291,7 +297,12 @@ export default function AdminApplicationsPage() {
       {/* Confirmation modal */}
       <Modal
         isOpen={!!confirmAction}
-        onClose={() => !isProcessing && setConfirmAction(null)}
+        onClose={() => {
+          if (!isProcessing) {
+            setConfirmAction(null)
+            setActionError(null)
+          }
+        }}
         title={confirmAction?.type === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
       >
         <p className="text-text-secondary">
@@ -299,10 +310,16 @@ export default function AdminApplicationsPage() {
             ? `Vas a aprobar la solicitud de ${confirmAction.application.fullName}. Se le otorgara el rol de agente inmobiliario verificado.`
             : `Vas a rechazar la solicitud de ${confirmAction?.application.fullName}.`}
         </p>
+        {actionError && (
+          <p className="mt-3 text-sm text-error">{actionError}</p>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <Button
             variant="text"
-            onClick={() => setConfirmAction(null)}
+            onClick={() => {
+              setConfirmAction(null)
+              setActionError(null)
+            }}
             disabled={isProcessing}
           >
             Cancelar

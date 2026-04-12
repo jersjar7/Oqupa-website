@@ -11,9 +11,10 @@ export function useAgentAssignments(agentId: string | undefined) {
 }
 
 export function useAvailableLeads(enabled: boolean) {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
-    queryKey: ['leads', 'available'],
-    queryFn: () => firestoreService.getAvailableLeads(),
+    queryKey: ['leads', 'available', user?.id],
+    queryFn: () => firestoreService.getAvailableLeads(user?.id),
     enabled,
   })
 }

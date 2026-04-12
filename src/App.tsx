@@ -29,6 +29,7 @@ import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsP
 import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
 import InterestedAgentsPage from '@/app/features/leads/pages/InterestedAgentsPage'
+import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -121,6 +122,14 @@ export default function App() {
             element={
               <AuthGuard>
                 <ProfilePage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="payments"
+            element={
+              <AuthGuard>
+                <PaymentHistoryPage />
               </AuthGuard>
             }
           />

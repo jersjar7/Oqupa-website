@@ -4,7 +4,7 @@ interface ClaimLimitBannerProps {
 }
 
 export default function ClaimLimitBanner({ used, limit }: ClaimLimitBannerProps) {
-  const percentage = Math.min((used / limit) * 100, 100)
+  const percentage = limit > 0 ? Math.min((used / limit) * 100, 100) : 0
   const atLimit = used >= limit
 
   return (

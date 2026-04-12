@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Navigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
@@ -14,6 +14,7 @@ export default function InterestedAgentsPage() {
   const { id: listingId } = useParams<{ id: string }>()
   const user = useAuthStore((s) => s.user)
   const [confirmAssign, setConfirmAssign] = useState<RealtorClaim | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const listingDetails = useListingDetails(listingId)
   const listing = listingDetails.data?.listing
@@ -26,6 +27,13 @@ export default function InterestedAgentsPage() {
   const assignRealtor = useAssignRealtor()
   const unassignRealtor = useUnassignRealtor()
   const [confirmUnassign, setConfirmUnassign] = useState(false)
+
+  // Auto-dismiss error toast
+  useEffect(() => {
+    if (!errorMessage) return
+    const timer = setTimeout(() => setErrorMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [errorMessage])
 
   // Loading state
   if (listingDetails.isLoading) {
@@ -52,6 +60,10 @@ export default function InterestedAgentsPage() {
       },
       {
         onSuccess: () => setConfirmAssign(null),
+        onError: () => {
+          setConfirmAssign(null)
+          setErrorMessage('Error al asignar el agente. Intenta de nuevo.')
+        },
       },
     )
   }
@@ -61,6 +73,10 @@ export default function InterestedAgentsPage() {
 
     unassignRealtor.mutate(listingId, {
       onSuccess: () => setConfirmUnassign(false),
+      onError: () => {
+        setConfirmUnassign(false)
+        setErrorMessage('Error al quitar el agente. Intenta de nuevo.')
+      },
     })
   }
 
@@ -135,7 +151,7 @@ export default function InterestedAgentsPage() {
           <div className="flex items-center gap-2">
             <Badge variant={listing.assignmentStatus === 'pending_acceptance' ? 'warning' : 'info'}>
               {listing.assignmentStatus === 'pending_acceptance'
-                ? 'Pendiente de aceptación'
+                ? 'Pendiente de aceptacion'
                 : 'Agente asignado'}
             </Badge>
             <span className="text-sm text-text-secondary">
@@ -162,6 +178,20 @@ export default function InterestedAgentsPage() {
         {claims.isLoading && (
           <div className="flex justify-center py-8">
             <Spinner size="lg" />
+          </div>
+        )}
+
+        {claims.isError && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
+            <p className="text-red-700">
+              Error al cargar los agentes interesados.
+            </p>
+            <button
+              onClick={() => claims.refetch()}
+              className="mt-2 text-sm font-medium text-primary hover:text-primary-hover"
+            >
+              Reintentar
+            </button>
           </div>
         )}
 
@@ -225,16 +255,16 @@ export default function InterestedAgentsPage() {
         {confirmAssign && (
           <div>
             <p className="text-sm text-text-secondary">
-              ¿Quieres trabajar con <span className="font-bold">{confirmAssign.realtorName}</span>
+              Quieres trabajar con <span className="font-bold">{confirmAssign.realtorName}</span>
               {confirmAssign.realtorBusinessName ? ` de ${confirmAssign.realtorBusinessName}` : ''}?
             </p>
 
             <p className="mt-3 text-sm font-medium text-text-primary">Al asignar un agente:</p>
             <ul className="mt-2 space-y-2">
               {[
-                'Su número de WhatsApp reemplazará al tuyo como contacto principal del anuncio',
-                'Los interesados en tu propiedad contactarán directamente al agente',
-                'Tú seguirás viendo todas las estadísticas y el estado de tu anuncio',
+                'Su numero de WhatsApp reemplazara al tuyo como contacto principal del anuncio',
+                'Los interesados en tu propiedad contactaran directamente al agente',
+                'Tu seguiras viendo todas las estadisticas y el estado de tu anuncio',
                 'Puedes cambiar de agente en cualquier momento',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-2 text-sm text-text-secondary">
@@ -273,7 +303,7 @@ export default function InterestedAgentsPage() {
       >
         <div>
           <p className="text-sm text-text-secondary">
-            El agente dejará de manejar los contactos de esta propiedad. Podrás elegir otro agente.
+            El agente dejara de manejar los contactos de esta propiedad. Podras elegir otro agente.
           </p>
           <div className="mt-6 flex gap-3">
             <Button
@@ -294,6 +324,13 @@ export default function InterestedAgentsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Error toast */}
+      {errorMessage && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+          {errorMessage}
+        </div>
+      )}
     </div>
   )
 }

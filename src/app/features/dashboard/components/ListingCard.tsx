@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Power, PowerOff, Share2, Trash2, Users } from 'lucide-react'
+import { Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
 import { blurHashToDataUrl } from '@/lib/blurhash'
+import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
+import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import {
@@ -115,11 +117,36 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           )}
         </div>
 
+        {/* Boost status */}
+        {listing.isBoosted && (
+          <div className="mt-2">
+            <BoostStatusBadge listing={listing} detailed />
+          </div>
+        )}
+
         {/* View count */}
         <div className="mt-3 flex items-center gap-1 text-xs text-text-tertiary">
           <Eye className="h-3.5 w-3.5" />
           <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
         </div>
+
+        {/* Boost CTA for non-boosted active listings */}
+        {listing.status === 'active' && !listing.isBoosted && (
+          <BoostPurchaseFlow
+            listingId={listing.id}
+            onSuccess={() => {}}
+          >
+            {(openFlow) => (
+              <button
+                onClick={openFlow}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Destacar mi propiedad
+              </button>
+            )}
+          </BoostPurchaseFlow>
+        )}
 
         {/* Realtor agents */}
         {listing.wantsRealtorHelp && listing.status === 'active' && (
@@ -194,7 +221,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {showDeleteConfirm && (
           <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
             <p className="text-sm font-medium text-red-800">
-              ¿Eliminar esta publicacion? Esta accion no se puede deshacer.
+              ¿Eliminar esta publicación? Esta acción no se puede deshacer.
             </p>
             <div className="mt-2 flex gap-2">
               <Button

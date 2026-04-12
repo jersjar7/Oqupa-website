@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { doc, updateDoc, increment } from 'firebase/firestore'
+import { Sparkles } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
@@ -8,9 +9,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import GalleryModal from '@/app/components/GalleryModal'
+import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -252,6 +255,7 @@ export default function PropertyPage() {
     )
   }
 
+  const isOwner = user?.id === listing.ownerId
   const showExact = listing.showExactLocation !== false
   const location = showExact
     ? [
@@ -339,7 +343,7 @@ export default function PropertyPage() {
             <span className="text-sm">{location}</span>
             {!showExact && (
               <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                Ubicacion aproximada
+                Ubicación aproximada
               </span>
             )}
           </div>
@@ -376,6 +380,58 @@ export default function PropertyPage() {
             </span>
           )}
         </div>
+
+        {/* Owner boost section */}
+        {isOwner && listing.status === 'active' && (
+          <div className="mt-6">
+            {listing.isBoosted ? (
+              // Boost status for owner
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  <span className="text-sm font-semibold text-amber-700">
+                    Tu publicación está destacada
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-3 text-xs text-amber-600">
+                  {listing.boostTier && (
+                    <span>Plan: {BOOST_TIER_LABELS[listing.boostTier]}</span>
+                  )}
+                  {listing.boostedUntil && (
+                    <span>
+                      Vence: {listing.boostedUntil.toLocaleDateString('es-PE', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  )}
+                  {listing.boostedUntil && (
+                    <span>
+                      ({Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días restantes)
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Boost CTA for owner
+              <BoostPurchaseFlow
+                listingId={listing.id}
+                onSuccess={() => {}}
+              >
+                {(openFlow) => (
+                  <button
+                    onClick={openFlow}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600"
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    Destacar mi propiedad
+                  </button>
+                )}
+              </BoostPurchaseFlow>
+            )}
+          </div>
+        )}
 
         {/* Description */}
         {listing.description && (

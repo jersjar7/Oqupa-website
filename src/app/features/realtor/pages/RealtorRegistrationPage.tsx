@@ -72,6 +72,18 @@ export default function RealtorRegistrationPage() {
     }
 
     try {
+      // Re-check user state to prevent duplicate submission from multiple tabs
+      await refreshUser()
+      const currentUser = useAuthStore.getState().user
+      if (currentUser?.realtorApplicationStatus === 'pending') {
+        setPageStatus('pending')
+        return
+      }
+      if (currentUser?.isVerifiedRealtor) {
+        setPageStatus('already-verified')
+        return
+      }
+
       await firestoreService.submitRealtorApplication(user.id, {
         fullName: user.name!,
         phone: user.contactInfo!.whatsappPhoneNumber,

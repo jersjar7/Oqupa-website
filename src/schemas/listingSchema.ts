@@ -95,7 +95,10 @@ export const step4Schema = z
       .positive('El precio debe ser mayor a 0'),
     currency: z.enum(['PEN', 'USD']),
     wantsRealtorHelp: z.boolean(),
-    maxRealtors: z.number().int(),
+    maxRealtors: z.number().int().refine(
+      (n) => [1, 3, 5, 10].includes(n),
+      { message: 'Selecciona un numero valido de agentes' },
+    ),
   })
   .superRefine((data, ctx) => {
     const isVenta = data.operationType === 'venta'
@@ -179,5 +182,8 @@ export const fullListingSchema = z.object({
   wantsRealtorHelp: z.boolean({
     message: 'Preferencia de agente no seleccionada (Paso 4)',
   }),
-  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 4)' }).int(),
+  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 4)' }).int().refine(
+    (n) => [1, 3, 5, 10].includes(n),
+    { message: 'Numero de agentes invalido (Paso 4)' },
+  ),
 })

@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   increment,
   writeBatch,
+  runTransaction,
   type Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
@@ -611,7 +612,7 @@ export const firestoreService = {
   // REALTOR LEADS
   // =========================================================================
 
-  async getAvailableLeads(): Promise<ListingWithProperty[]> {
+  async getAvailableLeads(currentUserId?: string): Promise<ListingWithProperty[]> {
     const q = query(
       collection(db, 'listings'),
       where('status', '==', 'active'),
@@ -624,8 +625,27 @@ export const firestoreService = {
       listingFromDoc(d.id, d.data() as Record<string, unknown>)
     )
 
+    // Filter out listings where all claim slots are full
+    const openListings = listings.filter(
+      (l) => l.currentClaimsCount < l.maxRealtors,
+    )
+
+    // If we have a current user, exclude listings they already claimed
+    let filteredListings = openListings
+    if (currentUserId) {
+      const claimsQuery = query(
+        collection(db, 'realtorClaims'),
+        where('realtorId', '==', currentUserId),
+      )
+      const claimsSnapshot = await getDocs(claimsQuery)
+      const claimedListingIds = new Set(
+        claimsSnapshot.docs.map((d) => (d.data() as Record<string, unknown>)['listingId'] as string),
+      )
+      filteredListings = openListings.filter((l) => !claimedListingIds.has(l.id))
+    }
+
     // Batch-fetch unique properties
-    const propertyIds = [...new Set(listings.map((l) => l.propertyId))]
+    const propertyIds = [...new Set(filteredListings.map((l) => l.propertyId))]
     const propertyDocs = await Promise.all(
       propertyIds.map((id) => getDoc(doc(db, 'properties', id)))
     )
@@ -639,7 +659,7 @@ export const firestoreService = {
       }
     }
 
-    return listings
+    return filteredListings
       .filter((l) => propertyMap.has(l.propertyId))
       .map((listing) => ({
         listing,
@@ -655,48 +675,75 @@ export const firestoreService = {
     realtorPhone: string
     realtorBusinessName: string
   }): Promise<void> {
-    const batch = writeBatch(db)
     const now = new Date()
     const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const claimId = `claim_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    const monthlyLimit = 5
 
-    // 1. Create claim document
-    const claimRef = doc(db, 'realtorClaims', claimId)
-    batch.set(claimRef, {
-      listingId: data.listingId,
-      realtorId: data.realtorId,
-      listingOwnerId: data.listingOwnerId,
-      claimedAt: serverTimestamp(),
-      claimMonth,
-      realtorName: data.realtorName,
-      realtorPhone: data.realtorPhone,
-      realtorBusinessName: data.realtorBusinessName,
-      ownerContacted: false,
-      assignedByOwner: false,
+    await runTransaction(db, async (transaction) => {
+      // 1. Read user doc inside transaction to prevent race conditions
+      const userRef = doc(db, 'users', data.realtorId)
+      const userDoc = await transaction.get(userRef)
+      const userData = userDoc.data() as Record<string, unknown> | undefined
+      const storedClaimMonth = userData?.['claimMonth'] as string | undefined
+      const currentClaimCount = (userData?.['claimsThisMonth'] as number) ?? 0
+
+      // Check monthly limit atomically
+      const effectiveCount = storedClaimMonth !== claimMonth ? 0 : currentClaimCount
+      if (effectiveCount >= monthlyLimit) {
+        throw new Error('Has alcanzado el limite de reclamaciones este mes.')
+      }
+
+      // 2. Read listing doc to check if slots are full
+      const listingRef = doc(db, 'listings', data.listingId)
+      const listingDoc = await transaction.get(listingRef)
+      const listingData = listingDoc.data() as Record<string, unknown> | undefined
+      const currentClaims = (listingData?.['currentClaimsCount'] as number) ?? 0
+      const maxRealtors = (listingData?.['maxRealtors'] as number) ?? 3
+
+      if (currentClaims >= maxRealtors) {
+        throw new Error('Todos los espacios de esta oportunidad estan ocupados.')
+      }
+
+      // 3. Check for duplicate claim by this realtor on this listing
+      const existingClaimsQuery = query(
+        collection(db, 'realtorClaims'),
+        where('listingId', '==', data.listingId),
+        where('realtorId', '==', data.realtorId),
+      )
+      const existingClaims = await getDocs(existingClaimsQuery)
+      if (!existingClaims.empty) {
+        throw new Error('Ya has reclamado esta oportunidad.')
+      }
+
+      // 4. Create claim document
+      const claimRef = doc(db, 'realtorClaims', claimId)
+      transaction.set(claimRef, {
+        listingId: data.listingId,
+        realtorId: data.realtorId,
+        listingOwnerId: data.listingOwnerId,
+        claimedAt: serverTimestamp(),
+        claimMonth,
+        realtorName: data.realtorName,
+        realtorPhone: data.realtorPhone,
+        realtorBusinessName: data.realtorBusinessName,
+        ownerContacted: false,
+        assignedByOwner: false,
+      })
+
+      // 5. Update user claim count
+      const newClaimCount = effectiveCount + 1
+      transaction.update(userRef, {
+        claimsThisMonth: newClaimCount,
+        claimMonth,
+        updatedAt: serverTimestamp(),
+      })
+
+      // 6. Increment listing's currentClaimsCount
+      transaction.update(listingRef, {
+        currentClaimsCount: increment(1),
+      })
     })
-
-    // 2. Read user doc for current month count
-    const userDoc = await getDoc(doc(db, 'users', data.realtorId))
-    const userData = userDoc.data() as Record<string, unknown> | undefined
-    const storedClaimMonth = userData?.['claimMonth'] as string | undefined
-    const currentClaimCount = (userData?.['claimsThisMonth'] as number) ?? 0
-    const newClaimCount = storedClaimMonth !== claimMonth ? 1 : currentClaimCount + 1
-
-    // 3. Update user claim count
-    const userRef = doc(db, 'users', data.realtorId)
-    batch.update(userRef, {
-      claimsThisMonth: newClaimCount,
-      claimMonth,
-      updatedAt: serverTimestamp(),
-    })
-
-    // 4. Increment listing's currentClaimsCount
-    const listingRef = doc(db, 'listings', data.listingId)
-    batch.update(listingRef, {
-      currentClaimsCount: increment(1),
-    })
-
-    await batch.commit()
   },
 
   async getClaimedLeadsWithDetails(

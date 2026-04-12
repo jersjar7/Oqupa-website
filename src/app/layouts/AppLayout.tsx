@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Home, LogOut, User, Briefcase, Clock, ShieldCheck, Star } from 'lucide-react'
+import { Home, LogOut, User, Briefcase, Clock, CreditCard, ShieldCheck, Star } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { isAdminEmail } from '@/app/components/guards/AdminGuard'
@@ -65,6 +65,12 @@ export default function AppLayout() {
                           },
                         ]
                       : []),
+                    // Payment history menu item
+                    {
+                      label: 'Mis Pagos',
+                      icon: <CreditCard className="h-4 w-4" />,
+                      to: '/app/payments',
+                    },
                     // Admin menu item
                     ...(isAdminEmail(user?.email)
                       ? [

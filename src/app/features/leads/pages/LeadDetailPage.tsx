@@ -22,6 +22,7 @@ export default function LeadDetailPage() {
   const claimStatus = useClaimStatus()
   const claimLead = useClaimLead()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const images = property?.media?.propertyPhotoUrls ?? []
   const mobileCarousel = useGallery(images.length)
@@ -35,6 +36,13 @@ export default function LeadDetailPage() {
       document.title = 'Oportunidad - Oqupa'
     }
   }, [listing?.description])
+
+  // Auto-dismiss error toast
+  useEffect(() => {
+    if (!errorMessage) return
+    const timer = setTimeout(() => setErrorMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [errorMessage])
 
   const openModal = (index: number) => {
     setModalStartIndex(index)
@@ -61,6 +69,14 @@ export default function LeadDetailPage() {
           setConfirmOpen(false)
           navigate('/app/leads')
         },
+        onError: (error) => {
+          setConfirmOpen(false)
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : 'Error al reclamar la oportunidad. Intenta de nuevo.',
+          )
+        },
       },
     )
   }
@@ -73,7 +89,7 @@ export default function LeadDetailPage() {
     )
   }
 
-  if (error || !listing || !property) {
+  if (error || !listing || !property || !listing.wantsRealtorHelp) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="font-sans text-2xl font-medium text-text-primary">
@@ -434,6 +450,13 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Error toast */}
+      {errorMessage && (
+        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+          {errorMessage}
+        </div>
+      )}
     </div>
   )
 }

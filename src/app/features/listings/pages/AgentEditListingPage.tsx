@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Info, Upload, X, Loader2 } from 'lucide-react'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { storageService } from '@/services/storageService'
 import { Button, Spinner } from '@/app/components/ui'
@@ -9,6 +11,8 @@ import { Button, Spinner } from '@/app/components/ui'
 export default function AgentEditListingPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
   const { data: result, isLoading, error } = useListingDetails(id)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -19,6 +23,19 @@ export default function AgentEditListingPage() {
   const [submitStatus, setSubmitStatus] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [initialized, setInitialized] = useState(false)
+
+  // Memoize blob URLs to avoid creating new ones on every render and enable cleanup
+  const newPhotoPreviewUrls = useMemo(
+    () => newPhotos.map((file) => URL.createObjectURL(file)),
+    [newPhotos],
+  )
+
+  // Revoke blob URLs on cleanup to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      newPhotoPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [newPhotoPreviewUrls])
 
   // Pre-fill form with existing data
   useEffect(() => {
@@ -103,6 +120,10 @@ export default function AgentEditListingPage() {
         await updateAsAgent(params)
       }
 
+      // Invalidate cached data so dashboard and detail pages show updated content
+      await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      await queryClient.invalidateQueries({ queryKey: ['leads'] })
+
       navigate('/app', { replace: true })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error inesperado'
@@ -129,8 +150,11 @@ export default function AgentEditListingPage() {
     )
   }
 
-  // Verify this is an accepted assignment
-  if (result.listing.assignmentStatus !== 'accepted') {
+  // Verify the current user is the accepted assigned agent
+  if (
+    result.listing.assignmentStatus !== 'accepted' ||
+    result.listing.assignedRealtorId !== user?.id
+  ) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-error">
@@ -214,10 +238,10 @@ export default function AgentEditListingPage() {
               ))}
 
               {/* New photos */}
-              {newPhotos.map((file, index) => (
+              {newPhotos.map((_file, index) => (
                 <div key={`new-${index}`} className="group relative aspect-square">
                   <img
-                    src={URL.createObjectURL(file)}
+                    src={newPhotoPreviewUrls[index]}
                     alt={`Nueva foto ${index + 1}`}
                     className="h-full w-full rounded-lg object-cover"
                   />
