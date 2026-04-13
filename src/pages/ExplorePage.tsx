@@ -1,11 +1,14 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
+import { StaggerList, staggerItemVariants } from '@/app/components/ui'
 import { thumbnail } from '@/lib/imageUrl'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
@@ -13,6 +16,13 @@ import type { MapFilters } from '@/types/explore'
 export default function ExplorePage() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  useDocumentMeta({
+    title: 'Explorar Propiedades - Oqupa',
+    description:
+      'Explora propiedades en venta y alquiler en Piura. Encuentra casas, departamentos, terrenos y mas en el mapa interactivo de Oqupa.',
+    url: `${window.location.origin}/explorar`,
+  })
 
   // Read post-publish focus coordinates from navigation state (once)
   const initialCenter = useMemo(() => {
@@ -93,15 +103,29 @@ export default function ExplorePage() {
       <div className="relative flex flex-1 overflow-hidden">
         {/* Map */}
         <div className="relative flex-1 md:flex-[3]">
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          )}
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                key="loading-overlay"
+                className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </motion.div>
+            )}
+          </AnimatePresence>
           {error && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80">
+            <motion.div
+              key="error-overlay"
+              className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <p className="text-sm text-error">Error al cargar propiedades</p>
-            </div>
+            </motion.div>
           )}
           <ExploreMap
             items={filtered}
@@ -146,29 +170,38 @@ export default function ExplorePage() {
 
         {/* Desktop property cards panel */}
         <div className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block">
-          {visible.length === 0 && !isLoading ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <MapPin className="h-8 w-8 text-text-tertiary/40" />
-              <p className="text-sm text-text-tertiary">
-                {filtered.length > 0
-                  ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
-                  : 'No se encontraron propiedades con los filtros seleccionados.'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {visible.map((item) => (
-                <PropertyCard
-                  key={item.listing.id}
-                  item={item}
-                  isSelected={selectedId === item.listing.id}
-                  onClick={() => handleSelect(
-                    selectedId === item.listing.id ? null : item.listing.id
-                  )}
-                />
-              ))}
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {visible.length === 0 && !isLoading ? (
+              <motion.div
+                key="empty"
+                className="flex flex-col items-center gap-3 py-12 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <MapPin className="h-8 w-8 text-text-tertiary/40" />
+                <p className="text-sm text-text-tertiary">
+                  {filtered.length > 0
+                    ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
+                    : 'No se encontraron propiedades con los filtros seleccionados.'}
+                </p>
+              </motion.div>
+            ) : (
+              <StaggerList className="grid grid-cols-2 gap-3" key="content">
+                {visible.map((item) => (
+                  <motion.div key={item.listing.id} variants={staggerItemVariants}>
+                    <PropertyCard
+                      item={item}
+                      isSelected={selectedId === item.listing.id}
+                      onClick={() => handleSelect(
+                        selectedId === item.listing.id ? null : item.listing.id
+                      )}
+                    />
+                  </motion.div>
+                ))}
+              </StaggerList>
+            )}
+          </AnimatePresence>
 
           {/* Infinite scroll sentinel */}
           <div ref={sentinelRef} className="h-1" />

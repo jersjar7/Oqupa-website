@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { isAdminEmail } from '@/app/components/guards/AdminGuard'
 import { Spinner } from '@/app/components/ui'
+import PageTransition from '@/app/components/ui/PageTransition'
 import UserMenu from '@/components/layout/UserMenu'
 import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 
@@ -34,7 +35,7 @@ export default function AppLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top bar */}
-      <header className="border-b border-border bg-[#FFFAF5]/95 backdrop-blur-xl">
+      <header className="relative z-50 border-b border-border bg-[#FFFAF5]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center">
             <img src={logo} alt="Oqupa" className="h-12" />
@@ -134,7 +135,9 @@ export default function AppLayout() {
 
       {/* Page content */}
       <main className="flex flex-1 flex-col">
-        <Outlet />
+        <PageTransition key={location.pathname}>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   )

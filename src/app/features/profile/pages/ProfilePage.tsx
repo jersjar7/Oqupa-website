@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -52,8 +53,10 @@ export default function ProfilePage() {
 
       await refreshUser()
       setSuccess('Perfil actualizado')
+      toast.success('Perfil actualizado')
     } catch {
       setError('Error al actualizar el perfil')
+      toast.error('Error al actualizar el perfil')
     }
   }
 
@@ -62,9 +65,11 @@ export default function ProfilePage() {
     setIsDeleting(true)
     try {
       await authService.deleteAccount()
+      toast.success('Cuenta eliminada')
       navigate('/app/login')
     } catch {
       setDeleteError('Error al eliminar la cuenta. Intenta de nuevo.')
+      toast.error('Error al eliminar la cuenta. Intenta de nuevo.')
       setIsDeleting(false)
     }
   }

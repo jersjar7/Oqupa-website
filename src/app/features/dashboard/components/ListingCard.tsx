@@ -1,15 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
-import { Badge, Button } from '@/app/components/ui'
+import { AnimatedImage, Badge, Button } from '@/app/components/ui'
 import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
 import { blurHashToDataUrl } from '@/lib/blurhash'
 import { card as cardUrl } from '@/lib/imageUrl'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
+import { useAuthStore } from '@/stores/authStore'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
+import type { BoostTier } from '@/types/boost'
+import type { ListingWithProperty } from '@/types/explore'
 import {
   PROPERTY_TYPE_LABELS,
   LISTING_STATUS_LABELS,
@@ -41,8 +45,41 @@ function formatPrice(amount: number, currency: string): string {
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
   const deleteListing = useDeleteListing()
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const handleBoostSuccess = useCallback(
+    ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
+      const userId = user?.id
+      if (!userId) return
+
+      const boostedUntil = new Date()
+      boostedUntil.setDate(boostedUntil.getDate() + durationDays)
+
+      // Optimistically update the listing in the React Query cache
+      queryClient.setQueryData<ListingWithProperty[]>(
+        ['listings', 'user', userId, 'withProperties'],
+        (old) =>
+          old?.map((item) =>
+            item.listing.id === listing.id
+              ? {
+                  ...item,
+                  listing: {
+                    ...item.listing,
+                    isBoosted: true,
+                    boostTier: tier,
+                    boostScore: 100,
+                    boostedUntil,
+                  },
+                }
+              : item,
+          ),
+      )
+    },
+    [queryClient, user?.id, listing.id],
+  )
   const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
   const photoUrl = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
@@ -57,14 +94,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
     <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
       {/* Photo */}
       <div
-        className="relative h-48 bg-gray-100"
+        className="group relative h-48 overflow-hidden bg-gray-100"
         style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
         {photoUrl ? (
-          <img
+          <AnimatedImage
             src={photoUrl}
             alt={listing.description}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
           />
@@ -136,7 +173,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {listing.status === 'active' && !listing.isBoosted && (
           <BoostPurchaseFlow
             listingId={listing.id}
-            onSuccess={() => {}}
+            onSuccess={handleBoostSuccess}
           >
             {(openFlow) => (
               <button

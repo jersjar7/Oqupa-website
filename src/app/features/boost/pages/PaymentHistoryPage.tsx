@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Receipt, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserBoostPayments, useRefundBoostPayment } from '@/hooks/useBoost'
 import { Spinner } from '@/app/components/ui'
@@ -100,9 +101,12 @@ function PaymentCard({ payment }: { payment: Payment }) {
     try {
       await refundMutation.mutateAsync(payment.id)
       setShowRefundConfirm(false)
+      toast.success('Reembolso procesado exitosamente')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al procesar el reembolso'
-      setRefundError(mapRefundError(message))
+      const userMessage = mapRefundError(message)
+      setRefundError(userMessage)
+      toast.error(userMessage)
     }
   }
 

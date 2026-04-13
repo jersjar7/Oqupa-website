@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Briefcase } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserListingsWithProperties } from '@/hooks/useListings'
 import { useAgentAssignments, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
-import { Button, Badge, Spinner } from '@/app/components/ui'
+import { Button, Badge, Spinner, StaggerList, staggerItemVariants } from '@/app/components/ui'
 import ListingCard from '../components/ListingCard'
 import ListingCardSkeleton from '../components/ListingCardSkeleton'
 import EmptyState from '../components/EmptyState'
@@ -43,37 +44,58 @@ export default function DashboardPage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <ListingCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="mt-8 text-center">
-          <p className="text-error">Error al cargar tus publicaciones</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-base text-secondary hover:text-secondary-hover"
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <motion.div
+            key="skeleton"
+            className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            Reintentar
-          </button>
-        </div>
-      ) : !items || items.length === 0 ? (
-        <div className="mt-8">
-          <EmptyState />
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map(({ listing, property }) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              property={property}
-            />
-          ))}
-        </div>
-      )}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ListingCardSkeleton key={i} />
+            ))}
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            key="error"
+            className="mt-8 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="text-error">Error al cargar tus publicaciones</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-base text-secondary hover:text-secondary-hover"
+            >
+              Reintentar
+            </button>
+          </motion.div>
+        ) : !items || items.length === 0 ? (
+          <motion.div
+            key="empty"
+            className="mt-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <EmptyState />
+          </motion.div>
+        ) : (
+          <StaggerList className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" key="content">
+            {items.map(({ listing, property }) => (
+              <motion.div key={listing.id} variants={staggerItemVariants}>
+                <ListingCard
+                  listing={listing}
+                  property={property}
+                />
+              </motion.div>
+            ))}
+          </StaggerList>
+        )}
+      </AnimatePresence>
 
       {/* Agent Assignments Section */}
       {isVerifiedRealtor && agentAssignments.data && agentAssignments.data.length > 0 && (
@@ -88,37 +110,38 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-text-secondary">
             Propiedades donde has sido seleccionado como agente
           </p>
-          <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerList className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {agentAssignments.data.map(({ listing, property }) => (
-              <AgentAssignmentCard
-                key={listing.id}
-                listing={listing}
-                property={property}
-                onAccept={listing.assignmentStatus === 'pending_acceptance'
-                  ? () => {
-                      setMutatingListingId(listing.id)
-                      acceptAssignment.mutate(listing.id, {
-                        onSettled: () => setMutatingListingId(null),
-                      })
-                    }
-                  : undefined}
-                onDecline={listing.assignmentStatus === 'pending_acceptance' && user
-                  ? () => {
-                      setMutatingListingId(listing.id)
-                      declineAssignment.mutate({
-                        listingId: listing.id,
-                        currentDeclinedIds: listing.declinedRealtorIds ?? [],
-                        agentId: user.id,
-                      }, {
-                        onSettled: () => setMutatingListingId(null),
-                      })
-                    }
-                  : undefined}
-                isAccepting={acceptAssignment.isPending && mutatingListingId === listing.id}
-                isDeclining={declineAssignment.isPending && mutatingListingId === listing.id}
-              />
+              <motion.div key={listing.id} variants={staggerItemVariants}>
+                <AgentAssignmentCard
+                  listing={listing}
+                  property={property}
+                  onAccept={listing.assignmentStatus === 'pending_acceptance'
+                    ? () => {
+                        setMutatingListingId(listing.id)
+                        acceptAssignment.mutate(listing.id, {
+                          onSettled: () => setMutatingListingId(null),
+                        })
+                      }
+                    : undefined}
+                  onDecline={listing.assignmentStatus === 'pending_acceptance' && user
+                    ? () => {
+                        setMutatingListingId(listing.id)
+                        declineAssignment.mutate({
+                          listingId: listing.id,
+                          currentDeclinedIds: listing.declinedRealtorIds ?? [],
+                          agentId: user.id,
+                        }, {
+                          onSettled: () => setMutatingListingId(null),
+                        })
+                      }
+                    : undefined}
+                  isAccepting={acceptAssignment.isPending && mutatingListingId === listing.id}
+                  isDeclining={declineAssignment.isPending && mutatingListingId === listing.id}
+                />
+              </motion.div>
             ))}
-          </div>
+          </StaggerList>
         </div>
       )}
 

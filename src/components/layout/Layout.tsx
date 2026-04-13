@@ -5,6 +5,7 @@ import { useWaitlistPopup } from '@/hooks/useWaitlistPopup'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import WaitlistPopup from '@/components/landing/WaitlistPopup'
+import PageTransition from '@/app/components/ui/PageTransition'
 
 export default function Layout() {
   const location = useLocation()
@@ -41,7 +42,9 @@ export default function Layout() {
       />
 
       <main className="flex-1">
-        <Outlet context={{ heroRef }} />
+        <PageTransition key={location.pathname}>
+          <Outlet context={{ heroRef }} />
+        </PageTransition>
       </main>
 
       <Footer />

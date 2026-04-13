@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Badge, Button } from '@/app/components/ui'
+import { AnimatedImage, Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
 import { card as cardUrl, fullSize as fullSizeUrl } from '@/lib/imageUrl'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -63,7 +63,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
                   className="h-full w-full shrink-0 cursor-pointer"
                   onClick={() => { setModalOpen(true) }}
                 >
-                  <img
+                  <AnimatedImage
                     src={url}
                     alt={`Foto ${i + 1}`}
                     className="h-full w-full object-cover"

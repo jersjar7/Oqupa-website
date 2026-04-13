@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -57,6 +58,10 @@ export function useClaimLead() {
     onSuccess: async () => {
       await refreshUser()
       queryClient.invalidateQueries({ queryKey: ['leads'] })
+      toast.success('Propiedad reclamada exitosamente')
+    },
+    onError: () => {
+      toast.error('Error al reclamar la propiedad')
     },
   })
 }
@@ -73,6 +78,10 @@ export function useAssignRealtor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Agente asignado exitosamente')
+    },
+    onError: () => {
+      toast.error('Error al asignar el agente')
     },
   })
 }
@@ -85,6 +94,10 @@ export function useUnassignRealtor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Agente removido')
+    },
+    onError: () => {
+      toast.error('Error al quitar el agente')
     },
   })
 }
@@ -97,6 +110,10 @@ export function useAcceptAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Asignacion aceptada')
+    },
+    onError: () => {
+      toast.error('Error al aceptar la asignacion')
     },
   })
 }
@@ -113,6 +130,10 @@ export function useDeclineAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Asignacion rechazada')
+    },
+    onError: () => {
+      toast.error('Error al rechazar la asignacion')
     },
   })
 }

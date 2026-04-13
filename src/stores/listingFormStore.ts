@@ -41,6 +41,7 @@ export interface ListingFormData {
 
 interface ListingFormState {
   step: number
+  direction: number // 1 = forward, -1 = backward
   data: ListingFormData
   isEditMode: boolean
   editListingId: string | null
@@ -111,25 +112,27 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
 
   return {
     step: saved.step ?? 1,
+    direction: 1,
     data: { ...INITIAL_DATA, ...saved },
     isEditMode: false,
     editListingId: null,
     editPropertyId: null,
 
     setStep: (step) => {
-      set({ step })
+      const dir = step >= get().step ? 1 : -1
+      set({ step, direction: dir })
       saveToSession(step, get().data)
     },
 
     nextStep: () => {
       const next = Math.min(get().step + 1, 4)
-      set({ step: next })
+      set({ step: next, direction: 1 })
       saveToSession(next, get().data)
     },
 
     prevStep: () => {
       const prev = Math.max(get().step - 1, 1)
-      set({ step: prev })
+      set({ step: prev, direction: -1 })
       saveToSession(prev, get().data)
     },
 
@@ -148,6 +151,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
       sessionStorage.removeItem(STORAGE_KEY)
       set({
         step: 1,
+        direction: 1,
         data: { ...INITIAL_DATA },
         isEditMode: false,
         editListingId: null,

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 
 interface ModalProps {
@@ -35,34 +36,44 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     return () => dialog.removeEventListener('cancel', handleCancel)
   }, [onClose])
 
-  if (!isOpen) return null
-
   return (
-    <dialog
-      ref={dialogRef}
-      className="m-auto w-full max-w-lg rounded-2xl border-none bg-white p-0 shadow-large backdrop:bg-black/50"
-      onClick={(e) => {
-        if (e.target === dialogRef.current) onClose()
-      }}
-    >
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          {title && (
-            <h2 className="text-[28px] font-medium text-text-primary">{title}</h2>
-          )}
-          <button
-            onClick={onClose}
-            className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-black/5 hover:text-text-primary"
-            aria-label="Cerrar"
+    <AnimatePresence>
+      {isOpen && (
+        <dialog
+          ref={dialogRef}
+          className="m-auto w-full max-w-lg rounded-2xl border-none bg-transparent p-0 shadow-none backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === dialogRef.current) onClose()
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="rounded-2xl bg-white shadow-large"
           >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                {title && (
+                  <h2 className="text-[28px] font-medium text-text-primary">{title}</h2>
+                )}
+                <button
+                  onClick={onClose}
+                  className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-black/5 hover:text-text-primary"
+                  aria-label="Cerrar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-        {/* Content */}
-        <div className="mt-4">{children}</div>
-      </div>
-    </dialog>
+              {/* Content */}
+              <div className="mt-4">{children}</div>
+            </div>
+          </motion.div>
+        </dialog>
+      )}
+    </AnimatePresence>
   )
 }

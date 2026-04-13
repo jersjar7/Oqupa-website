@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Navigate, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { useListingClaims, useAssignRealtor, useUnassignRealtor } from '@/hooks/useRealtorLeads'
 import { thumbnail as thumbnailUrl } from '@/lib/imageUrl'
 import { Modal, Spinner, Button, Badge } from '@/app/components/ui'
+import StaggerList, { staggerItemVariants } from '@/app/components/ui/StaggerList'
 import RealtorClaimCard from '../components/RealtorClaimCard'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -15,7 +17,6 @@ export default function InterestedAgentsPage() {
   const { id: listingId } = useParams<{ id: string }>()
   const user = useAuthStore((s) => s.user)
   const [confirmAssign, setConfirmAssign] = useState<RealtorClaim | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const listingDetails = useListingDetails(listingId)
   const listing = listingDetails.data?.listing
@@ -28,13 +29,6 @@ export default function InterestedAgentsPage() {
   const assignRealtor = useAssignRealtor()
   const unassignRealtor = useUnassignRealtor()
   const [confirmUnassign, setConfirmUnassign] = useState(false)
-
-  // Auto-dismiss error toast
-  useEffect(() => {
-    if (!errorMessage) return
-    const timer = setTimeout(() => setErrorMessage(null), 4000)
-    return () => clearTimeout(timer)
-  }, [errorMessage])
 
   // Loading state
   if (listingDetails.isLoading) {
@@ -63,7 +57,6 @@ export default function InterestedAgentsPage() {
         onSuccess: () => setConfirmAssign(null),
         onError: () => {
           setConfirmAssign(null)
-          setErrorMessage('Error al asignar el agente. Intenta de nuevo.')
         },
       },
     )
@@ -76,7 +69,6 @@ export default function InterestedAgentsPage() {
       onSuccess: () => setConfirmUnassign(false),
       onError: () => {
         setConfirmUnassign(false)
-        setErrorMessage('Error al quitar el agente. Intenta de nuevo.')
       },
     })
   }
@@ -216,16 +208,17 @@ export default function InterestedAgentsPage() {
           const declinedClaims = claims.data.filter((c) => declinedIds.includes(c.realtorId))
 
           return (
-            <div className="flex flex-col gap-3">
+            <StaggerList className="flex flex-col gap-3">
               {activeClaims.map((claim) => (
-                <RealtorClaimCard
-                  key={claim.id}
-                  claim={claim}
-                  isAssigned={listing.assignedRealtorId === claim.realtorId}
-                  hasAssignedRealtor={!!listing.assignedRealtorId}
-                  onAssign={() => setConfirmAssign(claim)}
-                  isAssigning={assignRealtor.isPending && confirmAssign?.id === claim.id}
-                />
+                <motion.div key={claim.id} variants={staggerItemVariants}>
+                  <RealtorClaimCard
+                    claim={claim}
+                    isAssigned={listing.assignedRealtorId === claim.realtorId}
+                    hasAssignedRealtor={!!listing.assignedRealtorId}
+                    onAssign={() => setConfirmAssign(claim)}
+                    isAssigning={assignRealtor.isPending && confirmAssign?.id === claim.id}
+                  />
+                </motion.div>
               ))}
               {declinedClaims.length > 0 && (
                 <>
@@ -233,7 +226,7 @@ export default function InterestedAgentsPage() {
                     Rechazados
                   </p>
                   {declinedClaims.map((claim) => (
-                    <div key={claim.id} className="opacity-50">
+                    <motion.div key={claim.id} variants={staggerItemVariants} className="opacity-50">
                       <RealtorClaimCard
                         claim={claim}
                         isAssigned={false}
@@ -241,11 +234,11 @@ export default function InterestedAgentsPage() {
                         onAssign={undefined}
                         isAssigning={false}
                       />
-                    </div>
+                    </motion.div>
                   ))}
                 </>
               )}
-            </div>
+            </StaggerList>
           )
         })()}
       </div>
@@ -329,12 +322,6 @@ export default function InterestedAgentsPage() {
         </div>
       </Modal>
 
-      {/* Error toast */}
-      {errorMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
-          {errorMessage}
-        </div>
-      )}
     </div>
   )
 }

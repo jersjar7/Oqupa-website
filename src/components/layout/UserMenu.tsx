@@ -43,7 +43,7 @@ export default function UserMenu({ userName, items }: UserMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-48 rounded-xl border border-border bg-white py-1 shadow-medium">
+        <div className="absolute right-0 z-50 mt-1 w-48 rounded-xl border border-border bg-white py-1 shadow-medium">
           {items.map((item) =>
             item.to ? (
               <Link
