@@ -2,7 +2,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step1Schema, type Step1Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { Button } from '@/app/components/ui'
+import { useRevealedFields } from '@/hooks/useRevealedFields'
+import { Button, InfoTip } from '@/app/components/ui'
+import RevealField from './RevealField'
 import {
   PROPERTY_TYPE_LABELS,
   PROPERTY_TYPE_DESCRIPTIONS,
@@ -20,7 +22,7 @@ import {
 } from '@/types/enums'
 
 export default function WizardStep1() {
-  const { data, updateData, nextStep } = useListingFormStore()
+  const { data, updateData, nextStep, isEditMode } = useListingFormStore()
 
   const {
     setValue,
@@ -40,6 +42,17 @@ export default function WizardStep1() {
   const selected = watch()
   const isAlquiler = selected.operationType === 'alquiler'
   const isShortTerm = selected.rentalDurationType === 'shortTerm'
+
+  const { isRevealed, wasInitial } = useRevealedFields(
+    {
+      operationType: true, // always visible
+      rentalDuration: !!selected.operationType && isAlquiler,
+      propertyType: !!selected.operationType && (!isAlquiler || !!selected.rentalDurationType),
+      role: !!selected.propertyType,
+      submit: !!selected.role,
+    },
+    isEditMode
+  )
 
   // Determine available property types based on operation + rental duration
   const availablePropertyTypes = !isAlquiler
@@ -102,113 +115,138 @@ export default function WizardStep1() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Operation Type */}
-      <div>
-        <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operacion</h3>
-        {errors.operationType && (
-          <p className="mt-1 text-sm text-error">{errors.operationType.message}</p>
-        )}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {Object.values(OperationType).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handleOperationTypeChange(type)}
-              className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                selected.operationType === type
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border text-text-secondary hover:border-primary/30'
-              }`}
-            >
-              {OPERATION_TYPE_LABELS[type]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Rental Duration Type (only when Alquiler is selected) */}
-      {isAlquiler && (
+      {/* Operation Type — always visible */}
+      <RevealField visible={isRevealed('operationType')} animate={!wasInitial('operationType')}>
         <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Duracion del alquiler</h3>
+          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operacion</h3>
+          {errors.operationType && (
+            <p className="mt-1 text-sm text-error">{errors.operationType.message}</p>
+          )}
           <div className="mt-3 grid grid-cols-2 gap-3">
-            {Object.values(RentalDurationType).map((type) => (
+            {Object.values(OperationType).map((type) => (
               <button
                 key={type}
                 type="button"
-                onClick={() => handleRentalDurationChange(type)}
+                onClick={() => handleOperationTypeChange(type)}
                 className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                  selected.rentalDurationType === type
+                  selected.operationType === type
                     ? 'border-primary bg-primary/5 text-primary'
                     : 'border-border text-text-secondary hover:border-primary/30'
                 }`}
               >
-                {RENTAL_DURATION_TYPE_LABELS[type]}
+                {OPERATION_TYPE_LABELS[type]}
               </button>
             ))}
           </div>
         </div>
+      </RevealField>
+
+      {/* Rental Duration Type (only when Alquiler is selected) */}
+      {isAlquiler && (
+        <RevealField
+          visible={isRevealed('rentalDuration')}
+          animate={!wasInitial('rentalDuration')}
+          tooltip={"Largo plazo = meses.\nCorto plazo = noches, estilo Airbnb."}
+        >
+          <div>
+            <h3 className="text-sm font-medium uppercase text-text-primary">
+              Duracion del alquiler
+              <InfoTip text="Largo plazo: contratos mensuales (1 mes o más). Corto plazo: alquiler por noches o días, estilo Airbnb." />
+            </h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {Object.values(RentalDurationType).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleRentalDurationChange(type)}
+                  className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    selected.rentalDurationType === type
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border text-text-secondary hover:border-primary/30'
+                  }`}
+                >
+                  {RENTAL_DURATION_TYPE_LABELS[type]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </RevealField>
       )}
 
       {/* Property Type */}
-      <div>
-        <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de propiedad</h3>
-        {errors.propertyType && (
-          <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>
-        )}
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          {availablePropertyTypes.map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handlePropertyTypeChange(type)}
-              className={`flex flex-col items-start rounded-xl border-2 px-4 py-3 text-left transition-colors ${
-                selected.propertyType === type
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/30'
-              }`}
-            >
-              <span className={`text-sm font-semibold ${
-                selected.propertyType === type ? 'text-primary' : 'text-text-primary'
-              }`}>
-                {PROPERTY_TYPE_LABELS[type]}
-              </span>
-              <span className={`text-xs ${
-                selected.propertyType === type ? 'text-primary/70' : 'text-text-tertiary'
-              }`}>
-                {PROPERTY_TYPE_DESCRIPTIONS[type]}
-              </span>
-            </button>
-          ))}
+      <RevealField visible={isRevealed('propertyType')} animate={!wasInitial('propertyType')}>
+        <div>
+          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de propiedad</h3>
+          {errors.propertyType && (
+            <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>
+          )}
+          <div className="mt-3 grid grid-cols-1 gap-3">
+            {availablePropertyTypes.map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handlePropertyTypeChange(type)}
+                className={`flex flex-col items-start rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                  selected.propertyType === type
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/30'
+                }`}
+              >
+                <span className={`text-sm font-semibold ${
+                  selected.propertyType === type ? 'text-primary' : 'text-text-primary'
+                }`}>
+                  {PROPERTY_TYPE_LABELS[type]}
+                </span>
+                <span className={`text-xs ${
+                  selected.propertyType === type ? 'text-primary/70' : 'text-text-tertiary'
+                }`}>
+                  {PROPERTY_TYPE_DESCRIPTIONS[type]}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </RevealField>
 
       {/* Role */}
-      <div>
-        <h3 className="text-sm font-medium uppercase text-text-primary">Tu relacion con la propiedad</h3>
-        {errors.role && (
-          <p className="mt-1 text-sm text-error">{errors.role.message}</p>
-        )}
-        <div className="mt-3 grid gap-3">
-          {Object.values(ListingRole).map((role) => (
-            <button
-              key={role}
-              type="button"
-              onClick={() => setValue('role', role, { shouldValidate: true })}
-              className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
-                selected.role === role
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border text-text-secondary hover:border-primary/30'
-              }`}
-            >
-              {LISTING_ROLE_LABELS[role]}
-            </button>
-          ))}
+      <RevealField
+        visible={isRevealed('role')}
+        animate={!wasInitial('role')}
+        tooltip="Esto nos ayuda a personalizar tu experiencia."
+      >
+        <div>
+          <h3 className="text-sm font-medium uppercase text-text-primary">
+            Tu relacion con la propiedad
+            <InfoTip text="Selecciona 'Agente inmobiliario' si trabajas como agente. 'Represento al propietario' si eres familiar, amigo, o apoderado del dueño." />
+          </h3>
+          {errors.role && (
+            <p className="mt-1 text-sm text-error">{errors.role.message}</p>
+          )}
+          <div className="mt-3 grid gap-3">
+            {Object.values(ListingRole).map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setValue('role', role, { shouldValidate: true })}
+                className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
+                  selected.role === role
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border text-text-secondary hover:border-primary/30'
+                }`}
+              >
+                {LISTING_ROLE_LABELS[role]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </RevealField>
 
-      <Button type="submit" className="w-full">
-        Continuar
-      </Button>
+      {/* Submit */}
+      <RevealField visible={isRevealed('submit')} animate={!wasInitial('submit')}>
+        <Button type="submit" className="w-full">
+          Continuar
+        </Button>
+      </RevealField>
     </form>
   )
 }
