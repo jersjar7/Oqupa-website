@@ -7,7 +7,9 @@ import type { ListingWithProperty } from '@/types/explore'
 interface ClusteredMarkersProps {
   items: ListingWithProperty[]
   selectedId: string | null
+  hoveredId: string | null
   onSelect: (id: string | null) => void
+  onHover: (id: string | null) => void
 }
 
 // Base classes shared by all pill styles
@@ -40,10 +42,24 @@ function getPillBg(isBoosted: boolean, isSelected: boolean, isVenta: boolean): s
   return isVenta ? BG_VENTA : BG_ALQUILER
 }
 
+/** Apply hover glow styling directly to a pill (no React re-render) */
+function applyHoverStyle(pill: HTMLElement) {
+  pill.style.transform = 'scale(1.1)'
+  pill.style.boxShadow = '0 0 0 3px rgba(0, 128, 128, 0.3)'
+}
+
+/** Remove hover glow styling from a pill */
+function clearHoverStyle(pill: HTMLElement) {
+  pill.style.transform = ''
+  pill.style.boxShadow = ''
+}
+
 export default function ClusteredMarkers({
   items,
   selectedId,
+  hoveredId,
   onSelect,
+  onHover,
 }: ClusteredMarkersProps) {
   const map = useMap()
   const markerLib = useMapsLibrary('marker')
@@ -52,6 +68,8 @@ export default function ClusteredMarkers({
   const circlesRef = useRef<google.maps.Circle[]>([])
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  const onHoverRef = useRef(onHover)
+  onHoverRef.current = onHover
 
   // Initialize clusterer once when map is ready
   useEffect(() => {
@@ -101,6 +119,7 @@ export default function ClusteredMarkers({
         wrapper.style.flexDirection = 'column'
         wrapper.style.alignItems = 'center'
         wrapper.dataset.venta = isVenta ? '1' : ''
+        wrapper.dataset.markerId = id
 
         // Pill with inline background color matching Flutter
         const bg = getPillBg(isBoosted, isSelected, isVenta)
@@ -128,6 +147,20 @@ export default function ClusteredMarkers({
 
         marker.addEventListener('gmp-click', () => {
           onSelectRef.current(id)
+        })
+
+        // Hover events: apply styling directly via DOM (bypasses React re-render)
+        // to prevent the className-mutation → reflow → mouseleave flicker cycle.
+        // The onHover callback updates React state for panel card highlighting only.
+        wrapper.addEventListener('mouseenter', () => {
+          applyHoverStyle(pill)
+          wrapper.dataset.localHover = '1'
+          onHoverRef.current(id)
+        })
+        wrapper.addEventListener('mouseleave', () => {
+          clearHoverStyle(pill)
+          wrapper.dataset.localHover = ''
+          onHoverRef.current(null)
         })
 
         newMarkers.set(id, marker)
@@ -164,24 +197,51 @@ export default function ClusteredMarkers({
         circlesRef.current.push(circle)
       }
     }
-  }, [map, markerLib, items, selectedId])
+    // Note: selectedId intentionally omitted — styling updates for selection
+    // are handled by the dedicated styling effect below. Including it here
+    // would cause unnecessary clusterer.clearMarkers()/addMarkers() cycles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, markerLib, items])
 
-  // Update selected marker styling
+  // Update marker styling for selected state and panel-to-marker hover.
+  // Markers that are locally hovered (mouse on the map marker) are styled
+  // directly by the DOM event handlers above — we skip them here to avoid
+  // className mutations that would cause reflow → mouseleave flicker.
   useEffect(() => {
     for (const [id, marker] of markersRef.current) {
       const wrapper = marker.content as HTMLElement
       if (!wrapper) continue
+
+      // Skip markers whose hover styling is managed by DOM event handlers
+      if (wrapper.dataset.localHover === '1') continue
+
       const pill = wrapper.firstElementChild as HTMLElement
       if (!pill) continue
       const isBoosted = pill.textContent?.startsWith('★') ?? false
       const isSelected = id === selectedId
+      const isHovered = id === hoveredId
       const isVenta = wrapper.dataset.venta === '1'
       const bg = getPillBg(isBoosted, isSelected, isVenta)
 
-      pill.className = isBoosted
-        ? `${PILL_BASE} ring-2 ring-amber-300 ${isSelected ? 'scale-110' : 'hover:scale-105'}`
-        : `${PILL_BASE} ${isSelected ? 'scale-110' : 'hover:scale-105'}`
+      // Priority: selected > hovered (from panel) > default
+      let classes = PILL_BASE
+      if (isBoosted) classes += ' ring-2 ring-amber-300'
+      if (isSelected) {
+        classes += ' scale-110'
+      } else if (isHovered) {
+        classes += ' scale-110'
+      } else {
+        classes += ' hover:scale-105'
+      }
+      pill.className = classes
       pill.style.backgroundColor = bg
+
+      // Panel-to-marker hover glow
+      if (isHovered && !isSelected) {
+        applyHoverStyle(pill)
+      } else {
+        clearHoverStyle(pill)
+      }
 
       // Update triangle color if present
       const tri = wrapper.querySelector('[data-pedestal]') as HTMLElement
@@ -189,7 +249,7 @@ export default function ClusteredMarkers({
         tri.style.borderTopColor = bg
       }
     }
-  }, [selectedId])
+  }, [selectedId, hoveredId])
 
   return null
 }

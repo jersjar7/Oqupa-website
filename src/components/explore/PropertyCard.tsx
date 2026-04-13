@@ -9,18 +9,16 @@ import type { ListingWithProperty } from '@/types/explore'
 
 interface PropertyCardProps {
   item: ListingWithProperty
-  isSelected: boolean
-  onClick: () => void
+  isHighlighted?: boolean
 }
 
-export default function PropertyCard({ item, isSelected, onClick }: PropertyCardProps) {
+export default function PropertyCard({ item, isHighlighted = false }: PropertyCardProps) {
   const { listing, property } = item
   const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
   const thumbnail = photoRef ? cardUrl(photoRef) : undefined
   const microThumb = property.media.primaryPhotoMicroThumb
   const blurHash = property.media.photoBlurHashes?.[0]
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
-  // Micro-thumbnail is instant (loaded with Firestore data); blurHash is fallback
   const placeholderUrl = microThumb
     ? `data:image/webp;base64,${microThumb}`
     : blurDataUrl
@@ -31,14 +29,8 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
   return (
     <Link
       to={`/property/${listing.id}`}
-      onClick={(e) => {
-        // If clicking the card body (not navigating), highlight it
-        if (e.metaKey || e.ctrlKey) return
-        e.preventDefault()
-        onClick()
-      }}
       className={`block overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-medium ${
-        isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+        isHighlighted ? 'border-primary ring-2 ring-primary/20' : 'border-border'
       }`}
     >
       {/* Thumbnail */}

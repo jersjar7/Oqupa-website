@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef } from 'react'
-import { APIProvider, Map, type MapCameraChangedEvent } from '@vis.gl/react-google-maps'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { APIProvider, Map, useMap, type MapCameraChangedEvent } from '@vis.gl/react-google-maps'
 import { PIURA_CENTER, DEFAULT_ZOOM, GOOGLE_MAP_ID } from '@/lib/constants'
 import ClusteredMarkers from './ClusteredMarkers'
-import PropertyInfoCard from './PropertyInfoCard'
+import MapPreviewCard from './MapPreviewCard'
+import HoverPreviewCard from './HoverPreviewCard'
 import { useBoundaryPolygons } from '@/hooks/useBoundaryPolygons'
 import { useMapCameraStorage } from '@/hooks/useMapCameraStorage'
 import type { ListingWithProperty } from '@/types/explore'
@@ -13,9 +14,12 @@ const FOCUS_ZOOM = 15
 interface ExploreMapProps {
   items: ListingWithProperty[]
   selectedId: string | null
+  hoveredId: string | null
   onSelect: (id: string | null) => void
+  onHover: (id: string | null) => void
   onBoundsChanged?: (bounds: google.maps.LatLngBoundsLiteral) => void
   initialCenter?: { lat: number; lng: number }
+  showPreviewCard: boolean
 }
 
 /** Renders boundary polygons on the map (display only). */
@@ -24,7 +28,37 @@ function BoundaryLayer() {
   return null
 }
 
-export default function ExploreMap({ items, selectedId, onSelect, onBoundsChanged, initialCenter }: ExploreMapProps) {
+/**
+ * Dismisses selection when clicking the map background.
+ * Uses the native google.maps.Map 'click' event, which does NOT fire
+ * when clicking on an AdvancedMarkerElement — only on the map surface.
+ */
+function MapClickDismissHandler({ onDismiss }: { onDismiss: () => void }) {
+  const map = useMap()
+  const callbackRef = useRef(onDismiss)
+  callbackRef.current = onDismiss
+
+  useEffect(() => {
+    if (!map) return
+    const listener = map.addListener('click', () => {
+      callbackRef.current()
+    })
+    return () => listener.remove()
+  }, [map])
+
+  return null
+}
+
+export default function ExploreMap({
+  items,
+  selectedId,
+  hoveredId,
+  onSelect,
+  onHover,
+  onBoundsChanged,
+  initialCenter,
+  showPreviewCard,
+}: ExploreMapProps) {
   const { savedCamera, saveCamera } = useMapCameraStorage()
 
   // Compute initial camera once (on first render) and freeze it via useMemo
@@ -60,13 +94,17 @@ export default function ExploreMap({ items, selectedId, onSelect, onBoundsChange
     didSaveInitial.current = true
   }
 
-  const selectedItem = selectedId
-    ? items.find((i) => i.listing.id === selectedId) ?? null
-    : null
+  // Pinned preview card (AdvancedMarker inside <Map>) — click to pin
+  const selectedItem = useMemo(() => {
+    if (!selectedId) return null
+    return items.find((i) => i.listing.id === selectedId) ?? null
+  }, [items, selectedId])
 
-  const handleClose = useCallback(() => {
-    onSelect(null)
-  }, [onSelect])
+  // Hover preview card (fixed-position portal) — only when nothing is pinned
+  const hoveredItem = useMemo(() => {
+    if (selectedId || !hoveredId) return null
+    return items.find((i) => i.listing.id === hoveredId) ?? null
+  }, [items, hoveredId, selectedId])
 
   const handleCameraChanged = useCallback(
     (ev: MapCameraChangedEvent) => {
@@ -76,6 +114,9 @@ export default function ExploreMap({ items, selectedId, onSelect, onBoundsChange
     },
     [onBoundsChanged, saveCamera],
   )
+
+  // Dismiss is handled by MapClickDismissHandler (native Google Maps
+  // 'click' event, which does not fire on AdvancedMarkerElement clicks).
 
   return (
     <APIProvider apiKey={API_KEY}>
@@ -90,16 +131,24 @@ export default function ExploreMap({ items, selectedId, onSelect, onBoundsChange
         onCameraChanged={handleCameraChanged}
       >
         <BoundaryLayer />
+        <MapClickDismissHandler onDismiss={() => onSelect(null)} />
         <ClusteredMarkers
           items={items}
           selectedId={selectedId}
+          hoveredId={hoveredId}
           onSelect={onSelect}
+          onHover={onHover}
         />
 
-        {selectedItem && (
-          <PropertyInfoCard item={selectedItem} onClose={handleClose} />
+        {showPreviewCard && (
+          <MapPreviewCard item={selectedItem} />
         )}
       </Map>
+
+      {/* Hover preview rendered outside Google Maps via portal (no flicker) */}
+      {showPreviewCard && (
+        <HoverPreviewCard item={hoveredItem} onHover={onHover} />
+      )}
     </APIProvider>
   )
 }

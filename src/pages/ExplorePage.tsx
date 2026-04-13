@@ -1,13 +1,16 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
+import { useExploreInteraction } from '@/hooks/useExploreInteraction'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import ExploreMap from '@/components/explore/ExploreMap'
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import PropertyCard from '@/components/explore/PropertyCard'
+import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { StaggerList, staggerItemVariants } from '@/app/components/ui'
 import { thumbnail } from '@/lib/imageUrl'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
@@ -16,6 +19,7 @@ import type { MapFilters } from '@/types/explore'
 export default function ExplorePage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
 
   useDocumentMeta({
     title: 'Explorar Propiedades - Oqupa',
@@ -53,21 +57,31 @@ export default function ExplorePage() {
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toastDismissed, setToastDismissed] = useState(false)
+
+  const {
+    hoveredId,
+    selectedId,
+    panelRef,
+    handleMarkerHover,
+    handleMarkerClick,
+    handleDismiss,
+  } = useExploreInteraction()
+
+  // Find the selected item for mobile sheet
+  const selectedItem = useMemo(() => {
+    if (!selectedId) return null
+    return filtered.find((i) => i.listing.id === selectedId) ?? null
+  }, [filtered, selectedId])
 
   // Reset toast dismissal when results appear, so it shows again on next empty view
   useEffect(() => {
     if (visible.length > 0) setToastDismissed(false)
   }, [visible.length])
 
-  const handleSelect = useCallback((id: string | null) => {
-    setSelectedId(id)
-  }, [])
-
-  const handleBoundsChanged = useCallback((bounds: google.maps.LatLngBoundsLiteral) => {
+  const handleBoundsChanged = (bounds: google.maps.LatLngBoundsLiteral) => {
     setMapBounds(bounds)
-  }, [])
+  }
 
   // Prefetch thumbnail images when listing data arrives
   useEffect(() => {
@@ -130,9 +144,12 @@ export default function ExplorePage() {
           <ExploreMap
             items={filtered}
             selectedId={selectedId}
-            onSelect={handleSelect}
+            hoveredId={hoveredId}
+            onSelect={handleMarkerClick}
+            onHover={handleMarkerHover}
             onBoundsChanged={handleBoundsChanged}
             initialCenter={initialCenter}
+            showPreviewCard={isDesktop}
           />
 
           {/* Mobile empty area toast */}
@@ -169,7 +186,10 @@ export default function ExplorePage() {
         </div>
 
         {/* Desktop property cards panel */}
-        <div className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block">
+        <div
+          ref={panelRef}
+          className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block"
+        >
           <AnimatePresence mode="wait">
             {visible.length === 0 && !isLoading ? (
               <motion.div
@@ -189,13 +209,16 @@ export default function ExplorePage() {
             ) : (
               <StaggerList className="grid grid-cols-2 gap-3" key="content">
                 {visible.map((item) => (
-                  <motion.div key={item.listing.id} variants={staggerItemVariants}>
+                  <motion.div
+                    key={item.listing.id}
+                    variants={staggerItemVariants}
+                    data-listing-id={item.listing.id}
+                    onMouseEnter={() => handleMarkerHover(item.listing.id)}
+                    onMouseLeave={() => handleMarkerHover(null)}
+                  >
                     <PropertyCard
                       item={item}
-                      isSelected={selectedId === item.listing.id}
-                      onClick={() => handleSelect(
-                        selectedId === item.listing.id ? null : item.listing.id
-                      )}
+                      isHighlighted={hoveredId === item.listing.id || selectedId === item.listing.id}
                     />
                   </motion.div>
                 ))}
@@ -221,6 +244,11 @@ export default function ExplorePage() {
           )}
         </div>
       </div>
+
+      {/* Mobile bottom sheet */}
+      {!isDesktop && (
+        <MobileListingSheet item={selectedItem} onClose={handleDismiss} />
+      )}
 
       {/* Mobile drawer */}
       {drawerOpen && (
