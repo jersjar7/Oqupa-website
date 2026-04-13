@@ -157,9 +157,11 @@ export default function ExplorePage() {
             <div className="absolute bottom-20 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
               <MapPin className="h-4 w-4 shrink-0 text-text-tertiary" />
               <p className="flex-1 text-xs text-text-secondary">
-                {filtered.length > 0
-                  ? 'No hay propiedades aqui. Aleja el mapa o navega a otra zona.'
-                  : 'No hay propiedades con estos filtros.'}
+                {total === 0
+                  ? 'Estamos empezando en Piura. Pronto habra propiedades aqui.'
+                  : filtered.length > 0
+                    ? 'No hay propiedades aqui. Aleja el mapa o navega a otra zona.'
+                    : 'No hay propiedades con estos filtros.'}
               </p>
               <button
                 onClick={() => setToastDismissed(true)}
@@ -201,9 +203,11 @@ export default function ExplorePage() {
               >
                 <MapPin className="h-8 w-8 text-text-tertiary/40" />
                 <p className="text-sm text-text-tertiary">
-                  {filtered.length > 0
-                    ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
-                    : 'No se encontraron propiedades con los filtros seleccionados.'}
+                  {total === 0
+                    ? 'Estamos empezando en Piura. Las primeras propiedades estaran disponibles muy pronto.'
+                    : filtered.length > 0
+                      ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
+                      : 'No se encontraron propiedades con los filtros seleccionados.'}
                 </p>
               </motion.div>
             ) : (
