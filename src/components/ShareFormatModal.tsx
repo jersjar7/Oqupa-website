@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Download, Loader2 } from 'lucide-react'
+import { Link, Download, Loader2, Check } from 'lucide-react'
 import Modal from '@/app/components/ui/Modal'
 import { buildBrandedCardConfig } from '@/lib/brandedCardConfig'
 import { paintBrandedCard } from '@/lib/brandedCardPainter'
@@ -8,6 +8,8 @@ import { fullSize } from '@/lib/imageUrl'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { CardFormat } from '@/lib/cardLayout'
+
+type CompletedAction = 'link' | CardFormat
 
 interface ShareFormatModalProps {
   isOpen: boolean
@@ -23,6 +25,10 @@ export default function ShareFormatModal({
   property,
 }: ShareFormatModalProps) {
   const [generatingFormat, setGeneratingFormat] = useState<CardFormat | null>(null)
+  const [completed, setCompleted] = useState<Set<CompletedAction>>(new Set())
+
+  const markDone = (action: CompletedAction) =>
+    setCompleted((prev) => new Set(prev).add(action))
 
   const handleShareLink = async () => {
     const params: ShareListingParams = {
@@ -39,7 +45,7 @@ export default function ShareFormatModal({
       totalAreaInSquareMeters: property.specs.totalAreaInSquareMeters,
     }
     await shareListing(params)
-    onClose()
+    markDone('link')
   }
 
   const handleShareImage = async (format: CardFormat) => {
@@ -62,7 +68,7 @@ export default function ShareFormatModal({
             files: [file],
             title: `${config.operationLabel} — ${config.locationText}`,
           })
-          onClose()
+          markDone(format)
           return
         } catch (err) {
           if (err instanceof Error && err.name === 'AbortError') {
@@ -81,13 +87,15 @@ export default function ShareFormatModal({
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      onClose()
+      markDone(format)
     } catch {
       // Silent fail — user can retry
     } finally {
       setGeneratingFormat(null)
     }
   }
+
+  const linkDone = completed.has('link')
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Compartir">
@@ -97,12 +105,18 @@ export default function ShareFormatModal({
         disabled={generatingFormat !== null}
         className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-black/5 disabled:opacity-50"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-secondary)] text-white">
-          <Link className="h-5 w-5" />
+        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${
+          linkDone ? 'bg-green-600' : 'bg-[var(--color-secondary)]'
+        }`}>
+          {linkDone ? <Check className="h-5 w-5" /> : <Link className="h-5 w-5" />}
         </div>
         <div>
-          <p className="font-medium text-text-primary">Compartir enlace</p>
-          <p className="text-sm text-text-secondary">Envía el link de tu anuncio</p>
+          <p className="font-medium text-text-primary">
+            {linkDone ? 'Enlace copiado' : 'Compartir enlace'}
+          </p>
+          <p className="text-sm text-text-secondary">
+            {linkDone ? '¡Listo para pegar!' : 'Envía el link de tu anuncio'}
+          </p>
         </div>
       </button>
 
@@ -117,6 +131,7 @@ export default function ShareFormatModal({
           format="story"
           isGenerating={generatingFormat === 'story'}
           isDisabled={generatingFormat !== null}
+          isDone={completed.has('story')}
           onClick={() => handleShareImage('story')}
         />
         <FormatButton
@@ -125,9 +140,18 @@ export default function ShareFormatModal({
           format="square"
           isGenerating={generatingFormat === 'square'}
           isDisabled={generatingFormat !== null}
+          isDone={completed.has('square')}
           onClick={() => handleShareImage('square')}
         />
       </div>
+
+      {/* Done button */}
+      <button
+        onClick={onClose}
+        className="mt-6 w-full rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+      >
+        Listo — Ver mi publicacion
+      </button>
     </Modal>
   )
 }
@@ -138,6 +162,7 @@ function FormatButton({
   format,
   isGenerating,
   isDisabled,
+  isDone,
   onClick,
 }: {
   label: string
@@ -145,6 +170,7 @@ function FormatButton({
   format: CardFormat
   isGenerating: boolean
   isDisabled: boolean
+  isDone: boolean
   onClick: () => void
 }) {
   const aspectClass = format === 'story' ? 'aspect-[9/16]' : 'aspect-square'
@@ -153,24 +179,39 @@ function FormatButton({
     <button
       onClick={onClick}
       disabled={isDisabled}
-      className="flex flex-col items-center gap-2 rounded-xl border border-[var(--color-border)] p-4 transition-colors hover:border-[var(--color-secondary)] hover:bg-black/5 disabled:opacity-50"
+      className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors disabled:opacity-50 ${
+        isDone
+          ? 'border-green-300 bg-green-50'
+          : 'border-[var(--color-border)] hover:border-[var(--color-secondary)] hover:bg-black/5'
+      }`}
     >
       {isGenerating ? (
         <div className="flex h-16 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--color-secondary)]" />
         </div>
       ) : (
-        <div
-          className={`${aspectClass} w-10 rounded border-2 border-[var(--color-secondary)] bg-[var(--color-cream)]`}
-        />
+        <div className="relative">
+          <div
+            className={`${aspectClass} w-10 rounded border-2 ${
+              isDone ? 'border-green-600 bg-green-100' : 'border-[var(--color-secondary)] bg-[var(--color-cream)]'
+            }`}
+          />
+          {isDone && (
+            <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white">
+              <Check className="h-2.5 w-2.5" />
+            </div>
+          )}
+        </div>
       )}
       <div className="text-center">
         <p className="text-sm font-medium text-text-primary">{label}</p>
         <p className="text-xs text-text-secondary">{sublabel}</p>
       </div>
-      <div className="flex items-center gap-1 text-xs text-[var(--color-secondary)]">
-        <Download className="h-3 w-3" />
-        <span>Descargar</span>
+      <div className={`flex items-center gap-1 text-xs ${
+        isDone ? 'text-green-600' : 'text-[var(--color-secondary)]'
+      }`}>
+        {isDone ? <Check className="h-3 w-3" /> : <Download className="h-3 w-3" />}
+        <span>{isDone ? 'Descargado' : 'Descargar'}</span>
       </div>
     </button>
   )

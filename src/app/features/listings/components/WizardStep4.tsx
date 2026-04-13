@@ -5,16 +5,24 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import { step4Schema, fullListingSchema, type Step4Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
-import { Button, Input } from '@/app/components/ui'
+import { Button, Input, InfoTip } from '@/app/components/ui'
 import Modal from '@/app/components/ui/Modal'
 import ShareFormatModal from '@/components/ShareFormatModal'
+import RevealField from './RevealField'
 import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
 import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
+
+function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
+  if (amount == null || isNaN(amount)) return ''
+  const formatted = amount.toLocaleString('en-US')
+  return `${CURRENCY_SYMBOLS[currency]} ${formatted}`
+}
 
 export default function WizardStep4() {
   const navigate = useNavigate()
@@ -54,9 +62,19 @@ export default function WizardStep4() {
   })
 
   const currency = watch('currency')
+  const amount = watch('amount')
   const wantsRealtorHelp = watch('wantsRealtorHelp')
   const isAlquiler = data.operationType === 'alquiler'
   const isShortTerm = data.rentalDurationType === 'shortTerm'
+
+  const { isRevealed, wasInitial } = useRevealedFields(
+    {
+      price: true, // always visible
+      realtorHelp: typeof amount === 'number' && amount > 0,
+      submitAndError: typeof amount === 'number' && amount > 0,
+    },
+    isEditMode
+  )
 
   async function onSubmit(formData: Step4Data) {
     if (!user) return
@@ -415,115 +433,131 @@ export default function WizardStep4() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Price */}
-      <div>
-        <h3 className="text-sm font-medium uppercase text-text-primary">Precio</h3>
+      {/* Price — always visible */}
+      <RevealField visible={isRevealed('price')} animate={!wasInitial('price')}>
+        <div>
+          <h3 className="text-sm font-medium uppercase text-text-primary">Precio</h3>
 
-        {/* Currency toggle */}
-        <div className="mt-3 flex rounded-xl border border-border">
-          {(['PEN', 'USD'] as const).map((cur) => (
-            <button
-              key={cur}
-              type="button"
-              onClick={() => setValue('currency', cur)}
-              className={`flex-1 py-2 text-sm font-medium transition-colors first:rounded-l-xl last:rounded-r-xl ${
-                currency === cur
-                  ? 'bg-primary text-white'
-                  : 'text-text-secondary hover:bg-black/5'
-              }`}
-            >
-              {CURRENCY_SYMBOLS[cur]} ({cur})
-            </button>
-          ))}
-        </div>
+          {/* Currency toggle */}
+          <div className="mt-3 flex rounded-xl border border-border">
+            {(['PEN', 'USD'] as const).map((cur) => (
+              <button
+                key={cur}
+                type="button"
+                onClick={() => setValue('currency', cur)}
+                className={`flex-1 py-2 text-sm font-medium transition-colors first:rounded-l-xl last:rounded-r-xl ${
+                  currency === cur
+                    ? 'bg-primary text-white'
+                    : 'text-text-secondary hover:bg-black/5'
+                }`}
+              >
+                {CURRENCY_SYMBOLS[cur]} ({cur})
+              </button>
+            ))}
+          </div>
 
-        <div className="mt-3">
-          <Input
-            type="number"
-            placeholder={`Ej: ${isAlquiler ? (isShortTerm ? '120' : '1500') : '250000'}`}
-            error={errors.amount?.message}
-            {...register('amount', { valueAsNumber: true })}
-          />
-          {isAlquiler && (
-            <p className="mt-1 text-xs text-text-tertiary">
-              {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
-            </p>
-          )}
+          <div className="mt-3">
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder={`Ej: ${CURRENCY_SYMBOLS[currency]} ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
+              error={errors.amount?.message}
+              value={formatPriceDisplay(amount, currency)}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^\d]/g, '')
+                const num = raw === '' ? undefined : Number(raw)
+                setValue('amount', num as number, { shouldValidate: true })
+              }}
+            />
+            {isAlquiler && (
+              <p className="mt-1 text-xs text-text-tertiary">
+                {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      </RevealField>
 
       {/* Realtor Help */}
-      <div className="rounded-xl border border-border p-4">
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            {...register('wantsRealtorHelp')}
-          />
-          <div>
-            <span className="text-sm font-medium uppercase text-text-primary">
-              Quiero ayuda de agentes
-            </span>
-            <p className="text-xs text-text-secondary">
-              Agentes verificados podran contactarte para ayudar a vender tu propiedad
-            </p>
-          </div>
-        </label>
-
-        {wantsRealtorHelp && (
-          <div className="mt-4">
-            <label className="text-sm font-medium uppercase text-text-primary">
-              Maximo de agentes
-            </label>
-            <div className="mt-2 flex gap-2">
-              {[1, 3, 5, 10].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setValue('maxRealtors', n)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                    watch('maxRealtors') === n
-                      ? 'bg-primary text-white'
-                      : 'border border-border text-text-secondary hover:border-primary/30'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
+      <RevealField visible={isRevealed('realtorHelp')} animate={!wasInitial('realtorHelp')}>
+        <div className="rounded-xl border border-border p-4">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              {...register('wantsRealtorHelp')}
+            />
+            <div>
+              <span className="text-sm font-medium uppercase text-text-primary">
+                Quiero ayuda de agentes
+              </span>
+              <p className="text-xs text-text-secondary">
+                Agentes verificados podran contactarte para ayudar a vender tu propiedad
+              </p>
             </div>
+          </label>
+
+          {wantsRealtorHelp && (
+            <div className="mt-4">
+              <label className="text-sm font-medium uppercase text-text-primary">
+                Maximo de agentes
+                <InfoTip text="Limita cuántos agentes pueden solicitar ayudarte con tu propiedad. Puedes cambiar esto después de publicar." />
+              </label>
+              <div className="mt-2 flex gap-2">
+                {[1, 3, 5, 10].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setValue('maxRealtors', n)}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      watch('maxRealtors') === n
+                        ? 'bg-primary text-white'
+                        : 'border border-border text-text-secondary hover:border-primary/30'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </RevealField>
+
+      {/* Submit + Error */}
+      <RevealField visible={isRevealed('submitAndError')} animate={!wasInitial('submitAndError')} delay={0.15}>
+        <div className="space-y-6">
+          {/* Submit error */}
+          {submitError && (
+            <p className="text-sm text-error">{submitError}</p>
+          )}
+
+          {/* Upload progress */}
+          {uploadProgress && (
+            <p className="text-sm text-primary">{uploadProgress}</p>
+          )}
+
+          {/* Navigation */}
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="text"
+              onClick={prevStep}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              Atras
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              className="flex-1"
+            >
+              {isEditMode ? 'Guardar Cambios' : 'Publicar'}
+            </Button>
           </div>
-        )}
-      </div>
-
-      {/* Submit error */}
-      {submitError && (
-        <p className="text-sm text-error">{submitError}</p>
-      )}
-
-      {/* Upload progress */}
-      {uploadProgress && (
-        <p className="text-sm text-primary">{uploadProgress}</p>
-      )}
-
-      {/* Navigation */}
-      <div className="flex gap-3">
-        <Button
-          type="button"
-          variant="text"
-          onClick={prevStep}
-          disabled={isSubmitting}
-          className="flex-1"
-        >
-          Atras
-        </Button>
-        <Button
-          type="submit"
-          isLoading={isSubmitting}
-          className="flex-1"
-        >
-          {isEditMode ? 'Guardar Cambios' : 'Publicar'}
-        </Button>
-      </div>
+        </div>
+      </RevealField>
     </form>
   )
 }

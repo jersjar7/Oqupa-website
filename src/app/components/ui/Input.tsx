@@ -1,12 +1,14 @@
 import { forwardRef, type InputHTMLAttributes } from 'react'
+import InfoTip from './InfoTip'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  hint?: string
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, id, className = '', ...props }, ref) => {
+  ({ label, error, hint, id, className = '', ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
@@ -17,6 +19,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
           >
             {label}
+            {hint && <InfoTip text={hint} />}
           </label>
         )}
         <input
