@@ -149,6 +149,12 @@ export default function ClusteredMarkers({
           onSelectRef.current(id)
         })
 
+        // DOM click on the wrapper ensures taps work on mobile/touch devices
+        // where gmp-click may not fire reliably on custom HTML content.
+        wrapper.addEventListener('click', () => {
+          onSelectRef.current(id)
+        })
+
         // Hover events: apply styling directly via DOM (bypasses React re-render)
         // to prevent the className-mutation → reflow → mouseleave flicker cycle.
         // The onHover callback updates React state for panel card highlighting only.
