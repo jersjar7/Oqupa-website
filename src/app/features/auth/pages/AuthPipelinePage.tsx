@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   nameSchema,
   phoneSchema,
@@ -17,6 +18,23 @@ import { Button, Input } from '@/app/components/ui'
 
 type PipelineStep = 'name' | 'phone' | 'verify-code'
 
+const STEP_ORDER: PipelineStep[] = ['name', 'phone', 'verify-code']
+
+const stepVariants = {
+  initial: (direction: number) => ({
+    opacity: 0,
+    x: direction * 50,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: direction * -50,
+  }),
+}
+
 export default function AuthPipelinePage() {
   const navigate = useNavigate()
   const { user, firebaseUser, refreshUser } = useAuthStore()
@@ -29,10 +47,18 @@ export default function AuthPipelinePage() {
   }
 
   const [step, setStep] = useState<PipelineStep>(getInitialStep)
+  const [direction, setDirection] = useState(1)
   const [verificationId, setVerificationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [smsCooldown, setSmsCooldown] = useState(0)
+
+  const goToStep = (target: PipelineStep) => {
+    const currentIndex = STEP_ORDER.indexOf(step)
+    const targetIndex = STEP_ORDER.indexOf(target)
+    setDirection(targetIndex >= currentIndex ? 1 : -1)
+    setStep(target)
+  }
 
   // SMS cooldown timer
   useEffect(() => {
@@ -90,91 +116,103 @@ export default function AuthPipelinePage() {
           </div>
         </div>
 
-        {step === 'name' && (
-          <NameStep
-            error={error}
-            isSubmitting={isSubmitting}
-            onSubmit={async (data) => {
-              setError(null)
-              setIsSubmitting(true)
-              try {
-                if (!firebaseUser) throw new Error('Not authenticated')
-                await authService.updateUserName(firebaseUser.uid, data.name)
-                await refreshUser()
-                setStep('phone')
-              } catch {
-                setError('Error al guardar el nombre')
-              } finally {
-                setIsSubmitting(false)
-              }
-            }}
-          />
-        )}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={stepVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          >
+            {step === 'name' && (
+              <NameStep
+                error={error}
+                isSubmitting={isSubmitting}
+                onSubmit={async (data) => {
+                  setError(null)
+                  setIsSubmitting(true)
+                  try {
+                    if (!firebaseUser) throw new Error('Not authenticated')
+                    await authService.updateUserName(firebaseUser.uid, data.name)
+                    await refreshUser()
+                    goToStep('phone')
+                  } catch {
+                    setError('Error al guardar el nombre')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+              />
+            )}
 
-        {step === 'phone' && (
-          <PhoneStep
-            error={error}
-            isSubmitting={isSubmitting}
-            cooldown={smsCooldown}
-            onSubmit={async (data) => {
-              if (smsCooldown > 0) return
-              setError(null)
-              setIsSubmitting(true)
-              try {
-                const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
-                const countryName = data.countryCode === '+51' ? 'peru' : 'usa'
-                const verId =
-                  await authService.sendPhoneVerificationCode(phoneWithCountry)
-                setVerificationId(verId)
-                setSmsCooldown(60)
+            {step === 'phone' && (
+              <PhoneStep
+                error={error}
+                isSubmitting={isSubmitting}
+                cooldown={smsCooldown}
+                onSubmit={async (data) => {
+                  if (smsCooldown > 0) return
+                  setError(null)
+                  setIsSubmitting(true)
+                  try {
+                    const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
+                    const countryName = data.countryCode === '+51' ? 'peru' : 'usa'
+                    const verId =
+                      await authService.sendPhoneVerificationCode(phoneWithCountry)
+                    setVerificationId(verId)
+                    setSmsCooldown(60)
 
-                // Save contact info
-                if (firebaseUser) {
-                  await authService.updateUserContactInfo(firebaseUser.uid, {
-                    whatsappPhoneNumber: phoneWithCountry,
-                    countryCode: countryName,
-                    preferredContactTimeSlot: 'anytime',
-                  })
-                }
+                    // Save contact info
+                    if (firebaseUser) {
+                      await authService.updateUserContactInfo(firebaseUser.uid, {
+                        whatsappPhoneNumber: phoneWithCountry,
+                        countryCode: countryName,
+                        preferredContactTimeSlot: 'anytime',
+                      })
+                    }
 
-                setStep('verify-code')
-              } catch {
-                setError(
-                  'Error al enviar el codigo. Verifica tu numero e intenta de nuevo.'
-                )
-              } finally {
-                setIsSubmitting(false)
-              }
-            }}
-          />
-        )}
+                    goToStep('verify-code')
+                  } catch {
+                    setError(
+                      'Error al enviar el codigo. Verifica tu numero e intenta de nuevo.'
+                    )
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+              />
+            )}
 
-        {step === 'verify-code' && (
-          <VerifyCodeStep
-            error={error}
-            isSubmitting={isSubmitting}
-            cooldown={smsCooldown}
-            onSubmit={async (data) => {
-              setError(null)
-              setIsSubmitting(true)
-              try {
-                if (!verificationId) throw new Error('No verification ID')
-                await authService.verifyPhoneCode(verificationId, data.code)
-                await refreshUser()
-                navigate(consumeReturnUrl() ?? '/app')
-              } catch {
-                setError('Codigo incorrecto. Intenta de nuevo.')
-              } finally {
-                setIsSubmitting(false)
-              }
-            }}
-            onResend={() => {
-              if (smsCooldown > 0) return
-              setStep('phone')
-              setError(null)
-            }}
-          />
-        )}
+            {step === 'verify-code' && (
+              <VerifyCodeStep
+                error={error}
+                isSubmitting={isSubmitting}
+                cooldown={smsCooldown}
+                onSubmit={async (data) => {
+                  setError(null)
+                  setIsSubmitting(true)
+                  try {
+                    if (!verificationId) throw new Error('No verification ID')
+                    await authService.verifyPhoneCode(verificationId, data.code)
+                    await refreshUser()
+                    navigate(consumeReturnUrl() ?? '/app')
+                  } catch {
+                    setError('Codigo incorrecto. Intenta de nuevo.')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+                onResend={() => {
+                  if (smsCooldown > 0) return
+                  goToStep('phone')
+                  setError(null)
+                }}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Invisible recaptcha container */}
         <div id="recaptcha-container" />
@@ -273,8 +311,8 @@ function PhoneStep({
               {...register('countryCode')}
               className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
             >
-              <option value="+51">🇵🇪 +51</option>
-              <option value="+1">🇺🇸 +1</option>
+              <option value="+51">+51</option>
+              <option value="+1">+1</option>
             </select>
             <svg
               className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"

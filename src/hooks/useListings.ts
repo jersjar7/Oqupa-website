@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import type { Listing } from '@/types/listing'
 
@@ -34,9 +35,18 @@ export function useToggleListingStatus() {
       } else {
         await firestoreService.activateListing(listingId)
       }
+      return currentStatus
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success(
+        variables.currentStatus === 'active'
+          ? 'Publicacion desactivada'
+          : 'Publicacion activada'
+      )
+    },
+    onError: () => {
+      toast.error('Error al cambiar el estado de la publicacion')
     },
   })
 }
@@ -57,6 +67,10 @@ export function useDeleteListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success('Publicacion eliminada')
+    },
+    onError: () => {
+      toast.error('Error al eliminar la publicacion')
     },
   })
 }

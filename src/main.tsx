@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import App from './App'
 import './index.css'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -27,6 +28,18 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <Toaster
+        position="bottom-left"
+        toastOptions={{
+          style: {
+            fontFamily: "'Gotham', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            borderRadius: '12px',
+          },
+          className: 'shadow-medium',
+        }}
+        richColors
+        closeButton
+      />
     </QueryClientProvider>
   </StrictMode>
 )

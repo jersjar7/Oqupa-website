@@ -22,6 +22,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
             error
               ? 'border-error focus:border-error focus:ring-error/20'
@@ -30,7 +32,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p className="mt-1.5 text-sm text-error">{error}</p>
+          <p id={`${inputId}-error`} className="mt-1.5 text-sm text-error" role="alert">{error}</p>
         )}
       </div>
     )

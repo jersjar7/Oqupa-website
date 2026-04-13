@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import BoostTierSelectionModal from './BoostTierSelectionModal'
 import StripePaymentModal from './StripePaymentModal'
-import { useCreateBoostPayment, usePollPaymentCompletion } from '@/hooks/useBoost'
+import { useCreateBoostPayment, useBoostTiers, usePollPaymentCompletion } from '@/hooks/useBoost'
 import type { BoostTier } from '@/types/boost'
 
 type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'success' | 'error'
@@ -10,7 +11,7 @@ type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'succes
 interface BoostPurchaseFlowProps {
   listingId: string
   /** Called when boost purchase completes successfully */
-  onSuccess: () => void
+  onSuccess: (data: { tier: BoostTier; durationDays: number }) => void
   /** Render prop to trigger the flow */
   children: (openFlow: () => void) => React.ReactNode
 }
@@ -32,15 +33,18 @@ export default function BoostPurchaseFlow({
   const [clientSecret, setClientSecret] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [selectedTier, setSelectedTier] = useState<BoostTier | null>(null)
+  const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const createPayment = useCreateBoostPayment()
   const pollCompletion = usePollPaymentCompletion()
+  const { data: tiers } = useBoostTiers()
   const queryClient = useQueryClient()
 
   const openFlow = useCallback(() => setStep('tier-selection'), [])
 
   const handleTierConfirm = useCallback(async (tier: BoostTier) => {
+    setSelectedTier(tier)
     try {
       const result = await createPayment.mutateAsync({ listingId, boostTier: tier })
       setClientSecret(result.clientSecret)
@@ -48,34 +52,49 @@ export default function BoostPurchaseFlow({
       setStep('payment')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al crear el pago'
-      // Map Firebase Functions error codes to user-friendly Spanish messages
       const userMessage = mapErrorToSpanish(message)
       setErrorMessage(userMessage)
       setStep('error')
+      toast.error(userMessage)
     }
   }, [listingId, createPayment])
+
+  const handleSuccessClose = useCallback(() => {
+    if (autoCloseTimer.current) {
+      clearTimeout(autoCloseTimer.current)
+      autoCloseTimer.current = null
+    }
+    setStep('closed')
+    setSelectedTier(null)
+    setClientSecret('')
+    setPaymentId('')
+  }, [])
 
   const handlePaymentSuccess = useCallback(async () => {
     setStep('processing')
 
     // Poll for webhook confirmation
-    const confirmed = await pollCompletion.mutateAsync(paymentId)
+    await pollCompletion.mutateAsync(paymentId)
 
     // Invalidate queries to refresh listing data
     queryClient.invalidateQueries({ queryKey: ['listings'] })
     queryClient.invalidateQueries({ queryKey: ['payments'] })
 
-    if (confirmed) {
-      setToastMessage('Tu publicación ha sido destacada exitosamente')
-    } else {
-      setToastMessage('Pago recibido. Tu publicación se destacará en unos momentos.')
-    }
-    setStep('closed')
-    onSuccess()
+    // Find the tier config for the summary
+    const tierConfig = tiers?.find((t) => t.tier === selectedTier)
+    const durationDays = tierConfig?.durationDays ?? 7
 
-    // Clear toast after 5 seconds
-    setTimeout(() => setToastMessage(null), 5000)
-  }, [paymentId, pollCompletion, queryClient, onSuccess])
+    // Notify parent for optimistic update
+    onSuccess({ tier: selectedTier!, durationDays })
+
+    // Show success step
+    setStep('success')
+
+    // Auto-close after 4 seconds
+    autoCloseTimer.current = setTimeout(() => {
+      handleSuccessClose()
+    }, 4000)
+  }, [paymentId, pollCompletion, queryClient, onSuccess, tiers, selectedTier, handleSuccessClose])
 
   const handlePaymentCancel = useCallback(() => {
     setStep('tier-selection')
@@ -86,6 +105,14 @@ export default function BoostPurchaseFlow({
   const handlePaymentError = useCallback((message: string) => {
     setErrorMessage(message)
     setStep('error')
+    toast.error(message)
+  }, [])
+
+  // Clean up auto-close timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current)
+    }
   }, [])
 
   const handleErrorClose = useCallback(() => {
@@ -123,17 +150,50 @@ export default function BoostPurchaseFlow({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-xl">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-            <h3 className="mt-4 font-sans text-lg font-medium text-secondary">
-              Procesando pago...
+            <h3 className="mt-4 font-sans text-lg font-medium text-text-primary">
+              Tu pago fue exitoso
             </h3>
             <p className="mt-2 text-sm text-text-secondary">
-              Tu publicación será destacada en unos momentos
+              Activando tu destacado...
             </p>
           </div>
         </div>
       )}
 
-      {/* Step 4: Error state */}
+      {/* Step 4: Success confirmation */}
+      {step === 'success' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <div className="text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="mt-4 font-sans text-lg font-medium text-text-primary">
+                Tu publicación ahora está destacada
+              </h3>
+              {(() => {
+                const tierConfig = tiers?.find((t) => t.tier === selectedTier)
+                if (!tierConfig) return null
+                return (
+                  <p className="mt-2 text-sm text-text-secondary">
+                    Plan de {tierConfig.displayName} · S/ {tierConfig.feeInSoles.toFixed(2)}
+                  </p>
+                )
+              })()}
+            </div>
+            <button
+              onClick={handleSuccessClose}
+              className="mt-6 flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+            >
+              Listo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Error state */}
       {step === 'error' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
@@ -173,15 +233,6 @@ export default function BoostPurchaseFlow({
         </div>
       )}
 
-      {/* Toast notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-secondary px-4 py-3 text-sm font-medium text-white shadow-lg">
-          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {toastMessage}
-        </div>
-      )}
     </>
   )
 }

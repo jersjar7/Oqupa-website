@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { getFunctions } from 'firebase/functions'
+import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { getRecaptchaToken } from '@/lib/recaptcha'
 
@@ -135,9 +136,11 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
       }
       setIsSuccess(true)
       setFormData({ name: '', phone: '', email: '', city: '', contactConsent: false })
+      toast.success('Te has registrado exitosamente!')
       options?.onSuccess?.()
     } catch {
       setErrors({ name: 'Error al registrarse. Intentalo de nuevo.' })
+      toast.error('Error al registrarse. Intentalo de nuevo.')
     } finally {
       setIsSubmitting(false)
     }

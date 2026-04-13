@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import HeroSection from '@/components/landing/HeroSection'
 import TrustStrip from '@/components/landing/TrustStrip'
 import SolutionSection from '@/components/landing/SolutionSection'
@@ -15,9 +16,15 @@ interface LayoutContext {
 export default function LandingPage() {
   const { heroRef } = useOutletContext<LayoutContext>()
 
-  useEffect(() => {
-    document.title = 'Oqupa - Todas las propiedades de Piura en un solo lugar'
+  useDocumentMeta({
+    title: 'Oqupa - Tu proximo hogar ya esta en el mapa',
+    description:
+      'Oqupa centraliza los avisos inmobiliarios de Piura, elimina fraudes y conecta a usuarios con propietarios y agentes verificados.',
+    url: 'https://oqupa.com',
+  })
 
+  // Structured data (JSON-LD)
+  useEffect(() => {
     const script = document.createElement('script')
     script.type = 'application/ld+json'
     script.textContent = JSON.stringify({

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
 import { useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
 import { Modal, Spinner, Button } from '@/app/components/ui'
+import StaggerList, { staggerItemVariants } from '@/app/components/ui/StaggerList'
 import ClaimLimitBanner from '../components/ClaimLimitBanner'
 import LeadCard from '../components/LeadCard'
 import ClaimedLeadCard from '../components/ClaimedLeadCard'
@@ -16,7 +18,6 @@ export default function LeadsPage() {
   const user = useAuthStore((s) => s.user)
   const [activeTab, setActiveTab] = useState<Tab>('available')
   const [confirmLead, setConfirmLead] = useState<{ listing: Listing; property: Property } | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const claimStatus = useClaimStatus()
   const availableLeads = useAvailableLeads(activeTab === 'available')
@@ -24,13 +25,6 @@ export default function LeadsPage() {
   const claimLead = useClaimLead()
   const acceptAssignment = useAcceptAssignment()
   const declineAssignment = useDeclineAssignment()
-
-  // Auto-dismiss error toast
-  useEffect(() => {
-    if (!errorMessage) return
-    const timer = setTimeout(() => setErrorMessage(null), 4000)
-    return () => clearTimeout(timer)
-  }, [errorMessage])
 
   function handleClaimConfirm() {
     if (!confirmLead || !user) return
@@ -49,13 +43,8 @@ export default function LeadsPage() {
           setConfirmLead(null)
           setActiveTab('claimed')
         },
-        onError: (error) => {
+        onError: () => {
           setConfirmLead(null)
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : 'Error al reclamar la oportunidad. Intenta de nuevo.',
-          )
         },
       },
     )
@@ -123,18 +112,19 @@ export default function LeadsPage() {
               </div>
             )}
             {availableLeads.data && availableLeads.data.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StaggerList className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {availableLeads.data.map(({ listing, property }) => (
-                  <LeadCard
-                    key={listing.id}
-                    listing={listing}
-                    property={property}
-                    canClaim={claimStatus.canClaim}
-                    onClaim={() => setConfirmLead({ listing, property })}
-                    isClaiming={claimLead.isPending && confirmLead?.listing.id === listing.id}
-                  />
+                  <motion.div key={listing.id} variants={staggerItemVariants}>
+                    <LeadCard
+                      listing={listing}
+                      property={property}
+                      canClaim={claimStatus.canClaim}
+                      onClaim={() => setConfirmLead({ listing, property })}
+                      isClaiming={claimLead.isPending && confirmLead?.listing.id === listing.id}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </StaggerList>
             )}
           </>
         )}
@@ -170,31 +160,28 @@ export default function LeadsPage() {
               </div>
             )}
             {claimedLeads.data && claimedLeads.data.length > 0 && (
-              <div className="flex flex-col gap-4">
+              <StaggerList className="flex flex-col gap-4">
                 {claimedLeads.data.map(({ claim, listing, property }) => {
                   const isPending = listing.assignedRealtorId === claim.realtorId && listing.assignmentStatus === 'pending_acceptance'
                   return (
-                    <ClaimedLeadCard
-                      key={claim.id}
-                      claim={claim}
-                      listing={listing}
-                      property={property}
-                      onAccept={isPending ? () => acceptAssignment.mutate(listing.id, {
-                        onError: () => setErrorMessage('Error al aceptar la asignacion. Intenta de nuevo.'),
-                      }) : undefined}
-                      onDecline={isPending && user ? () => declineAssignment.mutate({
-                        listingId: listing.id,
-                        currentDeclinedIds: listing.declinedRealtorIds ?? [],
-                        agentId: user.id,
-                      }, {
-                        onError: () => setErrorMessage('Error al rechazar la asignacion. Intenta de nuevo.'),
-                      }) : undefined}
-                      isAccepting={acceptAssignment.isPending}
-                      isDeclining={declineAssignment.isPending}
-                    />
+                    <motion.div key={claim.id} variants={staggerItemVariants}>
+                      <ClaimedLeadCard
+                        claim={claim}
+                        listing={listing}
+                        property={property}
+                        onAccept={isPending ? () => acceptAssignment.mutate(listing.id) : undefined}
+                        onDecline={isPending && user ? () => declineAssignment.mutate({
+                          listingId: listing.id,
+                          currentDeclinedIds: listing.declinedRealtorIds ?? [],
+                          agentId: user.id,
+                        }) : undefined}
+                        isAccepting={acceptAssignment.isPending}
+                        isDeclining={declineAssignment.isPending}
+                      />
+                    </motion.div>
                   )
                 })}
-              </div>
+              </StaggerList>
             )}
           </>
         )}
@@ -253,12 +240,6 @@ export default function LeadsPage() {
         )}
       </Modal>
 
-      {/* Error toast */}
-      {errorMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
-          {errorMessage}
-        </div>
-      )}
     </div>
   )
 }

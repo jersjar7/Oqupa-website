@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { AnimatedImage } from '@/app/components/ui'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import { blurHashToDataUrl } from '@/lib/blurhash'
@@ -42,14 +43,14 @@ export default function PropertyCard({ item, isSelected, onClick }: PropertyCard
     >
       {/* Thumbnail */}
       <div
-        className="relative aspect-[4/3] w-full bg-background-secondary"
+        className="group relative aspect-[4/3] w-full overflow-hidden bg-background-secondary"
         style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
         {thumbnail ? (
-          <img
+          <AnimatedImage
             src={thumbnail}
             alt={typeLabel}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
           />

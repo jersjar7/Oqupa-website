@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { Spinner } from '@/app/components/ui'
@@ -9,11 +10,26 @@ import WizardStep2 from '../components/WizardStep2'
 import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
 
+const stepVariants = {
+  initial: (direction: number) => ({
+    opacity: 0,
+    x: direction * 50,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: direction * -50,
+  }),
+}
+
 export default function EditListingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data: result, isLoading, error } = useListingDetails(id)
-  const { step, updateData, setStep, setEditMode, reset } =
+  const { step, direction, updateData, setStep, setEditMode, reset } =
     useListingFormStore()
   const [initialized, setInitialized] = useState(false)
 
@@ -96,10 +112,22 @@ export default function EditListingPage() {
       <div className="mt-8">
         <WizardProgress currentStep={step} />
 
-        {step === 1 && <WizardStep1 />}
-        {step === 2 && <WizardStep2 />}
-        {step === 3 && <WizardStep3 />}
-        {step === 4 && <WizardStep4 />}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={stepVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          >
+            {step === 1 && <WizardStep1 />}
+            {step === 2 && <WizardStep2 />}
+            {step === 3 && <WizardStep3 />}
+            {step === 4 && <WizardStep4 />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   )

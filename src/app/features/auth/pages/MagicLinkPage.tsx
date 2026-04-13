@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -49,16 +50,20 @@ export default function MagicLinkPage() {
         await authService.sendMagicLink(email)
         setSentEmail(email)
         setCooldown(60)
+        toast.success('Enlace enviado a tu correo')
       } catch (err) {
         console.error('Magic link error:', err)
         const message =
           err instanceof Error ? err.message : 'Error al enviar el enlace'
         if (message.includes('too-many-requests')) {
           setError('Demasiados intentos. Intenta de nuevo mas tarde.')
+          toast.error('Demasiados intentos. Intenta de nuevo mas tarde.')
         } else if (message.includes('unauthorized-domain') || message.includes('unauthorized-continue-uri')) {
           setError('Dominio no autorizado. Agrega este dominio en Firebase Console.')
+          toast.error('Dominio no autorizado.')
         } else {
           setError('Error al enviar el enlace. Verifica tu correo.')
+          toast.error('Error al enviar el enlace. Verifica tu correo.')
         }
       }
     },
@@ -77,6 +82,7 @@ export default function MagicLinkPage() {
     } catch (err) {
       console.error('Apple sign-in error:', err)
       setError('Error al iniciar sesion con Apple. Intenta de nuevo.')
+      toast.error('Error al iniciar sesion con Apple. Intenta de nuevo.')
     } finally {
       setOauthLoading(false)
     }
@@ -90,6 +96,7 @@ export default function MagicLinkPage() {
     } catch (err) {
       console.error('Google sign-in error:', err)
       setError('Error al iniciar sesion con Google. Intenta de nuevo.')
+      toast.error('Error al iniciar sesion con Google. Intenta de nuevo.')
     } finally {
       setOauthLoading(false)
     }

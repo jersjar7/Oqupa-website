@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { doc, updateDoc, increment } from 'firebase/firestore'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -12,6 +14,7 @@ import { fullSize } from '@/lib/imageUrl'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
+import { AnimatedImage } from '@/app/components/ui'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import GalleryModal from '@/app/components/GalleryModal'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
@@ -61,7 +64,7 @@ function PropertyGallery({ images }: { images: string[] }) {
               className="h-[300px] w-full shrink-0 cursor-pointer"
               onClick={() => openModal(i)}
             >
-              <img
+              <AnimatedImage
                 src={url}
                 alt={`Foto ${i + 1}`}
                 className="h-full w-full object-cover"
@@ -112,8 +115,8 @@ function PropertyGallery({ images }: { images: string[] }) {
                 aria-label={`Ir a imagen ${i + 1}`}
               >
                 <span
-                  className={`block h-3 w-3 rounded-full transition-colors ${
-                    i === mobileCarousel.currentSlide ? 'bg-white' : 'bg-white/50'
+                  className={`block h-3 w-3 rounded-full transition-all duration-300 ${
+                    i === mobileCarousel.currentSlide ? 'scale-100 bg-white' : 'scale-75 bg-white/50'
                   }`}
                 />
               </button>
@@ -126,18 +129,18 @@ function PropertyGallery({ images }: { images: string[] }) {
       <div className="mx-auto hidden max-w-5xl px-4 pt-6 md:block">
         {images.length === 1 ? (
           <div
-            className="h-[420px] cursor-pointer overflow-hidden rounded-xl"
+            className="group h-[420px] cursor-pointer overflow-hidden rounded-xl"
             onClick={() => openModal(0)}
           >
-            <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
+            <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
           </div>
         ) : (
           <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
             <div
-              className="col-span-2 row-span-2 cursor-pointer"
+              className="group col-span-2 row-span-2 cursor-pointer overflow-hidden"
               onClick={() => openModal(0)}
             >
-              <img src={images[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
+              <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
             </div>
             {visibleImages.slice(1).map((url, i) => {
               const imageIndex = i + 1
@@ -148,13 +151,13 @@ function PropertyGallery({ images }: { images: string[] }) {
               return (
                 <div
                   key={imageIndex}
-                  className={`relative cursor-pointer ${gridClass}`}
+                  className={`group relative cursor-pointer overflow-hidden ${gridClass}`}
                   onClick={() => openModal(imageIndex)}
                 >
-                  <img
+                  <AnimatedImage
                     src={url}
                     alt={`Foto ${imageIndex + 1}`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
                   />
@@ -187,31 +190,45 @@ function PropertyGallery({ images }: { images: string[] }) {
 export default function PropertyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { listing, property, isLoading, error } = useProperty(id)
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
 
-  useEffect(() => {
-    if (listing?.description) {
-      document.title = listing.description
-    } else {
-      document.title = 'Propiedad - Oqupa'
-    }
+  // SEO meta tags
+  const metaTitle = useMemo(() => {
+    if (!listing || !property) return 'Propiedad - Oqupa'
+    const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
+    const distrito = property.location?.distrito
+    return distrito ? `${typeLabel} en ${distrito} - Oqupa` : `${typeLabel} - Oqupa`
+  }, [listing, property])
+
+  const metaDescription = useMemo(() => {
+    if (!listing?.description) return undefined
+    return listing.description.length > 150
+      ? listing.description.slice(0, 147) + '...'
+      : listing.description
   }, [listing?.description])
+
+  const metaImage = useMemo(() => {
+    if (!property) return undefined
+    const firstRef = property.media?.photoKeys?.[0] ?? property.media?.propertyPhotoUrls?.[0]
+    return firstRef ? fullSize(firstRef) : undefined
+  }, [property])
+
+  useDocumentMeta({
+    title: metaTitle,
+    description: metaDescription,
+    image: metaImage,
+    url: `${window.location.origin}${pathname}`,
+  })
 
   useEffect(() => {
     if (id && listing) {
       AnalyticsLogger.listingViewed(id)
     }
   }, [id, listing])
-
-  useEffect(() => {
-    if (!toastMessage) return
-    const timer = setTimeout(() => setToastMessage(null), 3000)
-    return () => clearTimeout(timer)
-  }, [toastMessage])
 
   const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
   const images = photoRefs.map(fullSize)
@@ -292,8 +309,13 @@ export default function PropertyPage() {
       {/* Gallery */}
       <PropertyGallery images={images} />
 
-      {/* Content */}
-      <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
+      {/* Content — animated entrance */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+        className="mx-auto max-w-2xl px-4 pt-6 sm:px-6"
+      >
         {/* Price + Destacado badge + Share */}
         <div className="flex items-center gap-3">
           <p className="text-2xl font-bold text-primary">
@@ -463,7 +485,7 @@ export default function PropertyPage() {
                 setShowAuthModal(true)
               }
             }}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-lg font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#1DA851]"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-lg font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -492,14 +514,7 @@ export default function PropertyPage() {
             Avisarme cuando este lista
           </button>
         </div>
-      </div>
-
-      {/* Toast notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
-          {toastMessage}
-        </div>
-      )}
+      </motion.div>
 
       {/* Share format modal */}
       {listing && property && (
@@ -512,43 +527,55 @@ export default function PropertyPage() {
       )}
 
       {/* Auth required modal */}
-      {showAuthModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowAuthModal(false)
-          }}
-        >
-          <div className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl">
-            <h3 className="font-serif text-lg font-bold text-text-primary">
-              Verificación requerida
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-              {firebaseUser
-                ? 'Para contactar al propietario, necesitas verificar tu número de teléfono.'
-                : 'Para contactar al propietario, necesitas iniciar sesión y verificar tu número de teléfono.'}
-            </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  setShowAuthModal(false)
-                  setReturnUrl(window.location.pathname)
-                  navigate(firebaseUser ? '/app/verify' : '/app/login')
-                }}
-                className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
-              >
-                {firebaseUser ? 'Verificar teléfono' : 'Iniciar sesión'}
-              </button>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowAuthModal(false)
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
+            >
+              <h3 className="font-serif text-lg font-bold text-text-primary">
+                Verificación requerida
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+                {firebaseUser
+                  ? 'Para contactar al propietario, necesitas verificar tu número de teléfono.'
+                  : 'Para contactar al propietario, necesitas iniciar sesión y verificar tu número de teléfono.'}
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowAuthModal(false)
+                    setReturnUrl(window.location.pathname)
+                    navigate(firebaseUser ? '/app/verify' : '/app/login')
+                  }}
+                  className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
+                >
+                  {firebaseUser ? 'Verificar teléfono' : 'Iniciar sesión'}
+                </button>
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
