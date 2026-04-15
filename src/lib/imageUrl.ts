@@ -19,16 +19,11 @@ function isLegacyUrl(ref: string): boolean {
 /** Build a CDN URL from an R2 key. Returns legacy URLs unchanged. */
 export function buildImageUrl(
   ref: string,
-  opts?: { width?: number; quality?: number },
+  _opts?: { width?: number; quality?: number },
 ): string {
   if (!ref) return ''
   if (isLegacyUrl(ref)) return ref
-  const host = getHost()
-  if (opts?.width) {
-    const q = opts.quality ?? 80
-    return `https://${host}/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/${ref}`
-  }
-  return `https://${host}/${ref}`
+  return `https://${getHost()}/${ref}`
 }
 
 /** 300px thumbnail for listing cards and grids */
