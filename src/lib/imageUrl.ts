@@ -7,6 +7,10 @@
 const PRODUCTION_HOST = 'images.oqupa.com'
 const STAGING_HOST = 'images-staging.oqupa.com'
 
+// Image Transformations are enabled on the main zone, not the R2 custom domain.
+// Pattern: https://oqupa.com/cdn-cgi/image/{options}/https://images.oqupa.com/{key}
+const TRANSFORM_ZONE = 'oqupa.com'
+
 function getHost(): string {
   return import.meta.env.PROD ? PRODUCTION_HOST : STAGING_HOST
 }
@@ -19,11 +23,17 @@ function isLegacyUrl(ref: string): boolean {
 /** Build a CDN URL from an R2 key. Returns legacy URLs unchanged. */
 export function buildImageUrl(
   ref: string,
-  _opts?: { width?: number; quality?: number },
+  opts?: { width?: number; quality?: number },
 ): string {
   if (!ref) return ''
   if (isLegacyUrl(ref)) return ref
-  return `https://${getHost()}/${ref}`
+  const host = getHost()
+  // In production, use Cloudflare Image Transformations via the main zone
+  if (import.meta.env.PROD && opts?.width) {
+    const q = opts.quality ?? 80
+    return `https://${TRANSFORM_ZONE}/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/https://${host}/${ref}`
+  }
+  return `https://${host}/${ref}`
 }
 
 /** 300px thumbnail for listing cards and grids */

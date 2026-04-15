@@ -45,12 +45,17 @@ function resolveUrl(url: string): string {
 
 /**
  * Strips the Cloudflare cdn-cgi/image/ prefix from a URL, returning the
- * direct R2 URL. Returns the original URL if no prefix is present.
+ * direct image URL. Returns the original URL if no prefix is present.
  */
 function stripCdnCgi(url: string): string {
-  const match = url.match(/^(https:\/\/[^/]+)\/cdn-cgi\/image\/[^/]+\/(.+)$/)
-  if (!match) return url
-  return `${match[1]}/${match[2]}`
+  const match = url.match(/\/cdn-cgi\/image\/[^/]+\/(.+)$/)
+  if (!match?.[1]) return url
+  const source = match[1]
+  // Source is a full URL (e.g. https://images.oqupa.com/key) — return as-is
+  if (source.startsWith('https://')) return source
+  // Source is a relative path — prepend the host
+  const hostMatch = url.match(/^(https:\/\/[^/]+)/)
+  return hostMatch?.[1] ? `${hostMatch[1]}/${source}` : url
 }
 
 /** Loads an image via fetch-as-blob with an AbortController timeout. */
