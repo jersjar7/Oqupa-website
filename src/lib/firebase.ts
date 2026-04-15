@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
-import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from 'firebase/auth'
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
 import { getAnalytics } from 'firebase/analytics'
@@ -19,6 +19,7 @@ const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver,
 })
 export const storage = getStorage(app)
 export const functions = getFunctions(app, 'southamerica-east1')

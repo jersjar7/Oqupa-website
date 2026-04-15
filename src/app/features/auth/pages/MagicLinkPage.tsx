@@ -1,32 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
-import { useAuthStore } from '@/stores/authStore'
-import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input } from '@/app/components/ui'
 
 import appleLogo from '@/assets/images/apple-logo.webp'
 import googleLogo from '@/assets/images/google-logo.webp'
 
 export default function MagicLinkPage() {
-  const navigate = useNavigate()
-  const { firebaseUser, user, isInitialized, isLoading } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
   const [sentEmail, setSentEmail] = useState<string | null>(null)
   const [cooldown, setCooldown] = useState(0)
   const [oauthLoading, setOauthLoading] = useState(false)
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!isInitialized || isLoading) return
-    if (firebaseUser) {
-      navigate(user?.isPhoneVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify', { replace: true })
-    }
-  }, [firebaseUser, user, isInitialized, isLoading, navigate])
 
   // Cooldown timer
   useEffect(() => {

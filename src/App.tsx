@@ -16,6 +16,7 @@ import CompleteSignInPage from '@/app/features/auth/pages/CompleteSignInPage'
 import ForgotPasswordPage from '@/app/features/auth/pages/ForgotPasswordPage'
 import AuthPipelinePage from '@/app/features/auth/pages/AuthPipelinePage'
 import AuthGuard from '@/app/components/guards/AuthGuard'
+import GuestGuard from '@/app/components/guards/GuestGuard'
 import VerifiedGuard from '@/app/components/guards/VerifiedGuard'
 import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
@@ -60,11 +61,11 @@ export default function App() {
         {/* Publisher app routes (own layout) */}
         <Route path="/app" element={<ErrorBoundary><AppLayout /></ErrorBoundary>}>
           {/* Public auth pages */}
-          <Route path="login" element={<MagicLinkPage />} />
-          <Route path="login/password" element={<PasswordLoginPage />} />
+          <Route path="login" element={<GuestGuard><MagicLinkPage /></GuestGuard>} />
+          <Route path="login/password" element={<GuestGuard><PasswordLoginPage /></GuestGuard>} />
           <Route path="auth/complete" element={<CompleteSignInPage />} />
           <Route path="register" element={<Navigate to="/app/login" replace />} />
-          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="forgot-password" element={<GuestGuard><ForgotPasswordPage /></GuestGuard>} />
 
           {/* Auth required: verification pipeline */}
           <Route

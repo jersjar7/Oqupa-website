@@ -1,25 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
-import { useAuthStore } from '@/stores/authStore'
-import { consumeReturnUrl } from '@/lib/utils'
 import { Button, Input } from '@/app/components/ui'
 
 export default function PasswordLoginPage() {
-  const navigate = useNavigate()
-  const { firebaseUser, user, isInitialized, isLoading } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!isInitialized || isLoading) return
-    if (firebaseUser) {
-      navigate(user?.isPhoneVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify', { replace: true })
-    }
-  }, [firebaseUser, user, isInitialized, isLoading, navigate])
 
   const {
     register,

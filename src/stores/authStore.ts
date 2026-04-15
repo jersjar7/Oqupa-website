@@ -82,6 +82,10 @@ function firestoreDocToUser(
   }
 }
 
+const authChannel = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('oqupa-auth')
+  : null
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   firebaseUser: null,
   user: null,
@@ -93,40 +97,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Prevent double-initialization
     if (get()._unsubscribe) return
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        set({ firebaseUser, isLoading: true })
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-          if (userDoc.exists()) {
-            const user = firestoreDocToUser(
-              firebaseUser.uid,
-              userDoc.data() as Record<string, unknown>
-            )
-            set({ user, isLoading: false, isInitialized: true })
-          } else {
-            // Firebase Auth user exists but no Firestore doc yet
-            // (mid-registration - doc will be created by authService)
-            set({
-              user: null,
-              isLoading: false,
-              isInitialized: true,
-            })
+    // Wait for Firebase to resolve persisted session from IndexedDB
+    // before listening. This prevents a premature null callback.
+    auth.authStateReady().then(() => {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          set({ firebaseUser, isLoading: true })
+          try {
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+            if (userDoc.exists()) {
+              const user = firestoreDocToUser(
+                firebaseUser.uid,
+                userDoc.data() as Record<string, unknown>
+              )
+              set({ user, isLoading: false, isInitialized: true })
+            } else {
+              // Firebase Auth user exists but no Firestore doc yet
+              // (mid-registration - doc will be created by authService)
+              set({
+                user: null,
+                isLoading: false,
+                isInitialized: true,
+              })
+            }
+          } catch {
+            set({ user: null, isLoading: false, isInitialized: true })
           }
-        } catch {
-          set({ user: null, isLoading: false, isInitialized: true })
+        } else {
+          set({
+            firebaseUser: null,
+            user: null,
+            isLoading: false,
+            isInitialized: true,
+          })
+          authChannel?.postMessage({ type: 'logout' })
         }
-      } else {
-        set({
-          firebaseUser: null,
-          user: null,
-          isLoading: false,
-          isInitialized: true,
-        })
-      }
-    })
+      })
 
-    set({ _unsubscribe: unsubscribe })
+      authChannel?.addEventListener('message', (event) => {
+        if (event.data?.type === 'logout') {
+          auth.authStateReady().then(() => {
+            if (!auth.currentUser) {
+              set({
+                firebaseUser: null,
+                user: null,
+                isLoading: false,
+                isInitialized: true,
+              })
+            }
+          })
+        }
+      })
+
+      set({ _unsubscribe: unsubscribe })
+    })
   },
 
   refreshUser: async () => {
