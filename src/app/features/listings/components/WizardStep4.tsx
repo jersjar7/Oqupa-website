@@ -504,7 +504,7 @@ export default function WizardStep4() {
                 <InfoTip text="Limita cuántos agentes pueden solicitar ayudarte con tu propiedad. Puedes cambiar esto después de publicar." />
               </label>
               <div className="mt-2 flex gap-2">
-                {[1, 3, 5, 10].map((n) => (
+                {[1, 2, 3, 4, 5].map((n) => (
                   <button
                     key={n}
                     type="button"

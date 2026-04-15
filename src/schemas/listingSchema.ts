@@ -36,11 +36,10 @@ export const step2Schema = z
       .max(2000, 'La descripcion no puede exceder 2000 caracteres'),
     totalAreaInSquareMeters: z
       .number({ message: 'Ingresa un numero valido' })
-      .positive('El area debe ser mayor a 0')
-      .max(50000, 'El area no puede exceder 50,000 m²'),
-    bedroomCount: z.number().int().min(1).max(20).optional().nullable(),
-    bathroomCount: z.number().int().min(1).max(15).optional().nullable(),
-    availableParkingSpaces: z.number().int().min(0).max(50),
+      .positive('El area debe ser mayor a 0'),
+    bedroomCount: z.number().int().min(1).optional().nullable(),
+    bathroomCount: z.number().int().min(1).optional().nullable(),
+    availableParkingSpaces: z.number().int().min(0),
     propertyAmenities: z.array(z.string().max(50)).max(30),
     hasPrivateBathroom: z.boolean().optional(),
   })
@@ -95,55 +94,7 @@ export const step4Schema = z
       .positive('El precio debe ser mayor a 0'),
     currency: z.enum(['PEN', 'USD']),
     wantsRealtorHelp: z.boolean(),
-    maxRealtors: z.number().int().refine(
-      (n) => [1, 3, 5, 10].includes(n),
-      { message: 'Selecciona un numero valido de agentes' },
-    ),
-  })
-  .superRefine((data, ctx) => {
-    const isVenta = data.operationType === 'venta'
-    const isShortTerm = data.rentalDurationType === 'shortTerm'
-    const isRoom = data.propertyType === 'habitacion'
-    const isHospedaje = data.propertyType === 'hospedaje'
-    const isPEN = data.currency === 'PEN'
-    const symbol = isPEN ? 'S/.' : 'US$'
-
-    if (isVenta) {
-      const max = isPEN ? 5_000_000 : 2_000_000
-      if (data.amount > max) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['amount'],
-          message: `El precio no puede exceder ${symbol} ${max.toLocaleString()}`,
-        })
-      }
-    } else if (isShortTerm) {
-      // Short-term rental (nightly)
-      const max = isRoom
-        ? (isPEN ? 500 : 150)
-        : isHospedaje
-          ? (isPEN ? 50_000 : 15_000)
-          : (isPEN ? 2_000 : 500)
-      if (data.amount > max) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['amount'],
-          message: `El precio por noche no puede exceder ${symbol} ${max.toLocaleString()}`,
-        })
-      }
-    } else {
-      // Long-term rental (monthly)
-      const max = isRoom
-        ? (isPEN ? 5_000 : 1_500)
-        : (isPEN ? 50_000 : 15_000)
-      if (data.amount > max) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['amount'],
-          message: `El precio mensual no puede exceder ${symbol} ${max.toLocaleString()}`,
-        })
-      }
-    }
+    maxRealtors: z.number().int().min(1).max(5, 'Selecciona un numero valido de agentes'),
   })
 export type Step4Data = z.infer<typeof step4Schema>
 
@@ -182,8 +133,5 @@ export const fullListingSchema = z.object({
   wantsRealtorHelp: z.boolean({
     message: 'Preferencia de agente no seleccionada (Paso 4)',
   }),
-  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 4)' }).int().refine(
-    (n) => [1, 3, 5, 10].includes(n),
-    { message: 'Numero de agentes invalido (Paso 4)' },
-  ),
+  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 4)' }).int().min(1).max(5, 'Numero de agentes invalido (Paso 4)'),
 })
