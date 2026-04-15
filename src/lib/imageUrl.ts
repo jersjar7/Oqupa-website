@@ -7,10 +7,6 @@
 const PRODUCTION_HOST = 'images.oqupa.com'
 const STAGING_HOST = 'images-staging.oqupa.com'
 
-// Image Transformations are enabled on the main zone, not the R2 custom domain.
-// Pattern: https://oqupa.com/cdn-cgi/image/{options}/https://images.oqupa.com/{key}
-const TRANSFORM_ZONE = 'oqupa.com'
-
 function getHost(): string {
   return import.meta.env.PROD ? PRODUCTION_HOST : STAGING_HOST
 }
@@ -28,10 +24,12 @@ export function buildImageUrl(
   if (!ref) return ''
   if (isLegacyUrl(ref)) return ref
   const host = getHost()
-  // In production, use Cloudflare Image Transformations via the main zone
+  // In production, use Cloudflare Image Transformations via a same-origin
+  // relative path. This avoids CORS/CSP issues regardless of whether the
+  // user is on oqupa.com or www.oqupa.com.
   if (import.meta.env.PROD && opts?.width) {
     const q = opts.quality ?? 80
-    return `https://${TRANSFORM_ZONE}/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/https://${host}/${ref}`
+    return `/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/https://${host}/${ref}`
   }
   return `https://${host}/${ref}`
 }
