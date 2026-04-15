@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildImageUrl, thumbnail, card, fullSize, profilePhoto, imageUrl } from '../imageUrl'
+import { buildImageUrl, thumbnail, card, fullSize, profilePhoto, shareCard, imageUrl } from '../imageUrl'
 
 // By default, Vitest sets import.meta.env.PROD = false (dev/test mode),
 // so getHost() returns the staging host.
@@ -10,18 +10,25 @@ describe('imageUrl', () => {
   // ─── buildImageUrl ──────────────────────────────────────────────────
 
   describe('buildImageUrl', () => {
-    it('constructs a URL with host and key', () => {
+    it('constructs a cdn-cgi URL with width and default quality', () => {
       const url = buildImageUrl('property-photos/abc/123.webp', { width: 300 })
       expect(url).toBe(
-        `https://${STAGING_HOST}/property-photos/abc/123.webp`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=300,f=auto,q=80/property-photos/abc/123.webp`,
       )
     })
 
-    it('constructs a URL without cdn-cgi prefix', () => {
+    it('constructs a cdn-cgi URL with width and custom quality', () => {
       const url = buildImageUrl('property-photos/abc/123.webp', {
         width: 1200,
         quality: 90,
       })
+      expect(url).toBe(
+        `https://${STAGING_HOST}/cdn-cgi/image/w=1200,f=auto,q=90/property-photos/abc/123.webp`,
+      )
+    })
+
+    it('constructs a plain URL when no width is provided', () => {
+      const url = buildImageUrl('property-photos/abc/123.webp')
       expect(url).toBe(
         `https://${STAGING_HOST}/property-photos/abc/123.webp`,
       )
@@ -46,7 +53,7 @@ describe('imageUrl', () => {
       const key = 'profile-photos/user123/avatar.webp'
       const url = buildImageUrl(key, { width: 400 })
       expect(url).toBe(
-        `https://${STAGING_HOST}/${key}`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/${key}`,
       )
     })
 
@@ -54,6 +61,7 @@ describe('imageUrl', () => {
       const key = 'property-photos/abc/photo (1).webp'
       const url = buildImageUrl(key, { width: 300 })
       expect(url).toContain(key)
+      expect(url).toContain('cdn-cgi/image/')
       expect(url.startsWith(`https://${STAGING_HOST}/`)).toBe(true)
     })
   })
@@ -86,10 +94,10 @@ describe('imageUrl', () => {
   // ─── Preset methods ────────────────────────────────────────────────
 
   describe('thumbnail', () => {
-    it('constructs URL with host and key', () => {
+    it('constructs cdn-cgi URL with 300px width', () => {
       const url = thumbnail('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/photos/abc.webp`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=300,f=auto,q=80/photos/abc.webp`,
       )
     })
 
@@ -104,10 +112,10 @@ describe('imageUrl', () => {
   })
 
   describe('card', () => {
-    it('constructs URL with host and key', () => {
+    it('constructs cdn-cgi URL with 400px width', () => {
       const url = card('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/photos/abc.webp`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/photos/abc.webp`,
       )
     })
 
@@ -122,10 +130,10 @@ describe('imageUrl', () => {
   })
 
   describe('fullSize', () => {
-    it('constructs URL with host and key', () => {
+    it('constructs cdn-cgi URL with 1200px width', () => {
       const url = fullSize('photos/abc.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/photos/abc.webp`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=1200,f=auto,q=85/photos/abc.webp`,
       )
     })
 
@@ -140,10 +148,10 @@ describe('imageUrl', () => {
   })
 
   describe('profilePhoto', () => {
-    it('constructs URL with host and key', () => {
+    it('constructs cdn-cgi URL with 400px width', () => {
       const url = profilePhoto('profile-photos/user1/avatar.webp')
       expect(url).toBe(
-        `https://${STAGING_HOST}/profile-photos/user1/avatar.webp`,
+        `https://${STAGING_HOST}/cdn-cgi/image/w=400,f=auto,q=80/profile-photos/user1/avatar.webp`,
       )
     })
 
@@ -157,14 +165,32 @@ describe('imageUrl', () => {
     })
   })
 
+  describe('shareCard', () => {
+    it('constructs cdn-cgi URL with 1080px width', () => {
+      const url = shareCard('photos/abc.webp')
+      expect(url).toBe(
+        `https://${STAGING_HOST}/cdn-cgi/image/w=1080,f=auto,q=85/photos/abc.webp`,
+      )
+    })
+
+    it('returns legacy URLs unchanged', () => {
+      const legacy = 'https://storage.example.com/photo.jpg'
+      expect(shareCard(legacy)).toBe(legacy)
+    })
+
+    it('returns empty string for empty ref', () => {
+      expect(shareCard('')).toBe('')
+    })
+  })
+
   // ─── URL format verification ─────────────────────────────────────
 
   describe('URL format', () => {
-    it('follows the https://{host}/{key} pattern', () => {
+    it('includes cdn-cgi prefix when width is provided', () => {
       const url = buildImageUrl('photos/test.webp', { width: 500, quality: 75 })
-      // Pattern: https://<host>/<key>
-      const pattern = /^https:\/\/[^/]+\/.+$/
-      expect(url).toMatch(pattern)
+      expect(url).toBe(
+        `https://${STAGING_HOST}/cdn-cgi/image/w=500,f=auto,q=75/photos/test.webp`,
+      )
     })
 
     it('uses the staging host in test/dev environment', () => {
@@ -173,13 +199,18 @@ describe('imageUrl', () => {
       expect(url).not.toContain(PRODUCTION_HOST)
     })
 
-    it('does not include cdn-cgi prefix', () => {
+    it('includes cdn-cgi prefix for R2 keys with width', () => {
       const url = buildImageUrl('photos/test.webp', { width: 300 })
+      expect(url).toContain('cdn-cgi/image/')
+    })
+
+    it('does not include cdn-cgi prefix without width', () => {
+      const url = buildImageUrl('photos/test.webp')
       expect(url).not.toContain('cdn-cgi')
     })
 
-    it('URL is simply host plus key', () => {
-      const url = buildImageUrl('photos/test.webp', { width: 800, quality: 70 })
+    it('URL without width is simply host plus key', () => {
+      const url = buildImageUrl('photos/test.webp')
       expect(url).toBe(`https://${STAGING_HOST}/photos/test.webp`)
     })
 
@@ -199,6 +230,7 @@ describe('imageUrl', () => {
       expect(imageUrl.card).toBe(card)
       expect(imageUrl.fullSize).toBe(fullSize)
       expect(imageUrl.profilePhoto).toBe(profilePhoto)
+      expect(imageUrl.shareCard).toBe(shareCard)
       expect(typeof imageUrl.isLegacyUrl).toBe('function')
     })
   })

@@ -19,11 +19,16 @@ function isLegacyUrl(ref: string): boolean {
 /** Build a CDN URL from an R2 key. Returns legacy URLs unchanged. */
 export function buildImageUrl(
   ref: string,
-  _opts?: { width?: number; quality?: number },
+  opts?: { width?: number; quality?: number },
 ): string {
   if (!ref) return ''
   if (isLegacyUrl(ref)) return ref
-  return `https://${getHost()}/${ref}`
+  const host = getHost()
+  if (opts?.width) {
+    const q = opts.quality ?? 80
+    return `https://${host}/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/${ref}`
+  }
+  return `https://${host}/${ref}`
 }
 
 /** 300px thumbnail for listing cards and grids */
@@ -46,12 +51,18 @@ export function profilePhoto(ref: string): string {
   return buildImageUrl(ref, { width: 400, quality: 80 })
 }
 
+/** 1080px image for branded share card canvas (exact canvas width) */
+export function shareCard(ref: string): string {
+  return buildImageUrl(ref, { width: 1080, quality: 85 })
+}
+
 export const imageUrl = {
   buildImageUrl,
   thumbnail,
   card,
   fullSize,
   profilePhoto,
+  shareCard,
   isLegacyUrl,
 }
 

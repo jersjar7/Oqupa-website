@@ -44,36 +44,102 @@ function resolveUrl(url: string): string {
 }
 
 /**
- * Loads an image as a canvas-safe HTMLImageElement.
- *
- * For external URLs (Firebase Storage), fetches the image as a blob first
- * to avoid CORS taint on the canvas.
- *
- * For local/asset URLs, loads directly.
+ * Strips the Cloudflare cdn-cgi/image/ prefix from a URL, returning the
+ * direct R2 URL. Returns the original URL if no prefix is present.
  */
-async function loadImage(url: string, fetchAsBlob = true): Promise<HTMLImageElement | null> {
+function stripCdnCgi(url: string): string {
+  const match = url.match(/^(https:\/\/[^/]+)\/cdn-cgi\/image\/[^/]+\/(.+)$/)
+  if (!match) return url
+  return `${match[1]}/${match[2]}`
+}
+
+/** Loads an image via fetch-as-blob with an AbortController timeout. */
+async function fetchAsBlob(url: string, timeoutMs: number): Promise<HTMLImageElement | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    let src = url
-    let blobUrl: string | null = null
-
-    if (fetchAsBlob && (url.startsWith('http') || url.startsWith('/__storage'))) {
-      const fetchUrl = resolveUrl(url)
-      const response = await fetch(fetchUrl)
-      if (!response.ok) return null
-      const blob = await response.blob()
-      blobUrl = URL.createObjectURL(blob)
-      src = blobUrl
-    }
-
+    const fetchUrl = resolveUrl(url)
+    const response = await fetch(fetchUrl, { signal: controller.signal })
+    if (!response.ok) return null
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
     return await new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image()
       img.onload = () => resolve(img)
       img.onerror = () => {
-        if (blobUrl) URL.revokeObjectURL(blobUrl)
+        URL.revokeObjectURL(blobUrl)
         resolve(null)
       }
-      img.src = src
+      img.src = blobUrl
     })
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** Loads an image via an <img> element with crossOrigin (browser-native loader). */
+async function loadViaImgElement(url: string, timeoutMs: number): Promise<HTMLImageElement | null> {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    const timer = setTimeout(() => {
+      img.src = ''
+      resolve(null)
+    }, timeoutMs)
+    img.onload = () => {
+      clearTimeout(timer)
+      resolve(img)
+    }
+    img.onerror = () => {
+      clearTimeout(timer)
+      resolve(null)
+    }
+    img.src = url
+  })
+}
+
+/**
+ * Loads an image as a canvas-safe HTMLImageElement with 3-tier fallback:
+ *
+ * 1. fetch() as blob with 15s timeout (avoids CORS taint)
+ * 2. <img crossOrigin="anonymous"> (browser-native, better on mobile)
+ * 3. If URL has cdn-cgi, retry 1-2 with the direct R2 URL
+ *
+ * For local/asset URLs, loads directly without the fallback chain.
+ */
+async function loadImage(url: string, useFallbackChain = true): Promise<HTMLImageElement | null> {
+  // Local/asset URLs: load directly
+  if (!useFallbackChain || !(url.startsWith('http') || url.startsWith('/__storage'))) {
+    return new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null)
+      img.src = url
+    })
+  }
+
+  try {
+    // Tier 1: fetch as blob
+    const result1 = await fetchAsBlob(url, 15_000)
+    if (result1) return result1
+
+    // Tier 2: <img> element with crossOrigin
+    const result2 = await loadViaImgElement(url, 15_000)
+    if (result2) return result2
+
+    // Tier 3: if cdn-cgi URL, retry with direct R2 URL
+    const directUrl = stripCdnCgi(url)
+    if (directUrl !== url) {
+      const result3 = await fetchAsBlob(directUrl, 15_000)
+      if (result3) return result3
+
+      const result4 = await loadViaImgElement(directUrl, 15_000)
+      if (result4) return result4
+    }
+
+    return null
   } catch {
     return null
   }
