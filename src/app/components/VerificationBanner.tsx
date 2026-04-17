@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
-const HIDDEN_PATHS = ['/app/verify', '/app/login', '/app/login/password', '/app/auth/complete', '/app/forgot-password']
+const HIDDEN_PATHS = ['/app/verify', '/app/login', '/app/login/password', '/app/auth/complete', '/app/forgot-password', '/app/magic']
 
 export default function VerificationBanner() {
   const location = useLocation()
@@ -26,7 +26,7 @@ export default function VerificationBanner() {
   }
 
   return (
-    <div className="border-b border-warning/30 bg-warning/10 px-4 py-2.5 sm:px-6">
+    <div className="border-b border-warning/40 bg-warning/15 px-4 py-2.5 sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center gap-3">
         <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
         <p className="flex-1 text-sm text-text-secondary">{message}</p>

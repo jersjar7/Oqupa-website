@@ -232,7 +232,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={handleChangeNumber}
-                  className="text-sm text-text-tertiary hover:text-text-secondary"
+                  className="text-sm font-medium text-secondary hover:text-secondary-hover"
                 >
                   Cambiar numero
                 </button>
