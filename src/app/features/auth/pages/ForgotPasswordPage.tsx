@@ -6,7 +6,9 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
 } from '@/schemas/authSchema'
+import { toast } from 'sonner'
 import { authService } from '@/services/authService'
+import { getForgotPasswordAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 
 export default function ForgotPasswordPage() {
@@ -26,8 +28,10 @@ export default function ForgotPasswordPage() {
     try {
       await authService.requestPasswordReset(data.email)
       setSent(true)
-    } catch {
-      setError('Error al enviar el correo. Verifica tu direccion.')
+    } catch (err) {
+      const errorInfo = getForgotPasswordAuthError(err)
+      setError(errorInfo.message)
+      toast.error(errorInfo.message)
     }
   }
 

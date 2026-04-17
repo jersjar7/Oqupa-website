@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
+import { getMagicLinkAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 
 import appleLogo from '@/assets/images/apple-logo.webp'
@@ -41,18 +42,9 @@ export default function MagicLinkPage() {
         toast.success('Enlace enviado a tu correo')
       } catch (err) {
         console.error('Magic link error:', err)
-        const message =
-          err instanceof Error ? err.message : 'Error al enviar el enlace'
-        if (message.includes('too-many-requests')) {
-          setError('Demasiados intentos. Intenta de nuevo mas tarde.')
-          toast.error('Demasiados intentos. Intenta de nuevo mas tarde.')
-        } else if (message.includes('unauthorized-domain') || message.includes('unauthorized-continue-uri')) {
-          setError('Dominio no autorizado. Agrega este dominio en Firebase Console.')
-          toast.error('Dominio no autorizado.')
-        } else {
-          setError('Error al enviar el enlace. Verifica tu correo.')
-          toast.error('Error al enviar el enlace. Verifica tu correo.')
-        }
+        const errorInfo = getMagicLinkAuthError(err)
+        setError(errorInfo.message)
+        toast.error(errorInfo.message)
       }
     },
     []

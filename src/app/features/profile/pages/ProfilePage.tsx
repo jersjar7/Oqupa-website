@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
+import { phoneSchema, verificationCodeSchema, type PhoneFormData, type VerificationCodeFormData } from '@/schemas/authSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
+import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
-import { CheckCircle, Shield, Clock, XCircle } from 'lucide-react'
+import { CheckCircle, Shield, Clock, XCircle, Phone } from 'lucide-react'
+
+type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -18,6 +22,17 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // Phone verification state
+  const [phoneMode, setPhoneMode] = useState<PhoneMode>('idle')
+  const [verificationId, setVerificationId] = useState<string | null>(null)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [phoneRecoveryHint, setPhoneRecoveryHint] = useState<string | null>(null)
+  const [isPhoneSubmitting, setIsPhoneSubmitting] = useState(false)
+  const [smsCooldown, setSmsCooldown] = useState(0)
+
+  // Store the pending phone number to save AFTER verification
+  const pendingPhoneRef = useRef<{ phoneNumber: string; countryName: string } | null>(null)
 
   const {
     register,
@@ -33,6 +48,23 @@ export default function ProfilePage() {
         user?.contactInfo?.additionalContactNotes ?? '',
     },
   })
+
+  // SMS cooldown timer
+  useEffect(() => {
+    if (smsCooldown <= 0) return
+    const timer = setTimeout(() => setSmsCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [smsCooldown])
+
+  // Initialize reCAPTCHA when entering phone mode, cleanup unconditionally on exit
+  useEffect(() => {
+    if (phoneMode === 'enter-phone') {
+      authService.initializeRecaptcha('profile-recaptcha-container')
+    }
+    return () => {
+      authService.cleanupRecaptcha()
+    }
+  }, [phoneMode])
 
   async function onSubmit(data: ProfileFormData) {
     if (!user) return
@@ -58,6 +90,90 @@ export default function ProfilePage() {
       setError('Error al actualizar el perfil')
       toast.error('Error al actualizar el perfil')
     }
+  }
+
+  async function handleSendCode(data: PhoneFormData) {
+    if (smsCooldown > 0 || !user) return
+    setPhoneError(null)
+    setPhoneRecoveryHint(null)
+    setIsPhoneSubmitting(true)
+    try {
+      const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
+      const countryName = data.countryCode === '+51' ? 'peru' : 'unitedStates'
+      const verId = await authService.sendPhoneVerificationCode(phoneWithCountry)
+      setVerificationId(verId)
+      setSmsCooldown(60)
+      toast.success('Codigo enviado')
+
+      // Store pending phone to save AFTER successful verification
+      pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
+
+      setPhoneMode('enter-code')
+    } catch (err) {
+
+      const errorInfo = getPhoneAuthError(err)
+      setPhoneError(errorInfo.message)
+      setPhoneRecoveryHint(errorInfo.recoveryHint ?? null)
+      toast.error(errorInfo.message)
+
+      // Re-initialize reCAPTCHA on captcha failures
+      const code = err && typeof err === 'object' && 'code' in err
+        ? (err as { code: string }).code
+        : ''
+      if (code === 'auth/captcha-check-failed' || code === 'auth/missing-client-identifier') {
+        authService.cleanupRecaptcha()
+        authService.initializeRecaptcha('profile-recaptcha-container')
+      }
+    } finally {
+      setIsPhoneSubmitting(false)
+    }
+  }
+
+  async function handleVerifyCode(data: VerificationCodeFormData) {
+    if (!user) return
+    setPhoneError(null)
+    setPhoneRecoveryHint(null)
+    setIsPhoneSubmitting(true)
+    try {
+      if (!verificationId) throw new Error('No verification ID')
+      await authService.verifyPhoneCode(verificationId, data.code)
+
+      // Save contact info AFTER successful verification
+      const pending = pendingPhoneRef.current
+      if (pending) {
+        await authService.updateUserContactInfo(user.id, {
+          whatsappPhoneNumber: pending.phoneNumber,
+          countryCode: pending.countryName,
+          preferredContactTimeSlot: user.contactInfo?.preferredContactTimeSlot ?? 'anytime',
+          additionalContactNotes: user.contactInfo?.additionalContactNotes ?? '',
+        })
+        pendingPhoneRef.current = null
+      }
+
+      await refreshUser()
+      toast.success('Telefono verificado')
+      setPhoneMode('idle')
+      setVerificationId(null)
+    } catch (err) {
+
+      const errorInfo = getPhoneAuthError(err)
+      setPhoneError(errorInfo.message)
+      setPhoneRecoveryHint(errorInfo.recoveryHint ?? null)
+      toast.error(errorInfo.message)
+    } finally {
+      setIsPhoneSubmitting(false)
+    }
+  }
+
+  function handleChangeNumber() {
+    // No Firebase operations needed — just show the phone form.
+    // The new number will replace the old one via updatePhoneNumber in verifyPhoneCode.
+    setPhoneError(null)
+    setPhoneRecoveryHint(null)
+    setVerificationId(null)
+    setSmsCooldown(0)
+    pendingPhoneRef.current = null
+    setPhoneMode('enter-phone')
   }
 
   async function handleDeleteAccount() {
@@ -91,15 +207,83 @@ export default function ProfilePage() {
         <h2 className="text-sm font-medium uppercase text-text-primary">
           Estado de verificacion
         </h2>
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle
-              className={`h-4 w-4 ${user.isPhoneVerified ? 'text-success' : 'text-text-tertiary'}`}
-            />
-            <span className="text-sm text-text-secondary">
-              Telefono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
-            </span>
+        <div className="mt-3 space-y-3">
+          {/* Phone verification row */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle
+                  className={`h-4 w-4 ${user.isPhoneVerified ? 'text-success' : 'text-text-tertiary'}`}
+                />
+                <span className="text-sm text-text-secondary">
+                  Telefono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
+                </span>
+              </div>
+              {!user.isPhoneVerified && phoneMode === 'idle' && (
+                <button
+                  type="button"
+                  onClick={() => setPhoneMode('enter-phone')}
+                  className="text-sm font-medium text-secondary hover:text-secondary-hover"
+                >
+                  Verificar ahora
+                </button>
+              )}
+              {user.isPhoneVerified && phoneMode === 'idle' && (
+                <button
+                  type="button"
+                  onClick={handleChangeNumber}
+                  className="text-sm text-text-tertiary hover:text-text-secondary"
+                >
+                  Cambiar numero
+                </button>
+              )}
+            </div>
+
+            {/* Inline phone form */}
+            {phoneMode === 'enter-phone' && (
+              <PhoneForm
+                error={phoneError}
+                recoveryHint={phoneRecoveryHint}
+                isSubmitting={isPhoneSubmitting}
+                cooldown={smsCooldown}
+                onSubmit={handleSendCode}
+                onCancel={() => {
+                  setPhoneMode('idle')
+                  setPhoneError(null)
+                  setPhoneRecoveryHint(null)
+                  setVerificationId(null)
+                  pendingPhoneRef.current = null
+                }}
+              />
+            )}
+
+            {/* Inline code form */}
+            {phoneMode === 'enter-code' && (
+              <CodeForm
+                error={phoneError}
+                recoveryHint={phoneRecoveryHint}
+                isSubmitting={isPhoneSubmitting}
+                cooldown={smsCooldown}
+                onSubmit={handleVerifyCode}
+                onResend={() => {
+                  if (smsCooldown > 0) return
+                  setPhoneMode('enter-phone')
+                  setPhoneError(null)
+                  setPhoneRecoveryHint(null)
+                }}
+                onChangeNumber={() => {
+                  setPhoneMode('enter-phone')
+                  setPhoneError(null)
+                  setPhoneRecoveryHint(null)
+                  setVerificationId(null)
+                  setSmsCooldown(0)
+                  pendingPhoneRef.current = null
+                }}
+              />
+            )}
           </div>
+
+          {/* Identity verification row */}
           <div className="flex items-center gap-2">
             <Shield
               className={`h-4 w-4 ${user.isIdentityVerified ? 'text-success' : 'text-text-tertiary'}`}
@@ -109,6 +293,9 @@ export default function ProfilePage() {
             </span>
           </div>
         </div>
+
+        {/* reCAPTCHA container for profile */}
+        <div id="profile-recaptcha-container" />
       </Card>
 
       {/* Realtor status */}
@@ -186,11 +373,20 @@ export default function ProfilePage() {
             {...register('name')}
           />
 
-          <Input
-            label="Telefono"
-            value={user.contactInfo?.whatsappPhoneNumber ?? 'No registrado'}
-            disabled
-          />
+          {/* Phone display (read-only when not in phone verification mode) */}
+          {phoneMode === 'idle' && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium uppercase text-text-primary">
+                Telefono
+              </label>
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
+                <Phone className="h-4 w-4 text-text-tertiary" />
+                <span className="text-base text-text-secondary">
+                  {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
+                </span>
+              </div>
+            </div>
+          )}
 
           <Select
             label="Horario de contacto preferido"
@@ -294,5 +490,168 @@ export default function ProfilePage() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+function PhoneForm({
+  error,
+  recoveryHint,
+  isSubmitting,
+  cooldown,
+  onSubmit,
+  onCancel,
+}: {
+  error: string | null
+  recoveryHint: string | null
+  isSubmitting: boolean
+  cooldown: number
+  onSubmit: (data: PhoneFormData) => void
+  onCancel: () => void
+}) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<PhoneFormData>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { countryCode: '+51' },
+  })
+
+  const selectedCode = watch('countryCode')
+  const placeholder = selectedCode === '+1' ? '(555) 123-4567' : '912 345 678'
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
+      <div className="flex gap-2">
+        <div className="relative">
+          <select
+            {...register('countryCode')}
+            className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
+          >
+            <option value="+51">+51</option>
+            <option value="+1">+1</option>
+          </select>
+          <svg
+            className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <Input
+          type="tel"
+          autoComplete="tel-national"
+          autoFocus
+          placeholder={placeholder}
+          error={errors.phoneNumber?.message}
+          {...register('phoneNumber')}
+        />
+      </div>
+
+      {error && (
+        <div>
+          <p className="text-sm text-error">{error}</p>
+          {recoveryHint && (
+            <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Button
+          type="submit"
+          isLoading={isSubmitting}
+          disabled={cooldown > 0}
+        >
+          {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar codigo'}
+        </Button>
+        <Button
+          type="button"
+          variant="text"
+          onClick={onCancel}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function CodeForm({
+  error,
+  recoveryHint,
+  isSubmitting,
+  cooldown,
+  onSubmit,
+  onResend,
+  onChangeNumber,
+}: {
+  error: string | null
+  recoveryHint: string | null
+  isSubmitting: boolean
+  cooldown: number
+  onSubmit: (data: VerificationCodeFormData) => void
+  onResend: () => void
+  onChangeNumber: () => void
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<VerificationCodeFormData>({
+    resolver: zodResolver(verificationCodeSchema),
+  })
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
+      <Input
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        autoFocus
+        placeholder="000000"
+        maxLength={6}
+        className="text-center text-lg tracking-[0.3em]"
+        error={errors.code?.message}
+        {...register('code')}
+      />
+
+      {error && (
+        <div>
+          <p className="text-sm text-error">{error}</p>
+          {recoveryHint && (
+            <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <Button
+          type="submit"
+          isLoading={isSubmitting}
+        >
+          Verificar
+        </Button>
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={cooldown > 0}
+          className={`text-sm ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-secondary hover:text-secondary-hover'}`}
+        >
+          {cooldown > 0 ? `Reenviar (${cooldown}s)` : 'Reenviar'}
+        </button>
+        <button
+          type="button"
+          onClick={onChangeNumber}
+          className="text-sm text-secondary hover:text-secondary-hover"
+        >
+          Cambiar numero
+        </button>
+      </div>
+    </form>
   )
 }

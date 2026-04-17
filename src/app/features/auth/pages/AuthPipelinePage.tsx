@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   nameSchema,
   phoneSchema,
@@ -14,6 +15,7 @@ import {
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
+import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 
 type PipelineStep = 'name' | 'phone' | 'verify-code'
@@ -50,8 +52,12 @@ export default function AuthPipelinePage() {
   const [direction, setDirection] = useState(1)
   const [verificationId, setVerificationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [recoveryHint, setRecoveryHint] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [smsCooldown, setSmsCooldown] = useState(0)
+
+  // Store pending phone to save only AFTER verification succeeds
+  const pendingPhoneRef = useRef<{ phoneNumber: string; countryName: string } | null>(null)
 
   const goToStep = (target: PipelineStep) => {
     const currentIndex = STEP_ORDER.indexOf(step)
@@ -132,14 +138,17 @@ export default function AuthPipelinePage() {
                 isSubmitting={isSubmitting}
                 onSubmit={async (data) => {
                   setError(null)
+                  setRecoveryHint(null)
                   setIsSubmitting(true)
                   try {
                     if (!firebaseUser) throw new Error('Not authenticated')
                     await authService.updateUserName(firebaseUser.uid, data.name)
                     await refreshUser()
+                    toast.success('Nombre guardado')
                     goToStep('phone')
                   } catch {
                     setError('Error al guardar el nombre')
+                    toast.error('Error al guardar el nombre')
                   } finally {
                     setIsSubmitting(false)
                   }
@@ -150,56 +159,82 @@ export default function AuthPipelinePage() {
             {step === 'phone' && (
               <PhoneStep
                 error={error}
+                recoveryHint={recoveryHint}
                 isSubmitting={isSubmitting}
                 cooldown={smsCooldown}
                 onSubmit={async (data) => {
                   if (smsCooldown > 0) return
                   setError(null)
+                  setRecoveryHint(null)
                   setIsSubmitting(true)
                   try {
                     const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
-                    const countryName = data.countryCode === '+51' ? 'peru' : 'usa'
+                    const countryName = data.countryCode === '+51' ? 'peru' : 'unitedStates'
                     const verId =
                       await authService.sendPhoneVerificationCode(phoneWithCountry)
                     setVerificationId(verId)
                     setSmsCooldown(60)
+                    toast.success('Codigo enviado')
 
-                    // Save contact info
-                    if (firebaseUser) {
-                      await authService.updateUserContactInfo(firebaseUser.uid, {
-                        whatsappPhoneNumber: phoneWithCountry,
-                        countryCode: countryName,
-                        preferredContactTimeSlot: 'anytime',
-                      })
-                    }
+                    // Store pending phone — save to Firestore only after verification
+                    pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
 
                     goToStep('verify-code')
-                  } catch {
-                    setError(
-                      'Error al enviar el codigo. Verifica tu numero e intenta de nuevo.'
-                    )
+                  } catch (err) {
+                    const errorInfo = getPhoneAuthError(err)
+                    setError(errorInfo.message)
+                    setRecoveryHint(errorInfo.recoveryHint ?? null)
+                    toast.error(errorInfo.message)
+
+                    // Re-initialize reCAPTCHA on captcha failures
+                    const code = err && typeof err === 'object' && 'code' in err
+                      ? (err as { code: string }).code
+                      : ''
+                    if (code === 'auth/captcha-check-failed' || code === 'auth/missing-client-identifier') {
+                      authService.cleanupRecaptcha()
+                      authService.initializeRecaptcha('recaptcha-container')
+                    }
                   } finally {
                     setIsSubmitting(false)
                   }
                 }}
+                onSkip={() => navigate('/app/profile')}
               />
             )}
 
             {step === 'verify-code' && (
               <VerifyCodeStep
                 error={error}
+                recoveryHint={recoveryHint}
                 isSubmitting={isSubmitting}
                 cooldown={smsCooldown}
                 onSubmit={async (data) => {
                   setError(null)
+                  setRecoveryHint(null)
                   setIsSubmitting(true)
                   try {
                     if (!verificationId) throw new Error('No verification ID')
                     await authService.verifyPhoneCode(verificationId, data.code)
+
+                    // Save contact info AFTER successful verification
+                    const pending = pendingPhoneRef.current
+                    if (pending && firebaseUser) {
+                      await authService.updateUserContactInfo(firebaseUser.uid, {
+                        whatsappPhoneNumber: pending.phoneNumber,
+                        countryCode: pending.countryName,
+                        preferredContactTimeSlot: 'anytime',
+                      })
+                      pendingPhoneRef.current = null
+                    }
+
                     await refreshUser()
+                    toast.success('Telefono verificado')
                     navigate(consumeReturnUrl() ?? '/app')
-                  } catch {
-                    setError('Codigo incorrecto. Intenta de nuevo.')
+                  } catch (err) {
+                    const errorInfo = getPhoneAuthError(err)
+                    setError(errorInfo.message)
+                    setRecoveryHint(errorInfo.recoveryHint ?? null)
+                    toast.error(errorInfo.message)
                   } finally {
                     setIsSubmitting(false)
                   }
@@ -208,6 +243,14 @@ export default function AuthPipelinePage() {
                   if (smsCooldown > 0) return
                   goToStep('phone')
                   setError(null)
+                  setRecoveryHint(null)
+                }}
+                onChangeNumber={() => {
+                  goToStep('phone')
+                  setError(null)
+                  setRecoveryHint(null)
+                  setVerificationId(null)
+                  setSmsCooldown(0)
                 }}
               />
             )}
@@ -273,14 +316,18 @@ function NameStep({
 
 function PhoneStep({
   error,
+  recoveryHint,
   isSubmitting,
   cooldown,
   onSubmit,
+  onSkip,
 }: {
   error: string | null
+  recoveryHint: string | null
   isSubmitting: boolean
   cooldown: number
   onSubmit: (data: PhoneFormData) => void
+  onSkip: () => void
 }) {
   const {
     register,
@@ -334,7 +381,14 @@ function PhoneStep({
           />
         </div>
 
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && (
+          <div>
+            <p className="text-sm text-error">{error}</p>
+            {recoveryHint && (
+              <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
+            )}
+          </div>
+        )}
 
         <Button
           type="submit"
@@ -345,22 +399,36 @@ function PhoneStep({
           {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar codigo'}
         </Button>
       </form>
+
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-text-tertiary hover:text-text-secondary"
+        >
+          Verificar despues
+        </button>
+      </div>
     </>
   )
 }
 
 function VerifyCodeStep({
   error,
+  recoveryHint,
   isSubmitting,
   cooldown,
   onSubmit,
   onResend,
+  onChangeNumber,
 }: {
   error: string | null
+  recoveryHint: string | null
   isSubmitting: boolean
   cooldown: number
   onSubmit: (data: VerificationCodeFormData) => void
   onResend: () => void
+  onChangeNumber: () => void
 }) {
   const {
     register,
@@ -392,7 +460,14 @@ function VerifyCodeStep({
           {...register('code')}
         />
 
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && (
+          <div>
+            <p className="text-sm text-error">{error}</p>
+            {recoveryHint && (
+              <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
+            )}
+          </div>
+        )}
 
         <Button
           type="submit"
@@ -403,7 +478,7 @@ function VerifyCodeStep({
         </Button>
       </form>
 
-      <div className="mt-4 text-center">
+      <div className="mt-4 flex items-center justify-center gap-4">
         <button
           type="button"
           onClick={onResend}
@@ -411,6 +486,14 @@ function VerifyCodeStep({
           className={`text-base ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-secondary hover:text-secondary-hover'}`}
         >
           {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar codigo'}
+        </button>
+        <span className="text-text-tertiary">|</span>
+        <button
+          type="button"
+          onClick={onChangeNumber}
+          className="text-base text-secondary hover:text-secondary-hover"
+        >
+          Cambiar numero
         </button>
       </div>
     </>
