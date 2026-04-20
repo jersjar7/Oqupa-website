@@ -17,6 +17,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
+  unlink,
+  updatePhoneNumber,
 } from 'firebase/auth'
 import {
   doc,
@@ -168,8 +170,16 @@ export const authService = {
     const currentUser = auth.currentUser
 
     if (currentUser) {
-      // Link phone credential to existing email/password account
-      await linkWithCredential(currentUser, credential)
+      const hasPhone = currentUser.providerData.some(
+        (p) => p.providerId === 'phone'
+      )
+      if (hasPhone) {
+        // Phone already linked — update to new number (atomic, no unlink needed)
+        await updatePhoneNumber(currentUser, credential)
+      } else {
+        // First time linking phone to this account
+        await linkWithCredential(currentUser, credential)
+      }
     } else {
       // Sign in with phone (standalone)
       await signInWithCredential(auth, credential)
@@ -283,6 +293,14 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     await signOut(auth)
+  },
+
+  async unlinkPhone() {
+    const currentUser = auth.currentUser
+    if (!currentUser) throw new Error('No authenticated user')
+    const hasPhone = currentUser.providerData.some(p => p.providerId === 'phone')
+    if (!hasPhone) return
+    await unlink(currentUser, 'phone')
   },
 
   cleanupRecaptcha() {

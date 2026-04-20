@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { magicLinkSchema, type MagicLinkFormData } from '@/schemas/authSchema'
+import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
+import { getMagicLinkAuthError } from '@/lib/authErrors'
 import { Button, Input, Spinner } from '@/app/components/ui'
 
 type PageState = 'completing' | 'needs-email' | 'error'
@@ -55,15 +57,9 @@ export default function CompleteSignInPage() {
         navigate(consumeReturnUrl() ?? '/app', { replace: true })
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Error al iniciar sesion'
-      if (message.includes('expired') || message.includes('invalid-action-code')) {
-        setError('Este enlace ha expirado. Solicita uno nuevo.')
-      } else if (message.includes('invalid-email')) {
-        setError('El correo no coincide con el enlace. Intenta de nuevo.')
-      } else {
-        setError('Error al iniciar sesion. Intenta de nuevo.')
-      }
+      const errorInfo = getMagicLinkAuthError(err)
+      setError(errorInfo.message)
+      toast.error(errorInfo.message)
       setState('error')
     }
   }

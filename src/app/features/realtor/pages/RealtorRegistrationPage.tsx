@@ -38,7 +38,7 @@ export default function RealtorRegistrationPage() {
     if (!user) return
 
     // Pre-flight checks
-    if (!user.name || !user.contactInfo?.whatsappPhoneNumber) {
+    if (!user.name || !user.isPhoneVerified || !user.contactInfo?.whatsappPhoneNumber) {
       setPageStatus('incomplete-profile')
       return
     }
@@ -127,11 +127,11 @@ export default function RealtorRegistrationPage() {
                 Completa tu perfil primero
               </p>
               <p className="mt-1 text-sm text-text-secondary">
-                Necesitas tener tu nombre y telefono registrados antes de aplicar como agente.
+                Necesitas tener tu nombre completo y telefono verificado antes de aplicar como agente.
               </p>
               <div className="mt-4">
-                <Button onClick={() => navigate('/app/profile')}>
-                  Ir a Mi Perfil
+                <Button onClick={() => navigate('/app/verify')}>
+                  Completar verificacion
                 </Button>
               </div>
             </div>

@@ -143,7 +143,9 @@ export default function App() {
             path="realtor-registration"
             element={
               <AuthGuard>
-                <RealtorRegistrationPage />
+                <VerifiedGuard>
+                  <RealtorRegistrationPage />
+                </VerifiedGuard>
               </AuthGuard>
             }
           />

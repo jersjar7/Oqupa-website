@@ -21,6 +21,12 @@ export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],
   popupRedirectResolver: browserPopupRedirectResolver,
 })
+
+// Skip reCAPTCHA verification in development — phone auth uses test phone numbers
+// configured in Firebase Console (Authentication → Phone numbers)
+if (import.meta.env.DEV) {
+  auth.settings.appVerificationDisabledForTesting = true
+}
 export const storage = getStorage(app)
 export const functions = getFunctions(app, 'southamerica-east1')
 export const analytics = getAnalytics(app)

@@ -6,6 +6,7 @@ import { isAdminEmail } from '@/app/components/guards/AdminGuard'
 import { Spinner } from '@/app/components/ui'
 import PageTransition from '@/app/components/ui/PageTransition'
 import UserMenu from '@/components/layout/UserMenu'
+import VerificationBanner from '@/app/components/VerificationBanner'
 import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 
 export default function AppLayout() {
@@ -132,6 +133,8 @@ export default function AppLayout() {
           )}
         </div>
       </header>
+
+      <VerificationBanner />
 
       {/* Page content */}
       <main className="flex flex-1 flex-col">

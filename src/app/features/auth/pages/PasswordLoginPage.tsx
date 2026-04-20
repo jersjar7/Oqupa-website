@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { loginSchema, type LoginFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
+import { getLoginAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 
 export default function PasswordLoginPage() {
@@ -42,19 +44,12 @@ export default function PasswordLoginPage() {
 
       await authService.loginWithEmailAndPassword(data.email, data.password)
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Error al iniciar sesion'
-      if (
-        message.includes('invalid-credential') ||
-        message.includes('wrong-password') ||
-        message.includes('user-not-found')
-      ) {
-        setError('Correo o contrasena incorrectos')
-      } else if (message.includes('too-many-requests')) {
-        setError('Demasiados intentos. Intenta de nuevo mas tarde.')
-      } else {
-        setError('Error al iniciar sesion. Intenta de nuevo.')
-      }
+      // Master introduced centralized auth-error handling via getLoginAuthError
+      // + sonner toast. Keep that path; it subsumes the earlier ad-hoc
+      // message-matching code development had.
+      const errorInfo = getLoginAuthError(err)
+      setError(errorInfo.message)
+      toast.error(errorInfo.message)
     }
   }
 
