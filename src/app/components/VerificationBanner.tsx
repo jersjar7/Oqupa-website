@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
-const HIDDEN_PATHS = ['/app/verify', '/app/login', '/app/login/password', '/app/auth/complete', '/app/forgot-password', '/app/magic']
+const HIDDEN_PATHS = ['/app/verify', '/app/login', '/app/auth/complete', '/app/auth/set-password', '/app/forgot-password']
 
 export default function VerificationBanner() {
   const location = useLocation()

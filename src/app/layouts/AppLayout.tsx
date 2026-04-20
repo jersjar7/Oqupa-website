@@ -16,8 +16,8 @@ export default function AppLayout() {
 
   const isAuthPage =
     location.pathname === '/app/login' ||
-    location.pathname === '/app/login/password' ||
     location.pathname === '/app/auth/complete' ||
+    location.pathname === '/app/auth/set-password' ||
     location.pathname === '/app/forgot-password'
 
   async function handleLogout() {

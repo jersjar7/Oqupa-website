@@ -58,13 +58,13 @@ export default function ForgotPasswordPage() {
             Correo enviado
           </h1>
           <p className="mt-2 text-base text-text-secondary">
-            Revisa tu bandeja de entrada para restablecer tu contrasena.
+            Revisa tu bandeja de entrada y abre el enlace para crear o restablecer tu contrasena.
           </p>
           <p className="mt-1 text-sm text-text-tertiary">
             Si no lo encuentras, revisa tu bandeja de spam.
           </p>
           <Link
-            to="/app/login/password"
+            to="/app/login"
             className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
@@ -78,11 +78,11 @@ export default function ForgotPasswordPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Recuperar Contrasena
+          Crear o recuperar contraseña
         </h1>
         <p className="mt-2 text-center text-base text-text-secondary">
-          Ingresa tu correo y te enviaremos un enlace para restablecer tu
-          contrasena.
+          Ingresa tu correo y te enviaremos un enlace para crear tu contraseña
+          (si es tu primera vez) o para restablecerla.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
 
         <div className="mt-4 text-center">
           <Link
-            to="/app/login/password"
+            to="/app/login"
             className="text-base text-secondary hover:text-secondary-hover"
           >
             Volver a Iniciar Sesion
