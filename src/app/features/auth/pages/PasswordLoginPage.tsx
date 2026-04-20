@@ -8,6 +8,7 @@ import { Button, Input } from '@/app/components/ui'
 
 export default function PasswordLoginPage() {
   const [error, setError] = useState<string | null>(null)
+  const [legacyNotice, setLegacyNotice] = useState<string | null>(null)
 
   const {
     register,
@@ -19,12 +20,35 @@ export default function PasswordLoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setError(null)
+    setLegacyNotice(null)
     try {
+      // Smart recovery: if this account only has the emailLink provider
+      // (a legacy magic-link user), they don't have a password yet.
+      // Send them the set-password flow instead of failing with
+      // "wrong password" — matches the auth migration campaign.
+      const methods = await authService.getSignInMethods(data.email)
+      const hasPassword = methods.includes('password')
+      const hasEmailLinkOnly =
+        methods.length > 0 && !hasPassword && methods.includes('emailLink')
+      if (hasEmailLinkOnly) {
+        await authService.sendPasswordSetupEmail(data.email)
+        setLegacyNotice(
+          'Tu cuenta aun no tiene contrasena. Te enviamos un enlace a ' +
+            data.email +
+            ' para crear una en un solo paso.'
+        )
+        return
+      }
+
       await authService.loginWithEmailAndPassword(data.email, data.password)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error al iniciar sesion'
-      if (message.includes('invalid-credential') || message.includes('wrong-password') || message.includes('user-not-found')) {
+      if (
+        message.includes('invalid-credential') ||
+        message.includes('wrong-password') ||
+        message.includes('user-not-found')
+      ) {
         setError('Correo o contrasena incorrectos')
       } else if (message.includes('too-many-requests')) {
         setError('Demasiados intentos. Intenta de nuevo mas tarde.')
@@ -63,8 +87,15 @@ export default function PasswordLoginPage() {
             {...register('password')}
           />
 
-          {error && (
-            <p className="text-sm text-error">{error}</p>
+          {error && <p className="text-sm text-error">{error}</p>}
+
+          {legacyNotice && (
+            <div className="rounded-md border border-secondary/30 bg-secondary/5 p-3">
+              <p className="text-sm text-text-primary">{legacyNotice}</p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Revisa tu bandeja de entrada (y spam). El enlace expira en 1 hora.
+              </p>
+            </div>
           )}
 
           <Button
@@ -82,15 +113,6 @@ export default function PasswordLoginPage() {
             className="text-base text-secondary hover:text-secondary-hover"
           >
             Olvidaste tu contrasena?
-          </Link>
-        </div>
-
-        <div className="mt-6 border-t border-border pt-6 text-center">
-          <Link
-            to="/app/login"
-            className="text-base text-text-tertiary hover:text-text-secondary"
-          >
-            Usar enlace magico
           </Link>
         </div>
       </div>

@@ -46,6 +46,21 @@ export const forgotPasswordSchema = z.object({
 })
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
+export const setPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(6, 'La contrasena debe tener al menos 6 caracteres'),
+    confirmPassword: z
+      .string()
+      .min(1, 'Confirma tu contrasena'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Las contrasenas no coinciden',
+    path: ['confirmPassword'],
+  })
+export type SetPasswordFormData = z.infer<typeof setPasswordSchema>
+
 export const nameSchema = z.object({
   name: z
     .string()
