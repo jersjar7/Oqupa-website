@@ -3,9 +3,11 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-  sendSignInLinkToEmail,
   signInWithEmailLink,
   isSignInWithEmailLink,
+  fetchSignInMethodsForEmail,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
   RecaptchaVerifier,
   PhoneAuthProvider,
   signInWithCredential,
@@ -72,6 +74,41 @@ export const authService = {
 
   async requestPasswordReset(email: string) {
     await sendPasswordResetEmail(auth, email)
+  },
+
+  // Auth migration helpers (magic-link → password). See AUTH-MIGRATION-PLAN.md.
+
+  async getSignInMethods(email: string): Promise<string[]> {
+    return fetchSignInMethodsForEmail(auth, email)
+  },
+
+  async sendPasswordSetupEmail(email: string) {
+    const url = import.meta.env.DEV
+      ? 'http://localhost:5173/app/auth/set-password'
+      : 'https://oqupa.com/app/auth/set-password'
+    await sendPasswordResetEmail(auth, email, {
+      url,
+      handleCodeInApp: true,
+    })
+  },
+
+  async verifySetPasswordCode(oobCode: string): Promise<string> {
+    return verifyPasswordResetCode(auth, oobCode)
+  },
+
+  async confirmSetPassword(oobCode: string, newPassword: string, email: string) {
+    await confirmPasswordReset(auth, oobCode, newPassword)
+    const credential = await signInWithEmailAndPassword(auth, email, newPassword)
+    const user = credential.user
+    // Use dot-path to stamp only passwordSetAt without clobbering server-side
+    // stamps (announcedAt, reminderSentAt, finalNoticeSentAt).
+    await updateDoc(doc(db, 'users', user.uid), {
+      authProvider: 'password',
+      'migrationState.passwordSetAt': serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+    AnalyticsLogger.loginCompleted('passwordMigration')
+    return user
   },
 
   async updateUserName(uid: string, name: string) {
@@ -147,17 +184,9 @@ export const authService = {
     }
   },
 
-  async sendMagicLink(email: string) {
-    const actionCodeSettings = {
-      url: import.meta.env.DEV
-        ? 'http://localhost:5173/app/auth/complete'
-        : 'https://oqupa.com/app/auth/complete',
-      handleCodeInApp: true,
-      ...(import.meta.env.DEV ? {} : { linkDomain: 'oqupa.com' }),
-    }
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings)
-    localStorage.setItem('oqupa_signInEmail', email)
-  },
+  // Magic-link send was retired as part of the password-first migration.
+  // `isSignInLink` + `completeMagicLinkSignIn` remain so inbox-aged magic
+  // links can still complete until the cleanup PR at T+35.
 
   isSignInLink(url: string) {
     return isSignInWithEmailLink(auth, url)

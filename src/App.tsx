@@ -10,10 +10,10 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import ExplorePage from '@/pages/ExplorePage'
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
-import MagicLinkPage from '@/app/features/auth/pages/MagicLinkPage'
 import PasswordLoginPage from '@/app/features/auth/pages/PasswordLoginPage'
 import CompleteSignInPage from '@/app/features/auth/pages/CompleteSignInPage'
 import ForgotPasswordPage from '@/app/features/auth/pages/ForgotPasswordPage'
+import SetPasswordPage from '@/app/features/auth/pages/SetPasswordPage'
 import AuthPipelinePage from '@/app/features/auth/pages/AuthPipelinePage'
 import AuthGuard from '@/app/components/guards/AuthGuard'
 import GuestGuard from '@/app/components/guards/GuestGuard'
@@ -60,10 +60,15 @@ export default function App() {
 
         {/* Publisher app routes (own layout) */}
         <Route path="/app" element={<ErrorBoundary><AppLayout /></ErrorBoundary>}>
-          {/* Public auth pages */}
-          <Route path="login" element={<GuestGuard><MagicLinkPage /></GuestGuard>} />
-          <Route path="login/password" element={<GuestGuard><PasswordLoginPage /></GuestGuard>} />
+          {/* Public auth pages — password is now the default login. */}
+          {/* Magic-link UI was retired as part of the auth migration campaign; */}
+          {/* see docs/AUTH-MIGRATION-PLAN.md. /auth/complete is kept alive */}
+          {/* until Firebase email-link sign-in is disabled at T+35 so aged */}
+          {/* magic-link emails already in inboxes can still complete. */}
+          <Route path="login" element={<GuestGuard><PasswordLoginPage /></GuestGuard>} />
+          <Route path="login/password" element={<Navigate to="/app/login" replace />} />
           <Route path="auth/complete" element={<CompleteSignInPage />} />
+          <Route path="auth/set-password" element={<SetPasswordPage />} />
           <Route path="register" element={<Navigate to="/app/login" replace />} />
           <Route path="forgot-password" element={<GuestGuard><ForgotPasswordPage /></GuestGuard>} />
 
