@@ -84,6 +84,7 @@ export default function PasswordLoginPage() {
             autoComplete="current-password"
             placeholder="Tu contrasena"
             error={errors.password?.message}
+            revealToggle
             {...register('password')}
           />
 

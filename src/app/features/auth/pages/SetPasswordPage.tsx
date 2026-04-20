@@ -134,6 +134,7 @@ export default function SetPasswordPage() {
             autoComplete="new-password"
             placeholder="Minimo 6 caracteres"
             error={errors.password?.message}
+            revealToggle
             {...register('password')}
           />
 
@@ -143,6 +144,7 @@ export default function SetPasswordPage() {
             autoComplete="new-password"
             placeholder="Repite la contrasena"
             error={errors.confirmPassword?.message}
+            revealToggle
             {...register('confirmPassword')}
           />
 
