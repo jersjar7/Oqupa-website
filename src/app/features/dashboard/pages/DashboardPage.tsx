@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserListingsWithProperties } from '@/hooks/useListings'
 import { useAgentAssignments, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
 import { Button, Badge, Spinner, StaggerList, staggerItemVariants } from '@/app/components/ui'
+import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import ListingCard from '../components/ListingCard'
 import ListingCardSkeleton from '../components/ListingCardSkeleton'
 import EmptyState from '../components/EmptyState'
@@ -13,6 +14,10 @@ import AgentAssignmentCard from '../components/AgentAssignmentCard'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
+  useSetPageMeta({
+    title: 'Mis Publicaciones',
+    subtitle: user?.name ? `Hola, ${user.name}` : undefined,
+  })
   const { data: items, isLoading, error } = useUserListingsWithProperties(user?.id)
   const isVerifiedRealtor = user?.isVerifiedRealtor
   const agentAssignments = useAgentAssignments(isVerifiedRealtor ? user?.id : undefined)
@@ -22,18 +27,8 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-[28px] font-normal text-text-primary">
-            Mis Publicaciones
-          </h1>
-          {user?.name && (
-            <p className="mt-1 text-base text-text-secondary">
-              Hola, {user.name}
-            </p>
-          )}
-        </div>
+      {/* Page action — title now lives in the Topbar via useSetPageMeta */}
+      <div className="flex items-center justify-end">
         <Link to="/app/listings/new">
           <Button>
             <Plus className="h-5 w-5" />

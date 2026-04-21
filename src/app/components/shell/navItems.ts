@@ -1,9 +1,14 @@
 /**
  * Nav items shown in the dashboard sidebar, grouped for dual-role users.
  * Routing: `to` is the actual route path.
+ *
+ * NOTE: "Mis Anuncios" is intentionally omitted for now. The current /app
+ * route already IS the listings view (DashboardPage renders the user's
+ * listings). When the Dashboard is redesigned into role-aware KPIs (next
+ * commit), we'll add a dedicated /app/listings route + re-add the nav item.
  */
 import {
-  Home, Briefcase, CreditCard, User, Compass, FileBadge, ClipboardList,
+  Home, CreditCard, User, Compass, FileBadge, ClipboardList,
   type LucideIcon,
 } from 'lucide-react'
 import type { Capabilities } from './capabilities'
@@ -22,7 +27,6 @@ export type NavGroup = {
 
 const ITEMS = {
   dashboard:          { id: 'dashboard',          label: 'Dashboard',     to: '/app',                          icon: Home } as NavItem,
-  misAnuncios:        { id: 'misAnuncios',        label: 'Mis Anuncios',  to: '/app/listings',                 icon: Briefcase } as NavItem,
   pagos:              { id: 'pagos',              label: 'Pagos',         to: '/app/payments',                 icon: CreditCard } as NavItem,
   miPerfil:           { id: 'miPerfil',           label: 'Mi Perfil',     to: '/app/profile',                  icon: User } as NavItem,
   oportunidades:      { id: 'oportunidades',      label: 'Oportunidades', to: '/app/leads',                    icon: Compass } as NavItem,
@@ -35,20 +39,20 @@ const ITEMS = {
  * Single-role users get a flat list (no section headers); dual-role users get grouped.
  */
 export function getNavGroups(caps: Capabilities): NavGroup[] {
-  const { dashboard, misAnuncios, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
+  const { dashboard, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
 
   if (caps.isAdmin && caps.isRealtor) {
     return [
-      { label: 'Principal', items: [dashboard, misAnuncios, pagos, miPerfil] },
+      { label: 'Principal', items: [dashboard, pagos, miPerfil] },
       { label: 'Agente',    items: [oportunidades, miRegistroAgente] },
       { label: 'Admin',     items: [aplicaciones] },
     ]
   }
   if (caps.isRealtor) {
-    return [{ items: [dashboard, oportunidades, misAnuncios, pagos, miRegistroAgente, miPerfil] }]
+    return [{ items: [dashboard, oportunidades, pagos, miRegistroAgente, miPerfil] }]
   }
   if (caps.isAdmin) {
-    return [{ items: [dashboard, aplicaciones, misAnuncios, pagos, miPerfil] }]
+    return [{ items: [dashboard, aplicaciones, pagos, miPerfil] }]
   }
-  return [{ items: [dashboard, misAnuncios, pagos, miPerfil] }]
+  return [{ items: [dashboard, pagos, miPerfil] }]
 }

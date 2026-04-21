@@ -198,9 +198,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-serif text-[28px] font-normal text-text-primary">
-        Mi Perfil
-      </h1>
+      {/* Title lives in the Topbar via DashboardShell's default route title */}
 
       {/* Verification status */}
       <Card className="mt-6">
