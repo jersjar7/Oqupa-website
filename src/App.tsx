@@ -20,6 +20,7 @@ import AuthGuard from '@/app/components/guards/AuthGuard'
 import GuestGuard from '@/app/components/guards/GuestGuard'
 import VerifiedGuard from '@/app/components/guards/VerifiedGuard'
 import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
+import ListingsPage from '@/app/features/listings/pages/ListingsPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
 import EditListingPage from '@/app/features/listings/pages/EditListingPage'
 import AgentEditListingPage from '@/app/features/listings/pages/AgentEditListingPage'
@@ -87,6 +88,7 @@ export default function App() {
             </ErrorBoundary>
           }>
             <Route index element={<VerifiedGuard><DashboardPage /></VerifiedGuard>} />
+            <Route path="listings" element={<VerifiedGuard><ListingsPage /></VerifiedGuard>} />
             <Route path="listings/new" element={<VerifiedGuard><CreateListingPage /></VerifiedGuard>} />
             <Route path="listings/:id/edit" element={<VerifiedGuard><EditListingPage /></VerifiedGuard>} />
             <Route path="listings/:id/agent-edit" element={<VerifiedGuard><AgentEditListingPage /></VerifiedGuard>} />

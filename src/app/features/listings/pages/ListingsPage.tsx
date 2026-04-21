@@ -1,0 +1,156 @@
+/**
+ * Mis Anuncios — the user's own listings grid + any agent assignments they
+ * have (if they're a verified realtor). This is the former DashboardPage
+ * content, extracted to its own route (/app/listings) now that the
+ * dashboard home (/app) is role-aware KPIs.
+ */
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Plus, Briefcase } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuthStore } from '@/stores/authStore'
+import { useUserListingsWithProperties } from '@/hooks/useListings'
+import { useAgentAssignments, useAcceptAssignment, useDeclineAssignment } from '@/hooks/useRealtorLeads'
+import { Button, Badge, Spinner, StaggerList, staggerItemVariants } from '@/app/components/ui'
+import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
+import ListingCard from '@/app/features/dashboard/components/ListingCard'
+import ListingCardSkeleton from '@/app/features/dashboard/components/ListingCardSkeleton'
+import EmptyState from '@/app/features/dashboard/components/EmptyState'
+import AgentAssignmentCard from '@/app/features/dashboard/components/AgentAssignmentCard'
+
+export default function ListingsPage() {
+  const { user } = useAuthStore()
+  useSetPageMeta({
+    title: 'Mis Anuncios',
+    subtitle: 'Gestiona tus propiedades publicadas.',
+  })
+  const { data: items, isLoading, error } = useUserListingsWithProperties(user?.id)
+  const isVerifiedRealtor = user?.isVerifiedRealtor
+  const agentAssignments = useAgentAssignments(isVerifiedRealtor ? user?.id : undefined)
+  const acceptAssignment = useAcceptAssignment()
+  const declineAssignment = useDeclineAssignment()
+  const [mutatingListingId, setMutatingListingId] = useState<string | null>(null)
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Page action */}
+      <div className="flex items-center justify-end">
+        <Link to="/app/listings/new">
+          <Button>
+            <Plus className="h-5 w-5" />
+            <span className="hidden sm:inline">Crear Publicacion</span>
+            <span className="sm:hidden">Crear</span>
+          </Button>
+        </Link>
+      </div>
+
+      {/* Content */}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <motion.div
+            key="skeleton"
+            className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ListingCardSkeleton key={i} />
+            ))}
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            key="error"
+            className="mt-8 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="text-error">Error al cargar tus publicaciones</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-base text-secondary hover:text-secondary-hover"
+            >
+              Reintentar
+            </button>
+          </motion.div>
+        ) : !items || items.length === 0 ? (
+          <motion.div
+            key="empty"
+            className="mt-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <EmptyState />
+          </motion.div>
+        ) : (
+          <StaggerList className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" key="content">
+            {items.map(({ listing, property }) => (
+              <motion.div key={listing.id} variants={staggerItemVariants}>
+                <ListingCard
+                  listing={listing}
+                  property={property}
+                />
+              </motion.div>
+            ))}
+          </StaggerList>
+        )}
+      </AnimatePresence>
+
+      {/* Agent Assignments Section */}
+      {isVerifiedRealtor && agentAssignments.data && agentAssignments.data.length > 0 && (
+        <div className="mt-12">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-blue-600" />
+            <h2 className="font-sans text-[22px] font-medium text-text-primary">
+              Propiedades Asignadas
+            </h2>
+            <Badge variant="info">{agentAssignments.data.length}</Badge>
+          </div>
+          <p className="mt-1 text-sm text-text-secondary">
+            Propiedades donde has sido seleccionado como agente
+          </p>
+          <StaggerList className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {agentAssignments.data.map(({ listing, property }) => (
+              <motion.div key={listing.id} variants={staggerItemVariants}>
+                <AgentAssignmentCard
+                  listing={listing}
+                  property={property}
+                  onAccept={listing.assignmentStatus === 'pending_acceptance'
+                    ? () => {
+                        setMutatingListingId(listing.id)
+                        acceptAssignment.mutate(listing.id, {
+                          onSettled: () => setMutatingListingId(null),
+                        })
+                      }
+                    : undefined}
+                  onDecline={listing.assignmentStatus === 'pending_acceptance' && user
+                    ? () => {
+                        setMutatingListingId(listing.id)
+                        declineAssignment.mutate({
+                          listingId: listing.id,
+                          currentDeclinedIds: listing.declinedRealtorIds ?? [],
+                          agentId: user.id,
+                        }, {
+                          onSettled: () => setMutatingListingId(null),
+                        })
+                      }
+                    : undefined}
+                  isAccepting={acceptAssignment.isPending && mutatingListingId === listing.id}
+                  isDeclining={declineAssignment.isPending && mutatingListingId === listing.id}
+                />
+              </motion.div>
+            ))}
+          </StaggerList>
+        </div>
+      )}
+
+      {isVerifiedRealtor && agentAssignments.isLoading && (
+        <div className="mt-12 flex justify-center py-4">
+          <Spinner size="md" />
+        </div>
+      )}
+    </div>
+  )
+}
