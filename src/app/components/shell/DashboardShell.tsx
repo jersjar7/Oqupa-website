@@ -50,16 +50,20 @@ function DashboardShellInner() {
     rawCaps.isRealtor                    ? 'Agente' :
                                             'Usuario'
 
+  // Layout locks the viewport to exactly 100vh so the sidebar stays fixed
+  // while only the content area scrolls. `min-h-0` on flex children is the
+  // standard fix for allowing them to shrink below their intrinsic size so
+  // `overflow-y-auto` kicks in instead of the outer document scrolling.
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex bg-background">
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 flex bg-background min-h-0">
         <Sidebar
           caps={effective}
           userName={userName}
           roleLabel={roleLabel}
           onLogout={handleLogout}
         />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar title={meta.title} subtitle={meta.subtitle} caps={rawCaps} />
           <VerificationBanner />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
