@@ -23,16 +23,17 @@ export default function PaymentHistoryPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      {/* Header */}
+      {/* Back to listings — the natural "where users came from" in the new
+          sidebar structure (pagos was under principal, listings is the
+          primary page). Topbar handles the page title. */}
       <div className="flex items-center gap-3">
         <Link
-          to="/app"
+          to="/app/listings"
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:bg-black/5"
-          aria-label="Volver"
+          aria-label="Volver a Mis Anuncios"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        {/* Title lives in the Topbar via DashboardShell */}
       </div>
 
       {/* Content */}
@@ -62,7 +63,7 @@ export default function PaymentHistoryPage() {
             Aún no has realizado pagos para destacar publicaciones
           </p>
           <Link
-            to="/app"
+            to="/app/listings"
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
           >
             Ir a mis publicaciones

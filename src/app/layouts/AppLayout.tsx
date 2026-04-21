@@ -14,11 +14,17 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const { user, firebaseUser, isInitialized } = useAuthStore()
 
+  // Pages wrapped in AppLayout: login/forgot/set-password/auth-complete and
+  // the verification pipeline (/app/verify). All of them should hide the
+  // auth-aware nav — either because the user isn't logged in yet or because
+  // they're in a self-contained onboarding flow. The dashboard/authenticated
+  // area uses DashboardShell instead.
   const isAuthPage =
     location.pathname === '/app/login' ||
     location.pathname === '/app/auth/complete' ||
     location.pathname === '/app/auth/set-password' ||
-    location.pathname === '/app/forgot-password'
+    location.pathname === '/app/forgot-password' ||
+    location.pathname === '/app/verify'
 
   async function handleLogout() {
     await authService.logout()

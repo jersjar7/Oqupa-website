@@ -22,10 +22,22 @@ export function capabilitiesFor(user: User | null | undefined): Capabilities {
 /** View-as affects which sections render. Admins can "view as" other roles for debugging. */
 export type ViewAs = 'self' | 'asRealtor' | 'asOwner'
 
-/** What the user effectively has access to given their caps + current view-as. */
+/**
+ * What the user effectively has access to (UI-rendering-wise) given their
+ * caps + current view-as. NB: view-as is purely visual — real permissions
+ * are enforced by route guards + Firestore rules, which always consult the
+ * RAW user record, never this effective value.
+ *
+ * Semantics:
+ *   - 'self':       render everything the user actually has
+ *   - 'asRealtor':  hide admin chrome; show realtor chrome (always, even if
+ *                   the real user isn't a realtor — that's the whole point
+ *                   of debug view-as; route guards still block them)
+ *   - 'asOwner':    hide both admin AND realtor chrome → render pure owner
+ */
 export function effectiveCapabilities(caps: Capabilities, viewAs: ViewAs): Capabilities {
   return {
-    isAdmin: caps.isAdmin && viewAs === 'self',
-    isRealtor: caps.isRealtor || viewAs === 'asRealtor',
+    isAdmin:   caps.isAdmin && viewAs === 'self',
+    isRealtor: viewAs === 'asOwner' ? false : (caps.isRealtor || viewAs === 'asRealtor'),
   }
 }

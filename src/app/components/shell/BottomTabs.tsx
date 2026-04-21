@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
 import type { Capabilities } from './capabilities'
-import { getNavGroups } from './navItems'
+import { getMobileNavItems } from './navItems'
 
 /**
- * Mobile-only bottom tab bar. Shows the first 5 nav items (flattened across groups).
- * Sidebar takes over at >=768px.
+ * Mobile-only bottom tab bar. Shows a curated top-5 (getMobileNavItems
+ * picks role-aware priorities so admin's "Aplicaciones" and realtor's
+ * "Oportunidades" always fit on dual-role). Sidebar takes over at >=768px.
  */
 export default function BottomTabs({ caps }: { caps: Capabilities }) {
   const location = useLocation()
-  const items = getNavGroups(caps).flatMap((g) => g.items).slice(0, 5)
+  const items = getMobileNavItems(caps)
   const isActive = (to: string) =>
     to === '/app' ? location.pathname === '/app' : location.pathname.startsWith(to)
 

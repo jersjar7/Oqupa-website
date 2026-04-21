@@ -52,3 +52,26 @@ export function getNavGroups(caps: Capabilities): NavGroup[] {
   }
   return [{ items: [dashboard, misAnuncios, pagos, miPerfil] }]
 }
+
+/**
+ * Mobile bottom tab bar has space for ~5 items only. Returns the top-5
+ * most important items by role, using a different priority order than the
+ * sidebar to ensure every role's primary action fits within the limit.
+ *
+ * For admin+realtor (dual role) the sidebar's flattened order would push
+ * Aplicaciones to position 7 (beyond the tab limit). Here we promote it.
+ */
+export function getMobileNavItems(caps: Capabilities): NavItem[] {
+  const { dashboard, misAnuncios, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
+
+  if (caps.isAdmin && caps.isRealtor) {
+    return [dashboard, oportunidades, aplicaciones, misAnuncios, miPerfil]
+  }
+  if (caps.isRealtor) {
+    return [dashboard, oportunidades, misAnuncios, miRegistroAgente, miPerfil]
+  }
+  if (caps.isAdmin) {
+    return [dashboard, aplicaciones, misAnuncios, pagos, miPerfil]
+  }
+  return [dashboard, misAnuncios, pagos, miPerfil]
+}

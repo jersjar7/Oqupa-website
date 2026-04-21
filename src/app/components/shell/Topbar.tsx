@@ -24,14 +24,18 @@ export default function Topbar({ title, subtitle, caps, actions }: Props) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-[#FFFAF5]/90 backdrop-blur-md">
       {caps.isAdmin && viewAs !== 'self' && (
-        <div className="bg-accent/40 text-[#8A6400] text-xs px-6 py-1.5 flex items-center gap-2 justify-between">
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-accent/40 text-[#8A6400] text-xs px-6 py-1.5 flex flex-wrap items-center gap-2 justify-between"
+        >
           <span>
             <strong>Modo debug:</strong>{' '}
             estás viendo la app como {viewAs === 'asRealtor' ? 'un Agente' : 'un Dueño'}.
           </span>
           <button
             onClick={() => setViewAs('self')}
-            className="underline font-medium hover:text-[#6A4E00]"
+            className="underline font-medium hover:text-[#6A4E00] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A6400]/50 rounded-sm"
           >
             Volver a mi vista
           </button>

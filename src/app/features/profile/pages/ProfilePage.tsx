@@ -218,14 +218,21 @@ export default function ProfilePage() {
                 {...register('name')}
               />
 
-              {/* Phone display (read-only when not in phone verification mode) */}
+              {/* Phone display (read-only when not in phone verification mode).
+                  No <label> here — there's no form control to associate with.
+                  Uses <span> for the heading-like text and role='group' with
+                  aria-labelledby so SR users hear "Telefono: +51 ..." as one
+                  announcement. */}
               {phoneMode === 'idle' && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium uppercase text-text-primary">
+                <div role="group" aria-labelledby="profile-phone-label">
+                  <span
+                    id="profile-phone-label"
+                    className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                  >
                     Telefono
-                  </label>
+                  </span>
                   <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
-                    <Phone className="h-4 w-4 text-text-tertiary" />
+                    <Phone className="h-4 w-4 text-text-tertiary" aria-hidden="true" />
                     <span className="text-base text-text-secondary">
                       {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
                     </span>
