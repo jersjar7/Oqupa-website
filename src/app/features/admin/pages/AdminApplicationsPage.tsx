@@ -138,10 +138,7 @@ export default function AdminApplicationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <h1 className="font-sans text-[28px] font-medium text-text-primary">
-        Solicitudes de Agentes
-      </h1>
+      {/* Title lives in the Topbar via DashboardShell */}
 
       {/* Filter chips */}
       <div className="mt-4 flex flex-wrap gap-2">

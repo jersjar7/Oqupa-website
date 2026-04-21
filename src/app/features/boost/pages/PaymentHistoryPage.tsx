@@ -32,14 +32,7 @@ export default function PaymentHistoryPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div>
-          <h1 className="font-sans text-[28px] font-medium text-text-primary">
-            Mis Pagos
-          </h1>
-          <p className="mt-0.5 text-sm text-text-secondary">
-            Historial de pagos de destacados
-          </p>
-        </div>
+        {/* Title lives in the Topbar via DashboardShell */}
       </div>
 
       {/* Content */}
