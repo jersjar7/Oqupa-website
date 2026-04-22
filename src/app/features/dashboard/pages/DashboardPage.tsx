@@ -22,6 +22,7 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useUserListingsWithProperties } from '@/hooks/useListings'
 import { useAvailableLeads, useClaimStatus } from '@/hooks/useRealtorLeads'
+import { usePendingRealtorApplicationsCount } from '@/hooks/useAdmin'
 import { Card } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { capabilitiesFor, effectiveCapabilities } from '@/app/components/shell/capabilities'
@@ -57,20 +58,20 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
         label="Anuncios activos"
         value={isLoading ? '—' : active}
         sub={listings.length > active ? `${listings.length - active} en borrador o expirados` : undefined}
-        icon={<Briefcase className="h-5 w-5 text-secondary" />}
+        icon={<Briefcase className="h-6 w-6 text-secondary" />}
         cta={{ label: 'Ver mis anuncios', to: '/app/listings' }}
       />
       <StatCard
         label="Boosts activos"
         value={isLoading ? '—' : boosted}
         sub={boosted > 0 ? 'Con mayor visibilidad en el mapa' : 'Activa uno para destacar'}
-        icon={<Zap className="h-5 w-5 text-primary" />}
+        icon={<Zap className="h-6 w-6 text-primary" />}
       />
       <StatCard
         label="Vistas totales"
         value={isLoading ? '—' : totalViews.toLocaleString('es-PE')}
         sub="Acumuladas en todos tus anuncios"
-        icon={<Eye className="h-5 w-5 text-secondary" />}
+        icon={<Eye className="h-6 w-6 text-secondary" />}
       />
     </div>
   )
@@ -103,7 +104,7 @@ function RealtorKpis({ userId, isVerified }: { userId: string | undefined; isVer
         label="Oportunidades nuevas"
         value={leads.isLoading ? '—' : availableCount}
         sub={availableCount > 0 ? 'Propiedades que buscan agente' : 'Revisa más tarde'}
-        icon={<Compass className="h-5 w-5 text-secondary" />}
+        icon={<Compass className="h-6 w-6 text-secondary" />}
         cta={{ label: 'Ver oportunidades', to: '/app/leads' }}
       />
       <StatCard
@@ -123,7 +124,7 @@ function RealtorKpis({ userId, isVerified }: { userId: string | undefined; isVer
             </p>
           </div>
         }
-        icon={<FileBadge className="h-5 w-5 text-secondary" />}
+        icon={<FileBadge className="h-6 w-6 text-secondary" />}
       />
       <StatCard
         label="Estado de agente"
@@ -134,7 +135,7 @@ function RealtorKpis({ userId, isVerified }: { userId: string | undefined; isVer
           </span>
         }
         sub={isVerified ? 'Acceso completo a oportunidades' : 'Revisa tu registro'}
-        icon={<CheckCircle className="h-5 w-5 text-secondary" />}
+        icon={<CheckCircle className="h-6 w-6 text-secondary" />}
       />
     </div>
   )
@@ -153,23 +154,35 @@ function RealtorActions() {
   )
 }
 
-function AdminCta() {
+function AdminCta({ enabled }: { enabled: boolean }) {
+  const { data: pendingCount, isLoading } = usePendingRealtorApplicationsCount(enabled)
+
+  // Heading reflects the live count. Loading → ellipsis so the card doesn't
+  // jump when the number arrives. Zero pending → muted tone + no CTA urgency.
+  const headingText =
+    isLoading ? 'Aplicaciones de agentes' :
+    pendingCount === 0 ? 'No hay aplicaciones pendientes' :
+    pendingCount === 1 ? '1 aplicación de agente pendiente' :
+    `${pendingCount} aplicaciones de agentes pendientes`
+
+  const hasPending = !isLoading && (pendingCount ?? 0) > 0
+
   return (
-    <Card className="border-2 border-primary/30 bg-primary/5">
+    <Card className={hasPending ? 'border-2 border-primary/30 bg-primary/5' : undefined}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="h-12 w-12 shrink-0 rounded-full bg-primary/15 grid place-items-center">
-          <ClipboardList className="h-6 w-6 text-primary" />
-        </div>
+        <ClipboardList className={`h-8 w-8 shrink-0 ${hasPending ? 'text-primary' : 'text-text-secondary'}`} />
         <div className="flex-1 min-w-0">
           <h2 className="font-sans text-lg font-medium text-text-primary">
-            Aplicaciones de agentes pendientes
+            {headingText}
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Revisa y aprueba las solicitudes de nuevos agentes inmobiliarios.
+            {hasPending
+              ? 'Revisa y aprueba las solicitudes de nuevos agentes inmobiliarios.'
+              : 'Revisa el historial o vuelve cuando haya nuevas solicitudes.'}
           </p>
         </div>
         <Link to="/app/admin/applications" className={`${primaryBtn} shrink-0`}>
-          Revisar
+          {hasPending ? 'Revisar' : 'Ver todas'}
           <ArrowUpRight className="h-4 w-4" />
         </Link>
       </div>
@@ -201,8 +214,9 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-      {/* Admin gets its CTA at the top — most urgent */}
-      {effective.isAdmin && <AdminCta />}
+      {/* Admin gets its CTA at the top — most urgent. Query only fires when
+          the viewer is actually an admin (never during view-as). */}
+      {effective.isAdmin && <AdminCta enabled={rawCaps.isAdmin} />}
 
       {/* Realtor section */}
       {effective.isRealtor && (

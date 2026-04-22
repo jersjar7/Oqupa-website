@@ -47,11 +47,10 @@ export default function StatCard({
             </p>
           )}
         </div>
-        {icon && (
-          <div className="h-10 w-10 shrink-0 rounded-full bg-background-secondary grid place-items-center">
-            {icon}
-          </div>
-        )}
+        {/* Icon renders as a plain glyph (no circular background) to match the
+            landing-page aesthetic. Parent controls size via Tailwind classes
+            on the icon element passed in. */}
+        {icon && <div className="shrink-0">{icon}</div>}
       </div>
       {cta && (
         <Link
