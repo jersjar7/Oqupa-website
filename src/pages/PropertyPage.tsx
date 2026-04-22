@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
+import { useRecordListingView } from '@/hooks/useRecordListingView'
 import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -229,6 +230,8 @@ export default function PropertyPage() {
       AnalyticsLogger.listingViewed(id)
     }
   }, [id, listing])
+
+  useRecordListingView(id, listing?.ownerId)
 
   const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
   const images = photoRefs.map(fullSize)
