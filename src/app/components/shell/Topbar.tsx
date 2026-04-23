@@ -1,4 +1,3 @@
-import { Bell } from 'lucide-react'
 import type { Capabilities } from './capabilities'
 import { useViewAs } from './viewAsContext'
 import ViewAsMenu from './ViewAsMenu'
@@ -12,8 +11,8 @@ type Props = {
 
 /**
  * Sticky page header for the authenticated /app area. Shows the decorative page title
- * (Roboto Serif in Pacific Green), optional subtitle, notification bell, ViewAsMenu
- * (admin only), and a slot for page-specific actions (e.g. "Crear anuncio" on listings).
+ * (Roboto Serif in Pacific Green), optional subtitle, ViewAsMenu (admin only), and a
+ * slot for page-specific actions (e.g. "Crear anuncio" on listings).
  *
  * When an admin is in view-as mode, a warning ribbon appears at the top so they
  * can't forget they're debugging.
@@ -52,13 +51,6 @@ export default function Topbar({ title, subtitle, caps, actions }: Props) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <ViewAsMenu caps={caps} />
-          <button
-            type="button"
-            className="p-2 rounded-lg hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-            aria-label="Notificaciones"
-          >
-            <Bell className="h-5 w-5 text-text-secondary" />
-          </button>
           {actions}
         </div>
       </div>

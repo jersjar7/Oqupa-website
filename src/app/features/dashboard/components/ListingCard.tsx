@@ -1,12 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
-import { AnimatedImage, Badge, Button } from '@/app/components/ui'
+import { Badge, Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
+import type { PhotoOverlayTone } from '@/app/components/ui/PhotoOverlayBadge'
 import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
-import { blurHashToDataUrl } from '@/lib/blurhash'
-import { card as cardUrl } from '@/lib/imageUrl'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import { useAuthStore } from '@/stores/authStore'
@@ -27,8 +26,8 @@ interface ListingCardProps {
   property: Property
 }
 
-const STATUS_VARIANTS: Record<ListingStatus, 'success' | 'warning' | 'error' | 'default' | 'info'> = {
-  draft: 'default',
+const STATUS_OVERLAY_TONE: Record<ListingStatus, PhotoOverlayTone> = {
+  draft: 'neutral',
   paymentPending: 'warning',
   active: 'success',
   expired: 'warning',
@@ -80,48 +79,32 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
     },
     [queryClient, user?.id, listing.id],
   )
-  const photoRef = property.media.photoKeys?.[0] ?? property.media.propertyPhotoUrls[0]
-  const photoUrl = photoRef ? cardUrl(photoRef) : undefined
-  const microThumb = property.media.primaryPhotoMicroThumb
-  const blurHash = property.media.photoBlurHashes?.[0]
-  const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
-  const placeholderUrl = microThumb
-    ? `data:image/webp;base64,${microThumb}`
-    : blurDataUrl
+  const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const canToggle = listing.status === 'active' || listing.status === 'deactivated'
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
-      {/* Photo */}
-      <div
-        className="group relative h-48 overflow-hidden bg-gray-100"
-        style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
-      >
-        {photoUrl ? (
-          <AnimatedImage
-            src={photoUrl}
-            alt={listing.description}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-text-tertiary">
-            Sin imagen
-          </div>
-        )}
-        <Badge
-          variant={STATUS_VARIANTS[listing.status]}
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
+      {/* Photo (carousel) */}
+      <div className="relative">
+        <PhotoCarousel
+          photos={photos}
+          blurHashes={property.media.photoBlurHashes}
+          microThumb={property.media.primaryPhotoMicroThumb}
+          alt={listing.description}
+          className="h-48"
+        />
+        <PhotoOverlayBadge
+          tone={STATUS_OVERLAY_TONE[listing.status]}
           className="absolute top-3 left-3"
         >
           {LISTING_STATUS_LABELS[listing.status]}
-        </Badge>
+        </PhotoOverlayBadge>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
+      {/* Content — grows to fill so footers pin to bottom */}
+      <div className="flex flex-1 flex-col p-4">
         {/* Price */}
-        <p className="text-lg font-bold text-primary">
+        <p className="font-sans text-lg font-bold text-primary line-clamp-1">
           {formatPrice(listing.price.amount, listing.price.currency)}
           {(() => {
             const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
@@ -130,15 +113,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         </p>
 
         {/* Property type */}
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-sm font-medium text-text-secondary">
-            {PROPERTY_TYPE_LABELS[property.propertyType]}
-          </span>
-          <span className="text-text-tertiary">·</span>
-          <span className="text-sm text-text-secondary">
-            {property.location.distrito}
-          </span>
-        </div>
+        <p className="mt-1 text-sm text-text-secondary line-clamp-1">
+          <span className="font-medium">{PROPERTY_TYPE_LABELS[property.propertyType]}</span>
+          <span className="text-text-tertiary"> · </span>
+          {property.location.distrito}
+        </p>
 
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
@@ -206,8 +185,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-4 flex gap-2">
+        {/* Actions — pinned to the bottom via mt-auto */}
+        <div className="mt-auto pt-4 flex flex-wrap gap-2">
           <Link to={`/app/listings/${listing.id}/edit`} className="flex-1">
             <Button variant="text" className="w-full">
               <Pencil className="h-4 w-4" />
