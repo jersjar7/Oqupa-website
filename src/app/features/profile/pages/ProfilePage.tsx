@@ -197,13 +197,86 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-serif text-[28px] font-normal text-text-primary">
-        Mi Perfil
-      </h1>
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      {/* Title lives in the Topbar via DashboardShell's default route title */}
 
-      {/* Verification status */}
-      <Card className="mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column (2/3 on desktop): primary task — contact info form */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Profile form (moved up — primary task above status/meta) */}
+          <Card>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <Input
+                label="Correo electronico"
+                value={user.email}
+                disabled
+              />
+
+              <Input
+                label="Nombre completo"
+                error={errors.name?.message}
+                {...register('name')}
+              />
+
+              {/* Phone display (read-only when not in phone verification mode).
+                  No <label> here — there's no form control to associate with.
+                  Uses <span> for the heading-like text and role='group' with
+                  aria-labelledby so SR users hear "Telefono: +51 ..." as one
+                  announcement. */}
+              {phoneMode === 'idle' && (
+                <div role="group" aria-labelledby="profile-phone-label">
+                  <span
+                    id="profile-phone-label"
+                    className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                  >
+                    Telefono
+                  </span>
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
+                    <Phone className="h-4 w-4 text-text-tertiary" aria-hidden="true" />
+                    <span className="text-base text-text-secondary">
+                      {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <Select
+                label="Horario de contacto preferido"
+                options={timeSlotOptions}
+                error={errors.preferredContactTimeSlot?.message}
+                {...register('preferredContactTimeSlot')}
+              />
+
+              <div>
+                <label
+                  htmlFor="notes"
+                  className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                >
+                  Notas adicionales de contacto
+                </label>
+                <textarea
+                  id="notes"
+                  rows={3}
+                  placeholder="Ej: Prefiero WhatsApp"
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  {...register('additionalContactNotes')}
+                />
+              </div>
+
+              {error && <p className="text-sm text-error">{error}</p>}
+              {success && <p className="text-sm text-success">{success}</p>}
+
+              <Button type="submit" isLoading={isSubmitting}>
+                Guardar Cambios
+              </Button>
+            </form>
+          </Card>
+        </div>
+
+        {/* Right column (1/3 on desktop): status + meta cards */}
+        <div className="space-y-6">
+          {/* Verification status */}
+          <Card>
         <h2 className="text-sm font-medium uppercase text-text-primary">
           Estado de verificacion
         </h2>
@@ -299,7 +372,7 @@ export default function ProfilePage() {
       </Card>
 
       {/* Realtor status */}
-      <Card className="mt-6">
+      <Card>
         <h2 className="text-sm font-medium uppercase text-text-primary">
           Agente inmobiliario
         </h2>
@@ -358,70 +431,8 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* Profile form */}
-      <Card className="mt-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Correo electronico"
-            value={user.email}
-            disabled
-          />
-
-          <Input
-            label="Nombre completo"
-            error={errors.name?.message}
-            {...register('name')}
-          />
-
-          {/* Phone display (read-only when not in phone verification mode) */}
-          {phoneMode === 'idle' && (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium uppercase text-text-primary">
-                Telefono
-              </label>
-              <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
-                <Phone className="h-4 w-4 text-text-tertiary" />
-                <span className="text-base text-text-secondary">
-                  {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          <Select
-            label="Horario de contacto preferido"
-            options={timeSlotOptions}
-            error={errors.preferredContactTimeSlot?.message}
-            {...register('preferredContactTimeSlot')}
-          />
-
-          <div>
-            <label
-              htmlFor="notes"
-              className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
-            >
-              Notas adicionales de contacto
-            </label>
-            <textarea
-              id="notes"
-              rows={3}
-              placeholder="Ej: Prefiero WhatsApp"
-              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              {...register('additionalContactNotes')}
-            />
-          </div>
-
-          {error && <p className="text-sm text-error">{error}</p>}
-          {success && <p className="text-sm text-success">{success}</p>}
-
-          <Button type="submit" isLoading={isSubmitting}>
-            Guardar Cambios
-          </Button>
-        </form>
-      </Card>
-
       {/* Account info */}
-      <Card className="mt-6">
+      <Card>
         <h2 className="text-sm font-medium uppercase text-text-secondary">Cuenta</h2>
         <p className="mt-2 text-xs text-text-tertiary">
           Miembro desde {user.createdAt.toLocaleDateString('es-PE')}
@@ -429,7 +440,7 @@ export default function ProfilePage() {
       </Card>
 
       {/* Delete account */}
-      <Card className="mt-6">
+      <Card>
         <h2 className="text-sm font-medium uppercase text-text-secondary">
           Configuracion de cuenta
         </h2>
@@ -442,6 +453,8 @@ export default function ProfilePage() {
           </Button>
         </div>
       </Card>
+        </div>
+      </div>
 
       <Modal
         isOpen={showDeleteModal}

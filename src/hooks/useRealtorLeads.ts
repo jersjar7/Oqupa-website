@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
@@ -104,16 +105,26 @@ export function useUnassignRealtor() {
 
 export function useAcceptAssignment() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   return useMutation({
     mutationFn: (listingId: string) => firestoreService.acceptAssignment(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
-      toast.success('Asignacion aceptada')
+      // The card now moves pages — surface where it went so agents don't
+      // wonder if they lost it.
+      toast.success('¡Invitación aceptada!', {
+        description: 'Ahora gestionas esta propiedad.',
+        action: {
+          label: 'Ver en Asignadas',
+          onClick: () => navigate('/app/listings?tab=asignadas'),
+        },
+        duration: 8000,
+      })
     },
     onError: () => {
-      toast.error('Error al aceptar la asignacion')
+      toast.error('Error al aceptar la invitación')
     },
   })
 }

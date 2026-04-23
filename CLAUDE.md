@@ -75,15 +75,15 @@ Semantic styles mapped to Tailwind classes (mirrors Flutter `AppTextStyles`):
 
 | Style | Tailwind classes | Font | Use for |
 |-------|-----------------|------|---------|
-| **Header 1** | `font-serif text-[28px] font-normal` | Roboto Serif 400 | Page titles (auth, dashboard, profile). Reserved for decorative/formal headings — do NOT use for general UI headings. |
-| **Header 2** | `font-sans text-[28px] font-medium` | Gotham 500 | General app headings. **Preferred default** for new headings. |
-| **Subhead** | `font-sans text-sm font-medium uppercase` | Gotham 500 | Section labels, field labels |
-| **Body** | `text-base` (inherits `font-sans`) | Gotham 400 | Body text, descriptions, form text |
-| **Caption** | `font-serif text-xs font-light italic` | Roboto Serif 300 italic | Fine print, secondary details, timestamps |
-| **Legal** | `font-serif text-xs font-light` | Roboto Serif 300 | Legal links, privacy/terms text |
-| **Button** | `font-sans text-base font-bold uppercase` | Gotham 700 | Button labels |
+| **Header 1** | `font-serif text-[28px] font-normal` | Roboto Serif 400, Title Case | **Page titles, hero headings, KPI display values.** Brand-deck primary heading style. |
+| **Header 2** | `font-sans text-[22px] font-medium` | Gotham 500, Title Case | Section headings inside a page (e.g. "Mis propiedades" sub-section). |
+| **Subhead** | `font-sans text-sm font-medium uppercase tracking-wide` | Gotham 500, UPPER CASE | Section labels, field labels, KPI card labels, table headers. |
+| **Body** | `text-base` (inherits `font-sans`) | Gotham 400, Sentence case | Paragraphs, descriptions, form copy. |
+| **Caption** | `font-serif text-xs font-light italic` | Roboto Serif 300 italic, Sentence case | Fine print, metadata, secondary detail text, timestamps. |
+| **Legal** | `font-serif text-xs font-light` | Roboto Serif 300, Sentence case | Legal links (privacy, terms). |
+| **Button** | `font-sans text-base font-bold uppercase tracking-[1px]` | Gotham 700, UPPER CASE | All button / CTA labels. |
 
-**Current convention:** Most existing page titles use Header 1 (`font-serif`). For new UI, prefer Header 2 (`font-sans font-medium`) unless the context is decorative or formal (legal pages, onboarding, welcome screens).
+**Brand rule (per Oqupa Brand Deck typography slide):** Roboto Serif is the **primary heading font** for titles and hero display values. Gotham handles labels, body, and buttons. Do NOT default new headings to Gotham — Header 1 (Roboto Serif, Title Case) is the correct choice for page titles and any hero/display element.
 
 ### Language
 All user-facing text is in Spanish. Variable names and code comments are in English.

@@ -10,6 +10,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import ExplorePage from '@/pages/ExplorePage'
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
+import DashboardShell from '@/app/components/shell/DashboardShell'
 import PasswordLoginPage from '@/app/features/auth/pages/PasswordLoginPage'
 import CompleteSignInPage from '@/app/features/auth/pages/CompleteSignInPage'
 import ForgotPasswordPage from '@/app/features/auth/pages/ForgotPasswordPage'
@@ -19,6 +20,7 @@ import AuthGuard from '@/app/components/guards/AuthGuard'
 import GuestGuard from '@/app/components/guards/GuestGuard'
 import VerifiedGuard from '@/app/components/guards/VerifiedGuard'
 import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
+import ListingsPage from '@/app/features/listings/pages/ListingsPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
 import EditListingPage from '@/app/features/listings/pages/EditListingPage'
 import AgentEditListingPage from '@/app/features/listings/pages/AgentEditListingPage'
@@ -58,141 +60,46 @@ export default function App() {
           <Route path="/explorar" element={<ExplorePage />} />
         </Route>
 
-        {/* Publisher app routes (own layout) */}
-        <Route path="/app" element={<ErrorBoundary><AppLayout /></ErrorBoundary>}>
-          {/* Public auth pages — password is now the default login. */}
+        {/* Publisher app routes */}
+        <Route path="/app">
+          {/* Public auth pages + verification pipeline — minimal AppLayout chrome. */}
           {/* Magic-link UI was retired as part of the auth migration campaign; */}
           {/* see docs/AUTH-MIGRATION-PLAN.md. /auth/complete is kept alive */}
           {/* until Firebase email-link sign-in is disabled at T+35 so aged */}
           {/* magic-link emails already in inboxes can still complete. */}
-          <Route path="login" element={<GuestGuard><PasswordLoginPage /></GuestGuard>} />
-          <Route path="login/password" element={<Navigate to="/app/login" replace />} />
-          <Route path="auth/complete" element={<CompleteSignInPage />} />
-          <Route path="auth/set-password" element={<SetPasswordPage />} />
-          <Route path="register" element={<Navigate to="/app/login" replace />} />
-          <Route path="forgot-password" element={<GuestGuard><ForgotPasswordPage /></GuestGuard>} />
+          <Route element={<ErrorBoundary><AppLayout /></ErrorBoundary>}>
+            <Route path="login" element={<GuestGuard><PasswordLoginPage /></GuestGuard>} />
+            <Route path="login/password" element={<Navigate to="/app/login" replace />} />
+            <Route path="auth/complete" element={<CompleteSignInPage />} />
+            <Route path="auth/set-password" element={<SetPasswordPage />} />
+            <Route path="register" element={<Navigate to="/app/login" replace />} />
+            <Route path="forgot-password" element={<GuestGuard><ForgotPasswordPage /></GuestGuard>} />
+            <Route path="verify" element={<AuthGuard><AuthPipelinePage /></AuthGuard>} />
+          </Route>
 
-          {/* Auth required: verification pipeline */}
-          <Route
-            path="verify"
-            element={
+          {/* Authenticated app — sidebar + topbar dashboard shell. */}
+          {/* AuthGuard wraps once; per-page guards (VerifiedGuard, AdminGuard, etc.) */}
+          {/* still apply inside. */}
+          <Route element={
+            <ErrorBoundary>
               <AuthGuard>
-                <AuthPipelinePage />
+                <DashboardShell />
               </AuthGuard>
-            }
-          />
-
-          {/* Auth + verification required */}
-          <Route
-            index
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <DashboardPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="listings/new"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <CreateListingPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="listings/:id/edit"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <EditListingPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="listings/:id/agent-edit"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <AgentEditListingPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="profile"
-            element={
-              <AuthGuard>
-                <ProfilePage />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="payments"
-            element={
-              <AuthGuard>
-                <PaymentHistoryPage />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="realtor-registration"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <RealtorRegistrationPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="leads"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <RealtorGuard>
-                    <LeadsPage />
-                  </RealtorGuard>
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="leads/:id"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <RealtorGuard>
-                    <LeadDetailPage />
-                  </RealtorGuard>
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="listings/:id/agents"
-            element={
-              <AuthGuard>
-                <VerifiedGuard>
-                  <InterestedAgentsPage />
-                </VerifiedGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="admin/applications"
-            element={
-              <AuthGuard>
-                <AdminGuard>
-                  <AdminApplicationsPage />
-                </AdminGuard>
-              </AuthGuard>
-            }
-          />
+            </ErrorBoundary>
+          }>
+            <Route index element={<VerifiedGuard><DashboardPage /></VerifiedGuard>} />
+            <Route path="listings" element={<VerifiedGuard><ListingsPage /></VerifiedGuard>} />
+            <Route path="listings/new" element={<VerifiedGuard><CreateListingPage /></VerifiedGuard>} />
+            <Route path="listings/:id/edit" element={<VerifiedGuard><EditListingPage /></VerifiedGuard>} />
+            <Route path="listings/:id/agent-edit" element={<VerifiedGuard><AgentEditListingPage /></VerifiedGuard>} />
+            <Route path="listings/:id/agents" element={<VerifiedGuard><InterestedAgentsPage /></VerifiedGuard>} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="payments" element={<PaymentHistoryPage />} />
+            <Route path="realtor-registration" element={<VerifiedGuard><RealtorRegistrationPage /></VerifiedGuard>} />
+            <Route path="leads" element={<VerifiedGuard><RealtorGuard><LeadsPage /></RealtorGuard></VerifiedGuard>} />
+            <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />
+            <Route path="admin/applications" element={<AdminGuard><AdminApplicationsPage /></AdminGuard>} />
+          </Route>
         </Route>
 
         {/* Catch-all */}

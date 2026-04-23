@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, LogOut, User } from 'lucide-react'
+import { Home, LogOut } from 'lucide-react'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -53,14 +53,9 @@ function AuthBlock() {
       userName={userName}
       items={[
         {
-          label: 'Mis Publicaciones',
+          label: 'Mi Panel',
           icon: <Home className="h-4 w-4" />,
           to: '/app',
-        },
-        {
-          label: 'Mi Perfil',
-          icon: <User className="h-4 w-4" />,
-          to: '/app/profile',
         },
         {
           label: 'Salir',
@@ -104,15 +99,7 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
       >
         <Home className="h-4 w-4" />
-        Mis Publicaciones
-      </Link>
-      <Link
-        to="/app/profile"
-        onClick={onNavigate}
-        className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
-      >
-        <User className="h-4 w-4" />
-        Mi Perfil
+        Mi Panel
       </Link>
       <button
         onClick={() => {

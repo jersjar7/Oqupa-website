@@ -16,7 +16,7 @@ import {
   increment,
   writeBatch,
   runTransaction,
-  type Timestamp,
+  Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -386,6 +386,48 @@ export const firestoreService = {
     if (!property) return null
 
     return { listing, property }
+  },
+
+  // Records a listing view for analytics. Mirrors Flutter's
+  // ListingViewTrackingOperations.recordPropertyView:
+  // 1) Skip if viewer already viewed this listing today (per-day dedupe).
+  // 2) Otherwise atomically write the viewedListings doc and increment viewCount.
+  async recordListingView(listingId: string, viewerId: string): Promise<void> {
+    const viewedRef = doc(db, 'users', viewerId, 'viewedListings', listingId)
+    const listingRef = doc(db, 'listings', listingId)
+
+    await runTransaction(db, async (transaction) => {
+      const viewedSnap = await transaction.get(viewedRef)
+      if (viewedSnap.exists()) {
+        const viewedAt = (viewedSnap.data() as Record<string, unknown>)['viewedAt']
+        if (viewedAt && typeof viewedAt === 'object' && 'toDate' in viewedAt) {
+          const lastViewedAt = (viewedAt as Timestamp).toDate()
+          const now = new Date()
+          if (
+            lastViewedAt.getFullYear() === now.getFullYear() &&
+            lastViewedAt.getMonth() === now.getMonth() &&
+            lastViewedAt.getDate() === now.getDate()
+          ) {
+            return
+          }
+        }
+      }
+
+      const listingSnap = await transaction.get(listingRef)
+      if (!listingSnap.exists()) {
+        throw new Error('Listing not found')
+      }
+      const currentViewCount =
+        ((listingSnap.data() as Record<string, unknown>)['viewCount'] as number) ?? 0
+
+      transaction.set(viewedRef, {
+        viewedAt: Timestamp.now(),
+        listingId,
+      })
+      transaction.update(listingRef, {
+        viewCount: currentViewCount + 1,
+      })
+    })
   },
 
   async updateListingStatus(
