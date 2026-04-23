@@ -5,6 +5,7 @@ import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
 import { getAnalytics } from 'firebase/analytics'
 import { getPerformance } from 'firebase/performance'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,6 +17,30 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
+
+// App Check must be initialized before any Firestore/Functions call so that
+// attestation tokens are attached to outgoing requests. Gated on the site key
+// being present so local dev without a key does not crash — in that case App
+// Check-enforced callables (e.g. recordListingView) will fail closed, which is
+// the intended behaviour.
+const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_APPCHECK_KEY
+if (appCheckSiteKey) {
+  // Enable debug tokens in dev so `firebase emulators` / local builds can still
+  // exercise App-Check-enforced callables. Add the printed token to the Firebase
+  // console → App Check → "Manage debug tokens" for the web app.
+  if (import.meta.env.DEV) {
+    ;(self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
+  }
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(appCheckSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    })
+  } catch (err) {
+    console.warn('[firebase] App Check init failed', err)
+  }
+}
+
 export const db = getFirestore(app)
 export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],

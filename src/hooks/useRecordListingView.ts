@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
 
-// Fire-and-forget view tracking for the public property detail page.
-// Mirrors Flutter's recordPropertyView: auth-gated, skips self-views,
-// one-per-day-per-user dedupe handled server-side inside a Firestore transaction.
+// Fire-and-forget view tracking for the public property detail page. Fires for
+// both authenticated and anonymous visitors via the `recordListingView` Cloud
+// Function. Server enforces self-view skip + one-per-day dedupe (by uid when
+// signed in, by localStorage clientId when anonymous).
 export function useRecordListingView(
   listingId: string | undefined,
   ownerId: string | undefined,
@@ -14,15 +15,16 @@ export function useRecordListingView(
   const firedKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!listingId || !firebaseUser || !user || !ownerId) return
-    if (user.id === ownerId) return
+    if (!listingId || !ownerId) return
+    if (user && user.id === ownerId) return
 
-    const key = `${listingId}:${firebaseUser.uid}`
+    const principal = firebaseUser?.uid ?? 'anon'
+    const key = `${listingId}:${principal}`
     if (firedKeyRef.current === key) return
     firedKeyRef.current = key
 
-    firestoreService.recordListingView(listingId, firebaseUser.uid).catch(() => {
-      // Silent — offline, permission-denied, etc. must not surface to the user.
+    firestoreService.recordListingView(listingId).catch(() => {
+      // Silent — offline, App Check failure, rate-limit, etc. must not surface.
     })
   }, [listingId, firebaseUser, user, ownerId])
 }
