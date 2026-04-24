@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 
-export type PhotoItem =
+export type PhotoItem = { id: string } & (
   | { type: 'existing'; url: string }
   | { type: 'new'; file: File }
+)
 
 export const MAX_PHOTOS = 25
 
@@ -23,31 +24,40 @@ export interface PhotoQueue {
   addFiles: (files: File[]) => void
   remove: (index: number) => void
   move: (index: number, direction: -1 | 1) => void
+  reorder: (fromIndex: number, toIndex: number) => void
   toSubmitData: () => SubmitData
 }
 
 export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
+  const counterRef = useRef(0)
+  const nextId = useCallback(() => `photo-${counterRef.current++}`, [])
+
   const [items, setItems] = useState<PhotoItem[]>(() => {
     const existing: PhotoItem[] = initial.existingPhotoUrls.map((url) => ({
+      id: `photo-${counterRef.current++}`,
       type: 'existing',
       url,
     }))
     const newPhotos: PhotoItem[] = initial.photos.map((file) => ({
+      id: `photo-${counterRef.current++}`,
       type: 'new',
       file,
     }))
     return [...existing, ...newPhotos]
   })
 
-  const addFiles = useCallback((files: File[]) => {
-    setItems((prev) => {
-      const remaining = MAX_PHOTOS - prev.length
-      const newItems: PhotoItem[] = files
-        .slice(0, remaining)
-        .map((file) => ({ type: 'new', file }))
-      return [...prev, ...newItems]
-    })
-  }, [])
+  const addFiles = useCallback(
+    (files: File[]) => {
+      setItems((prev) => {
+        const remaining = MAX_PHOTOS - prev.length
+        const newItems: PhotoItem[] = files
+          .slice(0, remaining)
+          .map((file) => ({ id: nextId(), type: 'new' as const, file }))
+        return [...prev, ...newItems]
+      })
+    },
+    [nextId]
+  )
 
   const remove = useCallback((index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index))
@@ -59,6 +69,18 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
       if (target < 0 || target >= prev.length) return prev
       const next = [...prev]
       ;[next[index], next[target]] = [next[target]!, next[index]!]
+      return next
+    })
+  }, [])
+
+  const reorder = useCallback((fromIndex: number, toIndex: number) => {
+    setItems((prev) => {
+      if (fromIndex === toIndex) return prev
+      if (fromIndex < 0 || fromIndex >= prev.length) return prev
+      if (toIndex < 0 || toIndex >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved!)
       return next
     })
   }, [])
@@ -89,5 +111,5 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     return { photos, existingPhotoUrls, photoOrder }
   }, [items])
 
-  return { items, previewUrls, addFiles, remove, move, toSubmitData }
+  return { items, previewUrls, addFiles, remove, move, reorder, toSubmitData }
 }

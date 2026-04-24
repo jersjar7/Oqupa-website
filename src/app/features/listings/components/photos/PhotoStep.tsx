@@ -46,6 +46,7 @@ export default function PhotoStep() {
         }}
         onRemove={queue.remove}
         onMove={queue.move}
+        onReorder={queue.reorder}
         photoError={photoError}
         canContinue={canContinue}
         minPhotos={MIN_PHOTOS}

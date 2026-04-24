@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { card as cardUrl } from '@/lib/imageUrl'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { PhotoItem } from './usePhotoQueue'
@@ -11,6 +13,11 @@ interface PhotoTileProps {
   onMove: (index: number, direction: -1 | 1) => void
 }
 
+// Stop drag activation when interacting with overlay buttons.
+function stopDragHandlers(e: React.PointerEvent | React.KeyboardEvent) {
+  e.stopPropagation()
+}
+
 export default function PhotoTile({
   item,
   index,
@@ -19,14 +26,31 @@ export default function PhotoTile({
   onRemove,
   onMove,
 }: PhotoTileProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id })
+
   const src =
     item.type === 'existing' ? cardUrl(item.url) : previewUrls.get(item.file) ?? ''
   const isCover = index === 0
   const canMoveLeft = index > 0
   const canMoveRight = index < total - 1
 
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    touchAction: 'none',
+  }
+
   return (
-    <div className="group relative h-24 overflow-hidden rounded-xl border border-border">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      aria-label={`Reordenar foto ${index + 1} de ${total}`}
+      className="group relative h-24 cursor-grab overflow-hidden rounded-xl border border-border active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
       <img src={src} alt={`Foto ${index + 1}`} className="h-full w-full object-cover" />
 
       {isCover && (
@@ -41,6 +65,8 @@ export default function PhotoTile({
           {canMoveLeft && (
             <button
               type="button"
+              onPointerDown={stopDragHandlers}
+              onKeyDown={stopDragHandlers}
               onClick={() => onMove(index, -1)}
               className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary transition-colors hover:bg-white"
             >
@@ -50,6 +76,8 @@ export default function PhotoTile({
           {canMoveRight && (
             <button
               type="button"
+              onPointerDown={stopDragHandlers}
+              onKeyDown={stopDragHandlers}
               onClick={() => onMove(index, 1)}
               className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary transition-colors hover:bg-white"
             >
@@ -59,6 +87,8 @@ export default function PhotoTile({
         </div>
         <button
           type="button"
+          onPointerDown={stopDragHandlers}
+          onKeyDown={stopDragHandlers}
           onClick={() => onRemove(index)}
           className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
         >
@@ -72,6 +102,8 @@ export default function PhotoTile({
           {canMoveLeft && (
             <button
               type="button"
+              onPointerDown={stopDragHandlers}
+              onKeyDown={stopDragHandlers}
               onClick={() => onMove(index, -1)}
               className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary"
             >
@@ -81,6 +113,8 @@ export default function PhotoTile({
           {canMoveRight && (
             <button
               type="button"
+              onPointerDown={stopDragHandlers}
+              onKeyDown={stopDragHandlers}
               onClick={() => onMove(index, 1)}
               className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-text-primary"
             >
@@ -90,6 +124,8 @@ export default function PhotoTile({
         </div>
         <button
           type="button"
+          onPointerDown={stopDragHandlers}
+          onKeyDown={stopDragHandlers}
           onClick={() => onRemove(index)}
           className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
         >
