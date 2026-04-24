@@ -123,18 +123,35 @@ export default function WizardStep5() {
           newBlurHashes = results.map(r => r.blurHash)
         }
 
-        // Build ordered photo key array using photoOrder from Step 4
+        // Build ordered photo key + blurHash arrays using photoOrder from Step 4.
+        // Both arrays are aligned position-for-position so the cover photo's
+        // hash is at index 0, etc.
         let allPhotoKeys: string[]
+        let allBlurHashes: string[]
         if (data.photoOrder.length > 0) {
           allPhotoKeys = data.photoOrder.map(entry =>
             entry.type === 'existing'
               ? data.existingPhotoUrls[entry.index]!
               : newPhotoKeys[entry.index]!
           )
+          allBlurHashes = data.photoOrder.map(entry =>
+            entry.type === 'existing'
+              ? data.existingPhotoBlurHashes[entry.index] ?? ''
+              : newBlurHashes[entry.index] ?? ''
+          )
         } else {
           // Fallback for listings edited before photo ordering was added
           allPhotoKeys = [...data.existingPhotoUrls, ...newPhotoKeys]
+          allBlurHashes = [...data.existingPhotoBlurHashes, ...newBlurHashes]
         }
+
+        // Diff against the originals captured at edit-init time to find
+        // photos the user removed in Step 4. Anything no longer kept must
+        // be deleted from R2 after the Firestore writes succeed.
+        const keptKeys = new Set(data.existingPhotoUrls)
+        const removedKeys = data.originalExistingPhotoUrls.filter(
+          (k) => !keptKeys.has(k)
+        )
 
         setUploadProgress('Actualizando propiedad...')
         await firestoreService.updateProperty(editPropertyId, {
@@ -168,7 +185,7 @@ export default function WizardStep5() {
           media: {
             propertyPhotoUrls: allPhotoKeys,
             photoKeys: allPhotoKeys,
-            ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
+            photoBlurHashes: allBlurHashes,
           },
         })
 
@@ -181,11 +198,21 @@ export default function WizardStep5() {
           media: {
             propertyPhotoUrls: allPhotoKeys,
             photoKeys: allPhotoKeys,
-            ...(newBlurHashes.length > 0 ? { photoBlurHashes: newBlurHashes } : {}),
+            photoBlurHashes: allBlurHashes,
           },
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,
         })
+
+        // Best-effort R2 cleanup. Failure here does not roll back the
+        // listing update — the orphaned objects can be reaped later.
+        if (removedKeys.length > 0) {
+          try {
+            await storageService.deleteR2Photos(removedKeys)
+          } catch (cleanupErr) {
+            console.warn('R2 cleanup failed for removed photos:', cleanupErr)
+          }
+        }
       } else {
         // CREATE FLOW
         setUploadProgress('Creando propiedad...')

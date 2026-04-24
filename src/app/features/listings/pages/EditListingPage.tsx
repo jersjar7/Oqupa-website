@@ -61,6 +61,9 @@ export default function EditListingPage() {
       provincia: property.location.provincia,
       departamento: property.location.departamento,
       existingPhotoUrls: property.media.photoKeys ?? property.media.propertyPhotoUrls,
+      existingPhotoBlurHashes: property.media.photoBlurHashes ?? [],
+      originalExistingPhotoUrls:
+        property.media.photoKeys ?? property.media.propertyPhotoUrls,
       photos: [],
       amount: listing.price.amount,
       currency: listing.price.currency,

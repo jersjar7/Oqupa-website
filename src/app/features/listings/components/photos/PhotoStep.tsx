@@ -10,6 +10,7 @@ export default function PhotoStep() {
   const { data, updateData, nextStep, prevStep } = useListingFormStore()
   const queue = usePhotoQueue({
     existingPhotoUrls: data.existingPhotoUrls,
+    existingPhotoBlurHashes: data.existingPhotoBlurHashes,
     photos: data.photos,
   })
   const [photoError, setPhotoError] = useState<string | null>(null)
