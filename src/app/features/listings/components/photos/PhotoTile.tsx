@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useReducedMotion } from 'framer-motion'
 import { card as cardUrl } from '@/lib/imageUrl'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { PhotoItem } from './usePhotoQueue'
@@ -28,6 +29,7 @@ export default function PhotoTile({
 }: PhotoTileProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
+  const reducedMotion = useReducedMotion()
 
   const src =
     item.type === 'existing' ? cardUrl(item.url) : previewUrls.get(item.file) ?? ''
@@ -37,7 +39,7 @@ export default function PhotoTile({
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: reducedMotion ? 'none' : transition,
     opacity: isDragging ? 0.4 : 1,
     touchAction: 'none',
   }

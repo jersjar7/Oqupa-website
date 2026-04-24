@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   TouchSensor,
   KeyboardSensor,
@@ -8,6 +9,7 @@ import {
   useSensors,
   closestCenter,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -15,6 +17,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 import { InfoTip } from '@/app/components/ui'
+import { card as cardUrl } from '@/lib/imageUrl'
 import PhotoTile from './PhotoTile'
 import PhotoDropzone from './PhotoDropzone'
 import { MAX_PHOTOS, type PhotoItem } from './usePhotoQueue'
@@ -31,6 +34,29 @@ interface PhotoGridProps {
   minPhotos: number
 }
 
+function PhotoTilePreview({
+  item,
+  previewUrls,
+  isCover,
+}: {
+  item: PhotoItem
+  previewUrls: Map<File, string>
+  isCover: boolean
+}) {
+  const src =
+    item.type === 'existing' ? cardUrl(item.url) : previewUrls.get(item.file) ?? ''
+  return (
+    <div className="relative h-24 scale-105 overflow-hidden rounded-xl border border-border shadow-2xl ring-2 ring-primary/40">
+      <img src={src} alt="" className="h-full w-full object-cover" />
+      {isCover && (
+        <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-white">
+          Portada
+        </span>
+      )}
+    </div>
+  )
+}
+
 export default function PhotoGrid({
   items,
   previewUrls,
@@ -43,6 +69,7 @@ export default function PhotoGrid({
   minPhotos,
 }: PhotoGridProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -56,7 +83,12 @@ export default function PhotoGrid({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id))
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const fromIndex = items.findIndex((it) => it.id === active.id)
@@ -65,7 +97,13 @@ export default function PhotoGrid({
     onReorder(fromIndex, toIndex)
   }
 
+  function handleDragCancel() {
+    setActiveId(null)
+  }
+
   const itemIds = items.map((i) => i.id)
+  const activeItem = activeId ? items.find((it) => it.id === activeId) ?? null : null
+  const activeIsCover = activeItem ? items[0]?.id === activeItem.id : false
 
   return (
     <div>
@@ -89,7 +127,9 @@ export default function PhotoGrid({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext items={itemIds} strategy={rectSortingStrategy}>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -112,6 +152,15 @@ export default function PhotoGrid({
             )}
           </div>
         </SortableContext>
+        <DragOverlay>
+          {activeItem ? (
+            <PhotoTilePreview
+              item={activeItem}
+              previewUrls={previewUrls}
+              isCover={activeIsCover}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <input
