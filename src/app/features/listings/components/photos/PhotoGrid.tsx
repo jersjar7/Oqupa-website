@@ -8,8 +8,10 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  type Announcements,
   type DragEndEvent,
   type DragStartEvent,
+  type ScreenReaderInstructions,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -105,6 +107,29 @@ export default function PhotoGrid({
 
   const itemIds = items.map((i) => i.id)
   const activeItem = activeId ? items.find((it) => it.id === activeId) ?? null : null
+
+  const indexOf = (id: string | number) => items.findIndex((it) => it.id === id) + 1
+  const total = items.length
+
+  const screenReaderInstructions: ScreenReaderInstructions = {
+    draggable:
+      'Para recoger una foto, presiona Espacio o Enter. Mientras la cargas, usa las flechas para moverla. Presiona Espacio o Enter de nuevo para soltarla, o Escape para cancelar.',
+  }
+
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      `Recogiste la foto ${indexOf(active.id)} de ${total}.`,
+    onDragOver: ({ active, over }) =>
+      over
+        ? `Foto ${indexOf(active.id)} sobre la posición ${indexOf(over.id)}.`
+        : `Foto ${indexOf(active.id)} fuera de la cuadrícula.`,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `Soltaste la foto ${indexOf(active.id)} en la posición ${indexOf(over.id)}.`
+        : `Soltaste la foto ${indexOf(active.id)}.`,
+    onDragCancel: ({ active }) =>
+      `Cancelaste el movimiento de la foto ${indexOf(active.id)}.`,
+  }
   const activeIsCover = activeItem ? items[0]?.id === activeItem.id : false
 
   return (
@@ -132,6 +157,7 @@ export default function PhotoGrid({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
+        accessibility={{ announcements, screenReaderInstructions }}
       >
         <SortableContext items={itemIds} strategy={rectSortingStrategy}>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
