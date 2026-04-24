@@ -12,6 +12,7 @@ interface PhotoTileProps {
   previewUrls: Map<File, string>
   onRemove: (index: number) => void
   onMove: (index: number, direction: -1 | 1) => void
+  onMakeCover: (index: number) => void
 }
 
 // Stop drag activation when interacting with overlay buttons.
@@ -26,6 +27,7 @@ export default function PhotoTile({
   previewUrls,
   onRemove,
   onMove,
+  onMakeCover,
 }: PhotoTileProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
@@ -59,6 +61,18 @@ export default function PhotoTile({
         <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-white">
           Portada
         </span>
+      )}
+
+      {!isCover && (
+        <button
+          type="button"
+          onPointerDown={stopDragHandlers}
+          onKeyDown={stopDragHandlers}
+          onClick={() => onMakeCover(index)}
+          className="absolute top-1 right-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-text-primary transition-colors hover:bg-white"
+        >
+          Hacer portada
+        </button>
       )}
 
       {/* Desktop: hover overlay */}

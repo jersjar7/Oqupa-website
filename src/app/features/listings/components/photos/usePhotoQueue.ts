@@ -25,6 +25,7 @@ export interface PhotoQueue {
   remove: (index: number) => void
   move: (index: number, direction: -1 | 1) => void
   reorder: (fromIndex: number, toIndex: number) => void
+  promoteToCover: (index: number) => void
   toSubmitData: () => SubmitData
 }
 
@@ -85,6 +86,16 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     })
   }, [])
 
+  const promoteToCover = useCallback((index: number) => {
+    setItems((prev) => {
+      if (index <= 0 || index >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(index, 1)
+      next.unshift(moved!)
+      return next
+    })
+  }, [])
+
   const previewUrls = useMemo(() => {
     const map = new Map<File, string>()
     for (const item of items) {
@@ -111,5 +122,5 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     return { photos, existingPhotoUrls, photoOrder }
   }, [items])
 
-  return { items, previewUrls, addFiles, remove, move, reorder, toSubmitData }
+  return { items, previewUrls, addFiles, remove, move, reorder, promoteToCover, toSubmitData }
 }

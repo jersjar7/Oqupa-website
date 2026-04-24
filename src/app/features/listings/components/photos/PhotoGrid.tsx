@@ -29,6 +29,7 @@ interface PhotoGridProps {
   onRemove: (index: number) => void
   onMove: (index: number, direction: -1 | 1) => void
   onReorder: (fromIndex: number, toIndex: number) => void
+  onMakeCover: (index: number) => void
   photoError: string | null
   canContinue: boolean
   minPhotos: number
@@ -64,6 +65,7 @@ export default function PhotoGrid({
   onRemove,
   onMove,
   onReorder,
+  onMakeCover,
   photoError,
   canContinue,
   minPhotos,
@@ -142,6 +144,7 @@ export default function PhotoGrid({
                 previewUrls={previewUrls}
                 onRemove={onRemove}
                 onMove={onMove}
+                onMakeCover={onMakeCover}
               />
             ))}
             {items.length < MAX_PHOTOS && (
