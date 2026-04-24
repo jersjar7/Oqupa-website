@@ -9,6 +9,7 @@ import WizardStep1 from '../components/WizardStep1'
 import WizardStep2 from '../components/WizardStep2'
 import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
+import WizardStep5 from '../components/WizardStep5'
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -126,6 +127,7 @@ export default function EditListingPage() {
             {step === 2 && <WizardStep2 />}
             {step === 3 && <WizardStep3 />}
             {step === 4 && <WizardStep4 />}
+            {step === 5 && <WizardStep5 />}
           </motion.div>
         </AnimatePresence>
       </div>
