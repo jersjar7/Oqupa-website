@@ -176,6 +176,20 @@ Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite'
 - Set `pk_test_*` in `.env.development` for staging, `pk_live_*` in `.env` for production
 - Without this key, boost payment UI will display but Stripe will not load (logged warning)
 
+### App Check (anonymous view tracking + future App-Check-enforced callables)
+- `VITE_RECAPTCHA_APPCHECK_KEY` — reCAPTCHA v3 site key registered as App Check provider
+- Registered separately from `VITE_RECAPTCHA_SITE_KEY` (waitlist form): App Check needs its own site key bound to the app in Firebase console → App Check → Web app
+- Set the **staging** site key in `.env.development`, the **production** site key in `.env`
+- Without this key, App Check is not initialised locally and any `enforceAppCheck: true` callable (e.g. `recordListingView`) will fail closed
+- Debug tokens for local dev: set `VITE_APPCHECK_DEBUG_TOKEN` in `.env.development` to a UUID of your choice, then register that same value in Firebase console → App Check → Manage debug tokens. The SDK will reuse it across sessions so you only register it once per dev environment. If the env var is unset, the SDK falls back to auto-generating a fresh token each session (which you'd have to re-register every time)
+
+#### One-time setup per Firebase project (staging + production)
+
+1. Firebase console → App Check → Register app (Web) → reCAPTCHA v3 → create a new site key (or reuse one not tied to the waitlist form)
+2. Copy the site key into `.env.development` (staging) / `.env` (production) as `VITE_RECAPTCHA_APPCHECK_KEY`
+3. Enable enforcement for Cloud Functions after verifying attested traffic appears in the console (typically 24–48h of monitoring mode first)
+4. Configure a Firestore TTL policy on `listingViewDedupe.expiresAt` so dedupe docs self-prune after 30 days (Firestore console → TTL → Add policy)
+
 > **CRITICAL: NEVER delete `.env`, `.env.development`, or `.env.staging` files.** These contain real API keys and Firebase config that are gitignored and cannot be recovered from version control. Do not `rm`, overwrite, or `touch` these files under any circumstances. If you need a temporary file for testing, use a different name (e.g., `.env.test.tmp`). Deleting these files breaks the build completely.
 
 ### CI/CD

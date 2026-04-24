@@ -33,12 +33,6 @@ describe('useRecordListingView', () => {
     fakeAuth = { firebaseUser: null, user: null }
   })
 
-  it('does not fire when unauthenticated', () => {
-    fakeAuth = { firebaseUser: null, user: null }
-    renderHook(() => useRecordListingView('listing-1', 'owner-1'))
-    expect(recordListingViewMock).not.toHaveBeenCalled()
-  })
-
   it('does not fire when listingId is missing', () => {
     fakeAuth = { firebaseUser: { uid: 'u1' }, user: { id: 'u1' } }
     renderHook(() => useRecordListingView(undefined, 'owner-1'))
@@ -57,11 +51,18 @@ describe('useRecordListingView', () => {
     expect(recordListingViewMock).not.toHaveBeenCalled()
   })
 
+  it('fires exactly once for anonymous visitors', () => {
+    fakeAuth = { firebaseUser: null, user: null }
+    renderHook(() => useRecordListingView('listing-1', 'owner-1'))
+    expect(recordListingViewMock).toHaveBeenCalledTimes(1)
+    expect(recordListingViewMock).toHaveBeenCalledWith('listing-1')
+  })
+
   it('fires exactly once for authenticated non-owner viewer', () => {
     fakeAuth = { firebaseUser: { uid: 'viewer-1' }, user: { id: 'viewer-1' } }
     renderHook(() => useRecordListingView('listing-1', 'owner-1'))
     expect(recordListingViewMock).toHaveBeenCalledTimes(1)
-    expect(recordListingViewMock).toHaveBeenCalledWith('listing-1', 'viewer-1')
+    expect(recordListingViewMock).toHaveBeenCalledWith('listing-1')
   })
 
   it('does not re-fire on re-render with the same listing/user', () => {
@@ -83,13 +84,13 @@ describe('useRecordListingView', () => {
     )
     rerender({ id: 'listing-2', owner: 'owner-2' })
     expect(recordListingViewMock).toHaveBeenCalledTimes(2)
-    expect(recordListingViewMock).toHaveBeenNthCalledWith(1, 'listing-1', 'viewer-1')
-    expect(recordListingViewMock).toHaveBeenNthCalledWith(2, 'listing-2', 'viewer-1')
+    expect(recordListingViewMock).toHaveBeenNthCalledWith(1, 'listing-1')
+    expect(recordListingViewMock).toHaveBeenNthCalledWith(2, 'listing-2')
   })
 
   it('swallows service errors (silent failure)', async () => {
-    recordListingViewMock.mockRejectedValueOnce(new Error('permission-denied'))
-    fakeAuth = { firebaseUser: { uid: 'viewer-1' }, user: { id: 'viewer-1' } }
+    recordListingViewMock.mockRejectedValueOnce(new Error('app-check-failed'))
+    fakeAuth = { firebaseUser: null, user: null }
     // Should NOT throw.
     renderHook(() => useRecordListingView('listing-1', 'owner-1'))
     await new Promise((r) => setTimeout(r, 0))

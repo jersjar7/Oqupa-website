@@ -19,7 +19,9 @@ import {
   Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { httpsCallable } from 'firebase/functions'
+import { db, functions } from '@/lib/firebase'
+import { getOrCreateClientId } from '@/lib/clientId'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { WaitlistEntry } from '@/types/waitlist'
@@ -388,46 +390,17 @@ export const firestoreService = {
     return { listing, property }
   },
 
-  // Records a listing view for analytics. Mirrors Flutter's
-  // ListingViewTrackingOperations.recordPropertyView:
-  // 1) Skip if viewer already viewed this listing today (per-day dedupe).
-  // 2) Otherwise atomically write the viewedListings doc and increment viewCount.
-  async recordListingView(listingId: string, viewerId: string): Promise<void> {
-    const viewedRef = doc(db, 'users', viewerId, 'viewedListings', listingId)
-    const listingRef = doc(db, 'listings', listingId)
-
-    await runTransaction(db, async (transaction) => {
-      const viewedSnap = await transaction.get(viewedRef)
-      if (viewedSnap.exists()) {
-        const viewedAt = (viewedSnap.data() as Record<string, unknown>)['viewedAt']
-        if (viewedAt && typeof viewedAt === 'object' && 'toDate' in viewedAt) {
-          const lastViewedAt = (viewedAt as Timestamp).toDate()
-          const now = new Date()
-          if (
-            lastViewedAt.getFullYear() === now.getFullYear() &&
-            lastViewedAt.getMonth() === now.getMonth() &&
-            lastViewedAt.getDate() === now.getDate()
-          ) {
-            return
-          }
-        }
-      }
-
-      const listingSnap = await transaction.get(listingRef)
-      if (!listingSnap.exists()) {
-        throw new Error('Listing not found')
-      }
-      const currentViewCount =
-        ((listingSnap.data() as Record<string, unknown>)['viewCount'] as number) ?? 0
-
-      transaction.set(viewedRef, {
-        viewedAt: Timestamp.now(),
-        listingId,
-      })
-      transaction.update(listingRef, {
-        viewCount: currentViewCount + 1,
-      })
-    })
+  // Records a listing view for analytics. Routes through the `recordListingView`
+  // Cloud Function (App Check enforced) so the same server-side code path handles
+  // both authenticated and anonymous web visitors. Dedupe is one-per-day, keyed
+  // on uid when signed in and on a persistent localStorage clientId otherwise.
+  // Fire-and-forget: caller wraps in .catch() and swallows failures.
+  async recordListingView(listingId: string): Promise<void> {
+    const callable = httpsCallable<
+      { listingId: string; clientId: string },
+      { incremented: boolean; reason?: string }
+    >(functions, 'recordListingView')
+    await callable({ listingId, clientId: getOrCreateClientId() })
   },
 
   async updateListingStatus(
