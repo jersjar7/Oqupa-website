@@ -25,11 +25,15 @@ const app = initializeApp(firebaseConfig)
 // the intended behaviour.
 const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_APPCHECK_KEY
 if (appCheckSiteKey) {
-  // Enable debug tokens in dev so `firebase emulators` / local builds can still
-  // exercise App-Check-enforced callables. Add the printed token to the Firebase
-  // console → App Check → "Manage debug tokens" for the web app.
+  // In dev, pin a fixed debug token (VITE_APPCHECK_DEBUG_TOKEN in
+  // .env.development) so it doesn't rotate across sessions — you register it
+  // once in Firebase console → App Check → Manage debug tokens. If the env
+  // var is unset, fall back to `true` (auto-generate + log), which rotates
+  // per session and must be re-registered each time.
   if (import.meta.env.DEV) {
-    ;(self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
+    const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN
+    ;(self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      debugToken ?? true
   }
   try {
     initializeAppCheck(app, {

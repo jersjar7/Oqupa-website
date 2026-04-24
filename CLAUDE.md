@@ -181,7 +181,7 @@ Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite'
 - Registered separately from `VITE_RECAPTCHA_SITE_KEY` (waitlist form): App Check needs its own site key bound to the app in Firebase console → App Check → Web app
 - Set the **staging** site key in `.env.development`, the **production** site key in `.env`
 - Without this key, App Check is not initialised locally and any `enforceAppCheck: true` callable (e.g. `recordListingView`) will fail closed
-- Debug tokens for local dev: when `VITE_RECAPTCHA_APPCHECK_KEY` is set AND `import.meta.env.DEV`, the SDK logs a debug token on first init. Paste that into Firebase console → App Check → Manage debug tokens
+- Debug tokens for local dev: set `VITE_APPCHECK_DEBUG_TOKEN` in `.env.development` to a UUID of your choice, then register that same value in Firebase console → App Check → Manage debug tokens. The SDK will reuse it across sessions so you only register it once per dev environment. If the env var is unset, the SDK falls back to auto-generating a fresh token each session (which you'd have to re-register every time)
 
 #### One-time setup per Firebase project (staging + production)
 
