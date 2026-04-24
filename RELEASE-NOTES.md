@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-04-24 — Anonymous Listing View Tracking
+
+### New Features
+- **Listing views now count anonymous visitors**: `listing.viewCount` previously only incremented for signed-in users, massively undercounting real traffic from social shares, search, and direct links. Views now count for every unique device per day, matching how most real-estate browsers actually arrive at the site.
+
+### Technical
+- **Unified view tracking through a Cloud Function**: New App-Check-enforced `recordListingView` callable in `southamerica-east1` handles views from both authenticated and anonymous visitors. Server-side dedupe is one-view-per-day keyed on `uid` for signed-in users and on a persistent localStorage `clientId` (UUID) for anonymous visitors. Owner self-views are filtered server-side.
+- **Firestore App Check enabled** with reCAPTCHA v3 as the attestation provider on both staging and production web apps. New `VITE_RECAPTCHA_APPCHECK_KEY` env var required; see CLAUDE.md for setup.
+- **New server-only `listingViewDedupe` Firestore collection** stores one dedupe doc per `{principal, listingId}` per day. A 30-day TTL policy on the `expiresAt` field prunes old docs automatically.
+- **Pinned App Check debug token** via optional `VITE_APPCHECK_DEBUG_TOKEN` in `.env.development` keeps the token stable across local dev sessions so it only needs to be registered in Firebase console once.
+
+---
+
 ## 2026-03-14 — OAuth Sign-In, Map & Validation Improvements, Header Consistency
 
 ### New Features
