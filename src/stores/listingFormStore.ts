@@ -125,7 +125,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     },
 
     nextStep: () => {
-      const next = Math.min(get().step + 1, 4)
+      const next = Math.min(get().step + 1, 5)
       set({ step: next, direction: 1 })
       saveToSession(next, get().data)
     },
