@@ -9,8 +9,7 @@ type PhotoItem =
   | { type: 'new'; file: File }
 
 export default function WizardStep4() {
-  const { data, updateData, nextStep, prevStep, isEditMode } =
-    useListingFormStore()
+  const { data, updateData, nextStep, prevStep } = useListingFormStore()
 
   const [photoError, setPhotoError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -67,10 +66,13 @@ export default function WizardStep4() {
     return map
   }, [items])
 
+  const MIN_PHOTOS = 3
+  const canContinue = items.length >= MIN_PHOTOS
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!isEditMode && items.length === 0) {
-      setPhotoError('Selecciona al menos una foto')
+    if (items.length < MIN_PHOTOS) {
+      setPhotoError(`Sube al menos ${MIN_PHOTOS} fotos`)
       return
     }
 
@@ -116,6 +118,11 @@ export default function WizardStep4() {
           La primera foto sera la portada de tu publicacion
           <InfoTip text="La portada es la primera imagen que ven los compradores en los resultados de búsqueda. Pon tu mejor foto primero." />
         </p>
+        {!canContinue && !photoError && (
+          <p className="mt-1 text-xs text-text-tertiary">
+            Sube al menos {MIN_PHOTOS} fotos para continuar ({items.length}/{MIN_PHOTOS})
+          </p>
+        )}
         {photoError && (
           <p className="mt-1 text-sm text-error">{photoError}</p>
         )}
@@ -253,7 +260,7 @@ export default function WizardStep4() {
         >
           Atras
         </Button>
-        <Button type="submit" className="flex-1">
+        <Button type="submit" disabled={!canContinue} className="flex-1">
           Continuar
         </Button>
       </div>
