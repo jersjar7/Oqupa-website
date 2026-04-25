@@ -3,12 +3,23 @@
 // Port of Flutter's ImageUrlBuilder. Photo references in Firestore can be:
 // - R2 object keys (e.g. `property-photos/abc/123.webp`) — new path
 // - Legacy Firebase Storage URLs (starting with `https://`) — backward compat
+//
+// IMPORTANT: gate behaviour on `MODE === 'production'`, NOT `import.meta.env.PROD`.
+// `vite build` sets PROD=true regardless of which environment is being deployed;
+// staging CI is built with `--mode staging` so MODE='staging' there. The
+// /cdn-cgi/image/ Cloudflare Image Transformation prefix only works on
+// origins served behind Cloudflare — production (oqupa.com) is, but staging
+// (oqupa-staging.web.app, Firebase Hosting) is NOT. Using PROD here previously
+// produced same-origin /cdn-cgi/image/ URLs on staging which the Firebase
+// SPA rewrite swallowed into HTML responses → silent broken images.
 
 const PRODUCTION_HOST = 'images.oqupa.com'
 const STAGING_HOST = 'images-staging.oqupa.com'
 
+const isProductionDeploy = import.meta.env.MODE === 'production'
+
 function getHost(): string {
-  return import.meta.env.PROD ? PRODUCTION_HOST : STAGING_HOST
+  return isProductionDeploy ? PRODUCTION_HOST : STAGING_HOST
 }
 
 /** Whether the reference is a legacy Firebase Storage URL (not an R2 key) */
@@ -27,7 +38,7 @@ export function buildImageUrl(
   // In production, use Cloudflare Image Transformations via a same-origin
   // relative path. This avoids CORS/CSP issues regardless of whether the
   // user is on oqupa.com or www.oqupa.com.
-  if (import.meta.env.PROD && opts?.width) {
+  if (isProductionDeploy && opts?.width) {
     const q = opts.quality ?? 80
     return `/cdn-cgi/image/w=${opts.width},f=auto,q=${q}/https://${host}/${ref}`
   }
