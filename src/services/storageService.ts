@@ -5,6 +5,12 @@ import {
 } from 'firebase/storage'
 import { httpsCallable } from 'firebase/functions'
 import imageCompression from 'browser-image-compression'
+// Self-host the worker's library script. browser-image-compression spawns a
+// Web Worker that calls importScripts(libURL); the default libURL points to
+// cdn.jsdelivr.net, which would force a third-party CSP allow-list. Using
+// ?url makes Vite emit the UMD bundle as a hashed same-origin asset that the
+// worker can importScripts under script-src 'self'.
+import compressionLibUrl from 'browser-image-compression/dist/browser-image-compression.js?url'
 import { storage, functions } from '@/lib/firebase'
 import { generateBlurHash } from '@/lib/blurhash'
 
@@ -12,6 +18,7 @@ const COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
   maxWidthOrHeight: 1920,
   useWebWorker: true,
+  libURL: compressionLibUrl,
 }
 
 export interface PhotoUploadResult {
