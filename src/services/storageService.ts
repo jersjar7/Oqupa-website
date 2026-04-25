@@ -164,4 +164,13 @@ export const storageService = {
 
     return Promise.all(uploads)
   },
+
+  async deleteR2Photos(objectKeys: string[]): Promise<void> {
+    if (objectKeys.length === 0) return
+    const deleteFn = httpsCallable<
+      { objectKeys: string[] },
+      { deleted: number }
+    >(functions, 'deleteR2Objects')
+    await deleteFn({ objectKeys })
+  },
 }

@@ -4,6 +4,36 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-04-24 — Listing Wizard: Photos Step + Drag-and-Drop Reorder
+
+### New Features
+- **Photos are their own wizard step**: The publish flow is now 5 steps — Tipo → Detalles → Ubicación → Fotos → Precio — instead of cramming photos onto the location step. The Fotos step has a dedicated Roboto Serif page heading and a square-thumbnail grid (2 columns on mobile, 4 on desktop).
+- **Drag-and-drop photo reorder**: Built on @dnd-kit. On desktop, click-and-drag any tile to reposition; on mobile, long-press (200ms) to pick up. The dragged tile shows a lifted, shadowed preview while the original dims. A subtle hint under the count tells users how to reorder on each platform.
+- **Minimum 3 photos before publishing**: The "Continuar" button is disabled until at least 3 photos are present. A live counter ("Sube al menos 3 fotos para continuar (N/3)") shows progress toward the threshold.
+
+### UX Improvements
+- **Cover is implicit at position 0**: The first photo is the cover. To change the cover, just drag any photo to the first slot. The `PORTADA` badge (orange, uppercase, tracking-[1px]) marks whichever photo is in position 0.
+- **Cleaner tile chrome**: Removed the per-tile chevron-arrow buttons and "Hacer portada" labels — drag-to-reorder + drag-to-position-0 cover both jobs without crowding the grid.
+- **Spanish keyboard accessibility**: Tab to a tile, press Space/Enter to pick it up, arrow keys to move it, Space again to drop or Esc to cancel. The screen-reader live region announces every step in Spanish ("Recogiste la foto N de M", "Foto N sobre la posición M", etc.).
+- **Reduced-motion support**: The drop animation is instant when `prefers-reduced-motion: reduce` is set.
+
+### Bug Fixes
+- **photoBlurHashes drift after edit-mode reorder**: Editing a listing that uploaded N new photos used to write only the new hashes to `photoBlurHashes`, so existing photos lost their hashes and the cover-photo blurhash could end up pointing at the wrong image. Submit now builds the full ordered hash array using the same mapping that produces `photoKeys`, so both arrays are always written together and aligned.
+- **Removed photos no longer orphan in R2**: Deleting an existing photo in edit mode used to drop it from Firestore but leave the R2 object behind. The wizard now diffs against a snapshot taken at edit-init and calls the new `deleteR2Objects` Cloud Function for any keys the user removed (best-effort — failure is logged, doesn't roll back the listing update).
+- **Photo upload CSP block**: `browser-image-compression@2`'s web worker fetches itself from `cdn.jsdelivr.net` at runtime, but that host wasn't in our `script-src` allowlist — so compression silently failed and uploads broke. Added the host to the CSP. Surfaced by end-to-end testing of the new wizard.
+
+### Technical
+- New `usePhotoQueue` hook centralises the unified photo queue (existing URLs + freshly-picked Files), preview-URL memoization, and the submit-shape splitter that produces `photos`, `existingPhotoUrls`, `existingPhotoBlurHashes`, and the `photoOrder` mapping.
+- Photo step decomposed into `PhotoStep`, `PhotoGrid`, `PhotoTile`, `PhotoDropzone`. `WizardStep4.tsx` is now a thin re-export so the page-level slot stays stable.
+- New `storageService.deleteR2Photos(objectKeys)` wraps the `deleteR2Objects` callable for batch R2 cleanup.
+- Form store gains `existingPhotoBlurHashes` (parallel to `existingPhotoUrls`) and `originalExistingPhotoUrls` (snapshot at edit-init for the delete diff).
+- 15 new tests for `usePhotoQueue` and `PhotoGrid` covering reorder, blurhash alignment, gating hints, cover badge, and the Spanish aria-labels.
+
+### Deployment Notes
+- **R2 CORS update required**: The R2 buckets need `https://oqupa.com`, `https://*.oqupa.com`, `https://oqupa-production.web.app`, and `https://oqupa-production.firebaseapp.com` in their `AllowedOrigins`. Without this, photo uploads from production will hit a CORS preflight wall. Update via Cloudflare dashboard → R2 → bucket → Settings → CORS Policy.
+
+---
+
 ## 2026-04-24 — Anonymous Listing View Tracking
 
 ### New Features

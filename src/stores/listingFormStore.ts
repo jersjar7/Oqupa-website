@@ -28,6 +28,8 @@ export interface ListingFormData {
   showExactLocation: boolean
   photos: File[]
   existingPhotoUrls: string[] // for edit mode
+  existingPhotoBlurHashes: string[] // parallel to existingPhotoUrls
+  originalExistingPhotoUrls: string[] // snapshot at edit-init for delete diff
 
   // Photo ordering (maps final position to source)
   photoOrder: Array<{ type: 'existing' | 'new'; index: number }>
@@ -76,6 +78,8 @@ const INITIAL_DATA: ListingFormData = {
   showExactLocation: true,
   photos: [],
   existingPhotoUrls: [],
+  existingPhotoBlurHashes: [],
+  originalExistingPhotoUrls: [],
   photoOrder: [],
   amount: null,
   currency: 'PEN',
@@ -125,7 +129,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     },
 
     nextStep: () => {
-      const next = Math.min(get().step + 1, 4)
+      const next = Math.min(get().step + 1, 5)
       set({ step: next, direction: 1 })
       saveToSession(next, get().data)
     },
