@@ -4,6 +4,18 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-04-25 — Staging Image URL Fix + AnimatedImage Fallback
+
+### Bug Fixes
+- **Photos render correctly on staging again**: Listing detail pages and explore-page thumbnails on `oqupa-staging.web.app` had been silently broken since the R2 migration on 2026-04-12 — image URLs were being constructed with the production-only `/cdn-cgi/image/...` Cloudflare Image Transformation prefix pointing at the production CDN host. That path only works on origins served behind Cloudflare; staging Firebase Hosting silently fell through its catch-all SPA rewrite and returned HTML for every image request, leaving `<img>` elements at zero dimensions. The view-side URL builder now branches on `import.meta.env.MODE === 'production'` instead of `import.meta.env.PROD` (which Vite sets `true` for any `vite build`, regardless of which environment the build targets).
+- **`AnimatedImage` no longer hides failed loads**: The component starts at `opacity-0` and only fades in when `onLoad` fires — but failed loads (404, DNS error, CORS block) never fire `onLoad`, so the element stayed invisible with no broken-image icon. Added an `onError` handler that renders a fallback `<div>` with the lucide `ImageOff` icon and "No se pudo cargar la imagen" copy. Surfaced while debugging the staging image issue above; would have made the bug obvious from page one.
+
+### Technical
+- **CI: staging build now uses `--mode staging`**: `.github/workflows/deploy.yml` explicitly passes `--mode staging` to `npm run build` for the staging deploy, so `import.meta.env.MODE === 'staging'`. Production deploy still uses the default mode (`'production'`). Both branches are constant-folded by Vite, so the inactive code path is eliminated from the bundle (verified: staging bundle has no `cdn-cgi/image` string, prod bundle has no `images-staging.oqupa.com` string).
+- All 153 existing tests still pass — Vitest defaults to `MODE='test'` which evaluates the staging branch the tests already assert on.
+
+---
+
 ## 2026-04-24 — Listing Wizard: Photos Step + Drag-and-Drop Reorder
 
 ### New Features

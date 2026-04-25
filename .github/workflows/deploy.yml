@@ -42,7 +42,10 @@ jobs:
       - run: npm ci
       - name: Create .env for staging build
         run: echo "${{ secrets.DOTENV_STAGING }}" > .env
-      - run: npm run build
+      # --mode staging makes Vite set MODE='staging' (and PROD=false), which
+      # tells imageUrl.ts to use the staging R2 host directly instead of the
+      # /cdn-cgi/image/... Cloudflare-only path that production uses.
+      - run: npm run build -- --mode staging
       - id: auth
         uses: google-github-actions/auth@v2
         with:
