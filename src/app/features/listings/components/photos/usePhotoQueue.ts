@@ -25,9 +25,7 @@ export interface PhotoQueue {
   previewUrls: Map<File, string>
   addFiles: (files: File[]) => void
   remove: (index: number) => void
-  move: (index: number, direction: -1 | 1) => void
   reorder: (fromIndex: number, toIndex: number) => void
-  promoteToCover: (index: number) => void
   toSubmitData: () => SubmitData
 }
 
@@ -67,16 +65,6 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     setItems((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  const move = useCallback((index: number, direction: -1 | 1) => {
-    setItems((prev) => {
-      const target = index + direction
-      if (target < 0 || target >= prev.length) return prev
-      const next = [...prev]
-      ;[next[index], next[target]] = [next[target]!, next[index]!]
-      return next
-    })
-  }, [])
-
   const reorder = useCallback((fromIndex: number, toIndex: number) => {
     setItems((prev) => {
       if (fromIndex === toIndex) return prev
@@ -85,16 +73,6 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
       const next = [...prev]
       const [moved] = next.splice(fromIndex, 1)
       next.splice(toIndex, 0, moved!)
-      return next
-    })
-  }, [])
-
-  const promoteToCover = useCallback((index: number) => {
-    setItems((prev) => {
-      if (index <= 0 || index >= prev.length) return prev
-      const next = [...prev]
-      const [moved] = next.splice(index, 1)
-      next.unshift(moved!)
       return next
     })
   }, [])
@@ -132,9 +110,7 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     previewUrls,
     addFiles,
     remove,
-    move,
     reorder,
-    promoteToCover,
     toSubmitData,
   }
 }

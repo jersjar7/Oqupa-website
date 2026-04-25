@@ -29,9 +29,7 @@ interface PhotoGridProps {
   previewUrls: Map<File, string>
   onAddFiles: (files: File[]) => void
   onRemove: (index: number) => void
-  onMove: (index: number, direction: -1 | 1) => void
   onReorder: (fromIndex: number, toIndex: number) => void
-  onMakeCover: (index: number) => void
   photoError: string | null
   canContinue: boolean
   minPhotos: number
@@ -65,9 +63,7 @@ export default function PhotoGrid({
   previewUrls,
   onAddFiles,
   onRemove,
-  onMove,
   onReorder,
-  onMakeCover,
   photoError,
   canContinue,
   minPhotos,
@@ -141,6 +137,9 @@ export default function PhotoGrid({
         La primera foto sera la portada de tu publicacion
         <InfoTip text="La portada es la primera imagen que ven los compradores en los resultados de búsqueda. Pon tu mejor foto primero." />
       </p>
+      <p className="mt-1 hidden text-xs text-text-tertiary sm:block">
+        Arrastra las fotos para reordenarlas
+      </p>
       <p className="mt-1 text-xs text-text-tertiary sm:hidden">
         Mantén presionada una foto para reordenarla
       </p>
@@ -169,8 +168,6 @@ export default function PhotoGrid({
                 total={items.length}
                 previewUrls={previewUrls}
                 onRemove={onRemove}
-                onMove={onMove}
-                onMakeCover={onMakeCover}
               />
             ))}
             {items.length < MAX_PHOTOS && (

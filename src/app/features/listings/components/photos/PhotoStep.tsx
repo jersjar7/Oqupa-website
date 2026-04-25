@@ -46,9 +46,7 @@ export default function PhotoStep() {
           setPhotoError(null)
         }}
         onRemove={queue.remove}
-        onMove={queue.move}
         onReorder={queue.reorder}
-        onMakeCover={queue.promoteToCover}
         photoError={photoError}
         canContinue={canContinue}
         minPhotos={MIN_PHOTOS}

@@ -85,24 +85,6 @@ describe('usePhotoQueue', () => {
     expect(urls).toEqual(['a', 'c'])
   })
 
-  it('move(-1) swaps with the previous item and is a no-op at index 0', () => {
-    const { result } = renderHook(() =>
-      usePhotoQueue({
-        existingPhotoUrls: ['a', 'b', 'c'],
-        existingPhotoBlurHashes: ['', '', ''],
-        photos: [],
-      })
-    )
-
-    act(() => result.current.move(2, -1))
-    let urls = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
-    expect(urls).toEqual(['a', 'c', 'b'])
-
-    act(() => result.current.move(0, -1))
-    urls = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
-    expect(urls).toEqual(['a', 'c', 'b'])
-  })
-
   it('reorder splices an item from one index to another', () => {
     const { result } = renderHook(() =>
       usePhotoQueue({
@@ -115,34 +97,6 @@ describe('usePhotoQueue', () => {
     act(() => result.current.reorder(3, 0))
     const urls = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
     expect(urls).toEqual(['d', 'a', 'b', 'c'])
-  })
-
-  it('promoteToCover moves the item at index N to position 0', () => {
-    const { result } = renderHook(() =>
-      usePhotoQueue({
-        existingPhotoUrls: ['a', 'b', 'c'],
-        existingPhotoBlurHashes: ['ha', 'hb', 'hc'],
-        photos: [],
-      })
-    )
-
-    act(() => result.current.promoteToCover(2))
-    const urls = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
-    expect(urls).toEqual(['c', 'a', 'b'])
-  })
-
-  it('promoteToCover is a no-op for index 0', () => {
-    const { result } = renderHook(() =>
-      usePhotoQueue({
-        existingPhotoUrls: ['a', 'b'],
-        existingPhotoBlurHashes: ['', ''],
-        photos: [],
-      })
-    )
-
-    act(() => result.current.promoteToCover(0))
-    const urls = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
-    expect(urls).toEqual(['a', 'b'])
   })
 
   it('toSubmitData splits items + keeps blurHashes aligned with existingPhotoUrls', () => {
@@ -170,7 +124,7 @@ describe('usePhotoQueue', () => {
     ])
   })
 
-  it('blurHash stays glued to its existing item across promoteToCover', () => {
+  it('blurHash stays glued to its existing item across reorder', () => {
     const { result } = renderHook(() =>
       usePhotoQueue({
         existingPhotoUrls: ['a', 'b', 'c'],
@@ -179,10 +133,10 @@ describe('usePhotoQueue', () => {
       })
     )
 
-    act(() => result.current.promoteToCover(2))
+    // Drag 'c' (index 2) to the cover slot (index 0).
+    act(() => result.current.reorder(2, 0))
     const submit = result.current.toSubmitData()
 
-    // 'c' is now first; its hash 'hc' must follow.
     expect(submit.existingPhotoUrls[0]).toBe('c')
     expect(submit.existingPhotoBlurHashes[0]).toBe('hc')
   })

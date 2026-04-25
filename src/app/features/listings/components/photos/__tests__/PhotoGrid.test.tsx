@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import PhotoGrid from '../PhotoGrid'
 import type { PhotoItem } from '../usePhotoQueue'
 
@@ -24,9 +24,7 @@ function defaultProps(items: PhotoItem[]) {
     previewUrls: new Map<File, string>(),
     onAddFiles: vi.fn(),
     onRemove: vi.fn(),
-    onMove: vi.fn(),
     onReorder: vi.fn(),
-    onMakeCover: vi.fn(),
     photoError: null,
     canContinue: items.length >= 3,
     minPhotos: 3,
@@ -59,20 +57,16 @@ describe('PhotoGrid', () => {
     expect(badges).toHaveLength(1)
   })
 
-  it('shows "Hacer portada" only on non-cover tiles and fires onMakeCover with the tile index', () => {
+  it('renders both mobile long-press and desktop drag hints (responsive CSS picks one)', () => {
     const items = [
       existing('p1', 'a'),
       existing('p2', 'b'),
       existing('p3', 'c'),
     ]
-    const props = defaultProps(items)
-    render(<PhotoGrid {...props} />)
+    render(<PhotoGrid {...defaultProps(items)} />)
 
-    const buttons = screen.getAllByRole('button', { name: 'Hacer portada' })
-    expect(buttons).toHaveLength(2)
-
-    fireEvent.click(buttons[1]!) // tile index 2
-    expect(props.onMakeCover).toHaveBeenCalledWith(2)
+    expect(screen.getByText('Mantén presionada una foto para reordenarla')).toBeTruthy()
+    expect(screen.getByText('Arrastra las fotos para reordenarlas')).toBeTruthy()
   })
 
   it('shows the "sube al menos 3" hint while below the threshold', () => {
