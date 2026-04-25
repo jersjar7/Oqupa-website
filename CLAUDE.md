@@ -165,6 +165,16 @@ Firebase config is loaded from `VITE_FIREBASE_*` env vars (not hardcoded). Vite'
 | `npm run dev` | `oqupa-staging` | `.env` + `.env.development` (overrides) |
 | `npm run build` | `oqupa-production` | `.env` only |
 
+### Build Modes (MODE vs PROD)
+
+Gate production-only behaviour on `import.meta.env.MODE === 'production'`, **not** `import.meta.env.PROD`. `vite build` sets `PROD=true` for any minified build regardless of `--mode`, so a `PROD`-gated branch will treat the staging deploy as production. Staging CI runs `vite build --mode staging` (see `.github/workflows/deploy.yml`), so `MODE === 'staging'` on staging deploys.
+
+```ts
+// src/lib/imageUrl.ts — pick the CDN host
+const isProductionDeploy = import.meta.env.MODE === 'production'
+const host = isProductionDeploy ? 'images.oqupa.com' : 'images-staging.oqupa.com'
+```
+
 ### Environment Files
 - `.env` — Production API keys + Firebase config (gitignored)
 - `.env.development` — Staging Firebase overrides for dev mode (gitignored)

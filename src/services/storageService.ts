@@ -8,6 +8,30 @@ import imageCompression from 'browser-image-compression'
 import { storage, functions } from '@/lib/firebase'
 import { generateBlurHash } from '@/lib/blurhash'
 
+// browser-image-compression spawns a Web Worker that calls
+// `self.importScripts(libURL)` to load the real implementation. The library's
+// default `libURL` is hardcoded to `https://cdn.jsdelivr.net/npm/browser-image-compression@<ver>/dist/browser-image-compression.js`,
+// which is why `firebase.json`'s CSP allow-lists `https://cdn.jsdelivr.net`
+// in `script-src`.
+//
+// We attempted (chore/vite-build-hygiene, commit 153fe87) to self-host the
+// worker script by passing `libURL: <vite-?url-import>` so the worker would
+// importScripts a same-origin hashed asset under `script-src 'self'`. Static
+// analysis looked clean (libURL flowed through, the asset emitted, dev server
+// served it) but the deployed bundle's worker still failed to load the script
+// at runtime — the CSP violation reported the jsdelivr URL, meaning the
+// `libURL` option did not actually reach the worker context. Possible causes
+// to investigate next time: (1) the inline blob worker is created from a
+// stringified function literal that doesn't close over the option correctly
+// in our minified bundle, (2) Vite's `?url` import resolves at build time
+// to a path the worker cannot fetch under our CSP `worker-src 'self' blob:`
+// constraint, (3) the library version we ship has different runtime semantics
+// than the source we read.
+//
+// Don't retry the libURL bundling approach without first reproducing the
+// exact failure on a deployed staging build (it works in dev — dev does not
+// apply firebase.json CSP headers). Alternatives: drop `useWebWorker: true`
+// and accept main-thread compression, or replace the library entirely.
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
   maxWidthOrHeight: 1920,
