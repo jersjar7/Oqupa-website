@@ -11,7 +11,7 @@ export default function TermsPage() {
         Términos de Servicio
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
-        Última actualización: 15 de febrero de 2026
+        Última actualización: 28 de abril de 2026
       </p>
 
       <div className="mt-8 space-y-8">
@@ -64,6 +64,10 @@ export default function TermsPage() {
           <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
             <li>Proporcionar información veraz y actualizada.</li>
             <li>
+              Verificar tu número de teléfono mediante el código SMS que
+              enviamos como parte del proceso de registro.
+            </li>
+            <li>
               Ser responsable de mantener la confidencialidad de tus
               credenciales de acceso.
             </li>
@@ -97,6 +101,10 @@ export default function TermsPage() {
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
             <li>Ser veraz y representar propiedades reales.</li>
+            <li>
+              Que el publicante sea propietario o tenga autorización del
+              propietario para publicar la propiedad.
+            </li>
             <li>
               No infringir derechos de propiedad intelectual de terceros.
             </li>
@@ -139,17 +147,100 @@ export default function TermsPage() {
             7. Tarifas y Pagos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
-            Actualmente, el uso de Oqupa es <strong>gratuito</strong>. Nos
-            reservamos el derecho de introducir funciones de pago en el futuro.
-            En caso de implementar tarifas, los usuarios serán notificados con
-            antelación suficiente.
+            El uso básico de Oqupa para publicar y buscar anuncios es{' '}
+            <strong>gratuito</strong>. Oqupa ofrece adicionalmente funciones de
+            pago opcionales:
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+            <li>
+              <strong>Boosts:</strong> permiten destacar un anuncio dentro de
+              los resultados de búsqueda durante un período determinado, por una
+              tarifa fija indicada en la aplicación al momento de la compra.
+            </li>
+          </ul>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Los pagos se procesan a través de <strong>Stripe, Inc.</strong>,
+            incluyendo métodos locales como <strong>Yape</strong> y{' '}
+            <strong>Plin</strong>. Los precios se muestran en la aplicación
+            antes de confirmar la compra. Al completar un pago, autorizas a
+            Stripe a cargar el monto correspondiente en tu método de pago
+            seleccionado.
+          </p>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Oqupa no almacena información de tarjetas de crédito ni datos
+            financieros sensibles — esta información es procesada y custodiada
+            directamente por Stripe.
+          </p>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Oqupa se reserva el derecho de modificar los precios, introducir
+            nuevas funciones de pago o cambiar las condiciones de las
+            existentes, notificando a los usuarios con antelación razonable.
           </p>
         </section>
 
         {/* 8 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            8. Propiedad Intelectual
+            8. Política de Reembolsos
+          </h2>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Puedes solicitar el reembolso de un boost dentro de las{' '}
+            <strong>48 horas</strong> posteriores a la compra, siempre que el
+            servicio no haya sido consumido en su totalidad. Las solicitudes de
+            reembolso se realizan desde la aplicación o enviando un correo a{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>{' '}
+            indicando el identificador de la transacción.
+          </p>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Transcurridas las 48 horas, los pagos se consideran no reembolsables,
+            salvo en los casos en que la legislación peruana de protección al
+            consumidor lo exija. Los reembolsos se acreditan al método de pago
+            original a través de Stripe; el plazo de acreditación depende del
+            emisor.
+          </p>
+        </section>
+
+        {/* 9 */}
+        <section>
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
+            9. Programa de Asesores Inmobiliarios
+          </h2>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Oqupa permite a usuarios verificados solicitar acceso al programa de
+            asesores inmobiliarios. Al ser aprobado, podrás reclamar leads
+            disponibles y contactar a usuarios interesados en propiedades. Los
+            asesores se comprometen a:
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+            <li>
+              Proporcionar un servicio profesional, honesto y respetuoso a los
+              usuarios cuyos leads sean reclamados.
+            </li>
+            <li>
+              No utilizar los datos de contacto obtenidos para fines distintos a
+              la atención del lead específico.
+            </li>
+            <li>
+              Cumplir con la legislación peruana aplicable a la actividad
+              inmobiliaria.
+            </li>
+          </ul>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Oqupa se reserva el derecho de revocar el acceso al programa ante
+            quejas razonables, comportamiento no profesional o uso indebido de
+            la información de los leads.
+          </p>
+        </section>
+
+        {/* 10 */}
+        <section>
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
+            10. Propiedad Intelectual
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             La marca Oqupa, su logotipo, diseño de la aplicación y código fuente
@@ -159,10 +250,10 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {/* 9 */}
+        {/* 11 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            9. Descargo de Responsabilidad
+            11. Descargo de Responsabilidad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             Oqupa es únicamente una plataforma tecnológica. No garantizamos la
@@ -172,10 +263,10 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {/* 10 */}
+        {/* 12 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            10. Limitación de Responsabilidad
+            12. Limitación de Responsabilidad
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             En la máxima medida permitida por la ley, Oqupa LLC no será
@@ -186,16 +277,17 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {/* 11 */}
+        {/* 13 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            11. Terminación de Cuenta
+            13. Terminación de Cuenta
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             Oqupa se reserva el derecho de suspender o cancelar cuentas que
-            violen estos Términos de Servicio. Los usuarios pueden solicitar la
-            eliminación de su cuenta en cualquier momento enviando un correo
-            electrónico a{' '}
+            violen estos Términos de Servicio. Los usuarios pueden eliminar su
+            cuenta en cualquier momento desde la opción{' '}
+            <strong>"Eliminar mi cuenta"</strong> dentro de la aplicación, o
+            enviando un correo electrónico a{' '}
             <a
               href="mailto:admin@oqupa.com"
               className="text-primary hover:text-primary-hover hover:underline"
@@ -206,23 +298,24 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {/* 12 */}
+        {/* 14 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            12. Ley Aplicable
+            14. Ley Aplicable
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             Estos Términos de Servicio se rigen por las leyes del estado de
             Utah, Estados Unidos. Asimismo, Oqupa cumple con las regulaciones
             peruanas aplicables en relación con la operación del servicio en
-            Perú.
+            Perú, incluyendo la <strong>Ley N° 29733</strong> de Protección de
+            Datos Personales y las normas de protección al consumidor.
           </p>
         </section>
 
-        {/* 13 */}
+        {/* 15 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            13. Cambios a estos Términos
+            15. Cambios a estos Términos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             Podemos modificar estos Términos de Servicio en cualquier momento. Te
@@ -233,10 +326,10 @@ export default function TermsPage() {
           </p>
         </section>
 
-        {/* 14 */}
+        {/* 16 */}
         <section>
           <h2 className="font-serif text-xl font-semibold text-text-primary">
-            14. Contáctanos
+            16. Contáctanos
           </h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
             Si tienes preguntas sobre estos Términos de Servicio, puedes
