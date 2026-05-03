@@ -6,23 +6,32 @@ import { setPasswordSchema, type SetPasswordFormData } from '@/schemas/authSchem
 import { authService } from '@/services/authService'
 import { Button, Input } from '@/app/components/ui'
 
+type ActionMode = 'resetPassword' | 'verifyEmail' | 'unknown'
+
 type VerificationState =
   | { kind: 'verifying' }
-  | { kind: 'ready'; email: string }
+  | { kind: 'ready'; email: string }                    // password setup form
+  | { kind: 'emailVerified'; email: string }            // verifyEmail success
   | { kind: 'invalid'; message: string }
   | { kind: 'done' }
 
 /**
- * Handles the "set your first password" flow for users migrating from the
- * magic-link sign-in to email/password. Arrives here with an `oobCode` in
- * the query string — either from Firebase's password-reset email, or from
- * the startPasswordSetup Cloud Function that redirected after verifying
- * the campaign CTA token.
+ * Auth-action landing page used by Firebase email links. Branches on the
+ * `mode` query param:
+ *
+ *   - mode=resetPassword (or unset) — set/reset the user's password
+ *   - mode=verifyEmail              — apply the email-verification code
+ *
+ * The email-verification branch is what Flutter's
+ * `firebaseUser.sendEmailVerification()` triggers. The Firebase Console
+ * email template is configured to point at this same URL for both modes,
+ * so we read the mode at runtime and dispatch.
  */
 export default function SetPasswordPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const oobCode = searchParams.get('oobCode')
+  const mode = (searchParams.get('mode') ?? 'resetPassword') as ActionMode
 
   const [state, setState] = useState<VerificationState>({ kind: 'verifying' })
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -37,6 +46,7 @@ export default function SetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false
+
     async function verify() {
       if (!oobCode) {
         setState({
@@ -45,24 +55,36 @@ export default function SetPasswordPage() {
         })
         return
       }
+
       try {
-        const email = await authService.verifySetPasswordCode(oobCode)
-        if (!cancelled) setState({ kind: 'ready', email })
+        if (mode === 'verifyEmail') {
+          // Email verification flow: read email + apply code
+          const email = await authService.checkEmailVerificationCode(oobCode)
+          await authService.applyEmailVerificationCode(oobCode)
+          if (!cancelled) setState({ kind: 'emailVerified', email })
+        } else {
+          // Password setup / reset flow (existing behavior)
+          const email = await authService.verifySetPasswordCode(oobCode)
+          if (!cancelled) setState({ kind: 'ready', email })
+        }
       } catch {
         if (!cancelled) {
           setState({
             kind: 'invalid',
             message:
-              'Este enlace expiro o ya fue usado. Solicita uno nuevo desde "Olvidaste tu contrasena".',
+              mode === 'verifyEmail'
+                ? 'Este enlace de verificacion expiro o ya fue usado. Solicita uno nuevo desde la app.'
+                : 'Este enlace expiro o ya fue usado. Solicita uno nuevo desde "Olvidaste tu contrasena".',
           })
         }
       }
     }
+
     verify()
     return () => {
       cancelled = true
     }
-  }, [oobCode])
+  }, [oobCode, mode])
 
   async function onSubmit(data: SetPasswordFormData) {
     if (state.kind !== 'ready' || !oobCode) return
@@ -88,7 +110,9 @@ export default function SetPasswordPage() {
   if (state.kind === 'verifying') {
     return (
       <div className="flex flex-1 items-center justify-center px-4 py-12">
-        <p className="text-base text-text-secondary">Verificando enlace...</p>
+        <p className="text-base text-text-secondary">
+          {mode === 'verifyEmail' ? 'Verificando tu correo...' : 'Verificando enlace...'}
+        </p>
       </div>
     )
   }
@@ -101,12 +125,35 @@ export default function SetPasswordPage() {
             Enlace invalido
           </h1>
           <p className="mt-2 text-base text-text-secondary">{state.message}</p>
-          <Link
-            to="/app/forgot-password"
-            className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
-          >
-            Solicitar un nuevo enlace
-          </Link>
+          {mode !== 'verifyEmail' && (
+            <Link
+              to="/app/forgot-password"
+              className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
+            >
+              Solicitar un nuevo enlace
+            </Link>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (state.kind === 'emailVerified') {
+    return (
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="font-serif text-[28px] font-normal text-text-primary">
+            Correo verificado
+          </h1>
+          <p className="mt-2 text-base text-text-secondary">
+            Tu correo{' '}
+            <span className="font-medium text-text-primary">{state.email}</span>{' '}
+            quedo verificado. Vuelve a la app Oqupa para continuar con el registro.
+          </p>
+          <p className="mt-6 text-sm text-text-tertiary">
+            Si la app esta abierta en tu telefono, deberia detectar la
+            verificacion automaticamente en pocos segundos.
+          </p>
         </div>
       </div>
     )
