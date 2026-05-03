@@ -8,6 +8,8 @@ import {
   fetchSignInMethodsForEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
+  applyActionCode,
+  checkActionCode,
   RecaptchaVerifier,
   PhoneAuthProvider,
   signInWithCredential,
@@ -96,6 +98,20 @@ export const authService = {
 
   async verifySetPasswordCode(oobCode: string): Promise<string> {
     return verifyPasswordResetCode(auth, oobCode)
+  },
+
+  // Email verification — invoked when the action link arrives with
+  // mode=verifyEmail (sent by Firebase Auth's sendEmailVerification()).
+  // checkActionCode resolves the email and confirms the code is for the
+  // verifyEmail operation; applyActionCode actually flips the
+  // emailVerified flag on the Firebase Auth user.
+  async checkEmailVerificationCode(oobCode: string): Promise<string> {
+    const info = await checkActionCode(auth, oobCode)
+    return info.data.email ?? ''
+  },
+
+  async applyEmailVerificationCode(oobCode: string): Promise<void> {
+    await applyActionCode(auth, oobCode)
   },
 
   async confirmSetPassword(oobCode: string, newPassword: string, email: string) {
