@@ -1,16 +1,16 @@
 import { useCallback, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useScrollHeader } from '@/hooks/useScrollHeader'
-import { useWaitlistPopup } from '@/hooks/useWaitlistPopup'
+import { useExpansionPopup } from '@/hooks/useExpansionPopup'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import WaitlistPopup from '@/components/landing/WaitlistPopup'
+import ExpansionPopup from '@/components/landing/ExpansionPopup'
 import PageTransition from '@/app/components/ui/PageTransition'
 
 export default function Layout() {
   const location = useLocation()
   const { isScrolled, heroRef } = useScrollHeader()
-  const popup = useWaitlistPopup()
+  const popup = useExpansionPopup()
 
   const isLanding = location.pathname === '/'
   const isExplore = location.pathname === '/explorar'
@@ -49,9 +49,9 @@ export default function Layout() {
 
       <Footer />
 
-      {/* Floating waitlist popup — hidden on explore page to avoid clutter */}
+      {/* Floating expansion-interest popup — hidden on explore page to avoid clutter */}
       {!isExplore && (
-        <WaitlistPopup
+        <ExpansionPopup
           isReady={popup.isReady}
           isExpanded={popup.isExpanded}
           onCollapse={popup.collapse}

@@ -22,18 +22,18 @@ export default function Footer() {
 
           {/* Middle: Link sections */}
           <div className="grid grid-cols-2 gap-8">
-            {/* Lanzamiento */}
+            {/* Plataforma */}
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
-                Lanzamiento
+                Plataforma
               </h3>
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="#lista-espera"
+                    href="#expansion"
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Lista de Espera
+                    Pide en tu departamento
                   </a>
                 </li>
                 <li>
