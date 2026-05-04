@@ -16,7 +16,7 @@ describe('getRegisterAuthError', () => {
 
   it('maps invalid-email to a generic invalid-email message', () => {
     const info = getRegisterAuthError({ code: 'auth/invalid-email' })
-    expect(info.message).toMatch(/correo valido/i)
+    expect(info.message).toMatch(/correo válido/i)
     expect(info.isRetryable).toBe(true)
   })
 
@@ -34,7 +34,7 @@ describe('getRegisterAuthError', () => {
 
   it('maps network-request-failed to a connectivity message', () => {
     const info = getRegisterAuthError({ code: 'auth/network-request-failed' })
-    expect(info.message).toMatch(/conexion a internet/i)
+    expect(info.message).toMatch(/conexión a internet/i)
     expect(info.isRetryable).toBe(true)
   })
 

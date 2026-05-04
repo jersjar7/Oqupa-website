@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
             Correo enviado
           </h1>
           <p className="mt-2 text-base text-text-secondary">
-            Revisa tu bandeja de entrada y abre el enlace para crear o restablecer tu contrasena.
+            Revisa tu bandeja de entrada y abre el enlace para crear o restablecer tu contraseña.
           </p>
           <p className="mt-1 text-sm text-text-tertiary">
             Si no lo encuentras, revisa tu bandeja de spam.
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
             to="/app/login"
             className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
           >
-            Volver a Iniciar Sesion
+            Volver a iniciar sesión
           </Link>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
           <Input
-            label="Correo electronico"
+            label="Correo electrónico"
             type="email"
             autoComplete="email"
             placeholder="tu@correo.com"
@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
             to="/app/login"
             className="text-base text-secondary hover:text-secondary-hover"
           >
-            Volver a Iniciar Sesion
+            Volver a iniciar sesión
           </Link>
         </div>
       </div>

@@ -173,7 +173,7 @@ export default function AuthPipelinePage() {
                       toast.success('Correo verificado')
                       goToStep(user?.name ? 'phone' : 'name')
                     } else {
-                      setError('Aun no detectamos la verificacion. Revisa tu correo.')
+                      setError('Aún no detectamos la verificación. Revisa tu correo.')
                     }
                   } catch {
                     setError('No pudimos verificar el estado. Intenta de nuevo.')
@@ -227,7 +227,7 @@ export default function AuthPipelinePage() {
                       await authService.sendPhoneVerificationCode(phoneWithCountry)
                     setVerificationId(verId)
                     setSmsCooldown(60)
-                    toast.success('Codigo enviado')
+                    toast.success('Código enviado')
 
                     // Store pending phone — save to Firestore only after verification
                     pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
@@ -281,7 +281,7 @@ export default function AuthPipelinePage() {
                     }
 
                     await refreshUser()
-                    toast.success('Telefono verificado')
+                    toast.success('Teléfono verificado')
                     navigate(consumeReturnUrl() ?? '/app')
                   } catch (err) {
                     const errorInfo = getPhoneAuthError(err)
@@ -337,10 +337,10 @@ function NameStep({
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-        Como te llamas?
+        ¿Cómo te llamas?
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Tu nombre aparecera en tus publicaciones
+        Tu nombre aparecerá en tus publicaciones
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
@@ -348,7 +348,7 @@ function NameStep({
           label="Nombre completo"
           autoComplete="name"
           autoFocus
-          placeholder="Ej: Juan Perez"
+          placeholder="Ej: Juan Pérez"
           error={errors.name?.message}
           {...register('name')}
         />
@@ -398,10 +398,10 @@ function PhoneStep({
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-        Tu numero de telefono
+        Tu número de teléfono
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviaremos un codigo SMS para verificar tu numero
+        Te enviaremos un código SMS para verificar tu número
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
@@ -449,7 +449,7 @@ function PhoneStep({
           disabled={cooldown > 0}
           className="w-full"
         >
-          {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar codigo'}
+          {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar código'}
         </Button>
       </form>
 
@@ -459,7 +459,7 @@ function PhoneStep({
           onClick={onSkip}
           className="text-sm text-text-tertiary hover:text-text-secondary"
         >
-          Verificar despues
+          Verificar después
         </button>
       </div>
     </>
@@ -494,10 +494,10 @@ function VerifyCodeStep({
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-        Ingresa el codigo
+        Ingresa el código
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Enviamos un codigo de 6 digitos a tu telefono
+        Enviamos un código de 6 dígitos a tu teléfono
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
@@ -538,7 +538,7 @@ function VerifyCodeStep({
           disabled={cooldown > 0}
           className={`text-base ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-secondary hover:text-secondary-hover'}`}
         >
-          {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar codigo'}
+          {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar código'}
         </button>
         <span className="text-text-tertiary">|</span>
         <button
@@ -546,7 +546,7 @@ function VerifyCodeStep({
           onClick={onChangeNumber}
           className="text-base text-secondary hover:text-secondary-hover"
         >
-          Cambiar numero
+          Cambiar número
         </button>
       </div>
     </>
@@ -572,14 +572,14 @@ function EmailVerifyStep({
         Verifica tu correo
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviamos un enlace de verificacion
+        Te enviamos un enlace de verificación
         {email ? (
           <>
             {' '}a{' '}
             <span className="font-medium text-text-primary">{email}</span>
           </>
         ) : null}
-        . Abre el enlace y vuelve a esta pagina.
+        . Abre el enlace y vuelve a esta página.
       </p>
 
       <div className="mt-8 space-y-3">
@@ -589,7 +589,7 @@ function EmailVerifyStep({
           isLoading={isSubmitting}
           className="w-full"
         >
-          Ya verifique
+          Ya verifiqué
         </Button>
 
         <div className="text-center">
@@ -607,7 +607,7 @@ function EmailVerifyStep({
       </div>
 
       <p className="mt-6 text-center text-xs text-text-tertiary">
-        El enlace puede tardar un par de minutos en llegar. Revisa tambien
+        El enlace puede tardar un par de minutos en llegar. Revisa también
         tu carpeta de spam.
       </p>
     </>

@@ -30,10 +30,10 @@ vi.mock('@/lib/authErrors', () => ({
       ? (err as { code: string }).code
       : ''
     if (code === 'auth/email-already-in-use') {
-      return { message: 'Ya existe una cuenta con ese correo. Inicia sesion en su lugar.', isRetryable: false }
+      return { message: 'Ya existe una cuenta con ese correo. Inicia sesión en su lugar.', isRetryable: false }
     }
     if (code === 'auth/weak-password') {
-      return { message: 'La contrasena es muy debil. Usa al menos 6 caracteres.', isRetryable: true }
+      return { message: 'La contraseña es muy débil. Usa al menos 6 caracteres.', isRetryable: true }
     }
     return { message: 'No pudimos crear tu cuenta. Intenta de nuevo.', isRetryable: true }
   }),
@@ -77,10 +77,10 @@ function fillForm({
   fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
     target: { value: email },
   })
-  fireEvent.change(screen.getByLabelText(/^contrasena$/i), {
+  fireEvent.change(screen.getByLabelText(/^contraseña$/i), {
     target: { value: password },
   })
-  fireEvent.change(screen.getByLabelText(/confirma la contrasena/i), {
+  fireEvent.change(screen.getByLabelText(/confirma la contraseña/i), {
     target: { value: confirmPassword },
   })
 }
@@ -100,8 +100,8 @@ describe('RegisterPage', () => {
     it('renders email, password and confirmPassword fields', () => {
       renderPage()
       expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
-      expect(screen.getByLabelText(/^contrasena$/i)).toBeDefined()
-      expect(screen.getByLabelText(/confirma la contrasena/i)).toBeDefined()
+      expect(screen.getByLabelText(/^contraseña$/i)).toBeDefined()
+      expect(screen.getByLabelText(/confirma la contraseña/i)).toBeDefined()
     })
 
     it('renders the submit button', () => {
@@ -111,13 +111,13 @@ describe('RegisterPage', () => {
 
     it('renders a link back to login for users who already have an account', () => {
       renderPage()
-      const link = screen.getByRole('link', { name: /inicia sesion/i })
+      const link = screen.getByRole('link', { name: /inicia sesión/i })
       expect(link.getAttribute('href')).toBe('/app/login')
     })
 
     it('renders terms and privacy links', () => {
       renderPage()
-      expect(screen.getByRole('link', { name: /terminos/i })).toBeDefined()
+      expect(screen.getByRole('link', { name: /términos/i })).toBeDefined()
       expect(screen.getByRole('link', { name: /privacidad/i })).toBeDefined()
     })
   })
@@ -193,7 +193,7 @@ describe('RegisterPage', () => {
       fillForm({ email: 'not-an-email' })
       fireEvent.submit(document.querySelector('form')!)
       await waitFor(() => {
-        expect(screen.getByText(/correo valido/i)).toBeDefined()
+        expect(screen.getByText(/correo válido/i)).toBeDefined()
       })
       expect(mockAuthService.registerWithEmailAndPassword).not.toHaveBeenCalled()
     })
@@ -221,7 +221,7 @@ describe('RegisterPage', () => {
       fillForm()
       fireEvent.submit(document.querySelector('form')!)
       await waitFor(() => {
-        expect(screen.getByText(/muy debil/i)).toBeDefined()
+        expect(screen.getByText(/muy débil/i)).toBeDefined()
       })
     })
 

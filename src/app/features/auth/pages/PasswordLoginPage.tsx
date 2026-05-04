@@ -35,7 +35,7 @@ export default function PasswordLoginPage() {
       if (hasEmailLinkOnly) {
         await authService.sendPasswordSetupEmail(data.email)
         setLegacyNotice(
-          'Tu cuenta aun no tiene contrasena. Te enviamos un enlace a ' +
+          'Tu cuenta aún no tiene contraseña. Te enviamos un enlace a ' +
             data.email +
             ' para crear una en un solo paso.'
         )
@@ -57,7 +57,7 @@ export default function PasswordLoginPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Iniciar con Contrasena
+          Iniciar con contraseña
         </h1>
         <p className="mt-2 text-center text-base text-text-secondary">
           Ingresa a tu cuenta de Oqupa
@@ -104,7 +104,7 @@ export default function PasswordLoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <Input
-            label="Correo electronico"
+            label="Correo electrónico"
             type="email"
             autoComplete="email"
             placeholder="tu@correo.com"
@@ -113,10 +113,10 @@ export default function PasswordLoginPage() {
           />
 
           <Input
-            label="Contrasena"
+            label="Contraseña"
             type="password"
             autoComplete="current-password"
-            placeholder="Tu contrasena"
+            placeholder="Tu contraseña"
             error={errors.password?.message}
             revealToggle
             {...register('password')}
@@ -138,7 +138,7 @@ export default function PasswordLoginPage() {
             isLoading={isSubmitting}
             className="w-full"
           >
-            Iniciar Sesion
+            Iniciar sesión
           </Button>
         </form>
 
@@ -147,13 +147,13 @@ export default function PasswordLoginPage() {
             to="/app/forgot-password"
             className="text-base text-secondary hover:text-secondary-hover"
           >
-            Olvidaste tu contrasena?
+            ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
         <div className="mt-6 border-t border-border pt-4 text-center">
           <span className="text-base text-text-secondary">
-            No tienes cuenta?{' '}
+            ¿No tienes cuenta?{' '}
           </span>
           <Link
             to="/app/register"
