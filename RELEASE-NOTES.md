@@ -4,6 +4,30 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-04 — Web Signup Flow + Email Verification Gate
+
+### New Features
+- **Account creation on the web**: New `/app/register` page with email + password + confirm-password. The page existed originally but was deleted in the magic-link migration (2026-03-08, commit `5b10cf9`) and never restored when magic-link itself was retired — so the website had no path for new users to create an account at all. The login page now also surfaces a "No tienes cuenta? Crea una" CTA below the forgot-password link, and the register page links back to `/app/login` for users who already have an account.
+- **Email verification is now enforced**: After registration, the user lands on the existing post-auth pipeline at `/app/verify`, where a new first step ("Verifica tu correo") gates the rest of the flow. The step shows the user's email, a "Reenviar correo" action (re-sends the Firebase verification link), and a "Ya verifique" button that reloads the Firebase user and advances on success or shows "Aun no detectamos la verificacion" on failure. The pipeline is now 4 steps (email → name → phone → SMS code) instead of 3.
+
+### Security
+- **Dashboard blocks unverified email**: `VerifiedGuard` previously checked only name + phone. It now also redirects to the pipeline when `firebaseUser.emailVerified === false`, closing a gap where legacy accounts or users who manually navigated past the pipeline could reach the dashboard with an unverified email. Mid-registration users (Firebase auth user exists but Firestore doc hasn't loaded yet) are also redirected to the pipeline instead of being waved through to the dashboard.
+- **GuestGuard treats unverified email as "not fully verified"**: An already-logged-in user landing on `/app/login` is sent to `/app/verify` (not the dashboard) until email + name + phone are all done.
+
+### UX Improvements
+- **`SetPasswordPage` verifyEmail success now has a "Continuar" button**: When the verification action link is clicked in the same browser as the open signup session, the success screen sends the user back to `/app/verify` with one click instead of asking them to navigate manually. The "vuelve a la app de Oqupa" copy is preserved as a hint for users who clicked the link from a different device.
+
+### Technical
+- New `authService.sendEmailVerificationToCurrentUser()` (continueUrl `/app/verify`) and `authService.reloadCurrentFirebaseUser()`.
+- New `authStore.refreshFirebaseUser()` action so a verification flip done in another tab is visible without a sign-out/sign-in cycle.
+- New `getRegisterAuthError()` mapping in `lib/authErrors.ts` covers `email-already-in-use`, `invalid-email`, `weak-password`, `operation-not-allowed`, `too-many-requests`, `network-request-failed`, plus a generic fallback.
+- 23 new tests (`RegisterPage.test.tsx` 15 cases + `lib/authErrors.test.ts` 8 cases) plus extended coverage on `AuthPipelinePage`, `VerifiedGuard`, `GuestGuard`, and `PasswordLoginPage`. 244/244 passing.
+
+### Deployment Notes
+- **Firebase Console action URL must be customized per project** for the verification email link to land on our Oqupa-branded `SetPasswordPage` instead of Firebase's default English hosted page. Production: already set to `https://oqupa.com/app/auth/set-password`. Staging: still pending — the email currently uses the default `https://oqupa-staging.firebaseapp.com/__/auth/action`. To fix, go to Firebase Console → Authentication → Templates → Email address verification → pencil → "customize action URL" → set to `https://oqupa-staging.web.app/app/auth/set-password`. Same console also lets you change the email language to Spanish (Latin America).
+
+---
+
 ## 2026-04-25 — Staging Image URL Fix + AnimatedImage Fallback
 
 ### Bug Fixes

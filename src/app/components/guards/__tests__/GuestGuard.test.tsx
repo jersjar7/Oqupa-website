@@ -7,8 +7,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 // Mock auth store with controllable state
 const mockAuthState = {
-  firebaseUser: null as unknown,
-  user: null as { isPhoneVerified: boolean } | null,
+  firebaseUser: null as { uid: string; emailVerified: boolean } | null,
+  user: null as { name?: string; isPhoneVerified: boolean } | null,
   isLoading: true,
   isInitialized: false,
 }
@@ -115,11 +115,11 @@ describe('GuestGuard', () => {
   // ── Authenticated user redirect ─────────────────────────────────────────
 
   describe('authenticated user redirect', () => {
-    it('redirects verified user to /app', () => {
+    it('redirects fully verified user to /app', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.firebaseUser = { uid: 'uid-123' }
-      mockAuthState.user = { isPhoneVerified: true }
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
 
       renderWithRouter('/app/login')
 
@@ -127,11 +127,23 @@ describe('GuestGuard', () => {
       expect(screen.getByTestId('dashboard')).toBeDefined()
     })
 
-    it('redirects unverified user to /app/verify', () => {
+    it('redirects user with unverified phone to /app/verify', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.firebaseUser = { uid: 'uid-123' }
-      mockAuthState.user = { isPhoneVerified: false }
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
+
+      renderWithRouter('/app/login')
+
+      expect(screen.queryByTestId('login-page')).toBeNull()
+      expect(screen.getByTestId('verify')).toBeDefined()
+    })
+
+    it('redirects user with unverified email to /app/verify', () => {
+      mockAuthState.isInitialized = true
+      mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: false }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
 
       renderWithRouter('/app/login')
 
@@ -142,7 +154,7 @@ describe('GuestGuard', () => {
     it('redirects to /app/verify when user doc is null (mid-registration)', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.firebaseUser = { uid: 'uid-123' }
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: false }
       mockAuthState.user = null // no Firestore doc yet
 
       renderWithRouter('/app/login')
@@ -154,8 +166,8 @@ describe('GuestGuard', () => {
     it('redirects to stored return URL when available', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.firebaseUser = { uid: 'uid-123' }
-      mockAuthState.user = { isPhoneVerified: true }
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
       mockConsumeReturnUrl.mockReturnValueOnce('/app')
 
       renderWithRouter('/app/login')
@@ -189,8 +201,8 @@ describe('GuestGuard', () => {
       // should redirect immediately, never showing the login form.
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.firebaseUser = { uid: 'persisted-uid' }
-      mockAuthState.user = { isPhoneVerified: true }
+      mockAuthState.firebaseUser = { uid: 'persisted-uid', emailVerified: true }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
 
       renderWithRouter('/app/login')
 

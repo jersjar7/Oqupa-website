@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithEmailLink,
   isSignInWithEmailLink,
   fetchSignInMethodsForEmail,
@@ -74,6 +75,28 @@ export const authService = {
 
   async logout() {
     await signOut(auth)
+  },
+
+  // Sends Firebase's verifyEmail action link to the currently signed-in user.
+  // The action handler lives at /app/auth/set-password (mode=verifyEmail);
+  // SetPasswordPage applies the code and shows the success screen.
+  async sendEmailVerificationToCurrentUser() {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    const url = import.meta.env.DEV
+      ? 'http://localhost:5173/app/verify'
+      : 'https://oqupa.com/app/verify'
+    await sendEmailVerification(user, { url, handleCodeInApp: false })
+  },
+
+  // Re-fetches the auth user from the server so a freshly verified email
+  // (verified in another tab/device) flips emailVerified locally without
+  // requiring a sign-out/sign-in.
+  async reloadCurrentFirebaseUser() {
+    const user = auth.currentUser
+    if (!user) return null
+    await user.reload()
+    return auth.currentUser
   },
 
   async requestPasswordReset(email: string) {

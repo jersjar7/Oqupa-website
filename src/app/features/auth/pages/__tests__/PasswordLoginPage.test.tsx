@@ -84,6 +84,12 @@ describe('PasswordLoginPage', () => {
       // Page has two forgot-password links (one in accordion, one below form)
       expect(screen.getAllByRole('link', { name: /olvidaste/i }).length).toBeGreaterThan(0)
     })
+
+    it('renders a link to register for users without an account', () => {
+      renderPage()
+      const link = screen.getByRole('link', { name: /crea una/i })
+      expect(link.getAttribute('href')).toBe('/app/register')
+    })
   })
 
   describe('successful login', () => {

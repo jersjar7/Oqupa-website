@@ -18,9 +18,9 @@ import { consumeReturnUrl } from '@/lib/utils'
 import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 
-type PipelineStep = 'name' | 'phone' | 'verify-code'
+type PipelineStep = 'verify-email' | 'name' | 'phone' | 'verify-code'
 
-const STEP_ORDER: PipelineStep[] = ['name', 'phone', 'verify-code']
+const STEP_ORDER: PipelineStep[] = ['verify-email', 'name', 'phone', 'verify-code']
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -39,10 +39,13 @@ const stepVariants = {
 
 export default function AuthPipelinePage() {
   const navigate = useNavigate()
-  const { user, firebaseUser, refreshUser } = useAuthStore()
+  const { user, firebaseUser, refreshUser, refreshFirebaseUser } = useAuthStore()
 
-  // Determine starting step based on user state
+  // Determine starting step based on user state. Email verification gates
+  // the rest of the pipeline — until emailVerified flips to true, no other
+  // step is reachable.
   const getInitialStep = (): PipelineStep => {
+    if (firebaseUser && !firebaseUser.emailVerified) return 'verify-email'
     if (!user?.name) return 'name'
     if (!user?.isPhoneVerified) return 'phone'
     return 'name' // fallback, should redirect
@@ -73,12 +76,22 @@ export default function AuthPipelinePage() {
     return () => clearTimeout(timer)
   }, [smsCooldown])
 
-  // Redirect if already fully verified
+  // Redirect if already fully verified (email + name + phone)
   useEffect(() => {
-    if (user?.name && user?.isPhoneVerified) {
+    if (firebaseUser?.emailVerified && user?.name && user?.isPhoneVerified) {
       navigate(consumeReturnUrl() ?? '/app')
     }
-  }, [user, navigate])
+  }, [firebaseUser, user, navigate])
+
+  // If emailVerified flips false unexpectedly (e.g. user re-loaded), pull
+  // them back to the verify-email step. Conversely, when they verify in
+  // another tab and come back to this one, advance past it on next render.
+  useEffect(() => {
+    if (firebaseUser && !firebaseUser.emailVerified && step !== 'verify-email') {
+      goToStep('verify-email')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.emailVerified])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -102,8 +115,11 @@ export default function AuthPipelinePage() {
   }, [])
 
   const stepNumber =
-    step === 'name' ? 1 : step === 'phone' ? 2 : 3
-  const totalSteps = 3
+    step === 'verify-email' ? 1
+      : step === 'name' ? 2
+      : step === 'phone' ? 3
+      : 4
+  const totalSteps = 4
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
@@ -132,6 +148,43 @@ export default function AuthPipelinePage() {
             exit="exit"
             transition={{ duration: 0.25, ease: 'easeInOut' }}
           >
+            {step === 'verify-email' && (
+              <EmailVerifyStep
+                email={firebaseUser?.email ?? null}
+                isSubmitting={isSubmitting}
+                onResend={async () => {
+                  setError(null)
+                  setIsSubmitting(true)
+                  try {
+                    await authService.sendEmailVerificationToCurrentUser()
+                    toast.success('Te enviamos un nuevo enlace')
+                  } catch {
+                    toast.error('No pudimos reenviar el correo. Intenta de nuevo.')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+                onCheck={async () => {
+                  setError(null)
+                  setIsSubmitting(true)
+                  try {
+                    const refreshed = await refreshFirebaseUser()
+                    if (refreshed?.emailVerified) {
+                      toast.success('Correo verificado')
+                      goToStep(user?.name ? 'phone' : 'name')
+                    } else {
+                      setError('Aun no detectamos la verificacion. Revisa tu correo.')
+                    }
+                  } catch {
+                    setError('No pudimos verificar el estado. Intenta de nuevo.')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+                error={error}
+              />
+            )}
+
             {step === 'name' && (
               <NameStep
                 error={error}
@@ -496,6 +549,67 @@ function VerifyCodeStep({
           Cambiar numero
         </button>
       </div>
+    </>
+  )
+}
+
+function EmailVerifyStep({
+  email,
+  isSubmitting,
+  onResend,
+  onCheck,
+  error,
+}: {
+  email: string | null
+  isSubmitting: boolean
+  onResend: () => void
+  onCheck: () => void
+  error: string | null
+}) {
+  return (
+    <>
+      <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
+        Verifica tu correo
+      </h1>
+      <p className="mt-2 text-center text-base text-text-secondary">
+        Te enviamos un enlace de verificacion
+        {email ? (
+          <>
+            {' '}a{' '}
+            <span className="font-medium text-text-primary">{email}</span>
+          </>
+        ) : null}
+        . Abre el enlace y vuelve a esta pagina.
+      </p>
+
+      <div className="mt-8 space-y-3">
+        <Button
+          type="button"
+          onClick={onCheck}
+          isLoading={isSubmitting}
+          className="w-full"
+        >
+          Ya verifique
+        </Button>
+
+        <div className="text-center">
+          <Button
+            type="button"
+            onClick={onResend}
+            variant="text"
+            disabled={isSubmitting}
+          >
+            Reenviar correo
+          </Button>
+        </div>
+
+        {error && <p className="text-sm text-error">{error}</p>}
+      </div>
+
+      <p className="mt-6 text-center text-xs text-text-tertiary">
+        El enlace puede tardar un par de minutos en llegar. Revisa tambien
+        tu carpeta de spam.
+      </p>
     </>
   )
 }
