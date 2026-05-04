@@ -15,7 +15,7 @@ function extractFirebaseErrorCode(error: unknown): string {
 
 const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
   'auth/invalid-phone-number': {
-    message: 'Numero de telefono invalido. Verifica que este en formato correcto.',
+    message: 'Número de teléfono inválido. Verifica que esté en formato correcto.',
     isRetryable: true,
   },
   'auth/too-many-requests': {
@@ -23,45 +23,45 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     isRetryable: false,
   },
   'auth/quota-exceeded': {
-    message: 'Se excedio el limite de verificaciones. Intenta manana.',
+    message: 'Se excedió el límite de verificaciones. Intenta mañana.',
     isRetryable: false,
   },
   'auth/invalid-verification-code': {
-    message: 'Codigo de verificacion incorrecto. Revisa el codigo e intenta de nuevo.',
+    message: 'Código de verificación incorrecto. Revisa el código e intenta de nuevo.',
     isRetryable: true,
   },
   'auth/code-expired': {
-    message: 'Codigo expirado. Usa "Reenviar codigo" para obtener uno nuevo.',
+    message: 'Código expirado. Usa "Reenviar código" para obtener uno nuevo.',
     isRetryable: true,
   },
   'auth/session-expired': {
-    message: 'Codigo expirado. Usa "Reenviar codigo" para obtener uno nuevo.',
+    message: 'Código expirado. Usa "Reenviar código" para obtener uno nuevo.',
     isRetryable: true,
   },
   'auth/credential-already-in-use': {
-    message: 'Este numero ya esta asociado a otra cuenta. Usa un numero diferente.',
+    message: 'Este número ya está asociado a otra cuenta. Usa un número diferente.',
     isRetryable: false,
   },
   'auth/provider-already-linked': {
-    message: 'Ya tienes un numero vinculado a esta cuenta.',
+    message: 'Ya tienes un número vinculado a esta cuenta.',
     isRetryable: false,
   },
   'auth/requires-recent-login': {
-    message: 'Tu sesion ha expirado. Inicia sesion nuevamente.',
+    message: 'Tu sesión ha expirado. Inicia sesión nuevamente.',
     isRetryable: false,
   },
   'auth/captcha-check-failed': {
-    message: 'La verificacion de seguridad fallo. Recarga la pagina e intenta de nuevo.',
+    message: 'La verificación de seguridad falló. Recarga la página e intenta de nuevo.',
     recoveryHint: 'Si persiste, intenta desde otro navegador.',
     isRetryable: true,
   },
   'auth/missing-client-identifier': {
-    message: 'La verificacion de seguridad fallo. Recarga la pagina e intenta de nuevo.',
+    message: 'La verificación de seguridad falló. Recarga la página e intenta de nuevo.',
     recoveryHint: 'Si persiste, intenta desde otro navegador.',
     isRetryable: true,
   },
   'auth/network-request-failed': {
-    message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.',
+    message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.',
     isRetryable: true,
   },
 }
@@ -80,15 +80,15 @@ export function getLoginAuthError(error: unknown): AuthErrorInfo {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return { message: 'Correo o contrasena incorrectos.', isRetryable: true }
+      return { message: 'Correo o contraseña incorrectos.', isRetryable: true }
     case 'auth/too-many-requests':
       return { message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.', isRetryable: false }
     case 'auth/user-disabled':
       return { message: 'Esta cuenta ha sido desactivada.', isRetryable: false }
     case 'auth/network-request-failed':
-      return { message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.', isRetryable: true }
+      return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
-      return { message: 'Error al iniciar sesion. Intenta de nuevo.', isRetryable: true }
+      return { message: 'Error al iniciar sesión. Intenta de nuevo.', isRetryable: true }
   }
 }
 
@@ -97,19 +97,19 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
   switch (code) {
     case 'auth/email-already-in-use':
       return {
-        message: 'Ya existe una cuenta con ese correo. Inicia sesion en su lugar.',
+        message: 'Ya existe una cuenta con ese correo. Inicia sesión en su lugar.',
         isRetryable: false,
       }
     case 'auth/invalid-email':
-      return { message: 'Ingresa un correo valido.', isRetryable: true }
+      return { message: 'Ingresa un correo válido.', isRetryable: true }
     case 'auth/weak-password':
       return {
-        message: 'La contrasena es muy debil. Usa al menos 6 caracteres.',
+        message: 'La contraseña es muy débil. Usa al menos 6 caracteres.',
         isRetryable: true,
       }
     case 'auth/operation-not-allowed':
       return {
-        message: 'El registro con correo y contrasena esta deshabilitado. Contacta a soporte.',
+        message: 'El registro con correo y contraseña está deshabilitado. Contacta a soporte.',
         isRetryable: false,
       }
     case 'auth/too-many-requests':
@@ -119,7 +119,7 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
       }
     case 'auth/network-request-failed':
       return {
-        message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.',
+        message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.',
         isRetryable: true,
       }
     default:
@@ -141,7 +141,7 @@ export function getMagicLinkAuthError(error: unknown): AuthErrorInfo {
     case 'auth/invalid-email':
       return { message: 'El correo no coincide con el enlace. Intenta de nuevo.', isRetryable: true }
     case 'auth/network-request-failed':
-      return { message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.', isRetryable: true }
+      return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
       return { message: 'Error al enviar el enlace. Verifica tu correo.', isRetryable: true }
   }
@@ -155,8 +155,8 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
     case 'auth/user-not-found':
       return { message: 'No existe una cuenta con ese correo.', isRetryable: true }
     case 'auth/network-request-failed':
-      return { message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.', isRetryable: true }
+      return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
-      return { message: 'Error al enviar el correo. Verifica tu direccion.', isRetryable: true }
+      return { message: 'Error al enviar el correo. Verifica tu dirección.', isRetryable: true }
   }
 }

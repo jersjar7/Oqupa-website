@@ -4,6 +4,17 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-04 — Spanish Typography Pass on Auth Pipeline
+
+### UX Improvements
+- **Tildes restored across every auth page**: All user-facing strings on `/app/login`, `/app/register`, `/app/forgot-password`, `/app/auth/complete`, `/app/auth/set-password`, and the four-step `/app/verify` pipeline now carry their proper Spanish accents (contraseña, teléfono, número, código, sesión, verificación, página, política, términos, etc.) and inverted question marks where appropriate (¿Cómo te llamas?, ¿Olvidaste tu contraseña?, ¿No tienes cuenta?, ¿Ya tienes cuenta?). Buttons follow Spanish sentence-case ("Crear cuenta", "Iniciar sesión", "Volver a iniciar sesión") instead of title-case.
+- **Form validation messages, toast notifications, and Firebase error mappings updated** to match: every entry in `authSchema.ts` and every catalog in `authErrors.ts` (login, register, phone, magic-link, forgot-password) now uses correct Spanish accents.
+
+### Technical
+- Tests refreshed to assert against the tilde'd strings (`/cómo te llamas/i`, `/correo válido/i`, `/aún no detectamos/i`, etc.). 244/244 still passing — no logic changed.
+
+---
+
 ## 2026-05-04 — Web Signup Flow + Email Verification Gate
 
 ### New Features

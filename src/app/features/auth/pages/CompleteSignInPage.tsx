@@ -74,7 +74,7 @@ export default function CompleteSignInPage() {
         <div className="text-center">
           <Spinner size="lg" />
           <p className="mt-4 text-base text-text-secondary">
-            Iniciando sesion...
+            Iniciando sesión...
           </p>
         </div>
       </div>
@@ -94,7 +94,7 @@ export default function CompleteSignInPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
             <Input
-              label="Correo electronico"
+              label="Correo electrónico"
               type="email"
               autoComplete="email"
               placeholder="tu@correo.com"
@@ -139,7 +139,7 @@ export default function CompleteSignInPage() {
           </svg>
         </div>
         <h1 className="mt-4 font-serif text-[28px] font-normal text-text-primary">
-          Enlace no valido
+          Enlace no válido
         </h1>
         <p className="mt-2 text-base text-text-secondary">{error}</p>
         <Link
