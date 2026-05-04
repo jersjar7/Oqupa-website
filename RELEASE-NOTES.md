@@ -4,6 +4,26 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-04 — Launch-Day Landing Page Cleanup
+
+### UX Improvements
+- **Hero now uses two direct CTAs.** Dropped the "4 de Mayo / 11 de Mayo" date stack and the modal-mediated flow. Both desktop and mobile heroes show "Publicar mi propiedad" → `/app/listings/new` (anonymous visitors are routed through `/app/login` and bounced back via the `setReturnUrl` mechanism) and "Explorar Piura" → `/explorar`. This removes the pre-launch "adelántate" / "11 de mayo" framing that was incoherent on launch day.
+- **Waitlist UI repurposed for expansion-city interest.** The platform launched in Piura today, so the "lista de espera" framing no longer fits. The same UI is now an expansion-interest signup: heading "Lleva Oqupa a tu departamento" with a `<select>` dropdown of Peru's 24 departamentos + Callao (excluding Piura). The floating popup, the in-page section, and the navigation link all share the new framing. Submit button: "Quiero Oqupa en mi departamento". Section anchor: `#lista-espera` → `#expansion`.
+- **Footer column heading "Lanzamiento" → "Plataforma"**, and its first link "Lista de Espera" → "Pide en tu departamento" pointing at `#expansion`.
+- **Header sign-in CTA tildes** (desktop + mobile): "Iniciar Sesion" → "Iniciar sesión". Slipped the prior tildes pass since it lives in the layout, not the auth pipeline.
+- **PiuraOnlyBanner copy** moved from the pre-launch "Estamos lanzando" to the present-tense "Lanzamos en Piura". The "Estás fuera de Piura?" link now scrolls to the in-page expansion form instead of opening a `mailto:` draft.
+
+### Removed
+- `src/components/landing/SocialProofSection.tsx` — was never imported anywhere; dead code from a prior design.
+- `src/components/landing/PostPropertyModal.tsx`, `src/components/landing/SearchPropertyModal.tsx` — both modals were intermediate "are you sure?" dialogs added for the pre-launch teaser. With the hero CTAs going direct now, they have no reason to exist.
+
+### Technical
+- New `src/lib/peruDepartamentos.ts` exports the canonical list (excluding Piura) used by the dropdown and form validation.
+- Renamed `WaitlistSection` → `ExpansionSection`, `WaitlistPopup` → `ExpansionPopup`, `useWaitlistForm` → `useExpansionForm`, `useWaitlistPopup` → `useExpansionPopup`. Internal pubsub event name (`expand-waitlist-popup`) and the Firestore collection name (`waitlist`) were intentionally **not** renamed — the latter would force a Trigger Email rule update and a data migration for zero functional gain. The data shape inside changed: `WaitlistEntry.city` (free text) → `WaitlistEntry.departamento` (allowlist value), and the `budget` field was dropped (always empty). Email subject/body updated to "Solicitud de expansión: {departamento}".
+- 244/244 tests still pass — no logic changed, the form rewrite stayed compatible with existing assertions because no tests targeted the legacy waitlist form directly.
+
+---
+
 ## 2026-05-04 — Spanish Typography Pass on Auth Pipeline
 
 ### UX Improvements
