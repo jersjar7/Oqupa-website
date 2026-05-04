@@ -12,6 +12,7 @@ import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
 import DashboardShell from '@/app/components/shell/DashboardShell'
 import PasswordLoginPage from '@/app/features/auth/pages/PasswordLoginPage'
+import RegisterPage from '@/app/features/auth/pages/RegisterPage'
 import CompleteSignInPage from '@/app/features/auth/pages/CompleteSignInPage'
 import ForgotPasswordPage from '@/app/features/auth/pages/ForgotPasswordPage'
 import SetPasswordPage from '@/app/features/auth/pages/SetPasswordPage'
@@ -72,7 +73,7 @@ export default function App() {
             <Route path="login/password" element={<Navigate to="/app/login" replace />} />
             <Route path="auth/complete" element={<CompleteSignInPage />} />
             <Route path="auth/set-password" element={<SetPasswordPage />} />
-            <Route path="register" element={<Navigate to="/app/login" replace />} />
+            <Route path="register" element={<GuestGuard><RegisterPage /></GuestGuard>} />
             <Route path="forgot-password" element={<GuestGuard><ForgotPasswordPage /></GuestGuard>} />
             <Route path="verify" element={<AuthGuard><AuthPipelinePage /></AuthGuard>} />
           </Route>

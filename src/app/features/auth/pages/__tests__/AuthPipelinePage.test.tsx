@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
@@ -14,8 +14,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 const mockAuthState = vi.hoisted(() => ({
   user: null as { name?: string; isPhoneVerified?: boolean } | null,
-  firebaseUser: null as { uid: string } | null,
+  firebaseUser: null as
+    | { uid: string; email?: string | null; emailVerified?: boolean }
+    | null,
   refreshUser: vi.fn(),
+  refreshFirebaseUser: vi.fn(),
 }))
 
 vi.mock('@/stores/authStore', () => ({
@@ -29,6 +32,7 @@ const mockAuthService = vi.hoisted(() => ({
   updateUserContactInfo: vi.fn(),
   initializeRecaptcha: vi.fn(),
   cleanupRecaptcha: vi.fn(),
+  sendEmailVerificationToCurrentUser: vi.fn(),
 }))
 
 vi.mock('@/services/authService', () => ({
@@ -88,8 +92,20 @@ describe('AuthPipelinePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuthState.user = null
-    mockAuthState.firebaseUser = { uid: 'uid-123' }
+    // Default fixture: signed-in with email already verified, so existing
+    // tests focus on the name/phone/code steps. The email-verify step has
+    // its own describe block below.
+    mockAuthState.firebaseUser = {
+      uid: 'uid-123',
+      email: 'test@example.com',
+      emailVerified: true,
+    }
     mockAuthState.refreshUser.mockResolvedValue(undefined)
+    mockAuthState.refreshFirebaseUser.mockResolvedValue({
+      uid: 'uid-123',
+      email: 'test@example.com',
+      emailVerified: true,
+    })
   })
 
   describe('redirects', () => {
@@ -110,8 +126,74 @@ describe('AuthPipelinePage', () => {
     })
   })
 
+  describe('email-verify step', () => {
+    beforeEach(() => {
+      mockAuthState.firebaseUser = {
+        uid: 'uid-123',
+        email: 'new@example.com',
+        emailVerified: false,
+      }
+    })
+
+    it('shows email-verify step first when email is unverified', () => {
+      renderPage()
+      expect(screen.getByText(/verifica tu correo/i)).toBeDefined()
+    })
+
+    it('renders the user email in the body copy', () => {
+      renderPage()
+      expect(screen.getByText('new@example.com')).toBeDefined()
+    })
+
+    it('shows step 1 of 4 progress on the email step', () => {
+      renderPage()
+      expect(screen.getByText(/paso 1 de 4/i)).toBeDefined()
+    })
+
+    it('does not show the name step while email is unverified', () => {
+      renderPage()
+      expect(screen.queryByText(/como te llamas/i)).toBeNull()
+    })
+
+    it('calls sendEmailVerificationToCurrentUser when "Reenviar correo" is clicked', async () => {
+      mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined)
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /reenviar correo/i }))
+      await waitFor(() => {
+        expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled()
+      })
+    })
+
+    it('advances to name step when "Ya verifique" finds emailVerified=true', async () => {
+      mockAuthState.refreshFirebaseUser.mockResolvedValueOnce({
+        uid: 'uid-123',
+        email: 'new@example.com',
+        emailVerified: true,
+      })
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /ya verifique/i }))
+      await waitFor(() => {
+        expect(screen.getByText(/como te llamas/i)).toBeDefined()
+      })
+    })
+
+    it('shows error and stays on step when "Ya verifique" still finds emailVerified=false', async () => {
+      mockAuthState.refreshFirebaseUser.mockResolvedValueOnce({
+        uid: 'uid-123',
+        email: 'new@example.com',
+        emailVerified: false,
+      })
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /ya verifique/i }))
+      await waitFor(() => {
+        expect(screen.getByText(/aun no detectamos/i)).toBeDefined()
+      })
+      expect(screen.getByText(/verifica tu correo/i)).toBeDefined()
+    })
+  })
+
   describe('name step', () => {
-    it('shows name step when user has no name', () => {
+    it('shows name step when email is verified and user has no name', () => {
       mockAuthState.user = null
       renderPage()
       expect(screen.getByText(/como te llamas/i)).toBeDefined()
@@ -123,10 +205,10 @@ describe('AuthPipelinePage', () => {
       expect(screen.getByLabelText(/nombre/i)).toBeDefined()
     })
 
-    it('shows step 1 of 3 progress', () => {
+    it('shows step 2 of 4 progress', () => {
       mockAuthState.user = null
       renderPage()
-      expect(screen.getByText(/paso 1 de 3/i)).toBeDefined()
+      expect(screen.getByText(/paso 2 de 4/i)).toBeDefined()
     })
   })
 

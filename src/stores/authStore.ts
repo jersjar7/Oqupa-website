@@ -13,6 +13,7 @@ interface AuthState {
   _unsubscribe: (() => void) | null
   initialize: () => void
   refreshUser: () => Promise<void>
+  refreshFirebaseUser: () => Promise<FirebaseUser | null>
   setUser: (user: User | null) => void
   reset: () => void
 }
@@ -165,6 +166,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       )
       set({ user })
     }
+  },
+
+  // Re-fetches the Firebase auth user from the server. Needed after the
+  // email-verification action link is opened in another tab/device — without
+  // the reload, emailVerified stays cached as false in this session.
+  refreshFirebaseUser: async () => {
+    const current = auth.currentUser
+    if (!current) return null
+    await current.reload()
+    const refreshed = auth.currentUser
+    set({ firebaseUser: refreshed })
+    return refreshed
   },
 
   setUser: (user) => set({ user }),

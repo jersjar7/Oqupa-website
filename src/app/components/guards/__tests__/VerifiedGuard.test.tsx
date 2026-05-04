@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 const mockAuthState = {
   user: null as { name?: string; isPhoneVerified: boolean } | null,
+  firebaseUser: null as { uid: string; emailVerified: boolean } | null,
   isLoading: true,
   isInitialized: false,
 }
@@ -42,6 +43,7 @@ function renderWithRouter() {
 describe('VerifiedGuard', () => {
   beforeEach(() => {
     mockAuthState.user = null
+    mockAuthState.firebaseUser = null
     mockAuthState.isLoading = true
     mockAuthState.isInitialized = false
   })
@@ -59,20 +61,23 @@ describe('VerifiedGuard', () => {
     })
   })
 
-  describe('no user (mid-registration)', () => {
-    it('renders children when user doc is null', () => {
+  describe('mid-registration', () => {
+    it('redirects to /app/verify when firebaseUser exists but Firestore doc has not loaded yet', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
       mockAuthState.user = null
       renderWithRouter()
-      expect(screen.getByTestId('protected')).toBeDefined()
+      expect(screen.queryByTestId('protected')).toBeNull()
+      expect(screen.getByTestId('verify-page')).toBeDefined()
     })
   })
 
   describe('fully verified user', () => {
-    it('renders children when user has name and phone verified', () => {
+    it('renders children when email + name + phone are all verified', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
       mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
       renderWithRouter()
       expect(screen.getByTestId('protected')).toBeDefined()
@@ -81,9 +86,20 @@ describe('VerifiedGuard', () => {
   })
 
   describe('unverified user redirect', () => {
+    it('redirects to /app/verify when email is not verified', () => {
+      mockAuthState.isInitialized = true
+      mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: false }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
+      renderWithRouter()
+      expect(screen.queryByTestId('protected')).toBeNull()
+      expect(screen.getByTestId('verify-page')).toBeDefined()
+    })
+
     it('redirects to /app/verify when user has no name', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
       mockAuthState.user = { name: undefined, isPhoneVerified: true }
       renderWithRouter()
       expect(screen.queryByTestId('protected')).toBeNull()
@@ -93,6 +109,7 @@ describe('VerifiedGuard', () => {
     it('redirects to /app/verify when phone is not verified', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
+      mockAuthState.firebaseUser = { uid: 'uid-123', emailVerified: true }
       mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
       renderWithRouter()
       expect(screen.queryByTestId('protected')).toBeNull()

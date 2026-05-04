@@ -7,7 +7,7 @@ interface VerifiedGuardProps {
 }
 
 export default function VerifiedGuard({ children }: VerifiedGuardProps) {
-  const { user, isLoading, isInitialized } = useAuthStore()
+  const { user, firebaseUser, isLoading, isInitialized } = useAuthStore()
 
   if (!isInitialized || isLoading) {
     return (
@@ -17,8 +17,14 @@ export default function VerifiedGuard({ children }: VerifiedGuardProps) {
     )
   }
 
-  // Redirect to pipeline if not fully verified
-  if (user && (!user.name || !user.isPhoneVerified)) {
+  // Redirect to pipeline until email + name + phone are all verified.
+  // Email verification is non-negotiable: an unverified email blocks the
+  // dashboard the same way an unset name or unverified phone does.
+  const needsPipeline =
+    (firebaseUser && !firebaseUser.emailVerified) ||
+    !user?.name ||
+    !user?.isPhoneVerified
+  if (needsPipeline) {
     return <Navigate to="/app/verify" replace />
   }
 

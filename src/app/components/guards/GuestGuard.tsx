@@ -20,9 +20,9 @@ export default function GuestGuard({ children }: GuestGuardProps) {
   }
 
   if (firebaseUser) {
-    const destination = user?.isPhoneVerified
-      ? (consumeReturnUrl() ?? '/app')
-      : '/app/verify'
+    const fullyVerified =
+      firebaseUser.emailVerified && user?.name && user?.isPhoneVerified
+    const destination = fullyVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify'
     return <Navigate to={destination} state={{ from: location }} replace />
   }
 

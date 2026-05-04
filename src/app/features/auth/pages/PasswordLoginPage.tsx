@@ -150,6 +150,18 @@ export default function PasswordLoginPage() {
             Olvidaste tu contrasena?
           </Link>
         </div>
+
+        <div className="mt-6 border-t border-border pt-4 text-center">
+          <span className="text-base text-text-secondary">
+            No tienes cuenta?{' '}
+          </span>
+          <Link
+            to="/app/register"
+            className="text-base font-medium text-secondary hover:text-secondary-hover"
+          >
+            Crea una
+          </Link>
+        </div>
       </div>
     </div>
   )
