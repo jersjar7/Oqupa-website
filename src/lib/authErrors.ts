@@ -92,6 +92,41 @@ export function getLoginAuthError(error: unknown): AuthErrorInfo {
   }
 }
 
+export function getRegisterAuthError(error: unknown): AuthErrorInfo {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return {
+        message: 'Ya existe una cuenta con ese correo. Inicia sesion en su lugar.',
+        isRetryable: false,
+      }
+    case 'auth/invalid-email':
+      return { message: 'Ingresa un correo valido.', isRetryable: true }
+    case 'auth/weak-password':
+      return {
+        message: 'La contrasena es muy debil. Usa al menos 6 caracteres.',
+        isRetryable: true,
+      }
+    case 'auth/operation-not-allowed':
+      return {
+        message: 'El registro con correo y contrasena esta deshabilitado. Contacta a soporte.',
+        isRetryable: false,
+      }
+    case 'auth/too-many-requests':
+      return {
+        message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.',
+        isRetryable: false,
+      }
+    case 'auth/network-request-failed':
+      return {
+        message: 'Error de conexion a internet. Verifica tu conexion e intenta de nuevo.',
+        isRetryable: true,
+      }
+    default:
+      return { message: 'No pudimos crear tu cuenta. Intenta de nuevo.', isRetryable: true }
+  }
+}
+
 export function getMagicLinkAuthError(error: unknown): AuthErrorInfo {
   const code = extractFirebaseErrorCode(error)
   switch (code) {

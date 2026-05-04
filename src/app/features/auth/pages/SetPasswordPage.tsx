@@ -148,11 +148,18 @@ export default function SetPasswordPage() {
           <p className="mt-2 text-base text-text-secondary">
             Tu correo{' '}
             <span className="font-medium text-text-primary">{state.email}</span>{' '}
-            quedo verificado. Vuelve a la app Oqupa para continuar con el registro.
+            quedo verificado.
           </p>
-          <p className="mt-6 text-sm text-text-tertiary">
-            Si la app esta abierta en tu telefono, deberia detectar la
-            verificacion automaticamente en pocos segundos.
+          <Button
+            type="button"
+            onClick={() => navigate('/app/verify', { replace: true })}
+            className="mt-6 w-full"
+          >
+            Continuar
+          </Button>
+          <p className="mt-4 text-sm text-text-tertiary">
+            Si llegaste aqui desde la app de Oqupa en tu telefono, vuelve a
+            la app: detectara la verificacion automaticamente.
           </p>
         </div>
       </div>
