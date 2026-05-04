@@ -51,7 +51,7 @@ export default function SetPasswordPage() {
       if (!oobCode) {
         setState({
           kind: 'invalid',
-          message: 'Falta el codigo de configuracion. Usa el enlace del correo.',
+          message: 'Falta el código de configuración. Usa el enlace del correo.',
         })
         return
       }
@@ -73,8 +73,8 @@ export default function SetPasswordPage() {
             kind: 'invalid',
             message:
               mode === 'verifyEmail'
-                ? 'Este enlace de verificacion expiro o ya fue usado. Solicita uno nuevo desde la app.'
-                : 'Este enlace expiro o ya fue usado. Solicita uno nuevo desde "Olvidaste tu contrasena".',
+                ? 'Este enlace de verificación expiró o ya fue usado. Solicita uno nuevo desde la app.'
+                : 'Este enlace expiró o ya fue usado. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".',
           })
         }
       }
@@ -97,12 +97,12 @@ export default function SetPasswordPage() {
       const message = err instanceof Error ? err.message : 'Error'
       if (message.includes('expired-action-code')) {
         setSubmitError(
-          'Este enlace expiro. Solicita uno nuevo desde "Olvidaste tu contrasena".'
+          'Este enlace expiró. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".'
         )
       } else if (message.includes('weak-password')) {
-        setSubmitError('La contrasena es muy debil. Usa al menos 6 caracteres.')
+        setSubmitError('La contraseña es muy débil. Usa al menos 6 caracteres.')
       } else {
-        setSubmitError('No pudimos configurar tu contrasena. Intenta de nuevo.')
+        setSubmitError('No pudimos configurar tu contraseña. Intenta de nuevo.')
       }
     }
   }
@@ -122,7 +122,7 @@ export default function SetPasswordPage() {
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
           <h1 className="font-serif text-[28px] font-normal text-text-primary">
-            Enlace invalido
+            Enlace inválido
           </h1>
           <p className="mt-2 text-base text-text-secondary">{state.message}</p>
           {mode !== 'verifyEmail' && (
@@ -148,7 +148,7 @@ export default function SetPasswordPage() {
           <p className="mt-2 text-base text-text-secondary">
             Tu correo{' '}
             <span className="font-medium text-text-primary">{state.email}</span>{' '}
-            quedo verificado.
+            quedó verificado.
           </p>
           <Button
             type="button"
@@ -158,8 +158,8 @@ export default function SetPasswordPage() {
             Continuar
           </Button>
           <p className="mt-4 text-sm text-text-tertiary">
-            Si llegaste aqui desde la app de Oqupa en tu telefono, vuelve a
-            la app: detectara la verificacion automaticamente.
+            Si llegaste aquí desde la app de Oqupa en tu teléfono, vuelve a
+            la app: detectará la verificación automáticamente.
           </p>
         </div>
       </div>
@@ -174,29 +174,29 @@ export default function SetPasswordPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Crea tu contrasena
+          Crea tu contraseña
         </h1>
         <p className="mt-2 text-center text-base text-text-secondary">
-          Configurando la contrasena para{' '}
+          Configurando la contraseña para{' '}
           <span className="font-medium text-text-primary">{state.email}</span>
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
           <Input
-            label="Nueva contrasena"
+            label="Nueva contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Minimo 6 caracteres"
+            placeholder="Mínimo 6 caracteres"
             error={errors.password?.message}
             revealToggle
             {...register('password')}
           />
 
           <Input
-            label="Confirma la contrasena"
+            label="Confirma la contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Repite la contrasena"
+            placeholder="Repite la contraseña"
             error={errors.confirmPassword?.message}
             revealToggle
             {...register('confirmPassword')}
@@ -210,7 +210,7 @@ export default function SetPasswordPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-text-tertiary">
-          Al configurar tu contrasena podras iniciar sesion en un solo paso.
+          Al configurar tu contraseña podrás iniciar sesión en un solo paso.
         </p>
       </div>
     </div>

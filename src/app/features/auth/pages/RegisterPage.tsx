@@ -32,7 +32,7 @@ export default function RegisterPage() {
       } catch {
         // Non-fatal — the pipeline's "Reenviar correo" button can retry.
         // Surface a soft toast but still advance to the pipeline.
-        toast.error('No pudimos enviar el correo de verificacion. Reenvialo desde el siguiente paso.')
+        toast.error('No pudimos enviar el correo de verificación. Reenvíalo desde el siguiente paso.')
       }
       navigate('/app/verify', { replace: true })
     } catch (err) {
@@ -54,7 +54,7 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <Input
-            label="Correo electronico"
+            label="Correo electrónico"
             type="email"
             autoComplete="email"
             placeholder="tu@correo.com"
@@ -63,20 +63,20 @@ export default function RegisterPage() {
           />
 
           <Input
-            label="Contrasena"
+            label="Contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Minimo 6 caracteres"
+            placeholder="Mínimo 6 caracteres"
             error={errors.password?.message}
             revealToggle
             {...register('password')}
           />
 
           <Input
-            label="Confirma la contrasena"
+            label="Confirma la contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Repite la contrasena"
+            placeholder="Repite la contraseña"
             error={errors.confirmPassword?.message}
             revealToggle
             {...register('confirmPassword')}
@@ -85,31 +85,31 @@ export default function RegisterPage() {
           {error && <p className="text-sm text-error">{error}</p>}
 
           <Button type="submit" isLoading={isSubmitting} className="w-full">
-            Crear Cuenta
+            Crear cuenta
           </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-text-tertiary">
           Al crear una cuenta aceptas nuestros{' '}
           <Link to="/terms" className="underline hover:text-text-secondary">
-            Terminos
+            Términos
           </Link>{' '}
           y nuestra{' '}
           <Link to="/privacy" className="underline hover:text-text-secondary">
-            Politica de Privacidad
+            Política de Privacidad
           </Link>
           .
         </p>
 
         <div className="mt-4 text-center">
           <span className="text-base text-text-secondary">
-            Ya tienes cuenta?{' '}
+            ¿Ya tienes cuenta?{' '}
           </span>
           <Link
             to="/app/login"
             className="text-base font-medium text-secondary hover:text-secondary-hover"
           >
-            Inicia sesion
+            Inicia sesión
           </Link>
         </div>
       </div>

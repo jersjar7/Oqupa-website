@@ -152,7 +152,7 @@ describe('AuthPipelinePage', () => {
 
     it('does not show the name step while email is unverified', () => {
       renderPage()
-      expect(screen.queryByText(/como te llamas/i)).toBeNull()
+      expect(screen.queryByText(/cómo te llamas/i)).toBeNull()
     })
 
     it('calls sendEmailVerificationToCurrentUser when "Reenviar correo" is clicked', async () => {
@@ -171,9 +171,9 @@ describe('AuthPipelinePage', () => {
         emailVerified: true,
       })
       renderPage()
-      fireEvent.click(screen.getByRole('button', { name: /ya verifique/i }))
+      fireEvent.click(screen.getByRole('button', { name: /ya verifiqué/i }))
       await waitFor(() => {
-        expect(screen.getByText(/como te llamas/i)).toBeDefined()
+        expect(screen.getByText(/cómo te llamas/i)).toBeDefined()
       })
     })
 
@@ -184,9 +184,9 @@ describe('AuthPipelinePage', () => {
         emailVerified: false,
       })
       renderPage()
-      fireEvent.click(screen.getByRole('button', { name: /ya verifique/i }))
+      fireEvent.click(screen.getByRole('button', { name: /ya verifiqué/i }))
       await waitFor(() => {
-        expect(screen.getByText(/aun no detectamos/i)).toBeDefined()
+        expect(screen.getByText(/aún no detectamos/i)).toBeDefined()
       })
       expect(screen.getByText(/verifica tu correo/i)).toBeDefined()
     })
@@ -196,7 +196,7 @@ describe('AuthPipelinePage', () => {
     it('shows name step when email is verified and user has no name', () => {
       mockAuthState.user = null
       renderPage()
-      expect(screen.getByText(/como te llamas/i)).toBeDefined()
+      expect(screen.getByText(/cómo te llamas/i)).toBeDefined()
     })
 
     it('shows name input field', () => {
@@ -216,13 +216,13 @@ describe('AuthPipelinePage', () => {
     it('shows phone step when user has name but phone is not verified', () => {
       mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
       renderPage()
-      expect(screen.getByText(/numero de tel/i)).toBeDefined()
+      expect(screen.getByText(/número de tel/i)).toBeDefined()
     })
 
     it('shows "verify later" skip button', () => {
       mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
       renderPage()
-      expect(screen.getByRole('button', { name: /verificar despu/i })).toBeDefined()
+      expect(screen.getByRole('button', { name: /verificar después/i })).toBeDefined()
     })
 
     it('initializes reCAPTCHA when entering phone step', () => {
