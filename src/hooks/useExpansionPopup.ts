@@ -4,7 +4,7 @@ const COLLAPSED_KEY = 'oqupa_popup_collapsed'
 const SHOW_DELAY_MS = 5000
 const SUCCESS_DISPLAY_MS = 3000
 
-export function useWaitlistPopup() {
+export function useExpansionPopup() {
   const [isReady, setIsReady] = useState(false)
   const [isExpanded, setIsExpanded] = useState(() => !localStorage.getItem(COLLAPSED_KEY))
 

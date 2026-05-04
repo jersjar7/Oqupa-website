@@ -24,7 +24,7 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
   { label: 'Publica Gratis', href: '#precios' },
-  { label: 'Lista de Espera', href: '#', action: 'expand-waitlist-popup' },
+  { label: 'Pide en tu departamento', href: '#', action: 'expand-waitlist-popup' },
   { label: 'Contacto', href: '#contacto' },
 ]
 
@@ -41,7 +41,7 @@ function AuthBlock() {
         onClick={() => setReturnUrl(location.pathname)}
         className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
       >
-        Iniciar Sesion
+        Iniciar sesión
       </Link>
     )
   }
@@ -81,7 +81,7 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         onClick={() => { setReturnUrl(location.pathname); onNavigate() }}
         className="mt-4 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
       >
-        Iniciar Sesion
+        Iniciar sesión
       </Link>
     )
   }

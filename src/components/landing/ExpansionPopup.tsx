@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
-import { useWaitlistForm } from '@/hooks/useWaitlistForm'
+import { useExpansionForm } from '@/hooks/useExpansionForm'
+import { PERU_DEPARTAMENTOS_EXCEPT_PIURA } from '@/lib/peruDepartamentos'
 
-interface WaitlistPopupProps {
+interface ExpansionPopupProps {
   isReady: boolean
   isExpanded: boolean
   onCollapse: () => void
@@ -10,9 +11,9 @@ interface WaitlistPopupProps {
   onSuccess: () => void
 }
 
-export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpand, onSuccess }: WaitlistPopupProps) {
+export default function ExpansionPopup({ isReady, isExpanded, onCollapse, onExpand, onSuccess }: ExpansionPopupProps) {
   const { formData, errors, isSubmitting, isSuccess, handleChange, handleSubmit } =
-    useWaitlistForm({ onSuccess })
+    useExpansionForm({ onSuccess })
 
   // Slide-in animation on first appearance
   const [mounted, setMounted] = useState(false)
@@ -40,7 +41,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
             md:rounded-xl rounded-t-xl transition-colors duration-200 hover:bg-primary-hover cursor-pointer"
         >
           <span className="text-sm font-bold uppercase tracking-wider">
-            Unirme a la Lista de Espera
+            Pide Oqupa en tu departamento
           </span>
           <ChevronUp className="h-5 w-5" />
         </button>
@@ -52,7 +53,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-5 pt-5 pb-2 sm:px-6 sm:pt-6 rounded-t-2xl">
             <h3 className="font-serif font-medium text-lg text-secondary">
-              Únete a la familia Oqupa
+              Lleva Oqupa a tu departamento
             </h3>
             <button
               onClick={onCollapse}
@@ -64,7 +65,7 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
           </div>
 
           <p className="font-sans font-normal px-5 pb-2 text-sm text-text-secondary sm:px-6">
-            Sé uno de los primeros miembros de la familia Oqupa y publica tus propiedades gratis.
+            Empezamos en Piura. Cuéntanos a qué departamento te gustaría que lleguemos y te avisaremos cuando lancemos ahí.
           </p>
 
           {/* Form */}
@@ -92,10 +93,10 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                   </svg>
                 </div>
                 <p className="font-bold text-text-primary">
-                  ¡Registrado exitosamente!
+                  ¡Recibimos tu solicitud!
                 </p>
                 <p className="text-sm text-text-secondary">
-                  Te notificaremos cuando Oqupa esté disponible.
+                  Te avisaremos cuando Oqupa llegue a tu departamento.
                 </p>
               </div>
             ) : (
@@ -175,27 +176,34 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                   )}
                 </div>
 
-                {/* City */}
+                {/* Departamento */}
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="popup-city"
+                    htmlFor="popup-departamento"
                     className="font-sans font-medium uppercase text-xs text-secondary"
                   >
-                    Ciudad de interés
+                    Departamento
                   </label>
-                  <input
-                    type="text"
-                    id="popup-city"
-                    name="city"
-                    value={formData.city}
+                  <select
+                    id="popup-departamento"
+                    name="departamento"
+                    value={formData.departamento}
                     onChange={handleChange}
-                    placeholder="Ej: Sullana"
-                    className={`rounded-xl border px-3 py-2.5 text-sm text-text-primary outline-none transition-colors duration-200 placeholder:text-text-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-                      errors.city ? 'border-error' : 'border-border'
-                    }`}
-                  />
-                  {errors.city && (
-                    <span className="text-xs text-error">{errors.city}</span>
+                    className={`rounded-xl border bg-white px-3 py-2.5 text-sm text-text-primary outline-none transition-colors duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                      errors.departamento ? 'border-error' : 'border-border'
+                    } ${formData.departamento === '' ? 'text-text-tertiary' : ''}`}
+                  >
+                    <option value="" disabled>
+                      Selecciona un departamento
+                    </option>
+                    {PERU_DEPARTAMENTOS_EXCEPT_PIURA.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.departamento && (
+                    <span className="text-xs text-error">{errors.departamento}</span>
                   )}
                 </div>
 
@@ -248,16 +256,15 @@ export default function WaitlistPopup({ isReady, isExpanded, onCollapse, onExpan
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      Registrando...
+                      Enviando...
                     </>
                   ) : (
-                    'Unirme a la Lista de Espera'
+                    'Quiero Oqupa en mi departamento'
                   )}
                 </button>
 
                 <p className="font-sans font-normal text-center text-[10px] leading-relaxed text-text-tertiary">
-                  No compartiremos tu información con terceros. Solo te contactaremos
-                  para informarte sobre el lanzamiento de Oqupa.
+                  No compartiremos tu información con terceros. Solo te contactaremos cuando Oqupa llegue a tu departamento.
                 </p>
               </>
             )}

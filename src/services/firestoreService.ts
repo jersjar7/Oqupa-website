@@ -188,15 +188,15 @@ export const firestoreService = {
     await addDoc(mailRef, {
       to: 'admin@oqupa.com',
       message: {
-        subject: `Nueva inscripcion en lista de espera: ${entry.name}`,
+        subject: `Solicitud de expansión: ${entry.departamento} (${entry.name})`,
         html: `
-          <h2>Nueva inscripcion en la lista de espera</h2>
+          <h2>Nueva solicitud de expansión</h2>
+          <p>Un usuario quiere que Oqupa llegue a su departamento.</p>
           <table style="border-collapse:collapse;font-family:sans-serif;">
             <tr><td style="padding:8px;font-weight:bold;">Nombre:</td><td style="padding:8px;">${entry.name}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Telefono:</td><td style="padding:8px;">${entry.phone}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Teléfono:</td><td style="padding:8px;">${entry.phone}</td></tr>
             <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${entry.email}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Ciudad:</td><td style="padding:8px;">${entry.city}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Presupuesto:</td><td style="padding:8px;">${entry.budget || 'No especificado'}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;">Departamento:</td><td style="padding:8px;">${entry.departamento}</td></tr>
           </table>
         `,
       },

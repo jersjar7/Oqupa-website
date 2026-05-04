@@ -1,7 +1,7 @@
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
-import { Bell } from 'lucide-react'
+import { MapPinned } from 'lucide-react'
 
-export default function WaitlistSection() {
+export default function ExpansionSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   const handleExpand = () => {
@@ -10,7 +10,7 @@ export default function WaitlistSection() {
 
   return (
     <section
-      id="lista-espera"
+      id="expansion"
       className="bg-[#FFFAF5] py-8 lg:py-14"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -23,27 +23,28 @@ export default function WaitlistSection() {
           }`}
         >
           <div className="flex justify-center">
-            <Bell className="h-8 w-8 text-secondary" />
+            <MapPinned className="h-8 w-8 text-secondary" />
           </div>
 
           <h2 className="mt-6 font-serif text-2xl font-normal text-secondary md:text-[clamp(24px,2.5vw,36px)]">
-            Únete a la Lista de Espera
+            Lleva Oqupa a tu departamento
           </h2>
           <p className="font-sans font-normal mt-4 text-lg leading-relaxed text-text-secondary">
-            Sé de los primeros en acceder a Oqupa cuando lancemos en Piura.
-            Regístrate y te avisaremos cuando estemos listos.
+            Empezamos en Piura y queremos llegar a más departamentos del Perú.
+            Cuéntanos dónde te gustaría tener Oqupa y te avisaremos cuando
+            lancemos ahí.
           </p>
 
           <button
             onClick={handleExpand}
             className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large cursor-pointer"
           >
-            Registrarme
+            Pídelo en tu departamento
           </button>
 
           <p className="mt-6 text-xs leading-relaxed text-text-tertiary">
             No compartiremos tu información con terceros. Solo te contactaremos
-            para informarte sobre el lanzamiento de Oqupa.
+            cuando Oqupa llegue a tu departamento.
           </p>
         </div>
       </div>
