@@ -4,12 +4,16 @@ import { getFunctions } from 'firebase/functions'
 import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { getRecaptchaToken } from '@/lib/recaptcha'
+import {
+  PERU_DEPARTAMENTOS_EXCEPT_PIURA,
+  type PeruDepartamento,
+} from '@/lib/peruDepartamentos'
 
 interface FormData {
   name: string
   phone: string
   email: string
-  city: string
+  departamento: PeruDepartamento | ''
   contactConsent: boolean
 }
 
@@ -17,11 +21,11 @@ interface FormErrors {
   name?: string
   phone?: string
   email?: string
-  city?: string
+  departamento?: string
   contactConsent?: string
 }
 
-interface UseWaitlistFormOptions {
+interface UseExpansionFormOptions {
   onSuccess?: () => void
 }
 
@@ -34,12 +38,12 @@ function formatPhone(value: string): string {
 
 const RECAPTCHA_ENABLED = !!import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
-export function useWaitlistForm(options?: UseWaitlistFormOptions) {
+export function useExpansionForm(options?: UseExpansionFormOptions) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     phone: '',
     email: '',
-    city: '',
+    departamento: '',
     contactConsent: false,
   })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -57,19 +61,23 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
 
     const phoneDigits = formData.phone.replace(/\D/g, '')
     if (!phoneDigits) {
-      newErrors.phone = 'Por favor ingresa tu numero de telefono'
+      newErrors.phone = 'Por favor ingresa tu número de teléfono'
     } else if (phoneDigits.length < 9) {
-      newErrors.phone = 'El numero debe tener 9 digitos'
+      newErrors.phone = 'El número debe tener 9 dígitos'
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Por favor ingresa tu correo electronico'
+      newErrors.email = 'Por favor ingresa tu correo electrónico'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
-      newErrors.email = 'Por favor ingresa un correo electronico valido'
+      newErrors.email = 'Por favor ingresa un correo electrónico válido'
     }
 
-    if (!formData.city.trim()) {
-      newErrors.city = 'Por favor ingresa tu ciudad de interes'
+    if (!formData.departamento) {
+      newErrors.departamento = 'Selecciona tu departamento'
+    } else if (
+      !PERU_DEPARTAMENTOS_EXCEPT_PIURA.includes(formData.departamento as PeruDepartamento)
+    ) {
+      newErrors.departamento = 'Selecciona un departamento válido'
     }
 
     if (!formData.contactConsent) {
@@ -111,8 +119,7 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
         name: formData.name.trim(),
         phone: '+51 ' + formData.phone.trim(),
         email: formData.email.trim(),
-        city: formData.city.trim(),
-        budget: '',
+        departamento: formData.departamento as PeruDepartamento,
         contactConsent: formData.contactConsent,
       }
 
@@ -135,12 +142,12 @@ export function useWaitlistForm(options?: UseWaitlistFormOptions) {
         await firestoreService.addWaitlistEntry(entry)
       }
       setIsSuccess(true)
-      setFormData({ name: '', phone: '', email: '', city: '', contactConsent: false })
-      toast.success('Te has registrado exitosamente!')
+      setFormData({ name: '', phone: '', email: '', departamento: '', contactConsent: false })
+      toast.success('¡Recibimos tu solicitud!')
       options?.onSuccess?.()
     } catch {
-      setErrors({ name: 'Error al registrarse. Intentalo de nuevo.' })
-      toast.error('Error al registrarse. Intentalo de nuevo.')
+      setErrors({ name: 'Error al enviar. Inténtalo de nuevo.' })
+      toast.error('Error al enviar. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)
     }

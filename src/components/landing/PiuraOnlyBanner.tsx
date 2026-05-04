@@ -17,17 +17,17 @@ export default function PiuraOnlyBanner() {
         <MapPin className="mx-auto h-8 w-8 text-secondary" />
 
         <p className="mt-4 text-lg leading-relaxed text-text-secondary">
-          Estamos lanzando en{' '}
+          Lanzamos en{' '}
           <span className="font-bold text-text-primary">Piura</span>{' '}
-          mientras aprendemos de nuestros clientes antes de expandirnos a más
+          y aprendemos de nuestros clientes antes de expandirnos a más
           departamentos.
         </p>
 
         <a
-          href="mailto:admin@oqupa.com?subject=Quiero Oqupa en mi ciudad"
+          href="#expansion"
           className="mt-4 inline-block text-sm font-medium text-primary transition-colors duration-200 hover:text-primary-hover"
         >
-          ¿Estás fuera de Piura? ¡Cuéntanos que quieres Oqupa en tu ciudad!
+          ¿Estás fuera de Piura? ¡Cuéntanos que quieres Oqupa en tu departamento!
         </a>
       </div>
     </section>

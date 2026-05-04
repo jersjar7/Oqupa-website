@@ -139,7 +139,7 @@ Firebase is used for:
 
 ## Section IDs (anchor targets)
 
-- `#lista-espera` → WaitlistSection
+- `#expansion` → ExpansionSection (legacy "waitlist" UI repurposed for expansion-city interest at launch on 2026-05-04)
 - `#precios` → PricingSection
 - `#caracteristicas` → ShowcaseSection
 - `#contacto` → Footer
