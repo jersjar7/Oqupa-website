@@ -190,6 +190,13 @@ export default function WizardStep5() {
         })
 
         await firestoreService.updateListing(editListingId, {
+          // operationType is denormalized from Property → Listing so Firestore
+          // can filter without joining. Must be re-written on edit, otherwise
+          // the listing's tab assignment goes stale (see Phase 1 fix in
+          // oqupa/docs/diagnostics/listing-denormalization-divergence.md).
+          // Phase 2 will move this to a server-managed sync trigger and remove
+          // the client write.
+          operationType: data.operationType as Listing['operationType'],
           description: data.description,
           price: { amount: formData.amount, currency: formData.currency },
           role: data.role as Listing['role'],
