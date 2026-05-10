@@ -37,13 +37,18 @@ export default function ExpansionPopup({ isReady, isExpanded, onCollapse, onExpa
       {!isExpanded && (
         <button
           onClick={onExpand}
-          className="flex w-full items-center justify-between gap-3 bg-primary px-5 py-3.5 text-white shadow-large
+          className="flex w-full items-center justify-between gap-3 bg-primary px-5 py-3 text-white shadow-large
             md:rounded-xl rounded-t-xl transition-colors duration-200 hover:bg-primary-hover cursor-pointer"
         >
-          <span className="text-sm font-bold uppercase tracking-wider">
-            Pide Oqupa en tu departamento
+          <span className="flex flex-col items-start text-left">
+            <span className="text-[10px] font-normal leading-tight text-white/80">
+              Por ahora disponible solo en Piura
+            </span>
+            <span className="text-sm font-bold uppercase tracking-wider leading-tight">
+              Pide Oqupa en tu departamento
+            </span>
           </span>
-          <ChevronUp className="h-5 w-5" />
+          <ChevronUp className="h-5 w-5 shrink-0" />
         </button>
       )}
 
