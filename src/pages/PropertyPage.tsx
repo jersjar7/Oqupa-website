@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { doc, updateDoc, increment } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
+import { Eye, Sparkles } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
@@ -19,6 +19,7 @@ import { AnimatedImage } from '@/app/components/ui'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import GalleryModal from '@/app/components/GalleryModal'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
+import AppStoreBadges from '@/components/AppStoreBadges'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -127,7 +128,7 @@ function PropertyGallery({ images }: { images: string[] }) {
       </div>
 
       {/* Desktop grid */}
-      <div className="mx-auto hidden max-w-5xl px-4 pt-6 md:block">
+      <div className="mx-auto hidden max-w-6xl px-4 pt-6 md:block">
         {images.length === 1 ? (
           <div
             className="group h-[420px] cursor-pointer overflow-hidden rounded-xl"
@@ -317,205 +318,218 @@ export default function PropertyPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
-        className="mx-auto max-w-2xl px-4 pt-6 sm:px-6"
+        className="mx-auto max-w-6xl px-4 pt-6 sm:px-6"
       >
-        {/* Price + Destacado badge + Share */}
-        <div className="flex items-center gap-3">
-          <p className="text-2xl font-bold text-primary">
-            {formatPrice(listing.price?.amount)}
-            {(() => {
-              const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-              return suffix ? <span className="text-lg font-normal text-text-secondary"> {suffix}</span> : null
-            })()}
-          </p>
-          {listing.isBoosted && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-600 ring-1 ring-amber-500/30">
-              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-              Destacado
-            </span>
-          )}
-          <button
-            onClick={handleShare}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:bg-black/5"
-            aria-label="Compartir"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Location */}
-        {location && (
-          <div className="mt-2 flex items-center gap-1.5 text-text-secondary">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span className="text-sm">{location}</span>
-            {!showExact && (
-              <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                Ubicación aproximada
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Left column — listing details */}
+          <div className="lg:col-span-2">
+            {/* Price + Destacado badge + Share */}
+            <div className="flex items-center gap-3">
+              <p className="text-2xl font-bold text-primary">
+                {formatPrice(listing.price?.amount)}
+                {(() => {
+                  const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
+                  return suffix ? <span className="text-lg font-normal text-text-secondary"> {suffix}</span> : null
+                })()}
+              </p>
+              {listing.isBoosted && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-600 ring-1 ring-amber-500/30">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                  Destacado
+                </span>
+              )}
+              <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-text-secondary">
+                <Eye className="h-4 w-4 shrink-0" />
+                {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
               </span>
-            )}
-          </div>
-        )}
-
-        {/* Feature badges */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {property.specs?.bedroomCount != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
-              <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
-              {property.specs.bedroomCount} hab.
-            </span>
-          )}
-          {property.specs?.bathroomCount != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
-              <span aria-hidden="true">&#x1F6BF;</span>
-              {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
-            </span>
-          )}
-          {property.specs?.totalAreaInSquareMeters != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
-              <span aria-hidden="true">&#x1F4CF;</span>
-              {property.specs.totalAreaInSquareMeters} m²
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
-            <span aria-hidden="true">&#x1F3E0;</span>
-            {propertyTypeLabel}
-          </span>
-          {property.propertyType === 'habitacion' && property.specs?.hasPrivateBathroom != null && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
-              <span aria-hidden="true">&#x1F6BF;</span>
-              {property.specs.hasPrivateBathroom ? 'Baño privado' : 'Baño compartido'}
-            </span>
-          )}
-        </div>
-
-        {/* Owner boost section */}
-        {isOwner && listing.status === 'active' && (
-          <div className="mt-6">
-            {listing.isBoosted ? (
-              // Boost status for owner
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-amber-500" />
-                  <span className="text-sm font-semibold text-amber-700">
-                    Tu publicación está destacada
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-amber-600">
-                  {listing.boostTier && (
-                    <span>Plan: {BOOST_TIER_LABELS[listing.boostTier]}</span>
-                  )}
-                  {listing.boostedUntil && (
-                    <span>
-                      Vence: {listing.boostedUntil.toLocaleDateString('es-PE', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </span>
-                  )}
-                  {listing.boostedUntil && (
-                    <span>
-                      ({Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días restantes)
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Boost CTA for owner
-              <BoostPurchaseFlow
-                listingId={listing.id}
-                onSuccess={() => {}}
+              <button
+                onClick={handleShare}
+                className="rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
+                aria-label="Compartir"
               >
-                {(openFlow) => (
-                  <button
-                    onClick={openFlow}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600"
-                  >
-                    <Sparkles className="h-5 w-5" />
-                    Destacar mi propiedad
-                  </button>
+                Compartir
+              </button>
+            </div>
+
+            {/* Location */}
+            {location && (
+              <div className="mt-2 flex items-center gap-1.5 text-text-secondary">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="text-sm">{location}</span>
+                {!showExact && (
+                  <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                    Ubicación aproximada
+                  </span>
                 )}
-              </BoostPurchaseFlow>
+              </div>
+            )}
+
+            {/* Feature badges */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {property.specs?.bedroomCount != null && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+                  <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
+                  {property.specs.bedroomCount} hab.
+                </span>
+              )}
+              {property.specs?.bathroomCount != null && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+                  <span aria-hidden="true">&#x1F6BF;</span>
+                  {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              {property.specs?.totalAreaInSquareMeters != null && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+                  <span aria-hidden="true">&#x1F4CF;</span>
+                  {property.specs.totalAreaInSquareMeters} m²
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+                <span aria-hidden="true">&#x1F3E0;</span>
+                {propertyTypeLabel}
+              </span>
+              {property.propertyType === 'habitacion' && property.specs?.hasPrivateBathroom != null && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
+                  <span aria-hidden="true">&#x1F6BF;</span>
+                  {property.specs.hasPrivateBathroom ? 'Baño privado' : 'Baño compartido'}
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            {listing.description && (
+              <div className="mt-6">
+                <h2 className="font-serif text-lg font-semibold text-text-primary">
+                  Descripción
+                </h2>
+                <p className="mt-2 whitespace-pre-line text-gray-600 leading-relaxed">
+                  {listing.description}
+                </p>
+              </div>
             )}
           </div>
-        )}
 
-        {/* Description */}
-        {listing.description && (
-          <div className="mt-6">
-            <h2 className="font-serif text-lg font-semibold text-text-primary">
-              Descripción
-            </h2>
-            <p className="mt-2 whitespace-pre-line text-gray-600 leading-relaxed">
-              {listing.description}
-            </p>
-          </div>
-        )}
+          {/* Right column — sticky widgets */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:col-span-1 lg:h-fit lg:self-start lg:border-l lg:border-border lg:pl-8">
+            {/* WhatsApp button + helper notes */}
+            {whatsappNumber && (
+              <div>
+              <button
+                onClick={() => {
+                  if (firebaseUser && user?.isPhoneVerified) {
+                    window.open(
+                      `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
+                      '_blank',
+                      'noopener,noreferrer'
+                    )
+                    // Fire-and-forget contact click tracking
+                    updateDoc(doc(db, 'listings', listing.id), { contactClickCount: increment(1) })
+                  } else {
+                    setShowAuthModal(true)
+                  }
+                }}
+                className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#25D366] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                Escríbele por WhatsApp
+              </button>
+              <div className="mt-3 space-y-2 px-1 text-xs leading-relaxed text-text-secondary">
+                <p>
+                  Tu mensaje llega directamente a quien publica el aviso. En Oqupa no hay intermediarios.
+                </p>
+                <p>
+                  <span className="font-medium text-text-primary">Tip:</span> tu mensaje ya incluye la dirección. Cuéntale cuándo te gustaría visitarla.
+                </p>
+              </div>
+              </div>
+            )}
 
-        {/* WhatsApp button */}
-        {whatsappNumber && (
-          <button
-            onClick={() => {
-              if (firebaseUser && user?.isPhoneVerified) {
-                window.open(
-                  `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
-                  '_blank',
-                  'noopener,noreferrer'
-                )
-                // Fire-and-forget contact click tracking
-                updateDoc(doc(db, 'listings', listing.id), { contactClickCount: increment(1) })
-              } else {
-                setShowAuthModal(true)
-              }
-            }}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-4 text-lg font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-            Contactar por WhatsApp
-          </button>
-        )}
+            {/* Owner boost section */}
+            {isOwner && listing.status === 'active' && (
+              listing.isBoosted ? (
+                // Boost status for owner
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm font-semibold text-amber-700">
+                      Tu publicación está destacada
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-amber-600">
+                    {listing.boostTier && (
+                      <span>Plan: {BOOST_TIER_LABELS[listing.boostTier]}</span>
+                    )}
+                    {listing.boostedUntil && (
+                      <span>
+                        Vence: {listing.boostedUntil.toLocaleDateString('es-PE', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
+                    {listing.boostedUntil && (
+                      <span>
+                        ({Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días restantes)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // Boost CTA for owner
+                <BoostPurchaseFlow
+                  listingId={listing.id}
+                  onSuccess={() => {}}
+                >
+                  {(openFlow) => (
+                    <button
+                      onClick={openFlow}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600"
+                    >
+                      <Sparkles className="h-5 w-5" />
+                      Destacar mi propiedad
+                    </button>
+                  )}
+                </BoostPurchaseFlow>
+              )
+            )}
 
-        {/* App download banner */}
-        <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">
-          <h3 className="text-lg font-bold">
-            App movil disponible el 11 de Mayo
-          </h3>
-          <p className="mt-1 text-sm text-white/80">
-            Pronto podras buscar propiedades y publicar las tuyas desde tu celular.
-          </p>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('expand-waitlist-popup'))}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover cursor-pointer"
-          >
-            Avisarme cuando este lista
-          </button>
+            {/* App download banner */}
+            <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">
+              <h3 className="text-lg font-bold">
+                Descarga la app de Oqupa
+              </h3>
+              <p className="mt-1 text-sm text-white/80">
+                Busca propiedades y publica las tuyas desde tu celular.
+              </p>
+              <AppStoreBadges className="mt-4 justify-center" />
+            </div>
+          </aside>
         </div>
       </motion.div>
 

@@ -4,6 +4,37 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-10 — Property Page Redesign + App Store Launch on Web
+
+### New Features
+- **App Store + Google Play badges** are now live on the website, since the Oqupa mobile app shipped on both stores (iOS released 2026-05-07, Android shortly after). Two new pieces are reusable across the codebase: `src/lib/appStoreLinks.ts` exports the canonical store URLs (App Store ID `6758535934`, Android package `com.oqupa.app` — both auto-redirect users to their region's store), and a new `<AppStoreBadges />` component renders custom Tailwind pills with the Apple wordmark and the four-color Google Play triangle, opens in a new tab, accepts a `className` for layout. The badges currently render in two surfaces:
+  - **PropertyPage right-column banner** — replaces the pre-launch "App movil disponible el 11 de Mayo / Avisarme cuando este lista" placeholder. Banner copy rewritten for the launched state ("Descarga la app de Oqupa · Busca propiedades y publica las tuyas desde tu celular"), badges centered.
+  - **Footer (every page)** — new "DESCARGA LA APP" subhead block in the left brand column, badges left-aligned next to the logo + tagline so they're reachable from any page.
+
+### UX Improvements
+- **PropertyPage two-column layout on desktop.** The detail page below the gallery used to stack everything in a narrow `max-w-2xl` (~672px) column, leaving the WhatsApp CTA buried at the bottom of the scroll on widescreen monitors. It's now a two-column CSS grid (`lg:grid-cols-3`) inside a `max-w-6xl` container that matches the gallery width:
+  - **Left column (lg:col-span-2, scrollable):** price + Destacado badge in the header row, location, feature badges, description.
+  - **Right column (lg:col-span-1, sticky below the navbar):** WhatsApp CTA, owner-only boost CTA / status block, app-download banner. `lg:sticky lg:top-24 lg:self-start lg:h-fit` on the aside is what makes the sticky behavior work inside a CSS grid item.
+  - Mobile and tablet (`<lg`) stay single-column — same look as before.
+  - A subtle 1px hairline (`lg:border-l lg:border-border lg:pl-8`) divides the columns at the `lg` breakpoint only.
+- **View count surfaced on listing pages.** `listing.viewCount` (already populated by the App-Check-enforced `recordListingView` Cloud Function) had no UI. It now appears as "N vistas" with an Eye icon in the price-row header next to the share button.
+- **Share button is now a pill, not an icon.** The circular share-icon button is replaced by a "Compartir" Subhead-styled rounded-full pill button — more discoverable inside the wider header row, matches the existing border / hover treatment.
+- **WhatsApp CTA refresh:** copy changed from "Contactar por WhatsApp" → "Escríbele por WhatsApp" (with the í tilde), font dropped from `text-lg` → `text-sm` and `whitespace-nowrap` added so it stays on one line in the narrower right column. Two helper notes attached just below the button: a no-intermediaries assurance ("Tu mensaje llega directamente a quien publica el aviso. En Oqupa no hay intermediarios") and an etiquette nudge ("Tip: tu mensaje ya incluye la dirección. Cuéntale cuándo te gustaría visitarla").
+- **Header + Footer "Publica Gratis" now goes straight to the listing wizard.** Both links used to scroll to the legacy `#precios` section anchor. They now route to `/app/listings/new` with a `setReturnUrl('/app/listings/new')` stash so anonymous users bouncing through `/app/login` land back in the wizard after sign-in — same flow as the hero's "Publicar mi propiedad". The `NavLink` interface in `Header.tsx` was extended with an optional `beforeNavigate?: () => void` so route links can carry a side-effect cleanly.
+- **Expansion popup gains a context line.** The collapsed orange "PIDE OQUPA EN TU DEPARTAMENTO" bar was ambiguous to first-time visitors who didn't know Oqupa is Piura-only. A small "Por ahora disponible solo en Piura" caption (white at 80% opacity, sentence case, leading-tight) now sits above the bold uppercase title so the CTA is contextualised correctly. Bar padding tightened (`py-3.5` → `py-3`) to keep the footprint roughly the same.
+
+### Bug Fixes
+- **Hero desktop "Publicar mi propiedad" no longer drops signed-in users on the landing page.** The desktop button at `HeroSection.tsx:60` had `onClick={() => { stashPublishReturn(); setReturnUrl(location.pathname) }}` — the second `setReturnUrl` call was clobbering the first, so anonymous users who clicked Publicar bounced through `/app/login` and then landed back at `/` instead of `/app/listings/new`. Removed the redundant call (mobile was already correct), cleaned up the now-unused `useLocation` import.
+- **Listing-edit `operationType` payload fix (carried from 2026-05-08).** The website's listing-edit flow had been omitting `operationType` from the `updateListing()` call since launch. Property doc was getting the new value on every edit but the listing doc kept the old, pinning any home-map query result to the wrong tab. Affected ~3% of active listings on production at the time of the diagnostic. After this release no NEW listings can drift; existing diverged listings still need the Phase 3 reconciliation pass.
+
+### Technical
+- New files: `src/components/AppStoreBadges.tsx`, `src/lib/appStoreLinks.ts`.
+- Touched: `src/pages/PropertyPage.tsx` (the bulk of the diff — 398 → 524 line range refactor), `src/components/landing/HeroSection.tsx`, `src/components/landing/ExpansionPopup.tsx`, `src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`.
+- No type changes: `Listing.viewCount` already existed, no new dependencies, `lucide-react` `Eye` icon imported alongside the existing `Sparkles`.
+- TypeScript build passes (`tsc -b && vite build`).
+
+---
+
 ## 2026-05-04 — Launch Day Email Campaign
 
 ### New Email Infrastructure

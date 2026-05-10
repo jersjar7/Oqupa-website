@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 import { setReturnUrl } from '@/lib/utils'
 import heroCover from '@/assets/images/hero-cover.webp'
@@ -10,7 +10,6 @@ interface HeroSectionProps {
 
 export default function HeroSection({ heroRef }: HeroSectionProps) {
   const { ref, isVisible } = useAnimateOnScroll()
-  const location = useLocation()
 
   // Anonymous visitors hitting "Publicar" land at /app/login (AuthGuard
   // redirect). We stash the intended destination so they bounce to the
@@ -57,7 +56,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
             <div className="mt-8 hidden gap-6 lg:flex">
               <Link
                 to="/app/listings/new"
-                onClick={() => { stashPublishReturn(); setReturnUrl(location.pathname) }}
+                onClick={stashPublishReturn}
                 className="inline-flex items-center justify-center rounded-xl bg-primary px-[clamp(32px,2.5vw,48px)] py-[clamp(12px,1vw,16px)] text-[clamp(14px,1.2vw,20px)] font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
               >
                 Publicar mi propiedad
