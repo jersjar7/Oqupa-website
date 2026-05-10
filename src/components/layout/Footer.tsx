@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import logo from '@/assets/images/Oqupa_FullLogo_white.webp'
+import AppStoreBadges from '@/components/AppStoreBadges'
+import { setReturnUrl } from '@/lib/utils'
 
 export default function Footer() {
   return (
@@ -18,6 +20,12 @@ export default function Footer() {
             <p className="mt-4 text-sm text-white/80">
               Tu próximo hogar ya está en el mapa.
             </p>
+
+            {/* Download badges */}
+            <h3 className="mt-8 mb-3 text-sm font-semibold uppercase tracking-wider text-white/60">
+              Descarga la app
+            </h3>
+            <AppStoreBadges />
           </div>
 
           {/* Middle: Link sections */}
@@ -37,12 +45,13 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="#precios"
+                  <Link
+                    to="/app/listings/new"
+                    onClick={() => setReturnUrl('/app/listings/new')}
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
                     Publica Gratis
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a

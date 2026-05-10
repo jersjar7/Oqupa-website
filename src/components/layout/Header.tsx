@@ -19,11 +19,19 @@ interface NavLink {
   href: string
   isRoute?: boolean
   action?: string
+  beforeNavigate?: () => void
 }
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
-  { label: 'Publica Gratis', href: '#precios' },
+  {
+    label: 'Publica Gratis',
+    href: '/app/listings/new',
+    isRoute: true,
+    // Anonymous users bounce through /app/login — stash the destination
+    // so they land in the wizard after signing in. Mirrors HeroSection.
+    beforeNavigate: () => setReturnUrl('/app/listings/new'),
+  },
   { label: 'Pide en tu departamento', href: '#', action: 'expand-waitlist-popup' },
   { label: 'Contacto', href: '#contacto' },
 ]
@@ -189,6 +197,7 @@ export default function Header({
                   <Link
                     key={link.label}
                     to={link.href}
+                    onClick={link.beforeNavigate}
                     className={`font-sans text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
                       isScrolled ? 'text-secondary' : 'text-secondary'
                     }`}
@@ -285,7 +294,7 @@ export default function Header({
                   <Link
                     key={link.label}
                     to={link.href}
-                    onClick={close}
+                    onClick={() => { link.beforeNavigate?.(); close() }}
                     className="block border-b border-border py-4 font-sans text-base font-medium uppercase text-secondary transition-colors duration-200 hover:text-primary"
                   >
                     {link.label}
