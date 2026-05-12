@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import Layout from '@/components/layout/Layout'
@@ -8,6 +8,10 @@ import TermsPage from '@/pages/TermsPage'
 import PropertyPage from '@/pages/PropertyPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ExplorePage from '@/pages/ExplorePage'
+// NumbersPage is lazy-loaded — it pulls in recharts (~120KB gzipped) and is
+// only used by the team-internal /numbers dashboard. No reason to ship it
+// in the main bundle for every visitor.
+const NumbersPage = lazy(() => import('@/pages/NumbersPage'))
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
 import DashboardShell from '@/app/components/shell/DashboardShell'
@@ -59,6 +63,19 @@ export default function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/property/:id" element={<PropertyPage />} />
           <Route path="/explorar" element={<ExplorePage />} />
+          {/* Internal team metrics dashboard — unlinked, noindex; not a public route. */}
+          <Route
+            path="/numbers"
+            element={
+              <Suspense fallback={
+                <div className="flex min-h-screen items-center justify-center pt-20">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              }>
+                <NumbersPage />
+              </Suspense>
+            }
+          />
         </Route>
 
         {/* Publisher app routes */}
