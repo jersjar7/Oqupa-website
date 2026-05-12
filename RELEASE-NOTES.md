@@ -4,6 +4,20 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-12 — Internal team metrics dashboard at oqupa.com/numbers
+
+### New Features
+- **Daily-snapshot metrics dashboard for the team.** New unlinked route at `oqupa.com/numbers` showing the platform's live numbers in one page. Renders five KPI tiles (active listings, verified users, total listing views, total contact clicks with derived contact-rate %, and lifetime boost revenue in S/.), four time-series charts (active listings, verified users, views & contacts, cumulative revenue) plotted over the last 90 daily snapshots, and three current-state breakdowns of active inventory (operation type donut, property type bar, top-10 distrito bar). The page is intentionally unlinked from the rest of the site and sets `<meta name="robots" content="noindex, nofollow">` so it stays out of search results. The team finds it by knowing the URL — no auth gate at v1 since numbers are low; an email-allowlist gate is documented as a v2 follow-up.
+
+### Technical
+- **New Cloud Function:** `snapshotPlatformMetrics` (in `oqupa/functions/`, deployed to `southamerica-east1`, scheduled daily at 03:30 Lima). Aggregates `listings` + `users` + completed `payments` via Admin SDK (bypasses rules so payment PII never reaches the client) and writes a single doc per day to `publicMetrics/{YYYY-MM-DD}`. Doc holds only aggregated counts and group-bys — no PII, no per-user fields. Property-side fields (`propertyType`, `location.distrito`) are pulled by batched `db.getAll(...)` over chunks of 30 since listings only carry a `propertyId` reference. Failure mode is graceful: a crashed run produces a one-day chart gap and nothing else. Scale ceiling at the current in-memory pattern is roughly 100k listings.
+- **New Firestore rule:** `match /publicMetrics/{date}` allows `read: if true` and blocks all writes — clients can read aggregated dashboard data but cannot tamper with what the dashboard sees; only the Cloud Function (Admin SDK) populates the collection.
+- **New website page** at `src/pages/NumbersPage.tsx` + data hook `src/hooks/useNumbersData.ts` reads the last 90 days from `publicMetrics` ordered by `date` desc. Uses `recharts` for all chart rendering.
+- **Bundle-size hygiene:** `NumbersPage` is `React.lazy()`-imported and `recharts` + d3 transitive deps are split into a dedicated `charts` chunk via `vite.config.ts` `manualChunks`. Visitors to the public site do not download the ~90 KB gzipped chart code; main bundle is unchanged.
+- **Production seeding:** the function was manually triggered post-deploy so the first snapshot exists immediately rather than waiting for tomorrow's 03:30 schedule. Subsequent days run automatically.
+
+---
+
 ## 2026-05-10 — Property Page Redesign + App Store Launch on Web
 
 ### New Features
