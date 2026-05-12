@@ -97,6 +97,9 @@ export default defineConfig({
           // Image processing.
           if (pkg === 'browser-image-compression' || pkg === 'blurhash') return 'image'
 
+          // Charts (only loaded by the internal /numbers dashboard).
+          if (pkg === 'recharts' || pkg.startsWith('d3-') || pkg === 'd3' || pkg === 'victory-vendor' || pkg === 'recharts-scale') return 'charts'
+
           return 'vendor'
         },
       },
