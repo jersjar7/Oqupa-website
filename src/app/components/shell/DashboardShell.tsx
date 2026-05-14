@@ -19,6 +19,7 @@ function defaultMetaForPath(pathname: string): { title: string; subtitle?: strin
   if (pathname.startsWith('/app/leads/'))               return { title: 'Detalle de oportunidad' }
   if (pathname === '/app/realtor-registration')         return { title: 'Mi registro de agente' }
   if (pathname === '/app/admin/applications')           return { title: 'Aplicaciones de agentes', subtitle: 'Revisa y aprueba solicitudes pendientes.' }
+  if (pathname === '/app/numbers')                      return { title: 'Números',       subtitle: 'Métricas internas de la plataforma.' }
   if (pathname === '/app/verify')                       return { title: 'Verificación',  subtitle: 'Completa la verificación de tu cuenta.' }
   return { title: 'Oqupa' }
 }
