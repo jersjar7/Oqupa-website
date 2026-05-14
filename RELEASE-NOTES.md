@@ -4,6 +4,17 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-13 — Clearer reCAPTCHA failure copy on phone verification
+
+### UX Improvements
+- **More actionable error message when the security check fails during phone-number entry.** When Firebase Auth returns `auth/captcha-check-failed` or `auth/missing-client-identifier` (the codes raised when the in-browser reCAPTCHA token can't be produced — typically because an ad blocker or privacy extension is blocking the Google reCAPTCHA script), the previous copy ("La verificación de seguridad falló. Recarga la página e intenta de nuevo. Si persiste, intenta desde otro navegador.") told the user something was wrong but not what they could do about it. New copy names the likely cause and gives three concrete recovery steps in priority order: "La verificación de seguridad de Google falló. Suele ser un bloqueador de anuncios o una extensión del navegador." followed by "Recarga la página, prueba en modo incógnito, o desde Chrome o Safari. Si persiste, escríbenos a admin@oqupa.com." Incognito mode resolves the extension-blocker case in one click — the most common cause — and the admin@oqupa.com fallback gives users a real support channel when everything else fails. Surfaced in `src/lib/authErrors.ts` so both phone-verify entry points (`AuthPipelinePage` during signup and `ProfilePage` when adding a phone later) pick up the new wording automatically.
+
+### Technical
+- Touched: `src/lib/authErrors.ts` only (4-line copy diff).
+- No behaviour change, no new dependencies, TypeScript build passes (`tsc -b && vite build`).
+
+---
+
 ## 2026-05-12 — Internal team metrics dashboard at oqupa.com/numbers
 
 ### New Features
