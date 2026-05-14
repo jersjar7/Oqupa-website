@@ -12,6 +12,7 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 ### Technical
 - Touched: `src/lib/authErrors.ts` only (4-line copy diff).
 - No behaviour change, no new dependencies, TypeScript build passes (`tsc -b && vite build`).
+- **Security: `npm audit fix` lockfile bumps.** Recently published advisories against `protobufjs` (one HIGH, six total CVEs covering DoS, prototype pollution, code injection in generated toObject, and unsafe-option-path issues) plus moderate `postcss` and `@protobufjs/utf8` advisories tripped the CI `npm audit --audit-level=high` gate. Patch-level updates within existing semver ranges restore a clean audit: `protobufjs` 7.5.5 → 7.5.8, `@protobufjs/codegen` 2.0.4 → 2.0.5, `@protobufjs/inquire` 1.1.0 → 1.1.1, `@protobufjs/utf8` 1.1.0 → 1.1.1, `postcss` 8.5.9 → 8.5.14. No `package.json` changes (lockfile only), no behaviour change, build still passes. protobufjs is a transitive dep of `@grpc/proto-loader` → `@firebase/firestore`; postcss is a dev-only Tailwind dep.
 
 ---
 
