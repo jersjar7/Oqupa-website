@@ -8,10 +8,10 @@ import TermsPage from '@/pages/TermsPage'
 import PropertyPage from '@/pages/PropertyPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ExplorePage from '@/pages/ExplorePage'
-// NumbersPage is lazy-loaded — it pulls in recharts (~120KB gzipped) and is
-// only used by the team-internal /numbers dashboard. No reason to ship it
-// in the main bundle for every visitor.
-const NumbersPage = lazy(() => import('@/pages/NumbersPage'))
+// MetricsPage is lazy-loaded — it pulls in recharts (~120KB gzipped) and is
+// only used by the team-internal /app/numbers dashboard tab. No reason to
+// ship it in the main bundle for every visitor.
+const MetricsPage = lazy(() => import('@/app/features/metrics/pages/MetricsPage'))
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
 import DashboardShell from '@/app/components/shell/DashboardShell'
@@ -33,6 +33,7 @@ import ProfilePage from '@/app/features/profile/pages/ProfilePage'
 import RealtorRegistrationPage from '@/app/features/realtor/pages/RealtorRegistrationPage'
 import AdminGuard from '@/app/components/guards/AdminGuard'
 import RealtorGuard from '@/app/components/guards/RealtorGuard'
+import MetricsGuard from '@/app/components/guards/MetricsGuard'
 import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsPage'
 import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
@@ -63,19 +64,10 @@ export default function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/property/:id" element={<PropertyPage />} />
           <Route path="/explorar" element={<ExplorePage />} />
-          {/* Internal team metrics dashboard — unlinked, noindex; not a public route. */}
-          <Route
-            path="/numbers"
-            element={
-              <Suspense fallback={
-                <div className="flex min-h-screen items-center justify-center pt-20">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                </div>
-              }>
-                <NumbersPage />
-              </Suspense>
-            }
-          />
+          {/* Legacy public /numbers URL — moved into the gated dashboard tab
+              at /app/numbers. Redirect old bookmarks through AuthGuard +
+              MetricsGuard so only allowlisted teammates can reach it. */}
+          <Route path="/numbers" element={<Navigate to="/app/numbers" replace />} />
         </Route>
 
         {/* Publisher app routes */}
@@ -117,6 +109,20 @@ export default function App() {
             <Route path="leads" element={<VerifiedGuard><RealtorGuard><LeadsPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="admin/applications" element={<AdminGuard><AdminApplicationsPage /></AdminGuard>} />
+            <Route
+              path="numbers"
+              element={
+                <MetricsGuard>
+                  <Suspense fallback={
+                    <div className="flex min-h-[60vh] items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                  }>
+                    <MetricsPage />
+                  </Suspense>
+                </MetricsGuard>
+              }
+            />
           </Route>
         </Route>
 
