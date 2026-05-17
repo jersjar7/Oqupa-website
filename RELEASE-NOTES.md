@@ -10,6 +10,7 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 - **`/reportar` — a low-friction page for users to report website bugs.** Three visible fields: how to contact them (email or phone), what happened, and an optional collapsible "Detalles técnicos" section. Replaces the previous pattern of just telling users to email `admin@oqupa.com`. Linked from the footer ("Reportar un problema"). On submit it sends a formatted email to `admin@oqupa.com`, which the team triages on its daily duty rotation.
 - **Automatic client-error capture — users don't need to open DevTools.** A global in-memory ring buffer (`src/lib/errorBuffer.ts`, initialized in `main.tsx`) records the last 20 uncaught errors, unhandled promise rejections, and `console.error` calls. When the user opens `/reportar`, the optional technical field is pre-filled with whatever was captured before they got there, plus page URL and user-agent are attached silently. The manual "paste the console" path is kept as a desktop fallback but is no longer the primary mechanism, so no screenshot tutorial is needed.
+- **Email subject routes to the on-duty developer.** Same-day refinement: the subject is `[Bug web] Para <Name>` where `<Name>` is the developer on duty that day per the team rotation (computed in America/Lima time), instead of the report's first 60 chars. Lets whoever is on rotation spot/filter their reports at a glance in the shared admin@oqupa.com inbox. The duty map is duplicated in the CF and the client fallback and must stay in sync.
 
 ### Technical
 
