@@ -98,6 +98,18 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `properties` | Property specs/photos (read by PropertyPage) | Public read |
 | `config` | Platform configuration (pricing, feature flags) | Public read |
 | `payments` | Boost payment records | Owner read only |
+| `publicMetrics` | Daily aggregate snapshots for the internal `/app/numbers` dashboard | Read = email allowlist; write = server only |
+
+### Internal metrics dashboard (`/app/numbers`)
+
+The team metrics dashboard is a gated tab inside the authenticated dashboard shell, **not** a public page. It used to live at the public `oqupa.com/numbers` URL; that route now `<Navigate replace>`s to `/app/numbers` so old bookmarks still flow through `AuthGuard` + `MetricsGuard`.
+
+- Access is an **email allowlist** (small set of teammates), not a role. To add/remove someone you must edit the list in **two places that must stay in sync**:
+  1. `src/app/components/guards/MetricsGuard.tsx` — `METRICS_ALLOWED_EMAILS` (client gate + sidebar/bottom-tab visibility via `capabilities.isMetricsViewer`).
+  2. `firestore.rules` → `match /publicMetrics/{date}` — the read allowlist (so the data itself is protected, not just the UI).
+  Both lists are lowercased and compared case-insensitively. If they drift, a user either sees an empty/error dashboard (UI allows, rules deny) or a hidden-but-readable collection (rules allow, UI hides). After editing `firestore.rules`, redeploy it manually (it is **not** auto-deployed by CI) to **both** projects.
+- `MetricsPage` is `React.lazy()`-loaded so `recharts` stays in its own chunk — non-viewers never download it.
+- Source data: `publicMetrics/{YYYY-MM-DD}` written daily (03:30 Lima) by the `snapshotPlatformMetrics` Cloud Function (Admin SDK, bypasses rules). Aggregates only — no PII.
 
 **Firestore rules** are version-controlled at the repo root (`firestore.rules`, `storage.rules`). Deploy from the repo root:
 ```bash

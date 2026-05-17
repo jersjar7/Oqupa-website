@@ -4,6 +4,24 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-13 — Move /numbers metrics dashboard behind an allowlisted dashboard tab
+
+### Security / Access
+
+- **The team metrics dashboard is no longer a public URL.** Shipped the v2 follow-up promised in the 2026-05-12 entry. Previously `oqupa.com/numbers` was an unlinked-but-public page (`noindex`, but reachable by anyone who had the URL) and the backing `publicMetrics` collection allowed `read: if true` — so active-listing counts, lifetime boost revenue, contact rates, and district breakdowns were exposed to anyone who guessed the path. The page now lives at `/app/numbers` as a gated tab inside the authenticated dashboard shell, restricted to a small email allowlist of teammates. Non-allowlisted authenticated users are redirected to `/app`; the old public `/numbers` route now `<Navigate replace>`s to `/app/numbers` so existing bookmarks still resolve (through `AuthGuard` + `MetricsGuard`). The Flutter app is intentionally untouched — this is web-only.
+- **`publicMetrics` Firestore rule tightened** from open read to an email allowlist: `read: if request.auth != null && request.auth.token.email.lower() in [...]`. Writes were already server-only (the `snapshotPlatformMetrics` Cloud Function uses the Admin SDK and bypasses rules). Verified post-deploy: an anonymous Firestore REST read of `publicMetrics` returns `403 PERMISSION_DENIED`.
+
+### Technical
+
+- **New `MetricsGuard`** (`src/app/components/guards/MetricsGuard.tsx`) mirrors `AdminGuard`: a `METRICS_ALLOWED_EMAILS` list + `isMetricsAllowedEmail()` helper, case-insensitive (lowercased) matching. `Capabilities` gains `isMetricsViewer`, wired so the "Números" sidebar/bottom-tab entry only renders for allowlisted users. Access is tied to the **real** user, not the admin "view-as" simulation, so an admin debugging as another role does not see revenue numbers.
+- **The allowlist now lives in two files that must be kept in sync** — `MetricsGuard.tsx` (UI gate) and `firestore.rules` `match /publicMetrics/{date}` (data gate). This invariant is documented in `Oqupa-website/CLAUDE.md` → "Internal metrics dashboard". Editing one without the other produces either an empty/error dashboard or a hidden-but-readable collection.
+- **`NumbersPage.tsx` → `src/app/features/metrics/pages/MetricsPage.tsx`.** Same charts, adapted for the dashboard shell: topbar title/subtitle via `useSetPageMeta` (snapshot date pulled from Firestore), in-page `<h1>` and the `noindex` meta hack dropped (it is behind auth now). Still `React.lazy()`-loaded so `recharts` stays in its own chunk; non-viewers never download it (`MetricsPage` chunk ≈ 9 KB gzipped, charts vendor chunk loads on demand).
+- **Tests:** new `MetricsGuard.test.tsx` mirrors the `AdminGuard` suite (loading, non-allowlisted redirect, allowlisted render, case-insensitive match, helper unit tests). 254/254 vitest pass; `tsc -b && vite build` clean.
+- **Deploy note:** `firestore.rules` is **not** auto-deployed by CI — it was manually `firebase deploy --only firestore:rules`'d to **both** `oqupa-staging` and `oqupa-production` alongside the master push that auto-deployed the website. Any future allowlist edit must repeat that manual rules deploy to both projects.
+- **Cloudflare cache caveat (one-time, expired):** the SPA HTML at `oqupa.com/numbers` is Cloudflare-cached `max-age=3600`, so for up to ~1h after deploy a stale client could still hit the old bundle and see an error state (the rule was already tightened, so the data fetch failed closed — no leak). Resolved within the hour as the cache rotated.
+
+---
+
 ## 2026-05-13 — Clearer reCAPTCHA failure copy on phone verification
 
 ### UX Improvements
