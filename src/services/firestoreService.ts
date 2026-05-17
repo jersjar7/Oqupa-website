@@ -182,6 +182,26 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
+// On-duty developer for the current day, Lima time. Mirrors the team duty
+// rotation; MUST stay in sync with the CF copy in
+// oqupa/functions/index.js (bugReportDutyName).
+function bugReportDutyName(): string {
+  const weekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Lima',
+    weekday: 'long',
+  }).format(new Date())
+  const duty: Record<string, string> = {
+    Monday: 'Kenny',
+    Tuesday: 'Sarah',
+    Wednesday: 'Kenny',
+    Thursday: 'Samuel',
+    Friday: 'Jerson',
+    Saturday: 'Sarah',
+    Sunday: 'Jerson',
+  }
+  return duty[weekday] || 'Jerson'
+}
+
 export const firestoreService = {
   async addWaitlistEntry(
     entry: Omit<WaitlistEntry, 'createdAt'>
@@ -227,7 +247,7 @@ export const firestoreService = {
     return addDoc(mailRef, {
       to: 'admin@oqupa.com',
       message: {
-        subject: `[Bug web] ${report.description.slice(0, 60)}`,
+        subject: `[Bug web] Para ${bugReportDutyName()}`,
         html: `
           <h2>Reporte de error en la web</h2>
           <table style="border-collapse:collapse;font-family:sans-serif;">
