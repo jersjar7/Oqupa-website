@@ -5,6 +5,7 @@ import Layout from '@/components/layout/Layout'
 import LandingPage from '@/pages/LandingPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import TermsPage from '@/pages/TermsPage'
+import BugReportPage from '@/pages/BugReportPage'
 import PropertyPage from '@/pages/PropertyPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ExplorePage from '@/pages/ExplorePage'
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/reportar" element={<BugReportPage />} />
           <Route path="/property/:id" element={<PropertyPage />} />
           <Route path="/explorar" element={<ExplorePage />} />
           {/* Legacy public /numbers URL — moved into the gated dashboard tab

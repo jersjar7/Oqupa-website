@@ -94,6 +94,14 @@ export default function Footer() {
                     Términos de Servicio
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/reportar"
+                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
+                  >
+                    Reportar un problema
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

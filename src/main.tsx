@@ -5,6 +5,10 @@ import { Toaster } from 'sonner'
 import App from './App'
 import './index.css'
 import { AnalyticsLogger } from '@/lib/analytics'
+import { initErrorBuffer } from '@/lib/errorBuffer'
+
+// Buffer recent client errors so the /reportar form can auto-attach them.
+initErrorBuffer()
 
 // Catch unhandled errors outside React
 window.addEventListener('error', (event) => {
