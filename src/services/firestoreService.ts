@@ -173,6 +173,15 @@ function propertyFromDoc(id: string, data: Record<string, unknown>): Property {
   }
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export const firestoreService = {
   async addWaitlistEntry(
     entry: Omit<WaitlistEntry, 'createdAt'>
@@ -203,6 +212,34 @@ export const firestoreService = {
     })
 
     return docRef
+  },
+
+  // Direct mail-collection write. Degraded fallback for when reCAPTCHA is
+  // unavailable; the primary path is the submitBugReportWithCaptcha CF.
+  async submitBugReport(report: {
+    contact: string
+    description: string
+    technical: string
+    pageUrl: string
+    userAgent: string
+  }) {
+    const mailRef = collection(db, 'mail')
+    return addDoc(mailRef, {
+      to: 'admin@oqupa.com',
+      message: {
+        subject: `[Bug web] ${report.description.slice(0, 60)}`,
+        html: `
+          <h2>Reporte de error en la web</h2>
+          <table style="border-collapse:collapse;font-family:sans-serif;">
+            <tr><td style="padding:8px;font-weight:bold;vertical-align:top;">Contacto:</td><td style="padding:8px;">${escapeHtml(report.contact)}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;vertical-align:top;">Descripción:</td><td style="padding:8px;white-space:pre-wrap;">${escapeHtml(report.description)}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;vertical-align:top;">Página:</td><td style="padding:8px;">${escapeHtml(report.pageUrl)}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;vertical-align:top;">Navegador:</td><td style="padding:8px;">${escapeHtml(report.userAgent)}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;vertical-align:top;">Detalles técnicos:</td><td style="padding:8px;"><pre style="white-space:pre-wrap;font-size:12px;background:#f5f5f5;padding:8px;border-radius:4px;">${escapeHtml(report.technical) || '—'}</pre></td></tr>
+          </table>
+        `,
+      },
+    })
   },
 
   async getActiveListingsWithProperties(): Promise<ListingWithProperty[]> {
