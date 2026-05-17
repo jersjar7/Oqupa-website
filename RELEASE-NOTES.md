@@ -4,6 +4,23 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-05-17 — User-facing bug report form at /reportar
+
+### New Features
+
+- **`/reportar` — a low-friction page for users to report website bugs.** Three visible fields: how to contact them (email or phone), what happened, and an optional collapsible "Detalles técnicos" section. Replaces the previous pattern of just telling users to email `admin@oqupa.com`. Linked from the footer ("Reportar un problema"). On submit it sends a formatted email to `admin@oqupa.com`, which the team triages on its daily duty rotation.
+- **Automatic client-error capture — users don't need to open DevTools.** A global in-memory ring buffer (`src/lib/errorBuffer.ts`, initialized in `main.tsx`) records the last 20 uncaught errors, unhandled promise rejections, and `console.error` calls. When the user opens `/reportar`, the optional technical field is pre-filled with whatever was captured before they got there, plus page URL and user-agent are attached silently. The manual "paste the console" path is kept as a desktop fallback but is no longer the primary mechanism, so no screenshot tutorial is needed.
+
+### Technical
+
+- **Submit path mirrors the proven waitlist form.** Primary: reCAPTCHA Enterprise token (`bug_report` action) → new `submitBugReportWithCaptcha` Cloud Function, which verifies the token server-side (score ≥ 0.5, same threshold as `submitWaitlistWithCaptcha`) and writes the `mail` doc with the Admin SDK. Degraded fallback when reCAPTCHA is unavailable: direct client write to the public-create `mail` collection. Either path produces the same email via the Trigger Email extension.
+- **User input is HTML-escaped** in both the Cloud Function and the client fallback before going into the email body — bug reports contain free-form text and console dumps, which the existing (unescaped) waitlist code would have mangled or allowed injection through. The waitlist code was intentionally left as-is; the flaw was just not replicated.
+- New files: `src/pages/BugReportPage.tsx`, `src/hooks/useBugReportForm.ts`, `src/lib/errorBuffer.ts`. Route `/reportar` added in `App.tsx`; footer link added; `firestoreService.submitBugReport()` added. 254/254 vitest pass; `tsc -b && vite build` clean.
+- **Deploy note:** the `submitBugReportWithCaptcha` Cloud Function is **not** auto-deployed by CI — it was manually `firebase deploy --only functions:submitBugReportWithCaptcha`'d to **both** `oqupa-staging` and `oqupa-production`, each followed by the required `gcloud run services update submitbugreportwithcaptcha --no-invoker-iam-check` (GCP org policy blocks `allUsers` invoker bindings on new 2nd-gen callables). CF code is committed in the `oqupa` repo (`functions/index.js`).
+- **Known environment caveat:** email delivery is **production-only**. `oqupa-staging` has no Trigger Email extension installed, so on staging the `mail` doc is written but never sent (identical to the waitlist form's staging behavior). This feature was therefore validated directly on production, the same way the waitlist form was.
+
+---
+
 ## 2026-05-13 — Move /numbers metrics dashboard behind an allowlisted dashboard tab
 
 ### Security / Access
