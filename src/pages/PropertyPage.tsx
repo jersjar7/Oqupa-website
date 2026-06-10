@@ -197,7 +197,6 @@ export default function PropertyPage() {
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-
   // SEO meta tags
   const metaTitle = useMemo(() => {
     if (!listing || !property) return 'Propiedad - Oqupa'
