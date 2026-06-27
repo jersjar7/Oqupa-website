@@ -40,6 +40,9 @@ import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
 import InterestedAgentsPage from '@/app/features/leads/pages/InterestedAgentsPage'
 import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
+import ListsPage from '@/app/features/lists/pages/ListsPage'
+import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
+import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -47,6 +50,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ListStoreInitializer />
       {import.meta.env.DEV && (
         <div style={{
           position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
@@ -107,6 +111,8 @@ export default function App() {
             <Route path="listings/:id/agents" element={<VerifiedGuard><InterestedAgentsPage /></VerifiedGuard>} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="payments" element={<PaymentHistoryPage />} />
+            <Route path="lists" element={<ListsPage />} />
+            <Route path="lists/:listId" element={<ListDetailPage />} />
             <Route path="realtor-registration" element={<VerifiedGuard><RealtorRegistrationPage /></VerifiedGuard>} />
             <Route path="leads" element={<VerifiedGuard><RealtorGuard><LeadsPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />
