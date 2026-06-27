@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Home, LogOut, User, Briefcase, Clock, CreditCard, ShieldCheck, Star } from 'lucide-react'
+import { Home, LogOut, User, Briefcase, Clock, CreditCard, ShieldCheck, Star, Heart } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { isAdminEmail } from '@/app/components/guards/AdminGuard'
@@ -73,6 +73,11 @@ export default function AppLayout() {
                           },
                         ]
                       : []),
+                    {
+                      label: 'Mis Listas',
+                      icon: <Heart className="h-4 w-4" />,
+                      to: '/app/lists',
+                    },
                     // Payment history menu item
                     {
                       label: 'Mis Pagos',
