@@ -60,7 +60,7 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="cursor-pointer"
+          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
           style={{
             position: 'fixed',
             left: pos.left,
@@ -72,9 +72,18 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
             transformOrigin: 'bottom center',
             zIndex: 9999,
           }}
+          role="button"
+          tabIndex={0}
+          aria-label="Ver detalles de la propiedad"
           onMouseEnter={() => onHover(item.listing.id)}
           onMouseLeave={() => onHover(null)}
           onClick={() => navigate(`/property/${item.listing.id}`)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              navigate(`/property/${item.listing.id}`)
+            }
+          }}
         >
           <CardContent item={item} />
 

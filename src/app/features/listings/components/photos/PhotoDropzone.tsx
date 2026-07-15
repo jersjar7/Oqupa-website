@@ -11,6 +11,7 @@ export default function PhotoDropzone({ variant, onClick }: PhotoDropzoneProps) 
       <button
         type="button"
         onClick={onClick}
+        aria-label="Agregar foto"
         className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-text-tertiary transition-colors hover:border-primary/30 hover:text-primary"
       >
         <ImagePlus className="h-6 w-6" />

@@ -36,10 +36,19 @@ export default function MapPreviewCard({ item }: MapPreviewCardProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="cursor-pointer"
+              className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+              role="button"
+              tabIndex={0}
+              aria-label="Ver detalles de la propiedad"
               onClick={(e) => {
                 e.stopPropagation()
                 navigate(`/property/${item.listing.id}`)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/property/${item.listing.id}`)
+                }
               }}
             >
               <CardContent item={item} />
@@ -81,6 +90,7 @@ export function CardContent({ item }: { item: ListingWithProperty }) {
           photoRefs={photoRefs}
           maxPhotos={5}
           aspectRatio="4/3"
+          alt={`${typeLabel} en ${property.location.distrito}`}
           blurHash={property.media.photoBlurHashes?.[0]}
           microThumb={property.media.primaryPhotoMicroThumb}
         />

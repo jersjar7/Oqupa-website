@@ -13,6 +13,8 @@ interface PhotoCarouselProps {
   onPhotoClick?: () => void
   blurHash?: string
   microThumb?: string
+  /** Description used to build each slide's alt text (e.g. "Casa en Piura"). */
+  alt?: string
 }
 
 export default function PhotoCarousel({
@@ -23,6 +25,7 @@ export default function PhotoCarousel({
   onPhotoClick,
   blurHash,
   microThumb,
+  alt = 'Propiedad',
 }: PhotoCarouselProps) {
   const photos = photoRefs.slice(0, maxPhotos)
   const count = photos.length
@@ -74,14 +77,14 @@ export default function PhotoCarousel({
               {i === 0 ? (
                 <AnimatedImage
                   src={src}
-                  alt=""
+                  alt={`${alt} · foto ${i + 1} de ${count}`}
                   className="h-full w-full object-cover"
                   loading="eager"
                 />
               ) : (
                 <img
                   src={src}
-                  alt=""
+                  alt={`${alt} · foto ${i + 1} de ${count}`}
                   className="h-full w-full object-cover"
                   loading="lazy"
                   decoding="async"

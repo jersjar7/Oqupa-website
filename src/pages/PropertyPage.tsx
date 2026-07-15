@@ -62,9 +62,11 @@ function PropertyGallery({ images }: { images: string[] }) {
           onTouchEnd={mobileCarousel.onTouchEnd}
         >
           {images.map((url, i) => (
-            <div
+            <button
               key={i}
-              className="h-[300px] w-full shrink-0 cursor-pointer"
+              type="button"
+              aria-label={`Ver foto ${i + 1} en pantalla completa`}
+              className="block h-[300px] w-full shrink-0 cursor-pointer border-0 p-0"
               onClick={() => openModal(i)}
             >
               <AnimatedImage
@@ -74,7 +76,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
               />
-            </div>
+            </button>
           ))}
         </div>
 
@@ -131,20 +133,24 @@ function PropertyGallery({ images }: { images: string[] }) {
       {/* Desktop grid */}
       <div className="mx-auto hidden max-w-6xl px-4 pt-6 md:block">
         {images.length === 1 ? (
-          <div
-            className="group h-[420px] cursor-pointer overflow-hidden rounded-xl"
+          <button
+            type="button"
+            aria-label="Ver foto 1 en pantalla completa"
+            className="group block h-[420px] w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0"
             onClick={() => openModal(0)}
           >
             <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
-          </div>
+          </button>
         ) : (
           <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
-            <div
-              className="group col-span-2 row-span-2 cursor-pointer overflow-hidden"
+            <button
+              type="button"
+              aria-label="Ver foto 1 en pantalla completa"
+              className="group col-span-2 row-span-2 block cursor-pointer overflow-hidden border-0 p-0"
               onClick={() => openModal(0)}
             >
               <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
-            </div>
+            </button>
             {visibleImages.slice(1).map((url, i) => {
               const imageIndex = i + 1
               const totalRight = visibleImages.length - 1
@@ -152,9 +158,15 @@ function PropertyGallery({ images }: { images: string[] }) {
               const gridClass = getRightImageClass(i, totalRight)
 
               return (
-                <div
+                <button
                   key={imageIndex}
-                  className={`group relative cursor-pointer overflow-hidden ${gridClass}`}
+                  type="button"
+                  aria-label={
+                    isLast && hasMore
+                      ? `Ver todas las ${images.length} fotos`
+                      : `Ver foto ${imageIndex + 1} en pantalla completa`
+                  }
+                  className={`group relative block cursor-pointer overflow-hidden border-0 p-0 ${gridClass}`}
                   onClick={() => openModal(imageIndex)}
                 >
                   <AnimatedImage
@@ -171,7 +183,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                       </span>
                     </div>
                   )}
-                </div>
+                </button>
               )
             })}
           </div>
