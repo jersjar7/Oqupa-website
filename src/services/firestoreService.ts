@@ -13,9 +13,7 @@ import {
   deleteDoc,
   setDoc,
   serverTimestamp,
-  increment,
   writeBatch,
-  runTransaction,
   Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
@@ -29,6 +27,19 @@ import type { ContactTimeSlot, SupportedCountryCode, OperationType } from '@/typ
 import type { ListingWithProperty, ExploreListingsPage } from '@/types/explore'
 import type { RealtorApplication } from '@/types/realtorApplication'
 import type { RealtorClaim } from '@/types/realtorClaim'
+
+// Maps a claimOpportunity Cloud Function error to a user-facing Spanish message.
+// The CF sends Spanish messages via HttpsError, so prefer those; fall back to a
+// generic message for network/unknown errors.
+function mapClaimError(err: unknown): string {
+  const e = err as { code?: string; message?: string }
+  const isFunctionsError =
+    typeof e?.code === 'string' && e.code.startsWith('functions/')
+  if (isFunctionsError && e.message && e.message.trim().length > 0) {
+    return e.message
+  }
+  return 'No se pudo reclamar la oportunidad. Intenta de nuevo.'
+}
 
 // Strip undefined values recursively (Firestore rejects undefined)
 // Omits undefined keys entirely to avoid writing null for fields that don't exist
@@ -749,75 +760,17 @@ export const firestoreService = {
     realtorPhone: string
     realtorBusinessName: string
   }): Promise<void> {
-    const now = new Date()
-    const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const claimId = `claim_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-    const monthlyLimit = 5
-
-    await runTransaction(db, async (transaction) => {
-      // 1. Read user doc inside transaction to prevent race conditions
-      const userRef = doc(db, 'users', data.realtorId)
-      const userDoc = await transaction.get(userRef)
-      const userData = userDoc.data() as Record<string, unknown> | undefined
-      const storedClaimMonth = userData?.['claimMonth'] as string | undefined
-      const currentClaimCount = (userData?.['claimsThisMonth'] as number) ?? 0
-
-      // Check monthly limit atomically
-      const effectiveCount = storedClaimMonth !== claimMonth ? 0 : currentClaimCount
-      if (effectiveCount >= monthlyLimit) {
-        throw new Error('Has alcanzado el limite de reclamaciones este mes.')
-      }
-
-      // 2. Read listing doc to check if slots are full
-      const listingRef = doc(db, 'listings', data.listingId)
-      const listingDoc = await transaction.get(listingRef)
-      const listingData = listingDoc.data() as Record<string, unknown> | undefined
-      const currentClaims = (listingData?.['currentClaimsCount'] as number) ?? 0
-      const maxRealtors = (listingData?.['maxRealtors'] as number) ?? 3
-
-      if (currentClaims >= maxRealtors) {
-        throw new Error('Todos los espacios de esta oportunidad estan ocupados.')
-      }
-
-      // 3. Check for duplicate claim by this realtor on this listing
-      const existingClaimsQuery = query(
-        collection(db, 'realtorClaims'),
-        where('listingId', '==', data.listingId),
-        where('realtorId', '==', data.realtorId),
-      )
-      const existingClaims = await getDocs(existingClaimsQuery)
-      if (!existingClaims.empty) {
-        throw new Error('Ya has reclamado esta oportunidad.')
-      }
-
-      // 4. Create claim document
-      const claimRef = doc(db, 'realtorClaims', claimId)
-      transaction.set(claimRef, {
-        listingId: data.listingId,
-        realtorId: data.realtorId,
-        listingOwnerId: data.listingOwnerId,
-        claimedAt: serverTimestamp(),
-        claimMonth,
-        realtorName: data.realtorName,
-        realtorPhone: data.realtorPhone,
-        realtorBusinessName: data.realtorBusinessName,
-        ownerContacted: false,
-        assignedByOwner: false,
-      })
-
-      // 5. Update user claim count
-      const newClaimCount = effectiveCount + 1
-      transaction.update(userRef, {
-        claimsThisMonth: newClaimCount,
-        claimMonth,
-        updatedAt: serverTimestamp(),
-      })
-
-      // 6. Increment listing's currentClaimsCount
-      transaction.update(listingRef, {
-        currentClaimsCount: increment(1),
-      })
-    })
+    // Server-authoritative claim: the claimOpportunity Cloud Function enforces
+    // verified-realtor, opt-in, active, capacity, dedupe and the monthly limit
+    // atomically. Only the listingId is sent — the caller and realtor identity
+    // are derived server-side. The old client transaction is disabled by the
+    // Firestore rules (claims + currentClaimsCount are server-only).
+    const claim = httpsCallable(functions, 'claimOpportunity')
+    try {
+      await claim({ listingId: data.listingId })
+    } catch (err) {
+      throw new Error(mapClaimError(err))
+    }
   },
 
   async getClaimedLeadsWithDetails(
