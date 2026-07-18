@@ -67,8 +67,8 @@ function renderPage() {
 
 function fillForm({
   email = 'new@example.com',
-  password = 'password123',
-  confirmPassword = 'password123',
+  password = 'Password1!',
+  confirmPassword = 'Password1!',
 }: {
   email?: string
   password?: string
@@ -130,7 +130,7 @@ describe('RegisterPage', () => {
       await waitFor(() => {
         expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalledWith(
           'new@example.com',
-          'password123'
+          'Password1!'
         )
       })
     })
@@ -183,7 +183,7 @@ describe('RegisterPage', () => {
       fillForm({ password: '12345', confirmPassword: '12345' })
       fireEvent.submit(document.querySelector('form')!)
       await waitFor(() => {
-        expect(screen.getByText(/al menos 6/i)).toBeDefined()
+        expect(screen.getByText(/al menos 8/i)).toBeDefined()
       })
       expect(mockAuthService.registerWithEmailAndPassword).not.toHaveBeenCalled()
     })
