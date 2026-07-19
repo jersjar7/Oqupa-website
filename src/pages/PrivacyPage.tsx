@@ -134,8 +134,7 @@ export default function PrivacyPage() {
           <p className="mt-3 text-gray-600 leading-relaxed">
             Oqupa ofrece funciones de pago opcionales (como boosts para destacar
             tus anuncios). El procesamiento de pagos se realiza a través de{' '}
-            <strong>Stripe, Inc.</strong>, incluyendo métodos locales como{' '}
-            <strong>Yape</strong> y <strong>Plin</strong>.
+            <strong>Stripe, Inc.</strong>
           </p>
           <p className="mt-3 text-gray-600 leading-relaxed">
             <strong>Importante:</strong> Oqupa no recopila ni almacena
@@ -250,8 +249,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Stripe, Inc.:</strong> procesamiento de pagos por
-              funciones opcionales (boosts), incluyendo Yape y Plin para el
-              mercado peruano.{' '}
+              funciones opcionales (boosts).{' '}
               <a
                 href="https://stripe.com/privacy"
                 target="_blank"
