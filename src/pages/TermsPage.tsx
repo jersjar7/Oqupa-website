@@ -159,10 +159,9 @@ export default function TermsPage() {
             </li>
           </ul>
           <p className="mt-3 text-gray-600 leading-relaxed">
-            Los pagos se procesan a través de <strong>Stripe, Inc.</strong>,
-            incluyendo métodos locales como <strong>Yape</strong> y{' '}
-            <strong>Plin</strong>. Los precios se muestran en la aplicación
-            antes de confirmar la compra. Al completar un pago, autorizas a
+            Los pagos se procesan a través de <strong>Stripe, Inc.</strong> Los
+            precios se muestran en la aplicación antes de confirmar la compra. Al
+            completar un pago, autorizas a
             Stripe a cargar el monto correspondiente en tu método de pago
             seleccionado.
           </p>
