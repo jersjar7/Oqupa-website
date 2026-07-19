@@ -66,6 +66,13 @@ export default function PrivacyPage() {
               </strong>{' '}
               — esta información es procesada directamente por Stripe.
             </li>
+            <li>
+              <strong>Actividad de navegación:</strong> registramos qué anuncios
+              visualizas y cuándo, para indicarte en la aplicación cuáles ya has
+              visto y para llevar un conteo de vistas de cada anuncio. Esta
+              información se conserva por un período limitado (hasta 45 días) y
+              luego se elimina automáticamente.
+            </li>
           </ul>
         </section>
 
