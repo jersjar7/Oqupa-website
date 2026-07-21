@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { setPasswordSchema, type SetPasswordFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { Button, Input } from '@/app/components/ui'
+import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 
 type ActionMode = 'resetPassword' | 'verifyEmail' | 'unknown'
 
@@ -39,10 +40,13 @@ export default function SetPasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<SetPasswordFormData>({
     resolver: zodResolver(setPasswordSchema),
   })
+
+  const passwordValue = watch('password', '')
 
   useEffect(() => {
     let cancelled = false
@@ -186,11 +190,12 @@ export default function SetPasswordPage() {
             label="Nueva contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             error={errors.password?.message}
             revealToggle
             {...register('password')}
           />
+          <PasswordRequirements password={passwordValue} />
 
           <Input
             label="Confirma la contraseña"

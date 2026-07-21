@@ -281,7 +281,7 @@ export default function AuthPipelinePage() {
                     }
 
                     await refreshUser()
-                    toast.success('Teléfono verificado')
+                    toast.success('¡Teléfono verificado! No olvides volver a activar tu bloqueador de anuncios.')
                     navigate(consumeReturnUrl() ?? '/app')
                   } catch (err) {
                     const errorInfo = getPhoneAuthError(err)
@@ -404,7 +404,11 @@ function PhoneStep({
         Te enviaremos un código SMS para verificar tu número
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
+      <div className="mt-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-text-primary">
+        ¿Tienes un bloqueador de anuncios activo? Puede interferir con el envío del código. Desactívalo temporalmente antes de continuar.
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div className="flex gap-2">
           <div className="relative">
             <select

@@ -116,10 +116,10 @@ describe('SetPasswordPage', () => {
       await waitFor(() => screen.getByLabelText(/nueva contrase/i))
 
       fireEvent.change(screen.getByLabelText(/nueva contrase/i), {
-        target: { value: 'newpassword123' },
+        target: { value: 'Password1!' },
       })
       fireEvent.change(screen.getByLabelText(/confirma/i), {
-        target: { value: 'newpassword123' },
+        target: { value: 'Password1!' },
       })
       fireEvent.submit(document.querySelector('form')!)
 
@@ -136,10 +136,10 @@ describe('SetPasswordPage', () => {
       await waitFor(() => screen.getByLabelText(/nueva contrase/i))
 
       fireEvent.change(screen.getByLabelText(/nueva contrase/i), {
-        target: { value: 'newpassword123' },
+        target: { value: 'Password1!' },
       })
       fireEvent.change(screen.getByLabelText(/confirma/i), {
-        target: { value: 'newpassword123' },
+        target: { value: 'Password1!' },
       })
       fireEvent.submit(document.querySelector('form')!)
 

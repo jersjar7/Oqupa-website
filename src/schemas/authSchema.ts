@@ -11,15 +11,21 @@ export const loginSchema = z.object({
 })
 export type LoginFormData = z.infer<typeof loginSchema>
 
+const passwordSchema = z
+  .string()
+  .min(8, 'La contraseña debe tener al menos 8 caracteres')
+  .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
+  .regex(/[a-z]/, 'Debe incluir al menos una minúscula')
+  .regex(/\d/, 'Debe incluir al menos un número')
+  .regex(/[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>/?`~]/, 'Debe incluir al menos un símbolo')
+
 export const registerSchema = z
   .object({
     email: z
       .string()
       .min(1, 'El correo es requerido')
       .email('Ingresa un correo válido'),
-    password: z
-      .string()
-      .min(6, 'La contraseña debe tener al menos 6 caracteres'),
+    password: passwordSchema,
     confirmPassword: z
       .string()
       .min(1, 'Confirma tu contraseña'),
@@ -48,9 +54,7 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
 export const setPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(6, 'La contraseña debe tener al menos 6 caracteres'),
+    password: passwordSchema,
     confirmPassword: z
       .string()
       .min(1, 'Confirma tu contraseña'),

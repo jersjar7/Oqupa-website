@@ -61,8 +61,14 @@ export function useClaimLead() {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       toast.success('Propiedad reclamada exitosamente')
     },
-    onError: () => {
-      toast.error('Error al reclamar la propiedad')
+    onError: (error) => {
+      // createRealtorClaim rethrows the CF's Spanish message (full / already
+      // claimed / monthly limit / not verified); show it verbatim.
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Error al reclamar la propiedad',
+      )
     },
   })
 }

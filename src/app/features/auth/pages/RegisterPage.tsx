@@ -7,6 +7,7 @@ import { registerSchema, type RegisterFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { getRegisterAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
+import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -15,10 +16,13 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
+
+  const passwordValue = watch('password', '')
 
   async function onSubmit(data: RegisterFormData) {
     setError(null)
@@ -66,11 +70,12 @@ export default function RegisterPage() {
             label="Contraseña"
             type="password"
             autoComplete="new-password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             error={errors.password?.message}
             revealToggle
             {...register('password')}
           />
+          <PasswordRequirements password={passwordValue} />
 
           <Input
             label="Confirma la contraseña"

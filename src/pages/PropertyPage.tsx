@@ -20,6 +20,7 @@ import ShareFormatModal from '@/components/ShareFormatModal'
 import GalleryModal from '@/app/components/GalleryModal'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import AppStoreBadges from '@/components/AppStoreBadges'
+import SaveButton from '@/components/lists/SaveButton'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -197,7 +198,6 @@ export default function PropertyPage() {
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-
   // SEO meta tags
   const metaTitle = useMemo(() => {
     if (!listing || !property) return 'Propiedad - Oqupa'
@@ -342,6 +342,7 @@ export default function PropertyPage() {
                 <Eye className="h-4 w-4 shrink-0" />
                 {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
               </span>
+              <SaveButton listingId={listing.id} variant="page" />
               <button
                 onClick={handleShare}
                 className="rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
