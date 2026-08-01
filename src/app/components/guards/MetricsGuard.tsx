@@ -1,21 +1,11 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
-
-// Internal team allowlist for the /app/numbers metrics dashboard.
-// Mirror this list in firestore.rules under match /publicMetrics/{date}.
-const METRICS_ALLOWED_EMAILS = [
-  'admin@oqupa.com',
-  'becjanmor@gmail.com',
-  'ed.rafaelbarbosa@gmail.com',
-  'hrn.mv11@gmail.com',
-  'kadenthecanadian@gmail.com',
-  'landerjabar@gmail.com',
-  'libardo.pico26@gmail.com',
-]
+// Access for /app/numbers lives in ONE place — edit that file, not this one.
+import { canAccess } from '@/app/features/access/people'
 
 export function isMetricsAllowedEmail(email: string | undefined | null): boolean {
-  return !!email && METRICS_ALLOWED_EMAILS.includes(email.toLowerCase())
+  return canAccess(email, 'metrics')
 }
 
 interface MetricsGuardProps {

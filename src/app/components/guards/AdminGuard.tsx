@@ -2,10 +2,11 @@ import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
 
-const ADMIN_EMAILS = ['admin@oqupa.com', 'bbarba@oqupa.com']
+// Access lives in ONE place: src/app/features/access/people.ts
+import { canAccess } from '@/app/features/access/people'
 
-export function isAdminEmail(email: string | undefined): boolean {
-  return !!email && ADMIN_EMAILS.includes(email)
+export function isAdminEmail(email: string | undefined | null): boolean {
+  return canAccess(email, 'admin')
 }
 
 interface AdminGuardProps {

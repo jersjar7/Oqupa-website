@@ -20,6 +20,7 @@ vi.mock('@/app/components/ui', () => ({
 }))
 
 import MetricsGuard, { isMetricsAllowedEmail } from '../MetricsGuard'
+import { PEOPLE } from '@/app/features/access/people'
 
 function renderWithRouter() {
   return render(
@@ -86,7 +87,7 @@ describe('MetricsGuard', () => {
     it('renders children for an allowlisted gmail account', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.user = { email: 'landerjabar@gmail.com' }
+      mockAuthState.user = { email: 'libardo.pico26@gmail.com' }
       renderWithRouter()
       expect(screen.getByTestId('metrics-content')).toBeDefined()
     })
@@ -101,19 +102,17 @@ describe('MetricsGuard', () => {
   })
 
   describe('isMetricsAllowedEmail helper', () => {
-    it('returns true for every allowlisted email', () => {
-      const allowed = [
-        'admin@oqupa.com',
-        'becjanmor@gmail.com',
-        'ed.rafaelbarbosa@gmail.com',
-        'hrn.mv11@gmail.com',
-        'kadenthecanadian@gmail.com',
-        'landerjabar@gmail.com',
-        'libardo.pico26@gmail.com',
-      ]
-      for (const email of allowed) {
-        expect(isMetricsAllowedEmail(email)).toBe(true)
+    it('accepts exactly the people granted metrics, and nobody else', () => {
+      // Derived from the single access list rather than a second copy of the
+      // emails — hardcoding them here would be the very duplication this
+      // refactor removed, and would disagree the next time someone changes.
+      for (const person of PEOPLE) {
+        expect(isMetricsAllowedEmail(person.email)).toBe(
+          person.access.includes('metrics'),
+        )
       }
+      // Stops the assertion above passing vacuously if everyone had metrics.
+      expect(PEOPLE.some((p) => !p.access.includes('metrics'))).toBe(true)
     })
 
     it('returns false for non-allowlisted emails', () => {
@@ -128,7 +127,7 @@ describe('MetricsGuard', () => {
 
     it('lowercases email before matching', () => {
       expect(isMetricsAllowedEmail('Admin@Oqupa.com')).toBe(true)
-      expect(isMetricsAllowedEmail('LANDERJABAR@GMAIL.COM')).toBe(true)
+      expect(isMetricsAllowedEmail('LiBardo.Pico26@Gmail.com')).toBe(true)
     })
   })
 })

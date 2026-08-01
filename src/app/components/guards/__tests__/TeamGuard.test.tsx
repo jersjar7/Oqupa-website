@@ -99,11 +99,11 @@ describe('teamRoster', () => {
     // adding one marketing person would silently have handed them the developer
     // board. Access is per board.
     for (const member of TEAM_MEMBERS) {
-      expect(isTeamMemberEmail(member.email)).toBe(member.teams.includes('dev'))
+      expect(isTeamMemberEmail(member.email)).toBe(member.access.includes('dev'))
     }
     // And the roster must actually contain someone who is NOT on dev, or this
     // test passes vacuously and the protection is untested.
-    expect(TEAM_MEMBERS.some((m) => !m.teams.includes('dev'))).toBe(true)
+    expect(TEAM_MEMBERS.some((m) => !m.access.includes('dev'))).toBe(true)
 
     expect(isTeamMemberEmail('nobody@example.com')).toBe(false)
     expect(isTeamMemberEmail(undefined)).toBe(false)
@@ -113,7 +113,7 @@ describe('teamRoster', () => {
   it('grants the marketing calendar only to marketing-team members', () => {
     for (const member of TEAM_MEMBERS) {
       expect(isMarketingMemberEmail(member.email)).toBe(
-        member.teams.includes('marketing'),
+        member.access.includes('marketing'),
       )
     }
     expect(isMarketingMemberEmail('nobody@example.com')).toBe(false)

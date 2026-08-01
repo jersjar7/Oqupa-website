@@ -19,6 +19,12 @@ jobs:
       - run: npm ci
       - name: Lint & type-check
         run: npx tsc -b --noEmit
+      # Access lists live in people.ts; firestore.rules holds a generated copy.
+      # This fails the build if someone edited one without the other — the
+      # failure mode being prevented is a teammate silently gaining or losing
+      # access to an internal page.
+      - name: Access lists in sync with firestore.rules
+        run: npm run access:check
       - name: Create .env for build
         run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
       - name: Build
