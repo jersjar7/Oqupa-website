@@ -36,7 +36,9 @@ import AdminGuard from '@/app/components/guards/AdminGuard'
 import RealtorGuard from '@/app/components/guards/RealtorGuard'
 import MetricsGuard from '@/app/components/guards/MetricsGuard'
 import TeamGuard from '@/app/components/guards/TeamGuard'
+import ContentGuard from '@/app/components/guards/ContentGuard'
 import TeamBoardPage from '@/app/features/team/pages/TeamBoardPage'
+import ContentCalendarPage from '@/app/features/content/pages/ContentCalendarPage'
 import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsPage'
 import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
@@ -120,6 +122,7 @@ export default function App() {
             <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="admin/applications" element={<AdminGuard><AdminApplicationsPage /></AdminGuard>} />
             <Route path="equipo" element={<TeamGuard><TeamBoardPage /></TeamGuard>} />
+            <Route path="contenido" element={<ContentGuard><ContentCalendarPage /></ContentGuard>} />
             <Route
               path="numbers"
               element={

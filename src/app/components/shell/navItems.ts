@@ -5,6 +5,7 @@
 import {
   Home, Briefcase, CreditCard, User, Compass, FileBadge, ClipboardList, BarChart3, Heart,
   KanbanSquare,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react'
 import type { Capabilities } from './capabilities'
@@ -32,6 +33,7 @@ const ITEMS = {
   aplicaciones:       { id: 'aplicaciones',       label: 'Aplicaciones',  to: '/app/admin/applications',       icon: ClipboardList } as NavItem,
   numeros:            { id: 'numeros',            label: 'Números',       to: '/app/numbers',                  icon: BarChart3 } as NavItem,
   equipo:             { id: 'equipo',             label: 'Equipo',        to: '/app/equipo',                   icon: KanbanSquare } as NavItem,
+  contenido:          { id: 'contenido',          label: 'Contenido',     to: '/app/contenido',                icon: CalendarDays } as NavItem,
 }
 
 /**
@@ -41,6 +43,7 @@ const ITEMS = {
 function internalItems(caps: Capabilities): NavItem[] {
   const items: NavItem[] = []
   if (caps.isTeamMember) items.push(ITEMS.equipo)
+  if (caps.isMarketingMember) items.push(ITEMS.contenido)
   if (caps.isMetricsViewer) items.push(ITEMS.numeros)
   return items
 }

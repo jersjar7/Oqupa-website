@@ -38,10 +38,11 @@ export type TeamMember = {
 }
 
 export const TEAM_MEMBERS: TeamMember[] = [
-  { name: 'Jerson', email: 'admin@oqupa.com',                  teams: ['dev'] },
+  { name: 'Jerson', email: 'admin@oqupa.com',                  teams: ['dev', 'marketing'] },
   { name: 'Sarah',  email: 'sarahwalkerdev@gmail.com',         teams: ['dev'] },
   { name: 'Kenny',  email: 'kennethtquintana@gmail.com',       teams: ['dev'] },
   { name: 'Sam',    email: 'samuelsotointernational@gmail.com', teams: ['dev'] },
+  { name: 'Becca',  email: 'becjanmor@gmail.com',              teams: ['marketing'] },
 ]
 
 /** The roster entry for a given email, or null if they're not on the team. */
@@ -51,9 +52,28 @@ export function memberFor(email: string | undefined | null): TeamMember | null {
   return TEAM_MEMBERS.find((m) => m.email === key) ?? null
 }
 
-/** True if this email may open and write to the team board. */
+/**
+ * True if this email may open and write to a SPECIFIC board.
+ *
+ * Team-aware on purpose. The earlier version answered "is this person on the
+ * roster at all", which meant adding one marketing person would silently have
+ * granted them the developer board too. Access is per board, always.
+ */
+export function canAccessTeam(
+  email: string | undefined | null,
+  team: TeamId,
+): boolean {
+  return memberFor(email)?.teams.includes(team) ?? false
+}
+
+/** True if this email may open and write to the DEV board (/app/equipo). */
 export function isTeamMemberEmail(email: string | undefined | null): boolean {
-  return memberFor(email) !== null
+  return canAccessTeam(email, 'dev')
+}
+
+/** True if this email may open the marketing content calendar (/app/contenido). */
+export function isMarketingMemberEmail(email: string | undefined | null): boolean {
+  return canAccessTeam(email, 'marketing')
 }
 
 /** Columns to render for a board, in display order. */
