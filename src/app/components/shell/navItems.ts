@@ -52,36 +52,26 @@ function internalItems(caps: Capabilities): NavItem[] {
 export function getNavGroups(caps: Capabilities): NavGroup[] {
   const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
 
-  // "Equipo" (the internal board) and "Números" (internal metrics) are both
-  // allowlist-gated staff tools. They get their own labelled section so they
-  // read as internal chrome rather than part of the user's own account.
+  // "Equipo" (the internal team board) and "Números" (internal metrics) are
+  // both allowlist-gated staff tools and are placed identically: inside the
+  // Admin section for dual-role admins, appended as final entries for everyone
+  // else who's allowed. Most users get neither.
   const internal = internalItems(caps)
-  const internalGroup: NavGroup[] = internal.length ? [{ label: 'Equipo', items: internal }] : []
 
   if (caps.isAdmin && caps.isRealtor) {
     return [
       { label: 'Principal', items: [dashboard, misAnuncios, misListas, pagos, miPerfil] },
       { label: 'Agente',    items: [oportunidades, miRegistroAgente] },
-      { label: 'Admin',     items: [aplicaciones] },
-      ...internalGroup,
+      { label: 'Admin',     items: [aplicaciones, ...internal] },
     ]
   }
   if (caps.isRealtor) {
-    return [
-      { items: [dashboard, oportunidades, misAnuncios, misListas, pagos, miRegistroAgente, miPerfil] },
-      ...internalGroup,
-    ]
+    return [{ items: [dashboard, oportunidades, misAnuncios, misListas, pagos, miRegistroAgente, miPerfil, ...internal] }]
   }
   if (caps.isAdmin) {
-    return [
-      { items: [dashboard, aplicaciones, misAnuncios, misListas, pagos, miPerfil] },
-      ...internalGroup,
-    ]
+    return [{ items: [dashboard, aplicaciones, misAnuncios, misListas, pagos, miPerfil, ...internal] }]
   }
-  return [
-    { items: [dashboard, misAnuncios, misListas, pagos, miPerfil] },
-    ...internalGroup,
-  ]
+  return [{ items: [dashboard, misAnuncios, misListas, pagos, miPerfil, ...internal] }]
 }
 
 /**

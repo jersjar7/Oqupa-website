@@ -8,13 +8,16 @@ import { useTeamTasks } from '@/hooks/useTeamTasks'
 import { teamTaskService } from '@/services/teamTaskService'
 import type { TeamTask } from '@/types/teamTask'
 import {
-  TEAMS,
-  columnEmailFor,
+  memberFor,
   membersOf,
-  teamsFor,
-  type TeamId,
   type TeamMember,
 } from '@/app/features/team/teamRoster'
+
+/**
+ * Only the dev board exists today. `TeamId` is still carried on every task so a
+ * second board can be added later without migrating documents.
+ */
+const BOARD = 'dev' as const
 
 /** "31 jul · 4:12 p. m." — compact enough to sit under a one-line task title. */
 function formatStamp(date: Date): string {
@@ -322,14 +325,10 @@ export default function TeamBoardPage() {
   })
 
   const user = useAuthStore((s) => s.user)
-  const email = user?.email ?? null
-  const currentEmail = columnEmailFor(email)
+  const currentEmail = memberFor(user?.email)?.email ?? null
 
-  const myTeams = useMemo(() => teamsFor(email), [email])
-  const [team, setTeam] = useState<TeamId>(() => teamsFor(email)[0] ?? 'dev')
-
-  const members = useMemo(() => membersOf(team), [team])
-  const { todo, byAssignee, isLoading, error } = useTeamTasks(team)
+  const members = useMemo(() => membersOf(BOARD), [])
+  const { todo, byAssignee, isLoading, error } = useTeamTasks(BOARD)
 
   // TeamGuard already redirected anyone off-roster; this is the belt-and-braces
   // case where the roster changed mid-session.
@@ -343,7 +342,7 @@ export default function TeamBoardPage() {
     try {
       await teamTaskService.create({
         title,
-        team,
+        team: BOARD,
         assigneeEmail,
         createdByEmail: currentEmail!,
       })
@@ -354,30 +353,6 @@ export default function TeamBoardPage() {
 
   return (
     <div className="space-y-5 p-4 md:p-6">
-      {myTeams.length > 1 && (
-        <div
-          role="tablist"
-          aria-label="Equipo"
-          className="inline-flex rounded-full border border-border bg-white p-1"
-        >
-          {TEAMS.filter((t) => myTeams.includes(t.id)).map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={team === t.id}
-              onClick={() => setTeam(t.id)}
-              className={`rounded-full px-4 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] transition-colors ${
-                team === t.id
-                  ? 'bg-secondary text-white'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
-
       {error && (
         <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 font-sans text-sm text-error">
           {error}

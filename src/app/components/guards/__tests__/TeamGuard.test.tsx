@@ -22,10 +22,9 @@ vi.mock('@/app/components/ui', () => ({
 import TeamGuard from '../TeamGuard'
 import {
   TEAM_MEMBERS,
-  columnEmailFor,
   isTeamMemberEmail,
+  memberFor,
   membersOf,
-  teamsFor,
 } from '@/app/features/team/teamRoster'
 
 function renderWithRouter() {
@@ -87,7 +86,7 @@ describe('TeamGuard', () => {
   it('matches the roster case-insensitively', () => {
     mockAuthState.isInitialized = true
     mockAuthState.isLoading = false
-    mockAuthState.user = { email: 'SarahSweetPie6@Gmail.com' }
+    mockAuthState.user = { email: 'SarahWalkerDev@Gmail.com' }
     renderWithRouter()
     expect(screen.getByTestId('team-content')).toBeDefined()
   })
@@ -109,38 +108,33 @@ describe('teamRoster', () => {
     }
   })
 
-  it('reports the boards a person belongs to', () => {
-    expect(teamsFor('ktquint@byu.edu')).toEqual(['dev'])
-    expect(teamsFor('becjanmor@gmail.com')).toEqual(['marketing'])
-    expect(teamsFor('admin@oqupa.com')).toEqual(['dev', 'marketing'])
-    expect(teamsFor('nobody@example.com')).toEqual([])
+  it('is exactly the four developers, in column order', () => {
+    expect(membersOf('dev').map((m) => m.name)).toEqual([
+      'Jerson',
+      'Sarah',
+      'Kenny',
+      'Sam',
+    ])
+    expect(membersOf('dev').map((m) => m.email)).toEqual([
+      'admin@oqupa.com',
+      'sarahwalkerdev@gmail.com',
+      'kennethtquintana@gmail.com',
+      'samuelsotointernational@gmail.com',
+    ])
   })
 
-  it('renders one column per person, not per email alias', () => {
-    const devNames = membersOf('dev').map((m) => m.name)
-    expect(devNames).toEqual([...new Set(devNames)])
-    expect(devNames).toContain('Jerson')
-    expect(devNames).toContain('Sarah')
-    expect(devNames).toContain('Kenny')
+  it('has no second board yet', () => {
+    expect(membersOf('marketing')).toEqual([])
   })
 
-  it('excludes people who are not on the requested board', () => {
-    expect(membersOf('dev').map((m) => m.name)).not.toContain('Becca')
-    expect(membersOf('marketing').map((m) => m.name)).not.toContain('Sarah')
+  it('resolves an email to its roster entry', () => {
+    expect(memberFor('KennethTQuintana@Gmail.com')?.name).toBe('Kenny')
+    expect(memberFor('nobody@example.com')).toBeNull()
+    expect(memberFor(undefined)).toBeNull()
   })
 
-  it('collapses a person\'s alias addresses onto one column', () => {
-    // Jerson can sign in as either account; both must land in the same column
-    // or work assigned under one address would be invisible in the other.
-    expect(columnEmailFor('jersondevs@gmail.com')).toBe(columnEmailFor('admin@oqupa.com'))
-    expect(columnEmailFor('nobody@example.com')).toBeNull()
-  })
-
-  it('gives every column email a matching roster entry', () => {
-    for (const team of ['dev', 'marketing'] as const) {
-      for (const member of membersOf(team)) {
-        expect(columnEmailFor(member.email)).toBe(member.email)
-      }
-    }
+  it('gives every member a distinct column', () => {
+    const emails = membersOf('dev').map((m) => m.email)
+    expect(emails).toEqual([...new Set(emails)])
   })
 })

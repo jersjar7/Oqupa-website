@@ -99,7 +99,7 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `config` | Platform configuration (pricing, feature flags) | Public read |
 | `payments` | Boost payment records | Owner read only |
 | `publicMetrics` | Daily aggregate snapshots for the internal `/app/numbers` dashboard | Read = email allowlist; write = server only |
-| `teamTasks` | Tasks on the internal team board at `/app/equipo` | Read + write = email allowlist (roster) |
+| `teamTasks` | Tasks on the internal dev board at `/app/equipo` | Read + write = email allowlist (roster) |
 
 ### Internal metrics dashboard (`/app/numbers`)
 
@@ -112,17 +112,17 @@ The team metrics dashboard is a gated tab inside the authenticated dashboard she
 - `MetricsPage` is `React.lazy()`-loaded so `recharts` stays in its own chunk — non-viewers never download it.
 - Source data: `publicMetrics/{YYYY-MM-DD}` written daily (03:30 Lima) by the `snapshotPlatformMetrics` Cloud Function (Admin SDK, bypasses rules). Aggregates only — no PII.
 
-### Internal team board (`/app/equipo`)
+### Internal dev board (`/app/equipo`)
 
-A shared to-do board for the two internal teams (`dev`, `marketing`), gated the same way as `/app/numbers` but **read + write** for everyone on the list — the board is collaborative by design, so any teammate can add, claim, reassign, finish, or delete any task on either board.
+A shared to-do board for the four developers, gated exactly like `/app/numbers` (email allowlist, own sidebar tab, invisible to everyone else) except the list grants **read + write** — the board is collaborative by design, so any teammate can add, claim, reassign, finish, or delete any task.
 
 - Layout: a row of per-person columns (fixed height, internal scroll, newest first, `created` / `done` stamps on each card) above one full-width "Por hacer" container holding unclaimed tasks.
 - No `status` field. Where a task renders is derived: `assigneeEmail === null` → the shared list; assigned + no `doneAt` → that person's column, in progress; `doneAt` set → finished. The two can't disagree.
 - **Roster lives in two places that must stay in sync:**
-  1. `src/app/features/team/teamRoster.ts` — `TEAM_MEMBERS` (drives access, the sidebar tab via `capabilities.isTeamMember`, and which columns render).
+  1. `src/app/features/team/teamRoster.ts` — `TEAM_MEMBERS` (drives access, the sidebar tab via `capabilities.isTeamMember`, and which columns render, in order).
   2. `firestore.rules` → `isTeamMember()` — the data gate.
   Same failure mode as the metrics allowlist if they drift. Rules are **not** auto-deployed — redeploy manually to staging **and** production after any roster change.
-- A person may hold more than one roster entry (Jerson signs in as either `admin@oqupa.com` or his personal account). `columnEmailFor()` collapses aliases onto one canonical column so work assigned under either address shows up in the same place.
+- Every task carries a `team` field pinned to `'dev'`. There is only one board today; the field exists so a second one (marketing) can be added later by adding roster entries, with no migration of existing documents.
 - Realtime via `onSnapshot` (`teamTaskService.subscribe`) so teammates see each other's changes without refreshing. Needs the `teamTasks: team + createdAt DESC` composite index.
 
 **Firestore rules** are version-controlled at the repo root (`firestore.rules`, `storage.rules`). Deploy from the repo root:
