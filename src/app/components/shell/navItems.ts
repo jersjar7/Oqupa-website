@@ -32,7 +32,7 @@ const ITEMS = {
   miRegistroAgente:   { id: 'miRegistroAgente',   label: 'Mi Registro',   to: '/app/realtor-registration',     icon: FileBadge } as NavItem,
   aplicaciones:       { id: 'aplicaciones',       label: 'Aplicaciones',  to: '/app/admin/applications',       icon: ClipboardList } as NavItem,
   numeros:            { id: 'numeros',            label: 'Números',       to: '/app/numbers',                  icon: BarChart3 } as NavItem,
-  equipo:             { id: 'equipo',             label: 'Equipo',        to: '/app/equipo',                   icon: KanbanSquare } as NavItem,
+  equipo:             { id: 'equipo',             label: 'Ing. de Software', to: '/app/equipo',                icon: KanbanSquare } as NavItem,
   contenido:          { id: 'contenido',          label: 'Contenido',     to: '/app/contenido',                icon: CalendarDays } as NavItem,
 }
 
@@ -55,7 +55,7 @@ function internalItems(caps: Capabilities): NavItem[] {
 export function getNavGroups(caps: Capabilities): NavGroup[] {
   const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
 
-  // "Equipo" (the internal team board) and "Números" (internal metrics) are
+  // "Ing. de Software" (the internal dev board) and "Números" (internal metrics) are
   // both allowlist-gated staff tools and are placed identically: inside the
   // Admin section for dual-role admins, appended as final entries for everyone
   // else who's allowed. Most users get neither.

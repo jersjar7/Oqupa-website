@@ -446,7 +446,7 @@ function TodoContainer({
 
 export default function TeamBoardPage() {
   useSetPageMeta({
-    title: 'Equipo',
+    title: 'Ing. de Software',
     subtitle: 'Tareas del equipo y en qué trabaja cada quien.',
   })
 
