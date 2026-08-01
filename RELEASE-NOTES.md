@@ -4,6 +4,31 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-01 — Content calendar, one access list per team, tab rename
+
+### New Features
+
+- **`Contenido` — a month-at-a-glance content calendar for the marketing team.** One row per day of the month, each holding one or more Google Drive links, so the social team always knows where a given day's assets live. Today is highlighted, weekends are shaded, and a running "N de 31 días con contenido" counter sits in the header. Month arrows move between months. A day always shows one empty link slot; extra slots appear as links are added. Restricted to the `marketing` access area. Data lives in Firestore under `contentCalendar/{YYYY-MM-DD}`.
+- **`Equipo` renamed to `Ing. de Software`** — the board is engineering-specific and the generic name read as company-wide now that marketing has its own page.
+
+### Security / Access
+
+- **All four access lists collapsed into one file.** Access to the admin panel, the metrics dashboard, the engineering board and the content calendar was previously defined in four separate places, each with its own copy of the emails — so adding a teammate meant remembering all four, and the lists had already begun to disagree. There is now a single roster (`src/app/features/access/people.ts`) where each person carries the areas they may enter, and every guard and every navigation item reads from it.
+- **The Firestore rules copy is generated, not hand-written.** `npm run access:sync` writes the emails into `firestore.rules` between generated markers; `npm run access:check` fails if the two have drifted. The comparison is enforced in the Oqupa-Platform CI workflow, which checks out both repos and gates the rules deploy — the website repo alone does not contain `firestore.rules`.
+- **Access is area-scoped, so a marketing addition cannot leak the engineering board.** Tests assert the separation in both directions, with guards against passing vacuously.
+
+### Bug Fixes
+
+- **Month label read "Agosto De 2026".** Tailwind's `capitalize` upper-cases every word; Spanish capitalises only the first letter. The label is now built in JS.
+
+### Technical
+
+- 282 vitest tests now run **in CI** on every push. They existed before but only ever executed when someone ran them locally — the same failure shape as the Cloud Functions, where 109 tests went unrun for months.
+- The content calendar range-filters and orders on the same `date` field, so it needs **no composite index**.
+- **Deploy note:** the Firestore rules for these collections are **not** auto-deployed. Rules AND indexes both went out manually to production. The Contenido tab was initially invisible in production because the rules were deployed but the website itself had not been promoted to `master` — deploying one half of a change looks handled and ships broken.
+
+---
+
 ## 2026-05-17 — User-facing bug report form at /reportar
 
 ### New Features
