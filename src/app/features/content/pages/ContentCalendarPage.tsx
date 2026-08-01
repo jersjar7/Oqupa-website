@@ -225,10 +225,13 @@ export default function ContentCalendarPage() {
   const { byDate, isLoading, error } = useContentLinks(year, month)
   const days = useMemo(() => daysInMonth(year, month), [year, month])
 
-  const monthLabel = new Date(year, month, 1).toLocaleDateString('es-PE', {
+  // es-PE gives "agosto de 2026". Tailwind's `capitalize` would upper-case
+  // every word — "Agosto De 2026" — so capitalise only the first letter.
+  const rawMonth = new Date(year, month, 1).toLocaleDateString('es-PE', {
     month: 'long',
     year: 'numeric',
   })
+  const monthLabel = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1)
 
   function shiftMonth(delta: number) {
     const d = new Date(year, month + delta, 1)
@@ -257,7 +260,7 @@ export default function ContentCalendarPage() {
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h2 className="min-w-[11rem] text-center font-serif text-[22px] capitalize text-text-primary">
+          <h2 className="min-w-[11rem] text-center font-serif text-[22px] text-text-primary">
             {monthLabel}
           </h2>
           <button
@@ -270,7 +273,7 @@ export default function ContentCalendarPage() {
           </button>
         </div>
 
-        <span className="font-sans text-xs text-text-tertiary">
+        <span className="shrink-0 whitespace-nowrap font-sans text-xs text-text-tertiary">
           {filledDays} de {days.length} días con contenido
         </span>
       </div>
