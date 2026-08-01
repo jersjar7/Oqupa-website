@@ -10,6 +10,7 @@ import type { TeamTask } from '@/types/teamTask'
 import {
   memberFor,
   membersOf,
+  TEAM_MEMBERS,
   type TeamMember,
 } from '@/app/features/team/teamRoster'
 
@@ -19,14 +20,110 @@ import {
  */
 const BOARD = 'dev' as const
 
-/** "31 jul · 4:12 p. m." — compact enough to sit under a one-line task title. */
+/**
+ * Spanish relative time: "hace un momento", "hace 5 min", "hace 2 h",
+ * "hace 3 días", then an absolute date once it stops being useful.
+ *
+ * The previous version used a short month name, so a task created today
+ * rendered as "1 ago." — correct Spanish for "1 de agosto", but it reads as
+ * the English word "ago" and tells you nothing about how recent it is. The
+ * question on this board is always "how long has this been sitting there",
+ * which is what relative time answers.
+ */
 function formatStamp(date: Date): string {
-  return date.toLocaleString('es-PE', {
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000)
+
+  if (seconds < 45) return 'hace un momento'
+  if (seconds < 3600) {
+    const m = Math.round(seconds / 60)
+    return `hace ${m} min`
+  }
+  if (seconds < 86400) {
+    const h = Math.round(seconds / 3600)
+    return `hace ${h} ${h === 1 ? 'hora' : 'horas'}`
+  }
+  if (seconds < 86400 * 7) {
+    const d = Math.round(seconds / 86400)
+    return `hace ${d} ${d === 1 ? 'día' : 'días'}`
+  }
+  // Older than a week: the exact date is more useful than "hace 23 días".
+  return date.toLocaleDateString('es-PE', {
     day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
+    month: 'long',
   })
+}
+
+/** First name of whoever created a task, for "Creado por Sarah". */
+function creatorName(email: string): string {
+  if (!email) return 'alguien'
+  const member = TEAM_MEMBERS.find(
+    (m) => m.email.toLowerCase() === email.toLowerCase(),
+  )
+  // Roster name first; otherwise the part before @, which is still more use
+  // than a full address squeezed under a task title.
+  return member ? member.name.split(' ')[0]! : email.split('@')[0]!
+}
+
+
+/**
+ * Task title that can be edited in place. Click it, type, Enter saves, Escape
+ * cancels, clicking away saves. Editing the wording was the one operation the
+ * board could not do — the service supported renaming, nothing exposed it, so
+ * a typo meant deleting the task and retyping it.
+ */
+function EditableTitle({
+  title,
+  done,
+  onRename,
+  className,
+}: {
+  title: string
+  done?: boolean
+  onRename: (next: string) => Promise<void> | void
+  className: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(title)
+
+  async function commit() {
+    const next = draft.trim()
+    setEditing(false)
+    if (!next || next === title) {
+      setDraft(title)   // empty or unchanged — never blank out a task
+      return
+    }
+    await onRename(next)
+  }
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); void commit() }
+          if (e.key === 'Escape') { setDraft(title); setEditing(false) }
+        }}
+        aria-label="Editar tarea"
+        className={`${className} rounded border border-primary bg-white px-1 focus:outline-none focus:ring-2 focus:ring-primary/20`}
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => { setDraft(title); setEditing(true) }}
+      title="Clic para editar"
+      className={`${className} cursor-text rounded px-1 text-left hover:bg-background-secondary/60 ${
+        done ? 'text-text-tertiary line-through' : ''
+      }`}
+    >
+      {title}
+    </button>
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -38,11 +135,13 @@ function TaskCard({
   onToggleDone,
   onUnassign,
   onDelete,
+  onRename,
 }: {
   task: TeamTask
   onToggleDone: () => void
   onUnassign: () => void
   onDelete: () => void
+  onRename: (title: string) => void
 }) {
   const isDone = task.doneAt !== null
 
@@ -67,13 +166,14 @@ function TaskCard({
           <Check className="h-3 w-3" strokeWidth={3} />
         </button>
 
-        <p
-          className={`min-w-0 flex-1 break-words text-sm leading-snug ${
-            isDone ? 'text-text-tertiary line-through' : 'text-text-primary'
-          }`}
-        >
-          {task.title}
-        </p>
+        <div className="min-w-0 flex-1">
+          <EditableTitle
+            title={task.title}
+            done={isDone}
+            onRename={onRename}
+            className="w-full break-words text-sm leading-snug text-text-primary"
+          />
+        </div>
 
         <div className="flex shrink-0 gap-0.5 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           <button
@@ -98,7 +198,9 @@ function TaskCard({
       </div>
 
       <div className="mt-1.5 pl-[1.9rem] font-serif text-[11px] font-light italic leading-relaxed text-text-tertiary">
-        <div>Creado {formatStamp(task.createdAt)}</div>
+        <div>
+          Creado por {creatorName(task.createdByEmail)} · {formatStamp(task.createdAt)}
+        </div>
         {task.doneAt && <div>Terminado {formatStamp(task.doneAt)}</div>}
       </div>
     </div>
@@ -116,10 +218,12 @@ function MemberColumn({
   onToggleDone,
   onUnassign,
   onDelete,
+  onRename,
 }: {
   member: TeamMember
   tasks: TeamTask[]
   onAdd: (title: string) => Promise<void>
+  onRename: (task: TeamTask, title: string) => void
   onToggleDone: (task: TeamTask) => void
   onUnassign: (task: TeamTask) => void
   onDelete: (task: TeamTask) => void
@@ -191,6 +295,7 @@ function MemberColumn({
               onToggleDone={() => onToggleDone(task)}
               onUnassign={() => onUnassign(task)}
               onDelete={() => onDelete(task)}
+              onRename={(title) => onRename(task, title)}
             />
           ))
         )}
@@ -210,6 +315,7 @@ function TodoContainer({
   onAdd,
   onAssign,
   onDelete,
+  onRename,
 }: {
   tasks: TeamTask[]
   members: TeamMember[]
@@ -217,6 +323,7 @@ function TodoContainer({
   onAdd: (title: string) => Promise<void>
   onAssign: (task: TeamTask, email: string) => void
   onDelete: (task: TeamTask) => void
+  onRename: (task: TeamTask, title: string) => void
 }) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -289,11 +396,13 @@ function TodoContainer({
               className="flex flex-col gap-2 px-4 py-3 hover:bg-background-secondary/40 md:flex-row md:items-center md:gap-4 md:px-5"
             >
               <div className="min-w-0 flex-1">
-                <p className="break-words text-sm text-text-primary md:text-base">
-                  {task.title}
-                </p>
-                <p className="mt-0.5 font-serif text-[11px] font-light italic text-text-tertiary">
-                  Creado {formatStamp(task.createdAt)}
+                <EditableTitle
+                  title={task.title}
+                  onRename={(title) => onRename(task, title)}
+                  className="w-full break-words text-sm text-text-primary md:text-base"
+                />
+                <p className="mt-0.5 pl-1 font-serif text-[11px] font-light italic text-text-tertiary">
+                  Creado por {creatorName(task.createdByEmail)} · {formatStamp(task.createdAt)}
                 </p>
               </div>
 
@@ -407,6 +516,12 @@ export default function TeamBoardPage() {
                     'No se pudo eliminar la tarea',
                   )
                 }
+                onRename={(task, title) =>
+                  report(
+                    () => teamTaskService.rename(task.id, title),
+                    'No se pudo renombrar la tarea',
+                  )
+                }
               />
             ))}
           </div>
@@ -426,6 +541,12 @@ export default function TeamBoardPage() {
               report(
                 () => teamTaskService.remove(task.id),
                 'No se pudo eliminar la tarea',
+              )
+            }
+            onRename={(task, title) =>
+              report(
+                () => teamTaskService.rename(task.id, title),
+                'No se pudo renombrar la tarea',
               )
             }
           />
