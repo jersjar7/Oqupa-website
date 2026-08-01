@@ -154,7 +154,17 @@ function MemberColumn({
 
       <form onSubmit={submit} className="border-b border-border px-3 py-2">
         <div className="flex items-center gap-1.5">
-          <Plus className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
+          {/* A real submit button. It used to be a bare icon, which looked
+              clickable, did nothing, and left Enter as the only way to add a
+              task — the first thing every tester tried and failed. */}
+          <button
+            type="submit"
+            disabled={busy || !draft.trim()}
+            aria-label={`Añadir tarea para ${member.name}`}
+            className="shrink-0 rounded text-text-tertiary transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -248,7 +258,14 @@ function TodoContainer({
 
       <form onSubmit={submit} className="border-b border-border px-4 py-2.5 md:px-5">
         <div className="flex items-center gap-2">
-          <Plus className="h-4 w-4 shrink-0 text-text-tertiary" />
+          <button
+            type="submit"
+            disabled={busy || !draft.trim()}
+            aria-label="Añadir tarea por hacer"
+            className="shrink-0 rounded text-text-tertiary transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
