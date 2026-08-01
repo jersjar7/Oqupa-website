@@ -35,6 +35,8 @@ import RealtorRegistrationPage from '@/app/features/realtor/pages/RealtorRegistr
 import AdminGuard from '@/app/components/guards/AdminGuard'
 import RealtorGuard from '@/app/components/guards/RealtorGuard'
 import MetricsGuard from '@/app/components/guards/MetricsGuard'
+import TeamGuard from '@/app/components/guards/TeamGuard'
+import TeamBoardPage from '@/app/features/team/pages/TeamBoardPage'
 import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsPage'
 import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
@@ -117,6 +119,7 @@ export default function App() {
             <Route path="leads" element={<VerifiedGuard><RealtorGuard><LeadsPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="admin/applications" element={<AdminGuard><AdminApplicationsPage /></AdminGuard>} />
+            <Route path="equipo" element={<TeamGuard><TeamBoardPage /></TeamGuard>} />
             <Route
               path="numbers"
               element={

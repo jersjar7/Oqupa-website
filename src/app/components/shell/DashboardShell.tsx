@@ -20,6 +20,7 @@ function defaultMetaForPath(pathname: string): { title: string; subtitle?: strin
   if (pathname === '/app/realtor-registration')         return { title: 'Mi registro de agente' }
   if (pathname === '/app/admin/applications')           return { title: 'Aplicaciones de agentes', subtitle: 'Revisa y aprueba solicitudes pendientes.' }
   if (pathname === '/app/numbers')                      return { title: 'Números',       subtitle: 'Métricas internas de la plataforma.' }
+  if (pathname === '/app/equipo')                       return { title: 'Equipo',        subtitle: 'Tareas del equipo y en qué trabaja cada quien.' }
   if (pathname === '/app/verify')                       return { title: 'Verificación',  subtitle: 'Completa la verificación de tu cuenta.' }
   if (pathname === '/app/lists')                        return { title: 'Mis listas',    subtitle: 'Colecciones de propiedades guardadas.' }
   if (pathname.startsWith('/app/lists/'))               return { title: 'Lista' }

@@ -4,6 +4,7 @@
  */
 import {
   Home, Briefcase, CreditCard, User, Compass, FileBadge, ClipboardList, BarChart3, Heart,
+  KanbanSquare,
   type LucideIcon,
 } from 'lucide-react'
 import type { Capabilities } from './capabilities'
@@ -30,6 +31,18 @@ const ITEMS = {
   miRegistroAgente:   { id: 'miRegistroAgente',   label: 'Mi Registro',   to: '/app/realtor-registration',     icon: FileBadge } as NavItem,
   aplicaciones:       { id: 'aplicaciones',       label: 'Aplicaciones',  to: '/app/admin/applications',       icon: ClipboardList } as NavItem,
   numeros:            { id: 'numeros',            label: 'Números',       to: '/app/numbers',                  icon: BarChart3 } as NavItem,
+  equipo:             { id: 'equipo',             label: 'Equipo',        to: '/app/equipo',                   icon: KanbanSquare } as NavItem,
+}
+
+/**
+ * Team-internal tabs (board + metrics) the user is allowed to see, in the order
+ * they should appear. Both are allowlist-gated, so most users get an empty list.
+ */
+function internalItems(caps: Capabilities): NavItem[] {
+  const items: NavItem[] = []
+  if (caps.isTeamMember) items.push(ITEMS.equipo)
+  if (caps.isMetricsViewer) items.push(ITEMS.numeros)
+  return items
 }
 
 /**
@@ -37,33 +50,38 @@ const ITEMS = {
  * Single-role users get a flat list (no section headers); dual-role users get grouped.
  */
 export function getNavGroups(caps: Capabilities): NavGroup[] {
-  const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones, numeros } = ITEMS
+  const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
 
-  // The "Números" tab is the team-internal metrics dashboard. Show it in its
-  // own "Equipo" section for dual-role admins (mirrors how Admin chrome is
-  // grouped) and append it as a final entry for everyone else who's allowed.
-  const metricsItem = caps.isMetricsViewer ? numeros : null
+  // "Equipo" (the internal board) and "Números" (internal metrics) are both
+  // allowlist-gated staff tools. They get their own labelled section so they
+  // read as internal chrome rather than part of the user's own account.
+  const internal = internalItems(caps)
+  const internalGroup: NavGroup[] = internal.length ? [{ label: 'Equipo', items: internal }] : []
 
   if (caps.isAdmin && caps.isRealtor) {
     return [
       { label: 'Principal', items: [dashboard, misAnuncios, misListas, pagos, miPerfil] },
       { label: 'Agente',    items: [oportunidades, miRegistroAgente] },
-      { label: 'Admin',     items: metricsItem ? [aplicaciones, metricsItem] : [aplicaciones] },
+      { label: 'Admin',     items: [aplicaciones] },
+      ...internalGroup,
     ]
   }
   if (caps.isRealtor) {
-    const items = [dashboard, oportunidades, misAnuncios, misListas, pagos, miRegistroAgente, miPerfil]
-    if (metricsItem) items.push(metricsItem)
-    return [{ items }]
+    return [
+      { items: [dashboard, oportunidades, misAnuncios, misListas, pagos, miRegistroAgente, miPerfil] },
+      ...internalGroup,
+    ]
   }
   if (caps.isAdmin) {
-    const items = [dashboard, aplicaciones, misAnuncios, misListas, pagos, miPerfil]
-    if (metricsItem) items.push(metricsItem)
-    return [{ items }]
+    return [
+      { items: [dashboard, aplicaciones, misAnuncios, misListas, pagos, miPerfil] },
+      ...internalGroup,
+    ]
   }
-  const items = [dashboard, misAnuncios, misListas, pagos, miPerfil]
-  if (metricsItem) items.push(metricsItem)
-  return [{ items }]
+  return [
+    { items: [dashboard, misAnuncios, misListas, pagos, miPerfil] },
+    ...internalGroup,
+  ]
 }
 
 /**
@@ -75,27 +93,28 @@ export function getNavGroups(caps: Capabilities): NavGroup[] {
  * Aplicaciones to position 7 (beyond the tab limit). Here we promote it.
  */
 export function getMobileNavItems(caps: Capabilities): NavItem[] {
-  const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, aplicaciones, numeros } = ITEMS
+  const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, aplicaciones } = ITEMS
 
-  // Bottom-tab bar caps at 5 items. For metrics viewers we drop the lowest-
-  // priority tab in each role's slate to make room for "Números"; the missing
-  // tab is still reachable from the desktop sidebar / hamburger fallback.
-  if (caps.isAdmin && caps.isRealtor) {
-    return caps.isMetricsViewer
-      ? [dashboard, oportunidades, aplicaciones, numeros, miPerfil]
-      : [dashboard, oportunidades, aplicaciones, misAnuncios, miPerfil]
-  }
-  if (caps.isRealtor) {
-    return caps.isMetricsViewer
-      ? [dashboard, oportunidades, misAnuncios, numeros, miPerfil]
-      : [dashboard, oportunidades, misAnuncios, misListas, miPerfil]
-  }
-  if (caps.isAdmin) {
-    return caps.isMetricsViewer
-      ? [dashboard, aplicaciones, misAnuncios, numeros, miPerfil]
-      : [dashboard, aplicaciones, misAnuncios, pagos, miPerfil]
-  }
-  return caps.isMetricsViewer
-    ? [dashboard, misAnuncios, numeros, pagos, miPerfil]
-    : [dashboard, misAnuncios, misListas, pagos, miPerfil]
+  // Each role's tabs in priority order, "Mi perfil" always last.
+  const base =
+    caps.isAdmin && caps.isRealtor ? [dashboard, oportunidades, aplicaciones, misAnuncios, miPerfil] :
+    caps.isRealtor                 ? [dashboard, oportunidades, misAnuncios, misListas, miPerfil] :
+    caps.isAdmin                   ? [dashboard, aplicaciones, misAnuncios, pagos, miPerfil] :
+                                     [dashboard, misAnuncios, misListas, pagos, miPerfil]
+
+  return withInternalTabs(base, internalItems(caps))
+}
+
+/**
+ * The bottom-tab bar only fits 5 items. Internal staff tabs slot in right after
+ * the role's two headline tabs and the slate is trimmed back to 5, keeping
+ * "Mi perfil" pinned to the end. Whatever gets squeezed out is still reachable
+ * from the desktop sidebar.
+ */
+function withInternalTabs(base: NavItem[], internal: NavItem[]): NavItem[] {
+  if (internal.length === 0) return base
+  const profile = base.slice(-1)
+  const rest = base.slice(0, -1)
+  const merged = [...rest.slice(0, 2), ...internal, ...rest.slice(2)]
+  return [...merged.slice(0, 4), ...profile]
 }

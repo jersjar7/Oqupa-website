@@ -6,11 +6,13 @@
 import type { User } from '@/types/user'
 import { isAdminEmail } from '@/app/components/guards/AdminGuard'
 import { isMetricsAllowedEmail } from '@/app/components/guards/MetricsGuard'
+import { isTeamMemberEmail } from '@/app/features/team/teamRoster'
 
 export type Capabilities = {
   isAdmin: boolean
   isRealtor: boolean
   isMetricsViewer: boolean
+  isTeamMember: boolean
   // everyone is implicitly a property owner
 }
 
@@ -19,6 +21,7 @@ export function capabilitiesFor(user: User | null | undefined): Capabilities {
     isAdmin: isAdminEmail(user?.email),
     isRealtor: !!user?.isVerifiedRealtor,
     isMetricsViewer: isMetricsAllowedEmail(user?.email),
+    isTeamMember: isTeamMemberEmail(user?.email),
   }
 }
 
@@ -46,5 +49,7 @@ export function effectiveCapabilities(caps: Capabilities, viewAs: ViewAs): Capab
     // simulation, but the metrics tab leaks aggregate revenue numbers we
     // don't want to render for someone who shouldn't see them.
     isMetricsViewer: caps.isMetricsViewer && viewAs === 'self',
+    // Same reasoning for the internal team board.
+    isTeamMember: caps.isTeamMember && viewAs === 'self',
   }
 }
