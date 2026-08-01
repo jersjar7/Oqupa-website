@@ -19,12 +19,15 @@ jobs:
       - run: npm ci
       - name: Lint & type-check
         run: npx tsc -b --noEmit
-      # Access lists live in people.ts; firestore.rules holds a generated copy.
-      # This fails the build if someone edited one without the other — the
-      # failure mode being prevented is a teammate silently gaining or losing
-      # access to an internal page.
-      - name: Access lists in sync with firestore.rules
-        run: npm run access:check
+      # 282 tests existed but had never run in CI — they only executed when
+      # someone remembered locally. Same failure shape as the Cloud Functions,
+      # where 109 tests went unrun for months.
+      - name: Tests
+        run: npm test
+      # NOTE: the access-list ↔ firestore.rules comparison canNOT run here —
+      # firestore.rules lives in the Oqupa-Platform repo. It is enforced in that
+      # repo's access-sync workflow, which checks out both and gates the rules
+      # deploy.
       - name: Create .env for build
         run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
       - name: Build
