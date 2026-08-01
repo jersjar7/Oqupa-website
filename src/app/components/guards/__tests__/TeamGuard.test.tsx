@@ -22,6 +22,7 @@ vi.mock('@/app/components/ui', () => ({
 import TeamGuard from '../TeamGuard'
 import {
   TEAM_MEMBERS,
+  isMarketingMemberEmail,
   isTeamMemberEmail,
   memberFor,
   membersOf,
@@ -93,13 +94,31 @@ describe('TeamGuard', () => {
 })
 
 describe('teamRoster', () => {
-  it('accepts every roster email and rejects everything else', () => {
+  it('grants the dev board only to dev-team members, not to everyone on the roster', () => {
+    // This used to assert that EVERY roster email passed. That was the weakness:
+    // adding one marketing person would silently have handed them the developer
+    // board. Access is per board.
     for (const member of TEAM_MEMBERS) {
-      expect(isTeamMemberEmail(member.email)).toBe(true)
+      expect(isTeamMemberEmail(member.email)).toBe(member.access.includes('dev'))
     }
+    // And the roster must actually contain someone who is NOT on dev, or this
+    // test passes vacuously and the protection is untested.
+    expect(TEAM_MEMBERS.some((m) => !m.access.includes('dev'))).toBe(true)
+
     expect(isTeamMemberEmail('nobody@example.com')).toBe(false)
     expect(isTeamMemberEmail(undefined)).toBe(false)
     expect(isTeamMemberEmail(null)).toBe(false)
+  })
+
+  it('grants the marketing calendar only to marketing-team members', () => {
+    for (const member of TEAM_MEMBERS) {
+      expect(isMarketingMemberEmail(member.email)).toBe(
+        member.access.includes('marketing'),
+      )
+    }
+    expect(isMarketingMemberEmail('nobody@example.com')).toBe(false)
+    expect(isMarketingMemberEmail(undefined)).toBe(false)
+    expect(isMarketingMemberEmail(null)).toBe(false)
   })
 
   it('stores every roster email in lowercase so matching can normalize', () => {
@@ -123,8 +142,16 @@ describe('teamRoster', () => {
     ])
   })
 
-  it('has no second board yet', () => {
-    expect(membersOf('marketing')).toEqual([])
+  it('keeps the two boards separate', () => {
+    const dev = membersOf('dev').map((m) => m.email)
+    const marketing = membersOf('marketing').map((m) => m.email)
+
+    expect(dev.length).toBeGreaterThan(0)
+    expect(marketing.length).toBeGreaterThan(0)
+
+    // Someone must be on marketing and NOT on dev, otherwise the separation is
+    // untested and a regression would go unnoticed.
+    expect(marketing.some((e) => !dev.includes(e))).toBe(true)
   })
 
   it('resolves an email to its roster entry', () => {
