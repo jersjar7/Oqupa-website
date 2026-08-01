@@ -51,13 +51,13 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     isRetryable: false,
   },
   'auth/captcha-check-failed': {
-    message: 'La verificación de seguridad de Google falló. Suele ser un bloqueador de anuncios o una extensión del navegador.',
-    recoveryHint: 'Recarga la página, prueba en modo incógnito, o desde Chrome o Safari. Si persiste, escríbenos a admin@oqupa.com.',
+    message: 'Una extensión o la configuración de privacidad de tu navegador está bloqueando la verificación de seguridad de Google.',
+    recoveryHint: 'Desactiva las extensiones de privacidad para oqupa.com, prueba en modo incógnito, o usa Chrome o Safari. Si persiste, escríbenos a admin@oqupa.com.',
     isRetryable: true,
   },
   'auth/missing-client-identifier': {
-    message: 'La verificación de seguridad de Google falló. Suele ser un bloqueador de anuncios o una extensión del navegador.',
-    recoveryHint: 'Recarga la página, prueba en modo incógnito, o desde Chrome o Safari. Si persiste, escríbenos a admin@oqupa.com.',
+    message: 'Una extensión o la configuración de privacidad de tu navegador está bloqueando la verificación de seguridad de Google.',
+    recoveryHint: 'Desactiva las extensiones de privacidad para oqupa.com, prueba en modo incógnito, o usa Chrome o Safari. Si persiste, escríbenos a admin@oqupa.com.',
     isRetryable: true,
   },
   'auth/network-request-failed': {
