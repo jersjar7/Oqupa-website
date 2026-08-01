@@ -125,11 +125,23 @@ A shared to-do board for the four developers, gated exactly like `/app/numbers` 
 - Every task carries a `team` field pinned to `'dev'`. There is only one board today; the field exists so a second one (marketing) can be added later by adding roster entries, with no migration of existing documents.
 - Realtime via `onSnapshot` (`teamTaskService.subscribe`) so teammates see each other's changes without refreshing. Needs the `teamTasks: team + createdAt DESC` composite index.
 
-**Firestore rules** are version-controlled at the repo root (`firestore.rules`, `storage.rules`). Deploy from the repo root:
+**Firestore rules AND indexes** are version-controlled at the repo root (`firestore.rules`,
+`firestore.indexes.json`, `storage.rules`). Neither is auto-deployed by CI.
+
+> **Deploy BOTH, or the feature ships broken while looking handled.** On 2026-08-01 the team board
+> went to production with its rules deployed but its index forgotten. The page loaded, then failed
+> with `permission-denied` — a misleading message, because the real cause was the missing
+> `teamTasks: team + createdAt` composite index, not permissions. Indexes take a few minutes to
+> build after deploying; `CREATING` is not ready.
+
 ```bash
 cd /Users/jerson/developer/Oqupa-Platform
-firebase deploy --only firestore:rules --project oqupa-production
+cd tests && npm test && cd ..                      # 214 rules tests first
+firebase deploy --only firestore:rules,firestore:indexes --project oqupa-production
 ```
+
+Any feature backed by a new collection needs **three** things live, not one: the rules, the index,
+and the site. Name all three before calling it shipped.
 
 ## Email Notifications
 
