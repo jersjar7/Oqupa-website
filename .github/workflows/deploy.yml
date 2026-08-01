@@ -23,8 +23,68 @@ jobs:
         run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
       - name: Build
         run: npm run build
+      # Blocking on purpose. Do NOT downgrade this to a warning — the next
+      # advisory would slide through unnoticed, which is exactly how problems
+      # here go unseen for months.
+      #
+      # One advisory is deliberately excused, with its reasoning, because it
+      # cannot apply to this app and has no fixed version to move to:
+      #
+      #   GHSA-qwww-vcr4-c8h2 — React Router "RSC Mode CSRF Bypass".
+      #   Only affects React Server Components mode. This is a client-only SPA
+      #   (tsc + vite build, no server entry), so the vulnerable code path does
+      #   not exist here. The advisory covers react-router 7.12.0 – 8.2.0, and
+      #   the newest published release is 7.18.2 — there is nothing above the
+      #   range to upgrade to, and npm's "fix" is a DOWNGRADE to 7.11.0.
+      #   REVISIT when React Router publishes a stable release above 8.2.0.
+      #
+      # Every other advisory, at high or critical, still fails the build.
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        env:
+          ALLOWED: GHSA-qwww-vcr4-c8h2
+        run: |
+          npm audit --audit-level=high --json > /tmp/audit.json 2>/dev/null || true
+          node <<'GATE'
+            const fs = require('fs');
+            const allowed = new Set(process.env.ALLOWED.split(','));
+            const report = JSON.parse(fs.readFileSync('/tmp/audit.json', 'utf8'));
+            const vulns = report.vulnerabilities || {};
+
+            // A package can be flagged for its OWN advisory (via entries are objects with a
+            // GHSA url) or purely because it DEPENDS on a vulnerable package (via entries
+            // are plain strings naming that parent). Follow the strings so a transitively
+            // affected package is judged by the advisories actually behind it.
+            function advisoryIds(name, seen = new Set()) {
+              if (seen.has(name)) return [];
+              seen.add(name);
+              const v = vulns[name];
+              if (!v) return [];
+              const ids = [];
+              for (const entry of v.via || []) {
+                if (typeof entry === 'object' && entry.url) ids.push(entry.url.split('/').pop());
+                else if (typeof entry === 'string') ids.push(...advisoryIds(entry, seen));
+              }
+              return ids;
+            }
+
+            const blocking = [];
+            for (const [name, v] of Object.entries(vulns)) {
+              if (!['high', 'critical'].includes(v.severity)) continue;
+              const ids = [...new Set(advisoryIds(name))];
+              if (ids.length && ids.every(id => allowed.has(id))) continue;
+              blocking.push(`${name} (${v.severity}) ${ids.join(', ') || '[no advisory id]'}`);
+            }
+
+            if (blocking.length) {
+              console.error('Blocking advisories:');
+              blocking.forEach(b => console.error('  - ' + b));
+              console.error('\nIf one genuinely does not apply, add its GHSA id to ALLOWED');
+              console.error('with a comment explaining why and when to revisit.');
+              process.exit(1);
+            }
+            console.log('No blocking advisories (allowlisted ones excused).');
+
+          GATE
 
   deploy-staging:
     needs: build-and-test
