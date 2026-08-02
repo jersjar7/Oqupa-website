@@ -7,6 +7,7 @@ import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useContentLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
 import { contentLinkService } from '@/services/contentLinkService'
 import { memberFor } from '@/app/features/team/teamRoster'
+import GrowthPlanView from '@/app/features/plan/components/GrowthPlanView'
 import type { ContentLink } from '@/types/contentLink'
 
 /** "vie 1" — weekday and day number, the only two things the row needs. */
@@ -209,10 +210,20 @@ function DayRow({
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
+/** The two things this tab holds: what to do, and where the assets live. */
+type View = 'plan' | 'calendario'
+
 export default function ContentCalendarPage() {
+  // Defaults to the plan — the daily question is "what do I do today", and the
+  // calendar is reference material you go looking for.
+  const [view, setView] = useState<View>('plan')
+
   useSetPageMeta({
     title: 'Contenido',
-    subtitle: 'Dónde vive el contenido de cada día.',
+    subtitle:
+      view === 'plan'
+        ? 'Qué hacer hoy para crecer.'
+        : 'Dónde vive el contenido de cada día.',
   })
 
   const { user } = useAuthStore()
@@ -250,6 +261,34 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="space-y-4">
+      {/* Plan / Calendario — one tab, two jobs, deliberately not merged. */}
+      <div
+        role="tablist"
+        aria-label="Vista"
+        className="inline-flex gap-1 rounded-lg bg-background-secondary p-1"
+      >
+        {(['plan', 'calendario'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`rounded-md px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] transition-colors ${
+              view === v
+                ? 'bg-white text-text-primary shadow-light'
+                : 'text-text-tertiary hover:text-text-secondary'
+            }`}
+          >
+            {v === 'plan' ? 'Plan' : 'Calendario'}
+          </button>
+        ))}
+      </div>
+
+      {view === 'plan' && <GrowthPlanView />}
+
+      {view === 'calendario' && (
+      <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <button
@@ -319,6 +358,8 @@ export default function ContentCalendarPage() {
             ))}
           </ul>
         </section>
+      )}
+      </>
       )}
     </div>
   )
