@@ -4,6 +4,25 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-02 — Six-week growth plan inside Contenido
+
+### New Features
+
+- **A `Plan` view in Contenido, holding one specific action for each of 42 days.** `/app/contenido` now has a **Plan / Calendario** toggle. Plan opens by default, because the daily question is "what do I do today" — the calendar is reference material you go looking for. Today's action sits at the top with its definition of done; below it six collapsible weeks, current week open, each day tickable with a note on how it went. Runs 3 August to 13 September 2026, about 40 minutes a day, with $70 of ad budget committed in week 5 and nothing before that.
+- **Why the plan looks like this.** A full production baseline taken on 2 August found Oqupa has never observed a single organic event: every listing was personally recruited by the founders, most views and contact clicks came from the team itself, and all seven payment attempts were internal. The platform's largest supplier — a verified agent with 8 photographed listings — had received zero views in fifteen days. So the plan's goal is deliberately binary: **one listing and one interested buyer that nobody on the team recruited.**
+
+### Security / Access
+
+- **The plan can be worked but not rewritten.** Content is seeded from `planContent.ts` with the Admin SDK. Firestore rules forbid client create and delete outright, and restrict updates to `status`, `notes`, `completedAt` and `completedByEmail` — so a browser can record progress but cannot change what a day says to do, the minutes, or the spend. Marketing allowlist only; a dev-team member cannot read it. 13 new emulator tests cover both directions.
+
+### Technical
+
+- Re-seeding after an edit **preserves recorded progress** — verified against staging by writing progress, re-seeding, and confirming it survived, rather than assuming it.
+- The plan is 42 documents keyed by date, read whole and ordered by document id, so **no composite index is required**.
+- Deploy order was rules → data → website, deliberately. The reverse order is what left the Contenido tab broken on 1 August.
+
+---
+
 ## 2026-08-01 — Content calendar, one access list per team, tab rename
 
 ### New Features
