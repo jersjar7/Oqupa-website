@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "access:sync": "tsx scripts/syncAccessToRules.ts",
-    "access:check": "tsx scripts/syncAccessToRules.ts --check"
+    "access:check": "tsx scripts/syncAccessToRules.ts --check",
+    "plan:seed": "tsx scripts/seedGrowthPlan.ts"
   },
   "repository": {
     "type": "git",
