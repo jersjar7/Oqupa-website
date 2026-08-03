@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { doc, updateDoc, increment } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Sparkles } from 'lucide-react'
-import { db } from '@/lib/firebase'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
@@ -21,6 +19,8 @@ import GalleryModal from '@/app/components/GalleryModal'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import AppStoreBadges from '@/components/AppStoreBadges'
 import SaveButton from '@/components/lists/SaveButton'
+import { toast } from 'sonner'
+import { contactService, ContactDenied } from '@/services/contactService'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -293,7 +293,39 @@ export default function PropertyPage() {
         .join(', ')
   const propertyTypeLabel =
     PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
-  const whatsappNumber = listing.assignedRealtorPhoneNumber || listing.contactInfo?.whatsappPhoneNumber
+  // Kept only to decide whether this listing advertises a contact at all.
+  // The NUMBER itself is no longer read here — see handleWhatsAppClick.
+  const listingIdForContact = listing.id
+
+  // The number is no longer held by the client — it is requested from the
+  // server, which decides whether this person may have it and records that it
+  // was given out (ADR-015 Phase 3.4). The button stays visible because the
+  // listing still advertises that a contact exists; only the number is gated.
+  const [contactLoading, setContactLoading] = useState(false)
+
+  async function handleWhatsAppClick() {
+    if (contactLoading) return
+    setContactLoading(true)
+    try {
+      const contact = await contactService.getListingContact(listingIdForContact)
+      window.open(
+        `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
+        '_blank',
+        'noopener,noreferrer',
+      )
+    } catch (error) {
+      const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
+      if (reason === 'needs-login' || reason === 'needs-phone-verification') {
+        setShowAuthModal(true)
+      } else if (reason === 'rate-limited') {
+        toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')
+      } else {
+        toast.error('No se pudo obtener el contacto. Intenta de nuevo.')
+      }
+    } finally {
+      setContactLoading(false)
+    }
+  }
   const whatsappAddress = showExact
     ? [
         property.location?.calle,
@@ -431,22 +463,11 @@ export default function PropertyPage() {
           {/* Right column — sticky widgets */}
           <aside className="space-y-4 lg:sticky lg:top-24 lg:col-span-1 lg:h-fit lg:self-start lg:border-l lg:border-border lg:pl-8">
             {/* WhatsApp button + helper notes */}
-            {whatsappNumber && (
+            {(
               <div>
               <button
-                onClick={() => {
-                  if (firebaseUser && user?.isPhoneVerified) {
-                    window.open(
-                      `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
-                      '_blank',
-                      'noopener,noreferrer'
-                    )
-                    // Fire-and-forget contact click tracking
-                    updateDoc(doc(db, 'listings', listing.id), { contactClickCount: increment(1) })
-                  } else {
-                    setShowAuthModal(true)
-                  }
-                }}
+                onClick={handleWhatsAppClick}
+                disabled={contactLoading}
                 className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#25D366] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
               >
                 <svg

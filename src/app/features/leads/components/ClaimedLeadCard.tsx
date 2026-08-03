@@ -1,3 +1,4 @@
+import { useState } from 'react'
 /**
  * ClaimedLeadCard — vertical property card used on Oportunidades → En Espera
  * for claims the agent is still waiting on the owner to decide. Shares its
@@ -23,6 +24,8 @@ import {
   PROPERTY_TYPE_LABELS,
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
+import { toast } from 'sonner'
+import { contactService } from '@/services/contactService'
 
 interface ClaimedLeadCardProps {
   claim: RealtorClaim
@@ -60,7 +63,27 @@ export default function ClaimedLeadCard({
   claim, listing, property, statusBadge,
 }: ClaimedLeadCardProps) {
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
-  const whatsappPhone = listing.contactInfo?.whatsappPhoneNumber?.replace(/[^\d+]/g, '')
+  // The owner's number is no longer read off the listing (ADR-015 Phase 3.4).
+  // The agent asks the server, which checks they actually hold a claim on THIS
+  // listing before disclosing it, and records that it did.
+  const [opening, setOpening] = useState(false)
+
+  async function openWhatsApp() {
+    if (opening) return
+    setOpening(true)
+    try {
+      const contact = await contactService.getListingContact(listing.id)
+      window.open(
+        `https://wa.me/${contact.phone.replace(/[^\d+]/g, '')}`,
+        '_blank',
+        'noopener,noreferrer',
+      )
+    } catch {
+      toast.error('No se pudo obtener el contacto del propietario.')
+    } finally {
+      setOpening(false)
+    }
+  }
   const priceSuffix = getPriceSuffix(property.operationType, property.rentalDurationType)
 
   return (
@@ -117,19 +140,17 @@ export default function ClaimedLeadCard({
         </p>
 
         {/* Footer — pinned via mt-auto */}
-        {whatsappPhone && (
-          <div className="mt-auto pt-3">
-            <a
-              href={`https://wa.me/${whatsappPhone}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Contactar por WhatsApp
-            </a>
-          </div>
-        )}
+        <div className="mt-auto pt-3">
+          <button
+            type="button"
+            onClick={openWhatsApp}
+            disabled={opening}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Contactar por WhatsApp
+          </button>
+        </div>
       </div>
     </div>
   )
