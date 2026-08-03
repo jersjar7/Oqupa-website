@@ -313,6 +313,14 @@ export default function WizardStep5() {
           isBoosted: false,
           boostScore: 1,
           showExactLocation: data.showExactLocation,
+          // Owner identity copied onto the listing (ADR-015 Phase 3.3) so
+          // rendering a listing card needs no read of the owner's user record.
+          // Phase 4 makes those records private; without this the publisher
+          // name, photo and verified badge would vanish from every card.
+          ...(user.name ? { ownerDisplayName: user.name } : {}),
+          ...(user.photoUrl ? { ownerPhotoKey: user.photoUrl } : {}),
+          ownerIsVerified: Boolean(user.isPhoneVerified || user.isIdentityVerified),
+          ownerMemberSinceYear: user.createdAt.getFullYear(),
         }
 
         const listingId = await firestoreService.createListing(listingData)
