@@ -214,6 +214,39 @@ function bugReportDutyName(): string {
 }
 
 export const firestoreService = {
+  /**
+   * The TRUE location of a listing that hides its exact position.
+   *
+   * For a masked listing the public property document carries only the blurred
+   * point and no street (ADR-015 Phase 2), so the edit form must not pre-fill
+   * from it — the owner would be shown a pin 100-350m from their own house.
+   *
+   * Readable only by the person who listed the property. Returns null for
+   * anyone else, and for listings that were never masked, so callers can simply
+   * fall back to the public values.
+   */
+  async getPrivatePropertyLocation(propertyId: string): Promise<{
+    latitude: number
+    longitude: number
+    calle: string
+  } | null> {
+    try {
+      const snap = await getDoc(doc(db, 'properties', propertyId, 'private', 'location'))
+      if (!snap.exists()) return null
+      const d = snap.data()
+      if (typeof d['latitude'] !== 'number' || typeof d['longitude'] !== 'number') return null
+      return {
+        latitude: d['latitude'] as number,
+        longitude: d['longitude'] as number,
+        calle: (d['calle'] as string) ?? '',
+      }
+    } catch {
+      // Denied means "not the owner" — a normal outcome, not an error worth
+      // surfacing. The caller falls back to the public location.
+      return null
+    }
+  },
+
   async addWaitlistEntry(
     entry: Omit<WaitlistEntry, 'createdAt'>
   ) {

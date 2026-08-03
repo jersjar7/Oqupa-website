@@ -10,6 +10,7 @@ import WizardStep2 from '../components/WizardStep2'
 import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
 import WizardStep5 from '../components/WizardStep5'
+import { firestoreService } from '@/services/firestoreService'
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -34,12 +35,33 @@ export default function EditListingPage() {
     useListingFormStore()
   const [initialized, setInitialized] = useState(false)
 
-  // Pre-fill form with existing data
+  // Pre-fill form with existing data.
+  //
+  // For a listing that hides its exact location, the public property document
+  // holds only the blurred point (ADR-015 Phase 2). Pre-filling from it would
+  // show the owner a pin 100-350m from their own house, and inviting them to
+  // "correct" a position that is deliberately wrong is how a real address gets
+  // lost. Read the true values from the owner-only record instead; anyone who
+  // is not the owner gets null and never reaches this page anyway.
   useEffect(() => {
     if (!result || initialized) return
 
     const { listing, property } = result
+    let cancelled = false
 
+    async function prefill() {
+      const trueLocation = listing.showExactLocation
+        ? null
+        : await firestoreService.getPrivatePropertyLocation(property.id)
+      if (cancelled) return
+      applyPrefill(trueLocation)
+    }
+
+    function applyPrefill(trueLocation: {
+      latitude: number
+      longitude: number
+      calle: string
+    } | null) {
     reset()
     setEditMode(listing.id, property.id)
     updateData({
@@ -54,9 +76,9 @@ export default function EditListingPage() {
       bathroomCount: property.specs.bathroomCount ?? null,
       availableParkingSpaces: property.specs.availableParkingSpaces,
       propertyAmenities: property.specs.propertyAmenities,
-      latitude: property.location.latitude,
-      longitude: property.location.longitude,
-      calle: property.location.calle,
+      latitude: trueLocation?.latitude ?? property.location.latitude,
+      longitude: trueLocation?.longitude ?? property.location.longitude,
+      calle: trueLocation?.calle ?? property.location.calle,
       distrito: property.location.distrito,
       provincia: property.location.provincia,
       departamento: property.location.departamento,
@@ -72,6 +94,12 @@ export default function EditListingPage() {
     })
     setStep(1)
     setInitialized(true)
+    }
+
+    void prefill()
+    return () => {
+      cancelled = true
+    }
   }, [result, initialized]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
