@@ -4,6 +4,13 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/descargar",
+        "function": {
+          "functionId": "appDownloadRedirect",
+          "region": "southamerica-east1"
+        }
+      },
+      {
         "source": "/property/**",
         "function": {
           "functionId": "renderListingMeta",
