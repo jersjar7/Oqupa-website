@@ -109,7 +109,7 @@ export default function MetricsPage() {
       ? 'Esperando el primer snapshot diario'
       : `Snapshot del ${latest.date} · Actualizado ${latest.generatedAt.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}`
 
-  useSetPageMeta({ title: 'Números', subtitle })
+  useSetPageMeta({ title: 'Números', subtitle, accessArea: 'metrics' })
 
   const series = useMemo(() => buildTimeSeries(history), [history])
 
