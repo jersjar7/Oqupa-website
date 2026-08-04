@@ -4,6 +4,24 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-04 (2) — The map was showing 30 of 47 properties
+
+### Bug Fixes
+
+- **A third of the catalogue was invisible on the explore map.** Properties load 30 at a time, and the next batch only arrived when someone scrolled the **list** panel — but people using a map pan and zoom instead. So the map simply drew fewer properties, with nothing to suggest more existed. On the **Todos** tab that was 30 of 47 (**36% missing**); on **Venta**, 30 of 36.
+- **It hid the oldest listings.** Properties are ordered newest-first, so the ones cut off were the April sellers — Roberto, Cesa Group, Jonathan, Victoria, Branko. The people who have waited longest for a buyer were the least visible.
+- **Not a regression.** This has been true since the explore page shipped and only became noticeable once inventory passed 30 — meaning it got quietly worse exactly as recruiting sellers succeeded. It is also what made the app and the website disagree in the 2026-08-04 comparison: the pins the app showed and the website did not were properties the website had never loaded.
+
+### Technical
+
+- The explore hook keeps fetching until the catalogue is complete. The list still paginates visually; only the timing of the data changes. Guarded three ways against a request loop: only while another page exists, never while one is in flight, and never past a fixed ceiling.
+- **The ceiling is surfaced, not silent.** Beyond it the panel states that the map is showing a subset. A quiet cap would be this same bug again with a larger number. It cannot trigger at Piura's current size; when it does, the correct fix is querying by map viewport rather than loading everything.
+- Sabotage-verified: removing the auto-load fails 3 of the 4 new tests.
+- **Known, not fixed here:** the mobile app has the same design and has not hit it yet — its page size is 50 against 36 sale listings. The same bug is waiting at 50 per tab.
+- 334 tests pass; lint, type-check and build clean.
+
+---
+
 ## 2026-08-04 — A guard against the class of bug that broke the property pages
 
 ### Bug Fixes
