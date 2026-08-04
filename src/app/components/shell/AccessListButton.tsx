@@ -118,7 +118,9 @@ export default function AccessListButton({ area }: Props) {
               ))}
             </ul>
 
-            <p className="caption text-text-secondary px-2 pt-2 border-t border-border mt-1">
+            {/* Deliberately smaller than the emails above — this is a footnote
+                about maintenance, not part of the list you came here to read. */}
+            <p className="text-[10px] leading-snug text-text-secondary/80 px-2 pt-2 border-t border-border mt-1">
               Para cambiar quién entra, edita la lista de accesos y vuelve a publicar las reglas.
             </p>
           </div>

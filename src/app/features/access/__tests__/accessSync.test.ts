@@ -85,8 +85,44 @@ describe('the four areas are genuinely separate', () => {
   it('people removed from Números have no access anywhere', () => {
     for (const area of AREAS) {
       expect(canAccess('ed.rafaelbarbosa@gmail.com', area)).toBe(false)
-      expect(canAccess('hrn.mv11@gmail.com', area)).toBe(false)
       expect(canAccess('landerjabar@gmail.com', area)).toBe(false)
+    }
+  })
+
+  it('Hernán was granted Contenido without being let back into Números', () => {
+    // He was removed from Números on 2026-08-01 and granted Contenido on
+    // 2026-08-03. Two separate decisions — only the second was reversed, and
+    // the easiest way to undo the first by accident is a careless edit here.
+    expect(canAccess('hrn.mv11@gmail.com', 'marketing')).toBe(true)
+    expect(canAccess('hrn.mv11@gmail.com', 'metrics')).toBe(false)
+    expect(canAccess('hrn.mv11@gmail.com', 'dev')).toBe(false)
+    expect(canAccess('hrn.mv11@gmail.com', 'admin')).toBe(false)
+  })
+
+  it('the four people added to Contenido on 2026-08-03 can reach it', () => {
+    for (const email of [
+      'hrn.mv11@gmail.com',        // Hernán
+      'godoy.degs@gmail.com',      // Daniel
+      'kadenthecanadian@gmail.com', // Kaden
+      'libardo.pico26@gmail.com',   // Libardo
+    ]) {
+      expect(canAccess(email, 'marketing')).toBe(true)
+    }
+  })
+
+  it('Daniel is new and reaches Contenido only', () => {
+    expect(canAccess('godoy.degs@gmail.com', 'marketing')).toBe(true)
+    expect(canAccess('godoy.degs@gmail.com', 'metrics')).toBe(false)
+    expect(canAccess('godoy.degs@gmail.com', 'dev')).toBe(false)
+    expect(canAccess('godoy.degs@gmail.com', 'admin')).toBe(false)
+  })
+
+  it('Kaden and Libardo keep Números and gain Contenido, nothing more', () => {
+    for (const email of ['kadenthecanadian@gmail.com', 'libardo.pico26@gmail.com']) {
+      expect(canAccess(email, 'metrics')).toBe(true)
+      expect(canAccess(email, 'marketing')).toBe(true)
+      expect(canAccess(email, 'dev')).toBe(false)
+      expect(canAccess(email, 'admin')).toBe(false)
     }
   })
 })

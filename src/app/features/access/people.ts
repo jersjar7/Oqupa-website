@@ -64,16 +64,21 @@ export const PEOPLE: Person[] = [
 
   // Marketing
   { name: 'Becca',   email: 'becjanmor@gmail.com',               access: ['metrics', 'marketing'] },
+  { name: 'Hernán',  email: 'hrn.mv11@gmail.com',                access: ['marketing'] },
+  { name: 'Daniel',  email: 'godoy.degs@gmail.com',              access: ['marketing'] },
 
-  // Números only
-  { name: 'Kaden',   email: 'kadenthecanadian@gmail.com',        access: ['metrics'] },
-  { name: 'Libardo', email: 'libardo.pico26@gmail.com',          access: ['metrics'] },
+  // Números + Contenido
+  { name: 'Kaden',   email: 'kadenthecanadian@gmail.com',        access: ['metrics', 'marketing'] },
+  { name: 'Libardo', email: 'libardo.pico26@gmail.com',          access: ['metrics', 'marketing'] },
 
   // Removed from Números on 2026-08-01 at Jerson's instruction. Listed here as
   // a record of the decision, with no access granted. Safe to delete.
   //   ed.rafaelbarbosa@gmail.com  (Rafael)
-  //   hrn.mv11@gmail.com          (Hernán)
   //   landerjabar@gmail.com       (Lander)
+  //
+  // Hernán was on this list too. On 2026-08-03 he was granted Contenido — and
+  // ONLY Contenido. He is deliberately still off Números; the 2026-08-01
+  // decision stands and adding him back there needs its own instruction.
 ]
 
 /** Everyone granted an area, in file order. */
