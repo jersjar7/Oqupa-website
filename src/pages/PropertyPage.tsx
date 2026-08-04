@@ -198,6 +198,14 @@ export default function PropertyPage() {
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  // MUST stay up here with the other hooks. This lived further down, next to
+  // the WhatsApp handler it belongs to, where it replaced a plain `const` in
+  // ADR-015 Phase 3.4 — but that spot is BELOW the `isLoading` and `not found`
+  // early returns. A const there is fine; a hook there is not. The first render
+  // returned early and never ran it, the second ran it, and React threw #310
+  // ("rendered more hooks than during the previous render"), which the error
+  // boundary turned into "Algo salió mal" on EVERY property page.
+  const [contactLoading, setContactLoading] = useState(false)
   // SEO meta tags
   const metaTitle = useMemo(() => {
     if (!listing || !property) return 'Propiedad - Oqupa'
@@ -301,8 +309,8 @@ export default function PropertyPage() {
   // server, which decides whether this person may have it and records that it
   // was given out (ADR-015 Phase 3.4). The button stays visible because the
   // listing still advertises that a contact exists; only the number is gated.
-  const [contactLoading, setContactLoading] = useState(false)
-
+  // `contactLoading` is declared with the other hooks at the top of the
+  // component — it cannot live here, below the early returns.
   async function handleWhatsAppClick() {
     if (contactLoading) return
     setContactLoading(true)
