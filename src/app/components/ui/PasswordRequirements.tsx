@@ -11,7 +11,7 @@ export default function PasswordRequirements({ password }: { password: string })
     { label: 'A-Z', met: /[A-Z]/.test(password) },
     { label: 'a-z', met: /[a-z]/.test(password) },
     { label: '1-9', met: /\d/.test(password) },
-    { label: '!@#', met: /[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>/?`~]/.test(password) },
+    { label: '!@#', met: /[!@#$%^&*()_+\-=[\]{};:"\\|,.<>/?`~]/.test(password) },
   ]
 
   return (

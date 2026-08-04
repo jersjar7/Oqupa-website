@@ -19,8 +19,6 @@ export default function ViewAsMenu({ caps }: Props) {
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
 
-  if (!caps.isAdmin) return null
-
   const label =
     viewAs === 'self' ? 'Mi vista' :
     viewAs === 'asRealtor' ? 'Vista: Agente' : 'Vista: Dueño'
@@ -75,6 +73,16 @@ export default function ViewAsMenu({ caps }: Props) {
     if (focusIdx === null) return
     itemRefs.current[focusIdx]?.focus()
   }, [focusIdx])
+
+  // Non-admins render nothing — but this check MUST come after every hook.
+  // It used to sit above the useEffect, which meant the hook count changed the
+  // moment `caps.isAdmin` flipped: the first render (auth still loading) took
+  // the early return and ran five hooks, and the render after auth resolved ran
+  // six. React throws #310 on that, taking the topbar and the dashboard with
+  // it — and only for admins, which is why nobody hit it in normal use.
+  // Found by eslint's react-hooks/rules-of-hooks on its first ever run here,
+  // the day after the identical mistake took down every property page.
+  if (!caps.isAdmin) return null
 
   return (
     <div className="relative">

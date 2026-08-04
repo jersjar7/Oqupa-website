@@ -17,7 +17,23 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Lint & type-check
+      # Blocking on purpose, and separate from the type-check below, because
+      # they catch different things. TypeScript cannot see React hook order.
+      #
+      # On 2026-08-04 every property page on oqupa.com showed "Algo salió mal"
+      # for ~18 hours: a `const` had been changed to a `useState` in a spot
+      # below the page's early returns. 323 tests passed and the build was
+      # green, because nothing in this pipeline could see it — the project had
+      # no linter at all. `react-hooks/rules-of-hooks` flags it in one second,
+      # and on its first run here it also found a SECOND live instance of the
+      # same mistake in ViewAsMenu, which would have crashed the dashboard for
+      # admins only.
+      #
+      # Do NOT move this after the build or make it non-blocking: a hook-order
+      # violation is a page that crashes for every visitor, not a style nit.
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
         run: npx tsc -b --noEmit
       # 282 tests existed but had never run in CI — they only executed when
       # someone remembered locally. Same failure shape as the Cloud Functions,
