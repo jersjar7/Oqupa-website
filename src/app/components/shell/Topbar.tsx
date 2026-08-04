@@ -1,12 +1,16 @@
 import type { Capabilities } from './capabilities'
 import { useViewAs } from './viewAsContext'
 import ViewAsMenu from './ViewAsMenu'
+import AccessListButton from './AccessListButton'
+import type { AccessArea } from '@/app/features/access/people'
 
 type Props = {
   title: string
   subtitle?: string
   caps: Capabilities
   actions?: React.ReactNode
+  /** Restricted pages pass their area to show "who can see this" by the title. */
+  accessArea?: AccessArea
 }
 
 /**
@@ -17,7 +21,7 @@ type Props = {
  * When an admin is in view-as mode, a warning ribbon appears at the top so they
  * can't forget they're debugging.
  */
-export default function Topbar({ title, subtitle, caps, actions }: Props) {
+export default function Topbar({ title, subtitle, caps, actions, accessArea }: Props) {
   const { viewAs, setViewAs } = useViewAs()
 
   return (
@@ -42,9 +46,12 @@ export default function Topbar({ title, subtitle, caps, actions }: Props) {
       )}
       <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="min-w-0">
-          <h1 className="font-serif text-[28px] font-normal leading-tight text-secondary truncate">
-            {title}
-          </h1>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h1 className="font-serif text-[28px] font-normal leading-tight text-secondary truncate">
+              {title}
+            </h1>
+            {accessArea && <AccessListButton area={accessArea} />}
+          </div>
           {subtitle && (
             <p className="text-sm text-text-secondary mt-0.5 truncate">{subtitle}</p>
           )}
