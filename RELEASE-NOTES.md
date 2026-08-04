@@ -4,6 +4,22 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-04 — A guard against the class of bug that broke the property pages
+
+### Bug Fixes
+
+- **The admin view-switcher could crash the dashboard header.** Found by the new linter on its first run — the same mistake, still live, that had taken down every property page hours earlier. The menu returned early for non-admins *above* one of its hooks, so the moment sign-in resolved and the account turned out to be an admin, the number of hooks changed between renders and React threw. Only ever affected the two admin accounts, which is why it survived months of normal use.
+
+### Technical
+
+- **The site now has a linter, and it blocks the build.** There was none: CI ran a type-check and the tests, and neither can see React hook order. That is precisely why the 2026-08-03 property-page crash reached production with 323 tests passing and a green build.
+- `react-hooks/rules-of-hooks` is an **error** — a violation is a page that crashes for every visitor, not a style preference. Sabotage-verified: reintroducing the exact change that broke the property pages now fails `npm run lint` in about a second, naming the cause.
+- Scope is deliberately narrow. Pre-existing issues that would need a sweep through working code are warnings (10 today) rather than errors. A lint step that floods the console on day one gets ignored, and an ignored guard is worth nothing.
+- Two genuine escape errors fixed in the password-symbol regex, proven behaviour-identical across every relevant character first. Note for later: that regex is **duplicated** between the validation schema and the checklist UI — if the copies ever disagree, the UI will tell someone their password is fine while validation rejects it. Worth removing that duplication.
+- 330 tests pass; lint, type-check and build all clean.
+
+---
+
 ## 2026-08-04 — Hotfix: every property page was showing "Algo salió mal"
 
 ### Bug Fixes

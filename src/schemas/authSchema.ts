@@ -17,7 +17,7 @@ const passwordSchema = z
   .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
   .regex(/[a-z]/, 'Debe incluir al menos una minúscula')
   .regex(/\d/, 'Debe incluir al menos un número')
-  .regex(/[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>/?`~]/, 'Debe incluir al menos un símbolo')
+  .regex(/[!@#$%^&*()_+\-=[\]{};:"\\|,.<>/?`~]/, 'Debe incluir al menos un símbolo')
 
 export const registerSchema = z
   .object({
