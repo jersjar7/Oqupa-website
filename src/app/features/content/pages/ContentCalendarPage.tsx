@@ -224,6 +224,7 @@ export default function ContentCalendarPage() {
       view === 'plan'
         ? 'Qué hacer hoy para crecer.'
         : 'Dónde vive el contenido de cada día.',
+    accessArea: 'marketing',
   })
 
   const { user } = useAuthStore()

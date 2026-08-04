@@ -4,6 +4,26 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-03 — Who can see this page, shown on the page
+
+### New Features
+
+- **Each restricted tab now says who can reach it.** Next to the title on **Números**, **Ing. de Software** and **Contenido** there is a quiet button showing a headcount; pressing it lists every person's name and email. These pages are invisible to anyone off the roster, so until now the only way to answer "who else sees this?" was to read the source — which meant nobody checked, and an access mistake could sit unnoticed indefinitely.
+- **It cannot show a list that isn't the real one.** The panel reads the same single access list that the route guards and the generated Firestore rules are built from. Its tests assert the rendered list against the actual access check rather than a copied roster, so they keep holding as people join and leave. Verified by deliberately breaking the component to show everyone: 8 tests failed, which is the point.
+
+### Access
+
+- **Contenido goes from 2 people to 6.** Added **Hernán** (`hrn.mv11@gmail.com`), **Daniel** (`godoy.degs@gmail.com`), and **Kaden** and **Libardo**, who keep Números and gain Contenido alongside it.
+- **Hernán is on Contenido only.** His removal from Números on 2026-08-01 still stands — these are two separate decisions, and there is now a test naming him and asserting he stays out of Números, because a careless roster edit is the easy way to undo that by accident.
+- Firestore rules regenerated from the access list and deployed to staging and production. The Números and dev gates are unchanged.
+
+### Technical
+
+- The button is wired through the shared page header rather than added to three pages, so a fourth restricted tab costs one line and an unrestricted page cannot accidentally grow one.
+- 323 website tests and 269 rules emulator tests pass.
+
+---
+
 ## 2026-08-02 — Six-week growth plan inside Contenido
 
 ### New Features

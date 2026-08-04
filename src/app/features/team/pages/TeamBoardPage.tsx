@@ -448,6 +448,7 @@ export default function TeamBoardPage() {
   useSetPageMeta({
     title: 'Ing. de Software',
     subtitle: 'Tareas del equipo y en qué trabaja cada quien.',
+    accessArea: 'dev',
   })
 
   const user = useAuthStore((s) => s.user)
