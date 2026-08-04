@@ -4,6 +4,20 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-04 — Hotfix: every property page was showing "Algo salió mal"
+
+### Bug Fixes
+
+- **Opening any listing from the map or the list failed.** The page showed *"Algo salió mal — Ocurrió un error inesperado"* instead of the property. The map and the cards worked, so the site looked healthy; the failure was on the one screen that matters most, the detail page a buyer reaches after clicking. Broken from the 2026-08-03 contact-disclosure deploy until this fix.
+- **Cause.** In ADR-015 Phase 3.4 a plain `const whatsappNumber = …` was replaced by `const [contactLoading] = useState(false)` in the same spot — which sits below the page's `isLoading` and `not found` early returns. That position is harmless for a variable and invalid for a React hook: the loading render returned before reaching it, the loaded render ran it, the hook count changed between renders, and React threw #310. It affected every listing equally; a hidden-address listing was simply the one that got clicked.
+
+### Technical
+
+- **A test now covers the loading → loaded transition**, which is the only moment the fault existed — either state rendered on its own passes, which is exactly why 323 tests stayed green while the live page was dead. Sabotage-verified: restoring the old arrangement fails it.
+- **Follow-up, not in this release:** the project has no ESLint. `react-hooks/rules-of-hooks` flags this precise mistake and is not installed, and CI runs only the build — TypeScript cannot see hook-order errors. Tracked as its own piece of work.
+
+---
+
 ## 2026-08-03 — Who can see this page, shown on the page
 
 ### New Features
