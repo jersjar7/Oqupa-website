@@ -54,6 +54,7 @@ export default function ExplorePage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    hitPageCeiling,
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -192,6 +193,17 @@ export default function ExplorePage() {
           ref={panelRef}
           className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block"
         >
+          {/* The catalogue has outgrown load-everything, so the map is now
+              genuinely showing a subset. Say so. A cap that stays quiet is the
+              same bug this page just had — a partial map presented as the whole
+              one. Cannot trigger at Piura's current size; the honest fix when
+              it does is querying by map viewport. */}
+          {hitPageCeiling && (
+            <p className="mb-3 rounded-lg bg-accent/30 px-3 py-2 text-xs text-[#8A6400]">
+              Mostrando las propiedades mas recientes. Usa los filtros o acerca
+              el mapa para ver el resto.
+            </p>
+          )}
           <AnimatePresence mode="wait">
             {visible.length === 0 && !isLoading ? (
               <motion.div
