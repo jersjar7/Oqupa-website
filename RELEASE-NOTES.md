@@ -4,6 +4,28 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-04 (3) — The website starts counting listing views
+
+### Bug Fixes
+
+- **The website had never recorded a single listing view.** Not few — none. View recording is protected so the counts cannot be inflated by a script, and that protection needs a key the site was never given. So every view the website reported was rejected by the server, and the error was discarded silently. Confirmed against production: the collection that tracks web views was completely empty.
+- **Every view number on the platform, until today, came from the mobile app alone.** Web traffic was invisible in them.
+
+### Why now
+
+The six-week growth plan is about to put paid traffic on the website — the platform where the traffic actually is. Without this, the plan could not measure what any of that traffic looked at. Fixing the measurement before spending the budget rather than after.
+
+### Technical
+
+- The keys existed all along: dedicated reCAPTCHA v3 sites for production and staging, correctly domain-bound, created and never connected. `.env.example` already documented the variable name.
+- Added by appending in CI rather than folding into the stored environment secrets — those cannot be read back, so rewriting one risks silently dropping config nobody can verify. Appending cannot.
+- **Not** the waitlist form's key, which is a different reCAPTCHA site. Using that one would have produced valid-looking tokens the server rejects — failing exactly as silently as before.
+- **Verified end to end on staging, not assumed:** the tracking collection held 0 records, a property page was opened in a real browser, and the record appeared — correct listing, correct user, with the 30-day dedupe stamp that stops repeat visits inflating the count.
+
+> **Reading the numbers:** view counts on the website will rise from today. That is the same visitors finally being counted, not a marketing result. Compare against 4 August, not against last week.
+
+---
+
 ## 2026-08-04 (2) — The map was showing 30 of 47 properties
 
 ### Bug Fixes
