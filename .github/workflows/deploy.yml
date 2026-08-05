@@ -127,6 +127,22 @@ jobs:
       - run: npm ci
       - name: Create .env for staging build
         run: echo "${{ secrets.DOTENV_STAGING }}" > .env
+      # App Check site key — appended rather than stored in DOTENV_STAGING so
+      # this cannot disturb config that nobody can read back to verify. Public
+      # by design: it ships in every visitor's page source, which is why the
+      # Firebase config above is hardcoded here too.
+      #
+      # WHY IT MATTERS: recordListingView sets enforceAppCheck: true, so without
+      # this key the callable rejects every web request and the website records
+      # NO listing views at all. It had recorded none since it shipped —
+      # listingViewDedupe was empty in production on 2026-08-04 — meaning every
+      # view number on the platform came from the app only.
+      #
+      # Bound to localhost + oqupa-staging.* (site "Oqupa Website App Check
+      # (Staging)"). NOT interchangeable with VITE_RECAPTCHA_SITE_KEY, which is
+      # the waitlist form's key and a different reCAPTCHA site.
+      - name: Add App Check site key (staging)
+        run: echo "VITE_RECAPTCHA_APPCHECK_KEY=6Lf1WMYsAAAAAOMgBCCj9f5oDis5ilgzwjr8yK5Z" >> .env
       # --mode staging makes Vite set MODE='staging' (and PROD=false), which
       # tells imageUrl.ts to use the staging R2 host directly instead of the
       # /cdn-cgi/image/... Cloudflare-only path that production uses.
@@ -155,6 +171,12 @@ jobs:
       - run: npm ci
       - name: Create .env for production build
         run: echo "${{ secrets.DOTENV_PRODUCTION }}" > .env
+      # See the staging job for the full rationale. Bound to oqupa.com,
+      # www.oqupa.com and both oqupa-production Firebase hosts (site "Oqupa
+      # Website App Check (Production)"). Deliberately NOT bound to localhost —
+      # local development runs against staging and uses the staging key.
+      - name: Add App Check site key (production)
+        run: echo "VITE_RECAPTCHA_APPCHECK_KEY=6LfjWcYsAAAAANSKmb_sTrfeYLriwFGmk7jchxzg" >> .env
       - run: npm run build
       - id: auth
         uses: google-github-actions/auth@v2
