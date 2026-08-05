@@ -4,6 +4,23 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-04 (4) — Short links for social bios
+
+### New Features
+
+- **`oqupa.com/ig`, `/tiktok`, `/fb`, `/yt`** now redirect to the property map, carrying the campaign tags that tell you which platform a visitor came from. Both short and full spellings work (`/ig` and `/instagram`), so neither has to be remembered.
+- The point is the bio itself: a raw campaign-tagged URL is roughly four times longer, looks amateurish in a profile, and gets fewer taps.
+- **The indirection matters more than the length.** The bio says `oqupa.com/ig` forever; where it points can be changed in `firebase.json` without touching a single social profile. Same reasoning as `/descargar` on the printed flyers, which cannot be reprinted.
+
+### Technical
+
+- Firebase Hosting redirects — no Cloud Function, no cold start, nothing to break.
+- **302, not 301, deliberately.** A 301 is cached by browsers near-permanently, so anyone who tapped once would keep landing on the old destination after the config changed — silently defeating the indirection.
+- All eight paths verified returning 302 to the correct tagged destination on staging before promotion.
+- Keep `utm_source` values exactly as written: Google treats `instagram`, `Instagram` and `IG` as three separate sources and splits the numbers three ways.
+
+---
+
 ## 2026-08-04 (3) — The website starts counting listing views
 
 ### Bug Fixes
