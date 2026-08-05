@@ -2,6 +2,32 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "//redirects": [
+      "Short links for social bios. A bio link has to be short and clean — a raw",
+      "utm-tagged URL is long, ugly, and gets fewer taps.",
+      "",
+      "The indirection is the real win: the bio says oqupa.com/ig forever, and",
+      "where it POINTS can change here without touching a single profile. Same",
+      "reasoning as /descargar on the printed flyers, which cannot be reprinted.",
+      "",
+      "302 (temporary), deliberately NOT 301. A 301 is cached by browsers more or",
+      "less permanently, so anyone who tapped it once would keep going to the old",
+      "destination even after this file changed — which would silently defeat the",
+      "whole point of the indirection.",
+      "",
+      "Keep utm_source values EXACTLY as written. Google treats instagram,",
+      "Instagram and IG as three separate sources and splits the numbers."
+    ],
+    "redirects": [
+      { "source": "/ig", "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/instagram", "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/tiktok", "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/tt", "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/fb", "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/facebook", "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/yt", "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio", "type": 302 },
+      { "source": "/youtube", "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio", "type": 302 }
+    ],
     "rewrites": [
       {
         "source": "/descargar",
