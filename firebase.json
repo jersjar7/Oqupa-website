@@ -44,6 +44,14 @@
         }
       },
       {
+        "//": "Must sit ABOVE the ** catch-all. Without this rewrite, /sitemap.xml falls through to index.html and returns HTTP 200 carrying the app's markup — which is exactly what it did until 2026-08-05. Google fetched HTML where XML belongs and discarded it, so the site had no sitemap at all and nothing reported it.",
+        "source": "/sitemap.xml",
+        "function": {
+          "functionId": "renderSitemap",
+          "region": "southamerica-east1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
