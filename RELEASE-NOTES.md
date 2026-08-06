@@ -4,6 +4,27 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-05 — Google can finally see the whole catalogue
+
+### New Features
+
+- **`oqupa.com/sitemap.xml` now exists.** It lists the four public pages plus **every active listing**, so Google can find all of them instead of stumbling onto whichever it happens to crawl. Each listing carries the date it last changed, so a property whose price moved yesterday gets re-checked ahead of one untouched since April.
+- **A proper `robots.txt`**, declaring the sitemap and keeping crawlers out of the logged-in area, where every page needs an account and indexing them would waste Google's time on the site.
+
+### Bug Fixes
+
+- **That address used to return a page that looked fine and was useless.** Asking for the sitemap returned a normal "OK" response carrying the website's own HTML — the app answering an address it did not recognise. Google would fetch it, find a web page where a machine-readable list belongs, and discard it. **The site has had no sitemap for its entire life and nothing ever reported it.** Found while preparing to submit it to Google, which would have failed with no obvious cause.
+
+### Technical
+
+- Built fresh on each request rather than as a saved file. A saved file is wrong the moment a listing is published or removed — and wrong in the direction that matters, pointing buyers at properties no longer for sale. Cached for an hour so a crawler sweep does not re-read the database each time.
+- Draft, deactivated and test listings are excluded by the database query itself rather than filtered out afterwards, so a new listing state added later cannot leak in by default.
+- If the database is unreachable it returns a valid short sitemap rather than an error. An error makes Google mark the sitemap broken and back off for weeks; a short one costs nothing.
+- 17 tests covering the failures that happen silently — is it machine-readable rather than a web page, is every active listing present, is anything not-for-sale being advertised. Verified by deliberately breaking it and confirming the tests catch it.
+- Verified on staging against the real database: 19 listings in the sitemap, 19 active in the database, nothing gated or redirecting leaked in.
+
+---
+
 ## 2026-08-04 (4) — Short links for social bios
 
 ### New Features
