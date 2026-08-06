@@ -1,0 +1,29 @@
+# oqupa.com
+#
+# Search engines are welcome. The sitemap below is generated live from active
+# listings, so it is never stale — see functions/lib/sitemap.js.
+#
+# NOTE: Cloudflare sits in front of this origin and can serve its own generated
+# robots.txt (the AI-crawler content-signals one). If a change here does not
+# appear at oqupa.com/robots.txt, that is why — check the Cloudflare dashboard
+# rather than assuming the deploy failed.
+
+User-agent: *
+Allow: /
+
+# Nothing under /app is useful to a crawler: every route behind it requires a
+# login, so indexing them wastes crawl budget on pages Google cannot read.
+Disallow: /app/
+
+# Redirects, not pages. They exist to be followed, not listed.
+Disallow: /descargar
+Disallow: /ig
+Disallow: /instagram
+Disallow: /tiktok
+Disallow: /tt
+Disallow: /fb
+Disallow: /facebook
+Disallow: /yt
+Disallow: /youtube
+
+Sitemap: https://oqupa.com/sitemap.xml
