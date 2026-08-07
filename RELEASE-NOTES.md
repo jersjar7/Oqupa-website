@@ -4,6 +4,32 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-07 — A page for people searching "casas en venta en Piura"
+
+### New Features
+
+- **`oqupa.com/casas-en-venta-en-piura` is live.** Until now the only pages a stranger could find on Google were individual properties — useful if you already know what you want, useless to someone typing the phrase almost everyone actually types. This page answers that phrase directly: what a house really costs in each zone, what makes each part of the region different, and the questions a seller will not volunteer.
+- **The facts came from Branko**, who lives in Piura, in a recorded conversation — then every claim was checked before publishing. One was corrected: he recalled Piura being top three nationally for murders; it is third for extortion complaints and fourth for homicides. A wrong number would have destroyed exactly the credibility the honesty was meant to buy.
+- **It says which zones flood, including the expensive ones.** Miraflores is both the priciest area and a flood zone, and the page says so. Oqupa is a catalogue, not a broker for either side — being straight about a *place* is what keeps that true. The page never passes judgement on an individual property.
+- **Eight real listings at the bottom**, pulled live, so the article ends inside the product rather than at a dead stop.
+
+### Bug Fixes
+
+- **Those eight listings were the eight OLDEST in the database.** No sort order had ever been set, so the database fell back to ordering by ID — and listing IDs start with the date they were created. Anyone publishing today could never have appeared on the page built to attract them, and nothing anywhere would have reported it. They are now the newest, with at most two boosted listings mixed in at random positions rather than pinned to the top.
+- **Staging was showing a stale copy of this page for hours after each change.** The page is stored for six hours to keep it fast, which is right for the live site and useless for reviewing one. Staging now refreshes every minute.
+- **A manual re-run of a deploy reported success while deploying nothing.** The deploy step only ran on an automatic trigger, so re-running by hand did the tests, skipped the deploy, and went green. Found when GitHub's outage swallowed the automatic trigger and the fix appeared to ship twice without ever going out.
+
+### Technical
+
+- Server-rendered rather than a normal page in the app, because the words *are* the product here: Google receives the finished text instead of an empty shell it has to run code to fill.
+- Nothing on the page is hidden behind a click. Collapsing sections would have read better on a phone, but anything behind interaction is not reliably read by search engines, and ranking is the entire point.
+- Every number in the summary strip is counted from the data rather than typed, so none can drift out of date and no round-sounding invented figure can appear on a page whose whole pitch is honesty.
+- "Piura" means the department, not the city, so Sullana, Paita, Marcavelica and Máncora belong. Listings with no department recorded are included for now; that must reverse when Oqupa opens a second region, and a test says so.
+- 40 tests covering the corrected crime figures, the flood disclosures, and the rule that the page never rates an individual listing. Verified by breaking each fix and confirming the tests catch it.
+- Hero photograph by Alan Ghersi Blanco, credited in the page footer.
+
+---
+
 ## 2026-08-05 — Google can finally see the whole catalogue
 
 ### New Features
