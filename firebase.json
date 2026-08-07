@@ -1,9 +1,13 @@
 {
   "hosting": {
     "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "//redirects": [
-      "Short links for social bios. A bio link has to be short and clean — a raw",
+      "Short links for social bios. A bio link has to be short and clean \u2014 a raw",
       "utm-tagged URL is long, ugly, and gets fewer taps.",
       "",
       "The indirection is the real win: the bio says oqupa.com/ig forever, and",
@@ -12,21 +16,53 @@
       "",
       "302 (temporary), deliberately NOT 301. A 301 is cached by browsers more or",
       "less permanently, so anyone who tapped it once would keep going to the old",
-      "destination even after this file changed — which would silently defeat the",
+      "destination even after this file changed \u2014 which would silently defeat the",
       "whole point of the indirection.",
       "",
       "Keep utm_source values EXACTLY as written. Google treats instagram,",
       "Instagram and IG as three separate sources and splits the numbers."
     ],
     "redirects": [
-      { "source": "/ig", "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/instagram", "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/tiktok", "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/tt", "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/fb", "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/facebook", "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/yt", "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio", "type": 302 },
-      { "source": "/youtube", "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio", "type": 302 }
+      {
+        "source": "/ig",
+        "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/instagram",
+        "destination": "/explorar?utm_source=instagram&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/tiktok",
+        "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/tt",
+        "destination": "/explorar?utm_source=tiktok&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/fb",
+        "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/facebook",
+        "destination": "/explorar?utm_source=facebook&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/yt",
+        "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      },
+      {
+        "source": "/youtube",
+        "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio",
+        "type": 302
+      }
     ],
     "rewrites": [
       {
@@ -44,10 +80,18 @@
         }
       },
       {
-        "//": "Must sit ABOVE the ** catch-all. Without this rewrite, /sitemap.xml falls through to index.html and returns HTTP 200 carrying the app's markup — which is exactly what it did until 2026-08-05. Google fetched HTML where XML belongs and discarded it, so the site had no sitemap at all and nothing reported it.",
+        "//": "Must sit ABOVE the ** catch-all. Without this rewrite, /sitemap.xml falls through to index.html and returns HTTP 200 carrying the app's markup \u2014 which is exactly what it did until 2026-08-05. Google fetched HTML where XML belongs and discarded it, so the site had no sitemap at all and nothing reported it.",
         "source": "/sitemap.xml",
         "function": {
           "functionId": "renderSitemap",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "//": "City search-landing page \u2014 server-rendered so the CONTENT reaches Google, not just preview tags. Must sit above the ** catch-all. See ADR-016.",
+        "source": "/casas-en-venta-en-piura",
+        "function": {
+          "functionId": "renderCityPagePiura",
           "region": "southamerica-east1"
         }
       },
