@@ -113,7 +113,12 @@ jobs:
 
   deploy-staging:
     needs: build-and-test
-    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+    # `push` OR a manual run. Restricting this to `push` alone left no recovery
+    # path when a webhook is dropped: on 2026-08-06 GitHub's Actions outage ate
+    # the push event for the Piura page, and re-running by hand reported SUCCESS
+    # while skipping the deploy entirely — a green run that shipped nothing.
+    # Production (below) stays push-only on purpose; releases are deliberate.
+    if: github.ref == 'refs/heads/development' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
