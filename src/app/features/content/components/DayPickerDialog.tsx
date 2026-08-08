@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { CalendarOff, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Spinner } from '@/app/components/ui'
 import { useContentLinks, dateKey } from '@/hooks/useContentLinks'
 import type { ContentLink } from '@/types/contentLink'
@@ -58,6 +58,7 @@ export default function DayPickerDialog({
   itemLabel,
   currentDate,
   onPick,
+  onUnschedule,
   onClose,
 }: {
   open: boolean
@@ -66,6 +67,15 @@ export default function DayPickerDialog({
   /** The day it already sits on, if any — highlighted so a move is obvious. */
   currentDate?: string | null
   onPick: (date: string) => void
+  /**
+   * Send it back to the shelf. Only passed for something already on the
+   * calendar, so it appears exactly when "no day" is a possible answer.
+   *
+   * It lives here rather than as another button on the row: this dialog already
+   * answers "which day?", and "none" is one of the answers. A second control on
+   * every row would crowd it for a case that comes up rarely.
+   */
+  onUnschedule?: () => void
   onClose: () => void
 }) {
   const today = new Date()
@@ -255,6 +265,22 @@ export default function DayPickerDialog({
             Toca un día para programar. Lo que ya está en cada día se muestra solo como
             referencia; desde aquí no se edita.
           </p>
+
+          {onUnschedule && (
+            <div className="mt-3 border-t border-border pt-3">
+              <button
+                type="button"
+                onClick={onUnschedule}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] text-text-secondary transition-colors hover:border-error/40 hover:bg-error/5 hover:text-error"
+              >
+                <CalendarOff className="h-3.5 w-3.5" />
+                Quitar fecha
+              </button>
+              <p className="pt-1.5 font-serif text-xs font-light italic text-text-tertiary">
+                Vuelve a "Sin programar". No se borra nada.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
@@ -113,10 +113,17 @@ function LinkRow({
   link,
   onSave,
   onDelete,
+  onReschedule,
 }: {
   link: ContentLink
   onSave: (fields: { label: string; url: string }) => void
   onDelete: () => void
+  /**
+   * Open the day picker for a row already on the calendar — to move it, or to
+   * send it back to the shelf. Absent on the shelf, where the row has its own
+   * "Programar" button and there is no day to change.
+   */
+  onReschedule?: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [labelDraft, setLabelDraft] = useState(link.label ?? '')
@@ -197,6 +204,18 @@ function LinkRow({
           and should not require hunting for a control that appears on hover. */}
       <CopyButton value={link.url} />
 
+      {onReschedule && (
+        <button
+          type="button"
+          onClick={onReschedule}
+          aria-label="Cambiar de día"
+          title="Cambiar de día o quitar la fecha"
+          className="shrink-0 rounded p-1 text-text-tertiary opacity-0 transition-opacity hover:bg-background-secondary hover:text-primary group-hover/link:opacity-100 focus:opacity-100"
+        >
+          <CalendarDays className="h-3.5 w-3.5" />
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => { reset(); setEditing(true) }}
@@ -227,12 +246,14 @@ function DayRow({
   onAdd,
   onSave,
   onDelete,
+  onReschedule,
 }: {
   dateKeyValue: string
   links: ContentLink[]
   onAdd: (fields: { label: string; url: string }) => Promise<void>
   onSave: (link: ContentLink, fields: { label: string; url: string }) => void
   onDelete: (link: ContentLink) => void
+  onReschedule: (link: ContentLink) => void
 }) {
   const [labelDraft, setLabelDraft] = useState('')
   const [draft, setDraft] = useState('')
@@ -283,6 +304,7 @@ function DayRow({
               link={link}
               onSave={(fields) => onSave(link, fields)}
               onDelete={() => onDelete(link)}
+              onReschedule={() => onReschedule(link)}
             />
             <p className="font-serif text-[11px] font-light italic text-text-tertiary">
               {creatorName(link.createdByEmail)}
@@ -395,13 +417,27 @@ export default function ContentCalendarPage() {
   const [scheduling, setScheduling] = useState<ContentLink | null>(null)
 
   function assign(link: ContentLink, date: string) {
+    const from = link.date
     setScheduling(null)
     report(async () => {
       await contentLinkService.setDate(link.id, date)
-      // Confirms where it went. Without this the row simply vanishes from the
-      // shelf and it is not obvious anything succeeded.
-      toast.success(`Programado para el ${humanDay(date)}`)
+      // Confirms where it went. Without this the row simply vanishes from one
+      // view and reappears in another, and nothing says it worked.
+      toast.success(
+        from && from !== date
+          ? `Movido al ${humanDay(date)}`
+          : `Programado para el ${humanDay(date)}`,
+      )
     }, 'No se pudo programar el contenido')
+  }
+
+  /** Back to the shelf. Nothing is deleted — the record just loses its day. */
+  function unschedule(link: ContentLink) {
+    setScheduling(null)
+    report(async () => {
+      await contentLinkService.setDate(link.id, null)
+      toast.success('Movido a "Sin programar"')
+    }, 'No se pudo quitar la fecha')
   }
 
   const filledDays = days.filter((d) => (byDate[d]?.length ?? 0) > 0).length
@@ -529,6 +565,7 @@ export default function ContentCalendarPage() {
                     'No se pudo eliminar el enlace',
                   )
                 }
+                onReschedule={setScheduling}
               />
             ))}
           </ul>
@@ -581,6 +618,11 @@ export default function ContentCalendarPage() {
         itemLabel={scheduling?.label?.trim() || scheduling?.url || ''}
         currentDate={scheduling?.date ?? null}
         onPick={(date) => scheduling && assign(scheduling, date)}
+        // Only offered when the item actually has a day to lose — on the shelf
+        // "quitar fecha" would be a button that does nothing.
+        onUnschedule={
+          scheduling?.date ? () => unschedule(scheduling) : undefined
+        }
         onClose={() => setScheduling(null)}
       />
     </div>
