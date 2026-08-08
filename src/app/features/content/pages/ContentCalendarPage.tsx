@@ -319,8 +319,13 @@ function DayRow({
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-/** The two things this tab holds: what to do, and where the assets live. */
-type View = 'plan' | 'calendario'
+/**
+ * Three views. Calendario and Sin programar are two halves of the same job —
+ * where the assets live — so they share a toggle on the left. Plan is a
+ * different job entirely, so it sits apart on the right rather than pretending
+ * to be a third option in the same group.
+ */
+type View = 'plan' | 'calendario' | 'sin-programar'
 
 export default function ContentCalendarPage() {
   // Defaults to the plan — the daily question is "what do I do today", and the
@@ -332,7 +337,9 @@ export default function ContentCalendarPage() {
     subtitle:
       view === 'plan'
         ? 'Qué hacer hoy para crecer.'
-        : 'Dónde vive el contenido de cada día.',
+        : view === 'sin-programar'
+          ? 'Material listo, todavía sin fecha de publicación.'
+          : 'Dónde vive el contenido de cada día.',
     accessArea: 'marketing',
   })
 
@@ -374,28 +381,52 @@ export default function ContentCalendarPage() {
 
   return (
     <div className="space-y-4">
-      {/* Plan / Calendario — one tab, two jobs, deliberately not merged. */}
-      <div
-        role="tablist"
-        aria-label="Vista"
-        className="inline-flex gap-1 rounded-lg bg-background-secondary p-1"
-      >
-        {(['plan', 'calendario'] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            role="tab"
-            aria-selected={view === v}
-            onClick={() => setView(v)}
-            className={`rounded-md px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] transition-colors ${
-              view === v
-                ? 'bg-white text-text-primary shadow-light'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            {v === 'plan' ? 'Plan' : 'Calendario'}
-          </button>
-        ))}
+      {/* Left: the two halves of "where the assets live". Right: the plan,
+          which is a different job and is kept visually apart from the pair. */}
+      <div className="flex items-center justify-between gap-3">
+        <div
+          role="tablist"
+          aria-label="Vista del contenido"
+          className="inline-flex gap-1 rounded-lg bg-background-secondary p-1"
+        >
+          {(['calendario', 'sin-programar'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] transition-colors ${
+                view === v
+                  ? 'bg-white text-text-primary shadow-light'
+                  : 'text-text-tertiary hover:text-text-secondary'
+              }`}
+            >
+              {v === 'calendario' ? 'Calendario' : 'Sin programar'}
+              {/* The count rides on the tab so material waiting to be
+                  scheduled is visible without opening the view — the thing a
+                  separate tab would otherwise hide. */}
+              {v === 'sin-programar' && shelved.length > 0 && (
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-primary">
+                  {shelved.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-pressed={view === 'plan'}
+          onClick={() => setView('plan')}
+          className={`shrink-0 rounded-lg px-3 py-1.5 font-sans text-xs font-bold uppercase tracking-[1px] transition-colors ${
+            view === 'plan'
+              ? 'bg-primary text-white'
+              : 'bg-background-secondary text-text-tertiary hover:text-text-secondary'
+          }`}
+        >
+          Plan
+        </button>
       </div>
 
       {view === 'plan' && <GrowthPlanView />}
@@ -436,46 +467,6 @@ export default function ContentCalendarPage() {
         </div>
       )}
 
-      {/* Above the calendar, not in its own tab: the failure this prevents is
-          material getting made and then forgotten, and a tab you must remember
-          to open does not prevent that. Outside the isLoading branch so it does
-          not disappear while a month is fetching. */}
-      <UnscheduledShelf
-        shelved={shelved}
-        isLoading={shelfLoading}
-        error={shelfError}
-        renderRow={(link) => (
-          <>
-            <LinkRow
-              link={link}
-              onSave={(fields) =>
-                report(
-                  () => contentLinkService.update(link.id, fields),
-                  'No se pudo guardar el enlace',
-                )
-              }
-              onDelete={() =>
-                report(
-                  () => contentLinkService.remove(link.id),
-                  'No se pudo eliminar el enlace',
-                )
-              }
-            />
-            <p className="font-serif text-[11px] font-light italic text-text-tertiary">
-              {creatorName(link.createdByEmail)} · {madeOn(link.createdAt)}
-            </p>
-          </>
-        )}
-        onAdd={({ label, url }) =>
-          contentLinkService.create({
-            date: null,
-            label,
-            url,
-            createdByEmail: email,
-          })
-        }
-      />
-
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner size="lg" />
@@ -514,6 +505,44 @@ export default function ContentCalendarPage() {
         </section>
       )}
       </>
+      )}
+
+      {view === 'sin-programar' && (
+        <UnscheduledShelf
+          shelved={shelved}
+          isLoading={shelfLoading}
+          error={shelfError}
+          renderRow={(link) => (
+            <>
+              <LinkRow
+                link={link}
+                onSave={(fields) =>
+                  report(
+                    () => contentLinkService.update(link.id, fields),
+                    'No se pudo guardar el enlace',
+                  )
+                }
+                onDelete={() =>
+                  report(
+                    () => contentLinkService.remove(link.id),
+                    'No se pudo eliminar el enlace',
+                  )
+                }
+              />
+              <p className="font-serif text-[11px] font-light italic text-text-tertiary">
+                {creatorName(link.createdByEmail)} · {madeOn(link.createdAt)}
+              </p>
+            </>
+          )}
+          onAdd={({ label, url }) =>
+            contentLinkService.create({
+              date: null,
+              label,
+              url,
+              createdByEmail: email,
+            })
+          }
+        />
       )}
     </div>
   )

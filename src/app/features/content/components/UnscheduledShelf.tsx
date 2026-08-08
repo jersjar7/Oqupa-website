@@ -1,24 +1,25 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Inbox, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { Spinner } from '@/app/components/ui'
 import type { ContentLink } from '@/types/contentLink'
 
 /**
- * The "sin programar" shelf — finished material with no publish day yet.
+ * "Sin programar" — finished material with no publish day yet.
  *
- * WHY A SHELF AND NOT A SECOND CALENDAR. A calendar earns its complexity when
- * position carries meaning: where a thing sits tells you when it happens. For
- * unscheduled material the only date available is the day it was MADE, which is
- * the one fact nobody needs — you would scroll through October to find a reel
- * you made in October in order to schedule it for December. A flat list answers
- * the real question ("what have I got?") in one screen.
+ * WHY A LIST AND NOT A SECOND CALENDAR, which is what was originally proposed:
+ * a calendar earns its complexity when position carries meaning — where a thing
+ * sits tells you when it happens. For unscheduled material the only date
+ * available is the day it was MADE, which is the one fact nobody needs. You
+ * would scroll through October to find a reel you made in October in order to
+ * schedule it for December. A flat list answers the real question, "what have I
+ * got?", in one screen.
  *
- * WHY IT SITS ON TOP OF THE CALENDAR RATHER THAN IN ITS OWN TAB. The failure
- * this exists to prevent is material getting made and then forgotten. A count
- * you cannot avoid seeing does that; a tab you have to remember to open does
- * not. It collapses so it never buries the calendar.
+ * It is its OWN VIEW rather than a strip on top of the calendar (Jerson's call,
+ * 2026-08-08). The count rides on the tab so waiting material is still visible
+ * without opening it — which was the one thing the strip did better.
  *
- * One item is ONE record throughout: giving it a day moves the same record onto
- * the calendar rather than copying it. Two copies would have to be kept in
+ * One item stays ONE record throughout: giving it a day moves the same record
+ * onto the calendar rather than copying it. Two copies would have to be kept in
  * agreement by a person, and people forget.
  */
 export default function UnscheduledShelf({
@@ -31,13 +32,10 @@ export default function UnscheduledShelf({
   shelved: ContentLink[]
   isLoading: boolean
   error: string | null
-  /** The saved-link row, passed in so the shelf and the calendar stay identical. */
+  /** The saved-link row, passed in so this and the calendar cannot drift apart. */
   renderRow: (link: ContentLink) => React.ReactNode
   onAdd: (fields: { label: string; url: string }) => Promise<void>
 }) {
-  // Open by default when there is something waiting — the whole point is that
-  // it is hard to ignore. Closed when empty so it stays out of the way.
-  const [open, setOpen] = useState(true)
   const [labelDraft, setLabelDraft] = useState('')
   const [urlDraft, setUrlDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -45,6 +43,8 @@ export default function UnscheduledShelf({
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     const url = urlDraft.trim()
+    // The address is what makes the row worth saving; the label is a courtesy
+    // to whoever reads it next, so it is never required.
     if (!url || busy) return
     setBusy(true)
     try {
@@ -56,59 +56,42 @@ export default function UnscheduledShelf({
     }
   }
 
-  const count = shelved.length
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
 
   return (
-    <section className="mb-4 overflow-hidden rounded-lg border border-border bg-background-secondary/40">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-background-secondary/70 md:px-5"
-      >
-        {open ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary" />
-        ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-text-tertiary" />
-        )}
-        <Inbox className="h-4 w-4 shrink-0 text-text-tertiary" />
-        <span className="font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
-          Sin programar
-        </span>
-        {count > 0 && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-sans text-xs font-medium text-primary">
-            {count}
-          </span>
-        )}
-        <span className="ml-auto font-serif text-xs font-light italic text-text-tertiary">
-          {isLoading
-            ? 'Cargando…'
-            : count === 0
-              ? 'Nada pendiente'
-              : 'Material listo, sin fecha de publicación'}
-        </span>
-      </button>
+    <>
+      {error && (
+        <div
+          role="alert"
+          className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error"
+        >
+          {error}
+        </div>
+      )}
 
-      {open && (
-        <div className="space-y-1.5 border-t border-border px-4 pb-3 pt-3 md:px-5">
-          {error && (
-            <p className="font-sans text-sm text-error" role="alert">
-              {error}
-            </p>
-          )}
-
-          {!error && !isLoading && count === 0 && (
+      <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-light">
+        <div className="space-y-2 px-4 py-4 md:px-5">
+          {!error && shelved.length === 0 && (
             <p className="font-serif text-sm font-light italic text-text-tertiary">
               Cuando termines algo y todavía no sepas qué día se publica, guárdalo aquí.
+              Después le asignas la fecha.
             </p>
           )}
 
           {shelved.map((link) => (
-            <div key={link.id}>{renderRow(link)}</div>
+            <div key={link.id} className="border-b border-border pb-2 last:border-0 last:pb-0">
+              {renderRow(link)}
+            </div>
           ))}
 
-          {/* Same two-box shape as a day row, so it is obvious this is the
-              same kind of thing, just without a day yet. */}
+          {/* Same two-box shape as a day on the calendar, so it reads as the
+              same kind of thing — just without a day yet. */}
           <form onSubmit={submit} className="flex items-start gap-1.5 pt-1">
             <button
               type="submit"
@@ -138,7 +121,7 @@ export default function UnscheduledShelf({
             </div>
           </form>
         </div>
-      )}
-    </section>
+      </section>
+    </>
   )
 }
