@@ -7,8 +7,17 @@
  */
 export interface ContentLink {
   id: string
-  /** The day this content is for, as 'YYYY-MM-DD'. Local Lima date, not UTC. */
-  date: string
+  /**
+   * The day this content is for, as 'YYYY-MM-DD' (local Lima date, never UTC)
+   * — or `null` for finished material that has no publish day yet, which lives
+   * on the "sin programar" shelf until someone assigns it one.
+   *
+   * Stored as an explicit null rather than by omitting the field: Firestore can
+   * equality-match null but CANNOT match a missing field, and the shelf query
+   * depends on finding these. Verified against the emulator before this was
+   * built — see the contentLinks tests in tests/firestore-rules.test.js.
+   */
+  date: string | null
   /**
    * What the content IS, in a few words — "Reel casa Castilla", "Carrusel
    * precios". Optional because links created before 2026-08-08 have none; the

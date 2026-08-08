@@ -32,9 +32,12 @@ function toDate(value: unknown): Date | null {
 }
 
 function docToLink(id: string, data: Record<string, unknown>): ContentLink {
+  const rawDate = data['date']
   return {
     id,
-    date: String(data['date'] ?? ''),
+    // Anything that is not a real date string means "not scheduled" — null,
+    // missing, or the empty string a hand-edit could leave behind.
+    date: typeof rawDate === 'string' && rawDate ? rawDate : null,
     // Absent on every link created before labels existed — the UI falls back
     // to the address rather than rendering an empty row.
     label: data['label'] === undefined ? undefined : String(data['label']),
@@ -74,8 +77,29 @@ export const contentLinkService = {
     )
   },
 
+  /**
+   * Everything not yet scheduled, live.
+   *
+   * Deliberately NOT ordered in the query. `where(date == null)` combined with
+   * `orderBy(createdAt)` needs a composite index, and a forgotten index is
+   * exactly what shipped the team board broken on 2026-08-01 — the page loaded,
+   * then failed with a permissions error that had nothing to do with
+   * permissions. The shelf holds tens of items, so the caller sorts them.
+   */
+  subscribeToShelf(
+    onChange: (links: ContentLink[]) => void,
+    onError: (error: Error) => void,
+  ): Unsubscribe {
+    return onSnapshot(
+      query(linksCol(), where('date', '==', null)),
+      (snap) => onChange(snap.docs.map((d) => docToLink(d.id, d.data()))),
+      onError,
+    )
+  },
+
   async create(params: {
-    date: string
+    /** A day on the calendar, or null to put it on the shelf. */
+    date: string | null
     label: string
     url: string
     createdByEmail: string
@@ -87,6 +111,11 @@ export const contentLinkService = {
       createdAt: serverTimestamp(),
       createdByEmail: params.createdByEmail,
     })
+  },
+
+  /** Move material onto a day, or back onto the shelf with null. */
+  async setDate(id: string, date: string | null): Promise<void> {
+    await updateDoc(linkRef(id), { date })
   },
 
   /** Label and address are edited together — they describe the same thing. */

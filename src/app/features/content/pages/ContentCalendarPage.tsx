@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
-import { useContentLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
+import { useContentLinks, useShelvedLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
+import UnscheduledShelf from '@/app/features/content/components/UnscheduledShelf'
 import { contentLinkService } from '@/services/contentLinkService'
 import { memberFor } from '@/app/features/team/teamRoster'
 import GrowthPlanView from '@/app/features/plan/components/GrowthPlanView'
@@ -34,6 +35,18 @@ function isWeekend(key: string): boolean {
 function creatorName(email: string): string {
   if (!email) return 'alguien'
   return memberFor(email)?.name ?? email.split('@')[0]!
+}
+
+/**
+ * "hecho el 5 de agosto" — when a piece of material was finished.
+ *
+ * Only shown on the shelf. On the calendar the row already sits under its day,
+ * so the made-on date would be noise; on the shelf it is the only time
+ * information there is, and it is what tells you something has been waiting.
+ * No new field needed — every link has always recorded when it was created.
+ */
+function madeOn(created: Date): string {
+  return `hecho el ${created.toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}`
 }
 
 /* ------------------------------------------------------------------ */
@@ -331,6 +344,9 @@ export default function ContentCalendarPage() {
   const [month, setMonth] = useState(now.getMonth())
 
   const { byDate, isLoading, error } = useContentLinks(year, month)
+  // Not scoped to the month on purpose — material made in July is exactly what
+  // gets lost if the shelf hides behind month navigation.
+  const { shelved, isLoading: shelfLoading, error: shelfError } = useShelvedLinks()
   const days = useMemo(() => daysInMonth(year, month), [year, month])
 
   // es-PE gives "agosto de 2026". Tailwind's `capitalize` would upper-case
@@ -419,6 +435,46 @@ export default function ContentCalendarPage() {
           {error}
         </div>
       )}
+
+      {/* Above the calendar, not in its own tab: the failure this prevents is
+          material getting made and then forgotten, and a tab you must remember
+          to open does not prevent that. Outside the isLoading branch so it does
+          not disappear while a month is fetching. */}
+      <UnscheduledShelf
+        shelved={shelved}
+        isLoading={shelfLoading}
+        error={shelfError}
+        renderRow={(link) => (
+          <>
+            <LinkRow
+              link={link}
+              onSave={(fields) =>
+                report(
+                  () => contentLinkService.update(link.id, fields),
+                  'No se pudo guardar el enlace',
+                )
+              }
+              onDelete={() =>
+                report(
+                  () => contentLinkService.remove(link.id),
+                  'No se pudo eliminar el enlace',
+                )
+              }
+            />
+            <p className="font-serif text-[11px] font-light italic text-text-tertiary">
+              {creatorName(link.createdByEmail)} · {madeOn(link.createdAt)}
+            </p>
+          </>
+        )}
+        onAdd={({ label, url }) =>
+          contentLinkService.create({
+            date: null,
+            label,
+            url,
+            createdByEmail: email,
+          })
+        }
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-16">
