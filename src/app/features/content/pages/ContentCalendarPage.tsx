@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, ExternalLink, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
@@ -40,47 +40,122 @@ function creatorName(email: string): string {
 /* One saved link                                                      */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Copy-to-clipboard button.
+ *
+ * Confirms in place for a moment rather than firing a toast: the whole point is
+ * to grab an address and leave, and a copy that gives no feedback gets clicked
+ * three times because nobody can tell whether it worked.
+ */
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value)
+    } catch {
+      // Older browsers and any non-secure origin reject the clipboard API.
+      const el = document.createElement('textarea')
+      el.value = value
+      el.setAttribute('readonly', '')
+      el.style.position = 'fixed'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1400)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={copied ? 'Enlace copiado' : 'Copiar enlace'}
+      title={copied ? 'Copiado' : 'Copiar enlace'}
+      className={`shrink-0 rounded p-1 transition-colors hover:bg-background-secondary ${
+        copied ? 'text-success' : 'text-text-tertiary hover:text-primary'
+      }`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  )
+}
+
 function LinkRow({
   link,
   onSave,
   onDelete,
 }: {
   link: ContentLink
-  onSave: (url: string) => void
+  onSave: (fields: { label: string; url: string }) => void
   onDelete: () => void
 }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(link.url)
+  const [labelDraft, setLabelDraft] = useState(link.label ?? '')
+  const [urlDraft, setUrlDraft] = useState(link.url)
+
+  function reset() {
+    setLabelDraft(link.label ?? '')
+    setUrlDraft(link.url)
+  }
 
   function commit() {
-    const next = draft.trim()
+    const url = urlDraft.trim()
+    const label = labelDraft.trim()
     setEditing(false)
-    if (!next || next === link.url) {
-      setDraft(link.url)
+    // An empty address would leave a row pointing nowhere; a label may be blank.
+    if (!url || (url === link.url && label === (link.label ?? ''))) {
+      reset()
       return
     }
-    onSave(next)
+    onSave({ label, url })
   }
 
   if (editing) {
     return (
-      <input
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); commit() }
-          if (e.key === 'Escape') { setDraft(link.url); setEditing(false) }
-        }}
-        aria-label="Editar enlace"
-        className="w-full rounded border border-primary bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-      />
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+        <input
+          autoFocus
+          value={labelDraft}
+          onChange={(e) => setLabelDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit() }
+            if (e.key === 'Escape') { reset(); setEditing(false) }
+          }}
+          placeholder="Qué es"
+          aria-label="Editar etiqueta"
+          className="w-full rounded border border-primary bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-40 sm:shrink-0"
+        />
+        <input
+          value={urlDraft}
+          onChange={(e) => setUrlDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit() }
+            if (e.key === 'Escape') { reset(); setEditing(false) }
+          }}
+          placeholder="Enlace de Drive"
+          aria-label="Editar enlace"
+          className="w-full min-w-0 rounded border border-primary bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+      </div>
     )
   }
 
   return (
     <div className="group/link flex items-center gap-2">
+      {/* Fixed width so labels line up down the page and the addresses start
+          at the same place, which is what makes a long list scannable. */}
+      <span
+        className="w-40 shrink-0 truncate font-sans text-sm font-medium text-text-primary"
+        title={link.label || undefined}
+      >
+        {link.label || <span className="font-normal text-text-tertiary">Sin etiqueta</span>}
+      </span>
+
       <a
         href={link.url}
         target="_blank"
@@ -92,9 +167,13 @@ function LinkRow({
         <span className="truncate">{link.url}</span>
       </a>
 
+      {/* Always visible, unlike Editar/Eliminar — copying is the common action
+          and should not require hunting for a control that appears on hover. */}
+      <CopyButton value={link.url} />
+
       <button
         type="button"
-        onClick={() => { setDraft(link.url); setEditing(true) }}
+        onClick={() => { reset(); setEditing(true) }}
         className="shrink-0 rounded px-1.5 py-0.5 font-sans text-xs text-text-tertiary opacity-0 transition-opacity hover:bg-background-secondary group-hover/link:opacity-100 focus:opacity-100"
       >
         Editar
@@ -125,10 +204,11 @@ function DayRow({
 }: {
   dateKeyValue: string
   links: ContentLink[]
-  onAdd: (url: string) => Promise<void>
-  onSave: (link: ContentLink, url: string) => void
+  onAdd: (fields: { label: string; url: string }) => Promise<void>
+  onSave: (link: ContentLink, fields: { label: string; url: string }) => void
   onDelete: (link: ContentLink) => void
 }) {
+  const [labelDraft, setLabelDraft] = useState('')
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const { weekday, day } = dayLabel(dateKeyValue)
@@ -137,11 +217,14 @@ function DayRow({
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     const url = draft.trim()
+    // The address is what makes the row worth saving; the label is a courtesy
+    // to whoever reads it next, so it is never required.
     if (!url || busy) return
     setBusy(true)
     try {
-      await onAdd(url)
+      await onAdd({ label: labelDraft.trim(), url })
       setDraft('')
+      setLabelDraft('')
     } finally {
       setBusy(false)
     }
@@ -172,7 +255,7 @@ function DayRow({
           <div key={link.id}>
             <LinkRow
               link={link}
-              onSave={(url) => onSave(link, url)}
+              onSave={(fields) => onSave(link, fields)}
               onDelete={() => onDelete(link)}
             />
             <p className="font-serif text-[11px] font-light italic text-text-tertiary">
@@ -183,23 +266,36 @@ function DayRow({
 
         {/* Always one empty box, so adding a second link to a day needs no
             extra button — you just fill the next one. */}
-        <form onSubmit={submit} className="flex items-center gap-1.5">
+        <form onSubmit={submit} className="flex items-start gap-1.5">
           <button
             type="submit"
             disabled={busy || !draft.trim()}
             aria-label={`Guardar enlace para el ${day}`}
-            className="shrink-0 rounded text-text-tertiary transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-1 shrink-0 rounded text-text-tertiary transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
           </button>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={links.length ? 'Añadir otro enlace…' : 'Pega el enlace de Drive…'}
-            aria-label={`Añadir enlace para el ${day}`}
-            disabled={busy}
-            className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
-          />
+
+          {/* Two fields, same widths as a saved row, so it is obvious which
+              box becomes which column once saved. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center">
+            <input
+              value={labelDraft}
+              onChange={(e) => setLabelDraft(e.target.value)}
+              placeholder="Qué es (ej. Reel casa Castilla)"
+              aria-label={`Etiqueta del contenido para el ${day}`}
+              disabled={busy}
+              className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50 sm:w-40 sm:shrink-0"
+            />
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={links.length ? 'Añadir otro enlace de Drive…' : 'Pega el enlace de Drive…'}
+              aria-label={`Añadir enlace para el ${day}`}
+              disabled={busy}
+              className="w-full min-w-0 bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
+            />
+          </div>
         </form>
       </div>
     </li>
@@ -336,16 +432,17 @@ export default function ContentCalendarPage() {
                 key={d}
                 dateKeyValue={d}
                 links={byDate[d] ?? []}
-                onAdd={(url) =>
+                onAdd={({ label, url }) =>
                   contentLinkService.create({
                     date: d,
+                    label,
                     url,
                     createdByEmail: email,
                   })
                 }
-                onSave={(link, url) =>
+                onSave={(link, fields) =>
                   report(
-                    () => contentLinkService.updateUrl(link.id, url),
+                    () => contentLinkService.update(link.id, fields),
                     'No se pudo guardar el enlace',
                   )
                 }

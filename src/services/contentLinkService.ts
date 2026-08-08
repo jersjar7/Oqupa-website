@@ -35,6 +35,9 @@ function docToLink(id: string, data: Record<string, unknown>): ContentLink {
   return {
     id,
     date: String(data['date'] ?? ''),
+    // Absent on every link created before labels existed — the UI falls back
+    // to the address rather than rendering an empty row.
+    label: data['label'] === undefined ? undefined : String(data['label']),
     url: String(data['url'] ?? ''),
     // The optimistic local snapshot fires before the server stamps createdAt.
     createdAt: toDate(data['createdAt']) ?? new Date(),
@@ -73,19 +76,22 @@ export const contentLinkService = {
 
   async create(params: {
     date: string
+    label: string
     url: string
     createdByEmail: string
   }): Promise<void> {
     await addDoc(linksCol(), {
       date: params.date,
+      label: params.label,
       url: params.url,
       createdAt: serverTimestamp(),
       createdByEmail: params.createdByEmail,
     })
   },
 
-  async updateUrl(id: string, url: string): Promise<void> {
-    await updateDoc(linkRef(id), { url })
+  /** Label and address are edited together — they describe the same thing. */
+  async update(id: string, fields: { label: string; url: string }): Promise<void> {
+    await updateDoc(linkRef(id), { label: fields.label, url: fields.url })
   },
 
   async remove(id: string): Promise<void> {
