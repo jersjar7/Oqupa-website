@@ -56,6 +56,10 @@ export function useContentLinks(year: number, month: number): UseContentLinks {
   const byDate = useMemo(() => {
     const grouped: Record<string, ContentLink[]> = {}
     for (const link of links) {
+      // A month query cannot return an unscheduled link — proven against the
+      // emulator — but grouping by a null key would silently create a bucket
+      // called "null" rather than failing, so it is skipped explicitly.
+      if (!link.date) continue
       ;(grouped[link.date] ??= []).push(link)
     }
     // Oldest first inside a day, so the order stays stable as links are added.
@@ -66,4 +70,46 @@ export function useContentLinks(year: number, month: number): UseContentLinks {
   }, [links])
 
   return { byDate, isLoading, error }
+}
+
+interface UseShelvedLinks {
+  /** Finished material with no publish day yet, newest first. */
+  shelved: ContentLink[]
+  isLoading: boolean
+  error: string | null
+}
+
+/**
+ * Live "sin programar" shelf — everything finished but not yet given a day.
+ *
+ * Not scoped to a month, unlike the calendar: the whole question the shelf
+ * answers is "what have I got?", and material made in July is exactly what you
+ * would lose track of if it were hidden behind month navigation.
+ */
+export function useShelvedLinks(): UseShelvedLinks {
+  const [shelved, setShelved] = useState<ContentLink[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = contentLinkService.subscribeToShelf(
+      (next) => {
+        // Sorted here rather than in the query, which would need a composite
+        // index. Newest first: the thing you just finished is the thing you
+        // are most likely to be scheduling.
+        setShelved(
+          [...next].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+        )
+        setIsLoading(false)
+      },
+      (err) => {
+        console.error('useShelvedLinks:', err)
+        setError('No se pudo cargar el material sin programar.')
+        setIsLoading(false)
+      },
+    )
+    return unsubscribe
+  }, [])
+
+  return { shelved, isLoading, error }
 }
