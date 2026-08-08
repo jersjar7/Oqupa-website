@@ -43,5 +43,6 @@ export function useExploreListings(operationType?: OperationType | null) {
     fetchNextPage: infiniteQuery.fetchNextPage,
     hasNextPage: infiniteQuery.hasNextPage ?? false,
     isFetchingNextPage: infiniteQuery.isFetchingNextPage,
+    refetch: infiniteQuery.refetch,
   }
 }

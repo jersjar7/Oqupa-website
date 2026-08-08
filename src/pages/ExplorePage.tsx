@@ -13,8 +13,22 @@ import PropertyCard from '@/components/explore/PropertyCard'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { StaggerList, staggerItemVariants } from '@/app/components/ui'
 import { thumbnail } from '@/lib/imageUrl'
+import { getExploreEmptyMessage } from '@/lib/exploreEmptyState'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
+
+function PropertyCardSkeleton() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-xl border border-border bg-white">
+      <div className="aspect-[4/3] w-full bg-background-secondary" />
+      <div className="space-y-2 p-3">
+        <div className="h-4 w-2/3 rounded bg-background-secondary" />
+        <div className="h-3 w-1/2 rounded bg-background-secondary" />
+        <div className="h-3 w-1/3 rounded bg-background-secondary" />
+      </div>
+    </div>
+  )
+}
 
 export default function ExplorePage() {
   const location = useLocation()
@@ -54,6 +68,7 @@ export default function ExplorePage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -133,12 +148,18 @@ export default function ExplorePage() {
           {error && (
             <motion.div
               key="error-overlay"
-              className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-cream/80"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
               <p className="text-sm text-error">Error al cargar propiedades</p>
+              <button
+                onClick={() => refetch()}
+                className="rounded-full bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+              >
+                Reintentar
+              </button>
             </motion.div>
           )}
           <ExploreMap
@@ -157,11 +178,7 @@ export default function ExplorePage() {
             <div className="absolute bottom-20 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
               <MapPin className="h-4 w-4 shrink-0 text-text-tertiary" />
               <p className="flex-1 text-xs text-text-secondary">
-                {total === 0
-                  ? 'Estamos empezando en Piura. Pronto habra propiedades aqui.'
-                  : filtered.length > 0
-                    ? 'No hay propiedades aqui. Aleja el mapa o navega a otra zona.'
-                    : 'No hay propiedades con estos filtros.'}
+                {getExploreEmptyMessage(total, filtered.length)}
               </p>
               <button
                 onClick={() => setToastDismissed(true)}
@@ -193,7 +210,13 @@ export default function ExplorePage() {
           className="hidden w-0 flex-[2] overflow-y-auto border-l border-border bg-cream p-4 md:block"
         >
           <AnimatePresence mode="wait">
-            {visible.length === 0 && !isLoading ? (
+            {isLoading ? (
+              <div key="skeleton" className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <PropertyCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : visible.length === 0 ? (
               <motion.div
                 key="empty"
                 className="flex flex-col items-center gap-3 py-12 text-center"
@@ -203,11 +226,7 @@ export default function ExplorePage() {
               >
                 <MapPin className="h-8 w-8 text-text-tertiary/40" />
                 <p className="text-sm text-text-tertiary">
-                  {total === 0
-                    ? 'Estamos empezando en Piura. Las primeras propiedades estaran disponibles muy pronto.'
-                    : filtered.length > 0
-                      ? 'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicacion para ver las propiedades disponibles.'
-                      : 'No se encontraron propiedades con los filtros seleccionados.'}
+                  {getExploreEmptyMessage(total, filtered.length)}
                 </p>
               </motion.div>
             ) : (
