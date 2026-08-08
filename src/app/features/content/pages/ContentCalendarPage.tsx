@@ -6,6 +6,7 @@ import { Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useContentLinks, useShelvedLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
 import UnscheduledShelf from '@/app/features/content/components/UnscheduledShelf'
+import DayPickerDialog from '@/app/features/content/components/DayPickerDialog'
 import { FIELD_BOX, LABEL_FIELD_WIDTH } from '@/app/features/content/components/fieldStyles'
 import { contentLinkService } from '@/services/contentLinkService'
 import { memberFor } from '@/app/features/team/teamRoster'
@@ -49,6 +50,15 @@ function creatorName(email: string): string {
  */
 function madeOn(created: Date): string {
   return `hecho el ${created.toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}`
+}
+
+/** "14 de agosto" from a date key — built locally, never through UTC. */
+function humanDay(key: string): string {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(y!, m! - 1, d!).toLocaleDateString('es-PE', {
+    day: 'numeric',
+    month: 'long',
+  })
 }
 
 /* ------------------------------------------------------------------ */
@@ -380,6 +390,20 @@ export default function ContentCalendarPage() {
     })
   }
 
+  // Which item the day picker is open for. Held here rather than inside the
+  // shelf so the same dialog can later be opened from a calendar row too.
+  const [scheduling, setScheduling] = useState<ContentLink | null>(null)
+
+  function assign(link: ContentLink, date: string) {
+    setScheduling(null)
+    report(async () => {
+      await contentLinkService.setDate(link.id, date)
+      // Confirms where it went. Without this the row simply vanishes from the
+      // shelf and it is not obvious anything succeeded.
+      toast.success(`Programado para el ${humanDay(date)}`)
+    }, 'No se pudo programar el contenido')
+  }
+
   const filledDays = days.filter((d) => (byDate[d]?.length ?? 0) > 0).length
 
   return (
@@ -548,8 +572,17 @@ export default function ContentCalendarPage() {
               createdByEmail: email,
             })
           }
+          onSchedule={setScheduling}
         />
       )}
+
+      <DayPickerDialog
+        open={scheduling !== null}
+        itemLabel={scheduling?.label?.trim() || scheduling?.url || ''}
+        currentDate={scheduling?.date ?? null}
+        onPick={(date) => scheduling && assign(scheduling, date)}
+        onClose={() => setScheduling(null)}
+      />
     </div>
   )
 }

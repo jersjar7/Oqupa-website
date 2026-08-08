@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { CalendarPlus, Plus } from 'lucide-react'
 import { Spinner } from '@/app/components/ui'
 import type { ContentLink } from '@/types/contentLink'
 import { FIELD_BOX, LABEL_FIELD_WIDTH } from './fieldStyles'
@@ -29,6 +29,7 @@ export default function UnscheduledShelf({
   error,
   renderRow,
   onAdd,
+  onSchedule,
 }: {
   shelved: ContentLink[]
   isLoading: boolean
@@ -36,6 +37,8 @@ export default function UnscheduledShelf({
   /** The saved-link row, passed in so this and the calendar cannot drift apart. */
   renderRow: (link: ContentLink) => React.ReactNode
   onAdd: (fields: { label: string; url: string }) => Promise<void>
+  /** Opens the day picker for this item. The shelf owns the button; the page owns the dialog. */
+  onSchedule: (link: ContentLink) => void
 }) {
   const [labelDraft, setLabelDraft] = useState('')
   const [urlDraft, setUrlDraft] = useState('')
@@ -88,6 +91,16 @@ export default function UnscheduledShelf({
           {shelved.map((link) => (
             <div key={link.id} className="border-b border-border pb-2 last:border-0 last:pb-0">
               {renderRow(link)}
+              {/* The one action this view exists to enable, so it is a real
+                  button rather than something that appears on hover. */}
+              <button
+                type="button"
+                onClick={() => onSchedule(link)}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 font-sans text-xs font-bold uppercase tracking-[1px] text-primary transition-colors hover:border-primary hover:bg-primary/5"
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Programar
+              </button>
             </div>
           ))}
 
