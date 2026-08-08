@@ -6,6 +6,7 @@ import { Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useContentLinks, useShelvedLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
 import UnscheduledShelf from '@/app/features/content/components/UnscheduledShelf'
+import { FIELD_BOX, LABEL_FIELD_WIDTH } from '@/app/features/content/components/fieldStyles'
 import { contentLinkService } from '@/services/contentLinkService'
 import { memberFor } from '@/app/features/team/teamRoster'
 import GrowthPlanView from '@/app/features/plan/components/GrowthPlanView'
@@ -36,6 +37,7 @@ function creatorName(email: string): string {
   if (!email) return 'alguien'
   return memberFor(email)?.name ?? email.split('@')[0]!
 }
+
 
 /**
  * "hecho el 5 de agosto" — when a piece of material was finished.
@@ -129,7 +131,7 @@ function LinkRow({
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           autoFocus
           value={labelDraft}
@@ -140,7 +142,7 @@ function LinkRow({
           }}
           placeholder="Qué es"
           aria-label="Editar etiqueta"
-          className="w-full rounded border border-primary bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-40 sm:shrink-0"
+          className={`${FIELD_BOX} ${LABEL_FIELD_WIDTH} border-primary`}
         />
         <input
           value={urlDraft}
@@ -152,7 +154,7 @@ function LinkRow({
           }}
           placeholder="Enlace de Drive"
           aria-label="Editar enlace"
-          className="w-full min-w-0 rounded border border-primary bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className={`${FIELD_BOX} w-full min-w-0 flex-1 border-primary`}
         />
       </div>
     )
@@ -160,10 +162,11 @@ function LinkRow({
 
   return (
     <div className="group/link flex items-center gap-2">
-      {/* Fixed width so labels line up down the page and the addresses start
-          at the same place, which is what makes a long list scannable. */}
+      {/* Its own box, same width as the field that created it, so a saved row
+          reads as the same two things the form asked for. Fixed width also
+          means labels line up and every address starts at the same place. */}
       <span
-        className="w-40 shrink-0 truncate font-sans text-sm font-medium text-text-primary"
+        className="w-44 shrink-0 truncate rounded-md bg-background-secondary px-2 py-1 font-sans text-sm font-medium text-text-primary"
         title={link.label || undefined}
       >
         {link.label || <span className="font-normal text-text-tertiary">Sin etiqueta</span>}
@@ -173,7 +176,7 @@ function LinkRow({
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-secondary hover:underline"
+        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm text-secondary hover:border-border hover:underline"
         title={link.url}
       >
         <ExternalLink className="h-3.5 w-3.5 shrink-0" />
@@ -289,16 +292,16 @@ function DayRow({
             <Plus className="h-4 w-4" />
           </button>
 
-          {/* Two fields, same widths as a saved row, so it is obvious which
-              box becomes which column once saved. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center">
+          {/* Two boxed fields, same widths as a saved row, so it is obvious
+              which box becomes which column once saved. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
             <input
               value={labelDraft}
               onChange={(e) => setLabelDraft(e.target.value)}
-              placeholder="Qué es (ej. Reel casa Castilla)"
+              placeholder="Qué es"
               aria-label={`Etiqueta del contenido para el ${day}`}
               disabled={busy}
-              className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50 sm:w-40 sm:shrink-0"
+              className={`${FIELD_BOX} ${LABEL_FIELD_WIDTH}`}
             />
             <input
               value={draft}
@@ -306,7 +309,7 @@ function DayRow({
               placeholder={links.length ? 'Añadir otro enlace de Drive…' : 'Pega el enlace de Drive…'}
               aria-label={`Añadir enlace para el ${day}`}
               disabled={busy}
-              className="w-full min-w-0 bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
+              className={`${FIELD_BOX} w-full min-w-0 flex-1`}
             />
           </div>
         </form>
@@ -380,7 +383,10 @@ export default function ContentCalendarPage() {
   const filledDays = days.filter((d) => (byDate[d]?.length ?? 0) > 0).length
 
   return (
-    <div className="space-y-4">
+    // `<main>` in the shell carries no horizontal padding — each page supplies
+    // its own. This one had none, so the tabs, the Plan button and every row
+    // sat flush against the window edge. Matches TeamBoardPage.
+    <div className="space-y-4 p-4 md:p-6">
       {/* Left: the two halves of "where the assets live". Right: the plan,
           which is a different job and is kept visually apart from the pair. */}
       <div className="flex items-center justify-between gap-3">

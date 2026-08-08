@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Spinner } from '@/app/components/ui'
 import type { ContentLink } from '@/types/contentLink'
+import { FIELD_BOX, LABEL_FIELD_WIDTH } from './fieldStyles'
 
 /**
  * "Sin programar" — finished material with no publish day yet.
@@ -101,14 +102,14 @@ export default function UnscheduledShelf({
             >
               <Plus className="h-4 w-4" />
             </button>
-            <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
               <input
                 value={labelDraft}
                 onChange={(e) => setLabelDraft(e.target.value)}
-                placeholder="Qué es (ej. Reel casa Castilla)"
+                placeholder="Qué es"
                 aria-label="Etiqueta del material sin programar"
                 disabled={busy}
-                className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50 sm:w-40 sm:shrink-0"
+                className={`${FIELD_BOX} ${LABEL_FIELD_WIDTH}`}
               />
               <input
                 value={urlDraft}
@@ -116,7 +117,7 @@ export default function UnscheduledShelf({
                 placeholder="Pega el enlace de Drive…"
                 aria-label="Enlace del material sin programar"
                 disabled={busy}
-                className="w-full min-w-0 bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
+                className={`${FIELD_BOX} w-full min-w-0 flex-1`}
               />
             </div>
           </form>
