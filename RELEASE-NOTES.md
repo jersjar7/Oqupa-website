@@ -4,6 +4,31 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-08 — Content that is finished but not yet scheduled has somewhere to live
+
+### New Features
+
+- **"Sin programar" on the Contenido tab.** Material gets made in batches and published on a different schedule, but until now a link could only ever live on a specific day. Anything without a date had nowhere to go — you either parked it on a wrong day or kept it out of the system entirely. Now it waits in its own view, with a count on the tab so it is visible without opening it.
+- **Assign a day from a month grid that shows what is already there.** A plain date field makes you choose blind: you pick the 14th and only afterwards find three reels already stacked on it. Every cell lists what is already scheduled that day, so spacing decisions are made with the facts in view. The grid shows what is there and edits nothing — it is for choosing, not for changing someone else's work.
+- **Move a scheduled item, or send it back.** You will schedule something to the wrong day; now there is a way back. "Quitar fecha" returns it to Sin programar without deleting anything.
+- **Every link now carries a label** saying what it is — "Reel casa Castilla" — and a copy button on the address. A row of bare Drive addresses is unreadable: they all look identical and finding one meant opening several.
+
+### Bug Fixes
+
+- **The label and the address ran together on screen**, reading as one sentence — "Qué es (ej. Reel casa CaPega el enlace de Drive…" — because both were borderless boxes sitting flush. Each now has its own box, and the label gets twice the width of the address: a Drive address is a string you copy rather than read, while the label is the only part anyone reads.
+- **The whole page sat flush against the right edge of the window.** The shell adds no side padding and every page supplies its own; this one never did.
+
+### Technical
+
+- One item is one record with an optional day, rather than a copy on a second list. Two copies would have to be kept in agreement by a person, and people forget.
+- Before any of it was built, the one assumption underneath was checked against the real database: material with no day must never appear on the calendar. It doesn't — and the day has to be stored as an explicit "empty" rather than left out, because the database can match an empty value but not a missing one. That would have silently broken the shelf. Both facts are now permanent tests.
+- A link's day used to be unchangeable by security rule. That requirement was deliberately reversed, since moving material is the point. What the rule protected is kept: a day can still only ever be a real date or empty.
+- The shelf sorts in the browser rather than asking the database to sort, which avoids needing an index. A forgotten index is what shipped the dev board broken on 1 August.
+- The week starts on Sunday, taken from Peru's locale data rather than assumed. A wrong guess would shift the entire grid by one day — nobody reports that, they just mis-schedule things.
+- 278 security-rule tests, nine of them new.
+
+---
+
 ## 2026-08-07 — A page for people searching "casas en venta en Piura"
 
 ### New Features

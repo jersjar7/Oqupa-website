@@ -100,6 +100,8 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `payments` | Boost payment records | Owner read only |
 | `publicMetrics` | Daily aggregate snapshots for the internal `/app/numbers` dashboard | Read = email allowlist; write = server only |
 | `teamTasks` | Tasks on the internal dev board at `/app/equipo` | Read + write = email allowlist (roster) |
+| `contentLinks` | Where each piece of marketing content lives, on `/app/contenido` | Read + write = marketing access list |
+| `growthPlan` | Progress on the six-week growth plan, one doc per day (`YYYY-MM-DD`) | Read + write = marketing access list; `notes` capped at 2000 chars |
 
 ### Internal metrics dashboard (`/app/numbers`)
 
@@ -111,6 +113,26 @@ The team metrics dashboard is a gated tab inside the authenticated dashboard she
   Both lists are lowercased and compared case-insensitively. If they drift, a user either sees an empty/error dashboard (UI allows, rules deny) or a hidden-but-readable collection (rules allow, UI hides). After editing `firestore.rules`, redeploy it manually (it is **not** auto-deployed by CI) to **both** projects.
 - `MetricsPage` is `React.lazy()`-loaded so `recharts` stays in its own chunk — non-viewers never download it.
 - Source data: `publicMetrics/{YYYY-MM-DD}` written daily (03:30 Lima) by the `snapshotPlatformMetrics` Cloud Function (Admin SDK, bypasses rules). Aggregates only — no PII.
+
+### Marketing content page (`/app/contenido`)
+
+Three views behind one marketing-gated tab. **Plan** sits apart on the right because it is a different job from the other two; **Calendario** and **Sin programar** share a toggle on the left because they are two halves of one job — where the assets live.
+
+| View | What it is |
+|---|---|
+| **Plan** | The six-week growth plan. Text seeded from `src/app/features/plan/planContent.ts`; per-day progress written live to Firestore `growthPlan/{YYYY-MM-DD}`. See the `growth-day` skill. |
+| **Calendario** | One row per day of a month, each holding any number of content links. |
+| **Sin programar** | Finished material with **no publish day yet**. Count rides on the tab so it is visible without opening the view. |
+
+**One link is one record with an optional day.** `contentLinks.date` is either `'YYYY-MM-DD'` or **`null`** — null means it sits on the shelf. Assigning a day moves the *same* record onto the calendar; nothing is copied, so there is no second place to keep in sync.
+
+> **`date: null` is written explicitly, never by omitting the field.** Firestore can equality-match null but **cannot match a missing field**, and the shelf query is `where('date', '==', null)`. Omit it and the shelf silently finds nothing. Both halves — that a null date never leaks into a month range query, and that the shelf query finds it — are pinned by tests in `tests/firestore-rules.test.js`.
+
+**The date is NOT immutable.** It was until 2026-08-08; the rule pinned it so a stray write could not move content between days. Moving material between days, and between the shelf and the calendar, is the point of the shelf, so the pin is gone. What it protected is kept: a date can still only ever be a real calendar day or null.
+
+**The shelf sorts in the browser, not in the query.** `where(date == null)` combined with `orderBy(createdAt)` would need a composite index, and a forgotten index is what shipped the team board broken on 2026-08-01. The shelf holds tens of items; sorting client-side costs nothing and removes a deploy step that can be missed.
+
+**Day picker** (`DayPickerDialog`): a month grid where every cell lists what is already scheduled that day, because a plain date field makes you choose blind. Read-only — it shows what is there and edits nothing. **The week starts on Sunday**: `new Intl.Locale('es-PE').getWeekInfo()` reports `firstDay: 7`. Hardcoded from that verified value rather than called at runtime, since `getWeekInfo` is missing in some browsers and a silent fallback shifts the whole grid by a day.
 
 ### Internal dev board (`/app/equipo`)
 
