@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CalendarPlus, Plus } from 'lucide-react'
 import { Spinner } from '@/app/components/ui'
 import type { ContentLink } from '@/types/contentLink'
-import { FIELD_BOX, LABEL_FIELD_WIDTH } from './fieldStyles'
+import { FIELD_BOX, LABEL_FIELD_WIDTH, URL_FIELD_WIDTH } from './fieldStyles'
 
 /**
  * "Sin programar" — finished material with no publish day yet.
@@ -130,7 +130,7 @@ export default function UnscheduledShelf({
                 placeholder="Pega el enlace de Drive…"
                 aria-label="Enlace del material sin programar"
                 disabled={busy}
-                className={`${FIELD_BOX} w-full min-w-0 flex-1`}
+                className={`${FIELD_BOX} ${URL_FIELD_WIDTH}`}
               />
             </div>
           </form>

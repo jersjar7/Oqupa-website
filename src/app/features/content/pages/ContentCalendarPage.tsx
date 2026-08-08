@@ -7,7 +7,7 @@ import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useContentLinks, useShelvedLinks, dateKey, daysInMonth } from '@/hooks/useContentLinks'
 import UnscheduledShelf from '@/app/features/content/components/UnscheduledShelf'
 import DayPickerDialog from '@/app/features/content/components/DayPickerDialog'
-import { FIELD_BOX, LABEL_FIELD_WIDTH } from '@/app/features/content/components/fieldStyles'
+import { FIELD_BOX, LABEL_FIELD_WIDTH, URL_FIELD_WIDTH } from '@/app/features/content/components/fieldStyles'
 import { contentLinkService } from '@/services/contentLinkService'
 import { memberFor } from '@/app/features/team/teamRoster'
 import GrowthPlanView from '@/app/features/plan/components/GrowthPlanView'
@@ -171,7 +171,7 @@ function LinkRow({
           }}
           placeholder="Enlace de Drive"
           aria-label="Editar enlace"
-          className={`${FIELD_BOX} w-full min-w-0 flex-1 border-primary`}
+          className={`${FIELD_BOX} ${URL_FIELD_WIDTH} border-primary`}
         />
       </div>
     )
@@ -179,11 +179,11 @@ function LinkRow({
 
   return (
     <div className="group/link flex items-center gap-2">
-      {/* Its own box, same width as the field that created it, so a saved row
-          reads as the same two things the form asked for. Fixed width also
-          means labels line up and every address starts at the same place. */}
+      {/* Same 2:1 split as the form that created it, so a saved row reads as
+          the same two things — and the label gets the room, because a Drive
+          address is a string you copy rather than read. */}
       <span
-        className="w-44 shrink-0 truncate rounded-md bg-background-secondary px-2 py-1 font-sans text-sm font-medium text-text-primary"
+        className="min-w-0 flex-[2] truncate rounded-md bg-background-secondary px-2 py-1 font-sans text-sm font-medium text-text-primary"
         title={link.label || undefined}
       >
         {link.label || <span className="font-normal text-text-tertiary">Sin etiqueta</span>}
@@ -341,7 +341,7 @@ function DayRow({
               placeholder={links.length ? 'Añadir otro enlace de Drive…' : 'Pega el enlace de Drive…'}
               aria-label={`Añadir enlace para el ${day}`}
               disabled={busy}
-              className={`${FIELD_BOX} w-full min-w-0 flex-1`}
+              className={`${FIELD_BOX} ${URL_FIELD_WIDTH}`}
             />
           </div>
         </form>

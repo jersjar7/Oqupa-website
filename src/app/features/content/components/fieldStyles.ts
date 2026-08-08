@@ -17,5 +17,13 @@ export const FIELD_BOX =
   'placeholder:text-text-tertiary focus:border-primary focus:outline-none ' +
   'focus:ring-2 focus:ring-primary/20 disabled:opacity-50'
 
-/** Wide enough that the label is not clipped, narrow enough to leave the address room. */
-export const LABEL_FIELD_WIDTH = 'w-full sm:w-44 sm:shrink-0'
+/**
+ * The label gets TWICE the width of the address.
+ *
+ * A Drive address is unreadable at any width — it is a random string you copy
+ * rather than read, and there is a copy button for exactly that. The label is
+ * the only part a person actually reads, so it gets the room. Ratios rather
+ * than fixed widths so both still line up down the page at any window size.
+ */
+export const LABEL_FIELD_WIDTH = 'w-full min-w-0 sm:flex-[2]'
+export const URL_FIELD_WIDTH = 'w-full min-w-0 sm:flex-1'

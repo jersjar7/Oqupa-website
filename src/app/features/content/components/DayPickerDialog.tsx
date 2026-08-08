@@ -131,7 +131,9 @@ export default function DayPickerDialog({
         aria-modal="true"
         aria-label={`Elegir día para ${itemLabel}`}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
+        // Wide and tall on purpose: the cells have to fit real labels, and the
+        // labels are the only reason this is a grid rather than a date field.
+        className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
       >
         <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
           <div className="min-w-0">
@@ -203,7 +205,7 @@ export default function DayPickerDialog({
                       ? `${dayNum}, ${links.length} ya programado${links.length > 1 ? 's' : ''}`
                       : `${dayNum}, libre`
                   }
-                  className={`flex min-h-[62px] flex-col items-stretch gap-0.5 rounded-lg border p-1 text-left transition-colors sm:min-h-[76px] ${
+                  className={`flex min-h-[76px] flex-col items-stretch gap-1 rounded-lg border p-1.5 text-left transition-colors sm:min-h-[124px] ${
                     isCurrent
                       ? 'border-primary bg-primary/10'
                       : isTodayCell
@@ -212,7 +214,7 @@ export default function DayPickerDialog({
                   }`}
                 >
                   <span
-                    className={`font-serif text-sm leading-none ${
+                    className={`font-serif text-base leading-none ${
                       isTodayCell || isCurrent ? 'text-primary' : 'text-text-primary'
                     }`}
                   >
@@ -224,18 +226,18 @@ export default function DayPickerDialog({
                       seven columns leave no room for words; the count dot still
                       says the day is taken. */}
                   <span className="hidden flex-1 flex-col gap-0.5 overflow-hidden sm:flex">
-                    {links.slice(0, 2).map((l) => (
+                    {links.slice(0, 3).map((l) => (
                       <span
                         key={l.id}
                         title={labelOf(l)}
-                        className="truncate rounded bg-secondary/10 px-1 text-[10px] leading-4 text-secondary"
+                        className="truncate rounded bg-secondary/10 px-1 py-0.5 text-[11px] leading-4 text-secondary"
                       >
                         {labelOf(l)}
                       </span>
                     ))}
-                    {links.length > 2 && (
-                      <span className="px-1 text-[10px] leading-4 text-text-tertiary">
-                        +{links.length - 2} más
+                    {links.length > 3 && (
+                      <span className="px-1 text-[11px] leading-4 text-text-tertiary">
+                        +{links.length - 3} más
                       </span>
                     )}
                   </span>
