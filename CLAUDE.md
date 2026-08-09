@@ -94,8 +94,14 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 |------------|----------|-------|
 | `waitlist` | Landing page signups | Public create only |
 | `mail` | Trigger Email extension queue | Public create only |
-| `listings` | Property data (read by PropertyPage) | Public read |
-| `properties` | Property specs/photos (read by PropertyPage) | Public read |
+| `listings` | The **advertisement**: `description`, `price`, `status`, `viewCount`, `ownerId`, `operationType` | Public read |
+| `properties` | The **physical asset**: `propertyType`, `specs` (beds/baths/m²), `location`, `media` | Public read |
+
+> **`description` lives on the LISTING, never on the property.** It is ad copy, so it belongs to the ad — the same physical property re-advertised later gets a new one. `Property` has no `description` field at all, and `createProperty` does not accept one; `createListing` does.
+>
+> On 2026-08-08 this cost real trust: a check for descriptions ran against `properties`, found none on any of the 50, and was reported to Jerson as "the website collects a description and throws it away — a bug affecting every listing". **49 of the 50 listings had one, and the page renders it fine.** The trace even followed `createProperty` and correctly saw no description there, then stopped one function short of `createListing`.
+>
+> The lesson is not "remember where description lives". It is: **an empty result is not a finding.** Before reporting that something does not exist, confirm from the other direction — here, one look at a live listing page would have settled it in seconds.
 | `config` | Platform configuration (pricing, feature flags) | Public read |
 | `payments` | Boost payment records | Owner read only |
 | `publicMetrics` | Daily aggregate snapshots for the internal `/app/numbers` dashboard | Read = email allowlist; write = server only |
