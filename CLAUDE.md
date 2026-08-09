@@ -164,7 +164,7 @@ A shared to-do board for the four developers, gated exactly like `/app/numbers` 
 
 ```bash
 cd /Users/jerson/developer/Oqupa-Platform
-cd tests && npm test && cd ..                      # 214 rules tests first
+cd tests && npm test && cd ..                      # the rules suite first (278 emulator tests)
 firebase deploy --only firestore:rules,firestore:indexes --project oqupa-production
 ```
 
