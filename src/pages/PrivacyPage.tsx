@@ -1,9 +1,14 @@
-import { useEffect } from 'react'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
 export default function PrivacyPage() {
-  useEffect(() => {
-    document.title = 'Política de Privacidad - Oqupa'
-  }, [])
+  // Sets the title, the description and — the part that matters for search —
+  // a canonical link. Every route serves the same index.html, so without one
+  // Google sees this page and the homepage as the same document.
+  useDocumentMeta({
+    title: 'Política de Privacidad - Oqupa',
+    description: 'Cómo Oqupa recoge, usa y protege tus datos personales.',
+    url: 'https://oqupa.com/privacy',
+  })
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
