@@ -11,7 +11,7 @@
   --color-cream: #FFFAF5;
   --color-success: #3A6A55;
   --color-warning: #FFCD60;
-  --color-error: #D94035;
+  --color-error: #E63946; /* Alert Red — Brand Deck value; was #D94035 */
   --color-background: #FFFAF5;
   --color-background-secondary: #FFF4E6;
   --color-text-primary: #1C1C1E;
