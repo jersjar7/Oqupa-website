@@ -53,6 +53,21 @@ export function useDocumentMeta({ title, description, image, url }: DocumentMeta
     setMeta('twitter:title', title)
     if (url) setMeta('og:url', url)
 
+    // Say which page this is.
+    //
+    // Every route serves the same index.html, so without this the homepage,
+    // /explorar and /privacy are byte-for-byte identical to a crawler. Google
+    // reported exactly that on 2026-08-10: "Duplicate without user-selected
+    // canonical". A self-referencing canonical per route settles it.
+    const canonicalHref = url ?? `https://oqupa.com${window.location.pathname}`
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.setAttribute('rel', 'canonical')
+      document.head.appendChild(link)
+    }
+    link.setAttribute('href', canonicalHref)
+
     return () => {
       document.title = 'Oqupa'
     }

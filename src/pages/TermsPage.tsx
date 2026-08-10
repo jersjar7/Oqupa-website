@@ -1,9 +1,14 @@
-import { useEffect } from 'react'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
 export default function TermsPage() {
-  useEffect(() => {
-    document.title = 'Términos de Servicio - Oqupa'
-  }, [])
+  // Sets the title, the description and — the part that matters for search —
+  // a canonical link. Every route serves the same index.html, so without one
+  // Google sees this page and the homepage as the same document.
+  useDocumentMeta({
+    title: 'Términos de Servicio - Oqupa',
+    description: 'Condiciones de uso de Oqupa, el catálogo de propiedades de Piura.',
+    url: 'https://oqupa.com/terms',
+  })
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
