@@ -18,6 +18,17 @@ to change, edit HEADLINE/SUBLINE below and re-run:
 Colours and fonts come from the Brand Deck (see ui_guidance.md): Roboto Serif
 for the italic fine print, Gotham for everything else, Pacific Green for the
 heading, Brick Orange for the rule.
+
+WHEN YOU CHANGE THE CARD, CHANGE THE FILENAME TOO
+-------------------------------------------------
+Facebook, WhatsApp and Cloudflare all cache preview images by URL, so reusing a
+filename can leave the old picture showing for days.
+
+And do NOT request the new filename until the site is deployed. Cloudflare
+answers a missing asset path with the SPA's index.html and caches THAT against
+the URL — so one early curl leaves `og-card-*.png` serving HTML, and the
+preview breaks even after the real file ships. That happened on 2026-08-10 to
+the name this card had before this one, which is why it is on its second name.
 """
 
 from pathlib import Path
@@ -39,7 +50,7 @@ FINE_PRINT = (99, 99, 102)
 W, H = 1200, 630
 FONTS = ROOT / "public" / "fonts"
 LOGO = ROOT / "src" / "assets" / "images" / "Oqupa_FullLogo_multicolor.webp"
-OUT = ROOT / "public" / "og-card-v2.png"
+OUT = ROOT / "public" / "og-card-2026-08.png"
 
 
 def background() -> Image.Image:
