@@ -4,6 +4,23 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-11 — Google can finally read the property pages, and the shared card stopped saying "coming soon"
+
+### Bug Fixes
+
+- **None of the 47 property pages were in Google.** Search Console reported 5 pages indexed and 49 not, with every property page stuck in "Discovered — currently not indexed". The page Google received had a title and a preview card and then stopped: an empty body, no words at all. Google does not store a page with nothing in it. The one page built properly for search — the Piura buying guide — indexed without trouble, which is what made the contrast obvious. Property pages now carry the heading, price, district, bedrooms, bathrooms, size, the description and every photo.
+- **The card WhatsApp and Instagram show for oqupa.com advertised a launch date in the past.** It read "Lanzamiento este 4 de Mayo" and invited people to join a waiting list — on a product that had been live in both app stores for four days. Every share carried it, and nothing about a picture goes stale loudly. Replaced with a card that carries no date at all, so it cannot expire on its own.
+- **Every page looked like the same page.** The homepage, /explorar and /privacy served byte-for-byte identical HTML, so Google reported "Duplicate without user-selected canonical" and had to guess which was real. Each page now states its own address.
+- **The error colour was a different red from the rest of the brand** — the site used one shade, the Brand Deck and the app another.
+
+### Technical
+
+- Preview descriptions are cut on a word boundary instead of at a fixed character count, which is why the live card ended mid-sentence.
+- Git hooks now run on every commit and push: a credentials scan on commit, and the production build before any push to a branch that deploys. The guide had described these hooks for months; they had never existed.
+- The preview image is on its second filename. Cloudflare answers a missing asset path with the site's fallback page and caches that against the URL, so checking whether the new card was live before it had shipped left the first name serving HTML instead of an image.
+
+---
+
 ## 2026-08-08 — Content that is finished but not yet scheduled has somewhere to live
 
 ### New Features
