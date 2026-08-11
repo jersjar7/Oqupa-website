@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# pre-commit — Oqupa-website
+#
+# The secrets scan in /git-guard is described as MANDATORY and "never skip".
+# That only holds if whoever is committing remembers to run it. This does not
+# depend on remembering.
+#
+# Bypass with `git commit --no-verify` only in a genuine emergency, and say so
+# out loud when you do.
+
+set -uo pipefail
+
+fail() { echo ""; echo "BLOCKED: $*" >&2; echo ""; exit 1; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+# ---------------------------------------------------------------------------
+# 1. Files that must never be committed
+# ---------------------------------------------------------------------------
+forbidden=$(echo "$staged" | grep -E \
+  '(^|/)\.env($|\.)|\.pem$|\.key$|\.p12$|\.jks$|key\.properties$|GoogleService-Info\.plist$|-sa-key\.json$|-credentials\.json$|(^|/)id_(rsa|ed25519)$' \
+  || true)
+if [ -n "$forbidden" ]; then
+  fail "these files carry credentials and are gitignored for a reason:
+$(echo "$forbidden" | sed 's/^/    /')
+
+  .env files cannot be recovered from git if lost, and cannot be un-leaked
+  once pushed. If one is genuinely needed, it does not belong in a commit."
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Credential-shaped content in the staged diff
+# ---------------------------------------------------------------------------
+# Real values, not the variable names that legitimately appear in docs.
+declare -a patterns=(
+  'sk_live_[A-Za-z0-9]{10,}'         # Stripe live secret
+  'sk_test_[A-Za-z0-9]{10,}'         # Stripe test secret
+  'AIza[0-9A-Za-z_-]{30,}'           # Google API key
+  'whsec_[A-Za-z0-9]{10,}'           # Stripe webhook secret
+  '-----BEGIN [A-Z ]*PRIVATE KEY'    # any private key
+  'ghp_[A-Za-z0-9]{20,}'             # GitHub PAT
+  'github_pat_[A-Za-z0-9_]{20,}'
+  # Requires an actual value, not the bare field name — docs and this hook's own
+  # pattern list mention "private_key" legitimately, and a scanner that flags
+  # itself is one people learn to bypass.
+  '"private_key"[[:space:]]*:[[:space:]]*"[^"]{20,}'   # service-account JSON
+)
+
+hits=""
+added=$(git diff --cached -U0 --diff-filter=ACM | grep '^+' | grep -v '^+++' || true)
+for p in "${patterns[@]}"; do
+  if echo "$added" | grep -qE -- "$p"; then
+    hits="$hits\n    pattern: $p"
+  fi
+done
+
+if [ -n "$hits" ]; then
+  fail "the staged changes contain something shaped like a real credential:$(printf "$hits")
+
+  Inspect with: git diff --cached
+  If it is a placeholder or an example, make that obvious in the text.
+  If it is real: remove it, and ROTATE it — git history is forever."
+fi
+
+exit 0
