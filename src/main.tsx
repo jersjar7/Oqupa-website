@@ -6,9 +6,19 @@ import App from './App'
 import './index.css'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { initErrorBuffer } from '@/lib/errorBuffer'
+import { initMetaPixel } from '@/lib/metaPixel'
+import { captureAttribution } from '@/lib/attribution'
 
 // Buffer recent client errors so the /reportar form can auto-attach them.
 initErrorBuffer()
+
+// Record how this visit arrived BEFORE anything can navigate and rewrite the
+// URL — the campaign tags live in the address bar and are gone once React
+// Router replaces it.
+captureAttribution()
+
+// Production only; see metaPixel.ts.
+initMetaPixel()
 
 // Catch unhandled errors outside React
 window.addEventListener('error', (event) => {

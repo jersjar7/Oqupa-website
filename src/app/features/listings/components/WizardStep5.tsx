@@ -17,6 +17,7 @@ import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
 import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
+import { attributionForListing } from '@/lib/attribution'
 
 function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
   if (amount == null || isNaN(amount)) return ''
@@ -289,6 +290,9 @@ export default function WizardStep5() {
         const now = new Date()
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
+        // Read once: two calls could disagree if storage changes mid-publish.
+        const arrivedFrom = attributionForListing()
+
         const listingData = {
           role: data.role as Listing['role'],
           ownerId: user.id,
@@ -321,6 +325,19 @@ export default function WizardStep5() {
           ...(user.photoUrl ? { ownerPhotoKey: user.photoUrl } : {}),
           ownerIsVerified: Boolean(user.isPhoneVerified || user.isIdentityVerified),
           ownerMemberSinceYear: user.createdAt.getFullYear(),
+          // How this person first found Oqupa, carried from their first visit.
+          //
+          // This is the only durable answer to "did paid advertising produce a
+          // listing?". Meta's own reporting cannot answer it — it credits a
+          // conversion only when it recognises the browser, which ad blockers,
+          // Safari and iOS increasingly prevent. Stamping it on the listing
+          // means the answer lives in our own database and survives whatever
+          // Meta can or cannot see.
+          //
+          // Campaign labels and a timestamp only; no personal data. Absent for
+          // anyone whose browser blocks local storage, which is expected and
+          // must never block a publish.
+          ...(arrivedFrom ? { attribution: arrivedFrom } : {}),
         }
 
         const listingId = await firestoreService.createListing(listingData)
