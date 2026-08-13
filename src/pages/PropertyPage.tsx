@@ -236,9 +236,11 @@ export default function PropertyPage() {
 
   useEffect(() => {
     if (id && listing) {
-      AnalyticsLogger.listingViewed(id)
+      // District only — never the street. It gives ad targeting something
+      // useful without publishing where the property actually is.
+      AnalyticsLogger.listingViewed(id, property?.location?.distrito)
     }
-  }, [id, listing])
+  }, [id, listing, property?.location?.distrito])
 
   useRecordListingView(id, listing?.ownerId)
 
@@ -316,6 +318,10 @@ export default function PropertyPage() {
     setContactLoading(true)
     try {
       const contact = await contactService.getListingContact(listingIdForContact)
+      // Someone asked for an owner's number: the strongest intent signal the
+      // site produces. Reported after the call succeeds, so a denial is not
+      // counted as interest.
+      AnalyticsLogger.contactRevealed(listingIdForContact)
       window.open(
         `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
         '_blank',
