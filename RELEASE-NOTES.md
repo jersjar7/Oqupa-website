@@ -4,6 +4,26 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-13 — A click on an advert can now be traced to a published listing
+
+### New Features
+
+- **The site remembers how someone first found Oqupa**, and writes it onto any property they publish. Until now a visit from a Facebook advert and a visit from a friend's WhatsApp message were indistinguishable by the time the person reached the publish form — so there was no way to know whether paying for advertising produced anything. Someone can click an advert on Monday, come back on Thursday and list their house, and the listing will still carry "first arrived from the Castilla advert". The record is kept on our side rather than relying on Meta, whose own reporting only counts a result when it recognises the browser — which ad blockers, Safari and iPhones increasingly prevent.
+- **Meta is now told when something real happens**: a property viewed, an owner's contact revealed, an account created, a property published. Without this an advert can be measured only by clicks, and Meta optimises for whatever is cheapest to buy, which is people who leave immediately.
+
+### Privacy
+
+- **The privacy policy now discloses all of it** — Google Analytics, Meta, and the note about how you arrived, including that it deletes itself after 90 days and how to remove it sooner. It previously disclosed neither analytics service.
+- **No name, email, phone number or street address reaches Meta or Google.** Meta's "advanced matching", which improves their tracking in exchange for customer data, is deliberately switched off.
+- The identifier Facebook attaches to an advert click is **not** stored. That a click was paid is recorded; the identifier itself is Meta's handle for a person and does not belong in our database.
+
+### Technical
+
+- The advert tracking runs on production only, verified by counting: the staging bundle contains it zero times, production once. Development traffic cannot pollute the advertising data.
+- A test caught a fault with no visible symptom: moving between pages on the site counted as an arrival and claimed the "first arrival" slot, so a genuine advert click landing afterwards could only ever register as secondary. Every advert would have appeared to produce nothing.
+
+---
+
 ## 2026-08-11 — Google can finally read the property pages, and the shared card stopped saying "coming soon"
 
 ### Bug Fixes
