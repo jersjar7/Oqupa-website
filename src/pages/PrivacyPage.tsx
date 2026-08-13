@@ -288,7 +288,54 @@ export default function PrivacyPage() {
                 Política de privacidad de Apple
               </a>
             </li>
+            <li>
+              <strong>Google Analytics:</strong> medición de uso del sitio y de
+              la app — páginas vistas, propiedades consultadas y registros.
+              Solo recibe eventos anónimos: nunca tu nombre, correo, teléfono ni
+              la dirección exacta de una propiedad.{' '}
+              <a
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-hover hover:underline"
+              >
+                Política de privacidad de Google
+              </a>
+            </li>
+            <li>
+              <strong>Meta (Facebook e Instagram):</strong> usamos el píxel de
+              Meta para saber si nuestros anuncios funcionan. Meta recibe que
+              ocurrió una acción — se vio una propiedad, se creó una cuenta, se
+              publicó un aviso — junto con el distrito de la propiedad.{' '}
+              <strong>
+                No enviamos tu nombre, correo, teléfono ni la dirección exacta
+                de ninguna propiedad
+              </strong>
+              , y no usamos la función de emparejamiento avanzado de Meta.{' '}
+              <a
+                href="https://www.facebook.com/privacy/policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-hover hover:underline"
+              >
+                Política de privacidad de Meta
+              </a>
+            </li>
           </ul>
+
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Cómo supimos que llegaste
+          </h3>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Guardamos en tu navegador una nota de cómo llegaste a Oqupa por
+            primera vez — por ejemplo &quot;desde un anuncio de Facebook&quot; o
+            &quot;desde una búsqueda en Google&quot; — para saber qué canales
+            realmente nos traen personas. Si publicas una propiedad, esa nota se
+            guarda junto al aviso. Contiene el nombre de la campaña y la fecha;
+            no contiene ningún dato que te identifique. Se borra sola a los 90
+            días y puedes eliminarla en cualquier momento borrando los datos del
+            sitio en tu navegador.
+          </p>
         </section>
 
         {/* 9 */}
