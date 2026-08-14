@@ -13,6 +13,19 @@
     <meta name="theme-color" content="#007AFF">
     <link rel="stylesheet" href="/fonts.css">
     <link rel="icon" type="image/png" href="/favicon.png">
+    <!--
+      Proves to Meta that we control oqupa.com, which is what lets the ad
+      account report conversions for this domain.
+
+      It must live HERE, in the static HTML, not be inserted by React. Meta's
+      own instruction: "Verification will fail if the meta-tag code is outside
+      of the <head> section or in a section loaded dynamically by JavaScript."
+      Our canonical tags are set by JavaScript for exactly the opposite reason —
+      Google renders pages, Meta's verifier does not.
+
+      Do not remove: losing it un-verifies the domain.
+    -->
+    <meta name="facebook-domain-verification" content="cp9zonlm0dnicn0hom3t9izb06oswx" />
     <meta property="og:title" content="Oqupa - Propiedades en Piura">
     <meta property="og:description" content="Encuentra casas, departamentos y terrenos en venta y alquiler en Piura. Publicar es gratis.">
     <meta property="og:url" content="https://oqupa.com">
