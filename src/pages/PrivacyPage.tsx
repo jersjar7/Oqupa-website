@@ -321,6 +321,26 @@ export default function PrivacyPage() {
                 Política de privacidad de Meta
               </a>
             </li>
+            <li>
+              <strong>TikTok:</strong> usamos el píxel de TikTok con el mismo
+              criterio que el de Meta — para saber si nuestros anuncios
+              funcionan. TikTok recibe que ocurrió una acción (se vio una
+              propiedad, se creó una cuenta, se publicó un aviso) junto con el
+              distrito.{' '}
+              <strong>
+                No enviamos tu nombre, correo, teléfono ni la dirección exacta
+                de ninguna propiedad
+              </strong>
+              , y no usamos su función de emparejamiento avanzado.{' '}
+              <a
+                href="https://www.tiktok.com/legal/page/row/privacy-policy/es"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-hover hover:underline"
+              >
+                Política de privacidad de TikTok
+              </a>
+            </li>
           </ul>
 
           <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
