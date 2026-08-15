@@ -7,6 +7,7 @@ import './index.css'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { initErrorBuffer } from '@/lib/errorBuffer'
 import { initMetaPixel } from '@/lib/metaPixel'
+import { initTikTokPixel } from '@/lib/tiktokPixel'
 import { captureAttribution } from '@/lib/attribution'
 
 // Buffer recent client errors so the /reportar form can auto-attach them.
@@ -17,8 +18,9 @@ initErrorBuffer()
 // Router replaces it.
 captureAttribution()
 
-// Production only; see metaPixel.ts.
+// Production only; see metaPixel.ts / tiktokPixel.ts.
 initMetaPixel()
+initTikTokPixel()
 
 // Catch unhandled errors outside React
 window.addEventListener('error', (event) => {
