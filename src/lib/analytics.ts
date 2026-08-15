@@ -1,20 +1,24 @@
 import { analytics } from './firebase'
 import { logEvent } from 'firebase/analytics'
 import { trackMeta, trackMetaCustom } from './metaPixel'
+import { trackTikTok } from './tiktokPixel'
 
 /**
  * The one place that knows when something meaningful happened on the site.
  *
- * It reports to two destinations: Google Analytics, which answers "what are
- * people doing", and the Meta pixel, which answers "did the money work". They
- * are deliberately fanned out from here rather than called separately at each
- * site — six call sites already exist across the app, and a second set beside
- * them would drift within a month. Add an event here and both destinations get
- * it; forget to, and neither does, which is at least honest.
+ * It reports to three destinations: Google Analytics, which answers "what are
+ * people doing", and the Meta and TikTok pixels, which answer "did the money
+ * work". They are deliberately fanned out from here rather than called
+ * separately at each site — six call sites already exist across the app, and a
+ * second set beside them would drift within a month. Add an event here and
+ * every destination gets it; forget to, and none does, which is at least
+ * honest.
  *
- * Meta only receives the four events that mean something commercially. It does
- * NOT receive logins, shares or errors: they would not help it find buyers, and
- * every event sent is data handed over for no return.
+ * The ad platforms receive only the four events that mean something
+ * commercially, and both receive the SAME four, so their numbers can be
+ * compared without reconciling two definitions. Neither gets logins, shares or
+ * errors: those would not help either platform find buyers, and every event
+ * sent is data handed over for no return.
  *
  * Nothing here carries a name, an email, a phone number or a street address.
  */
@@ -32,6 +36,11 @@ export const AnalyticsLogger = {
       content_ids: [listingId],
       ...(district ? { content_category: district } : {}),
     })
+    trackTikTok('ViewContent', {
+      content_type: 'product',
+      content_id: listingId,
+      ...(district ? { content_category: district } : {}),
+    })
   },
 
   listingCreated: (operationType: string) => {
@@ -41,6 +50,7 @@ export const AnalyticsLogger = {
     // still be optimised towards, and an honest name beats forcing it into
     // "Purchase", which would put fictional revenue in the reports.
     trackMetaCustom('ListingPublished', { operation_type: operationType })
+    trackTikTok('ListingPublished', { operation_type: operationType })
   },
 
   loginCompleted: (method: string) =>
@@ -49,6 +59,7 @@ export const AnalyticsLogger = {
   registrationCompleted: () => {
     logEvent(analytics, 'sign_up')
     trackMeta('CompleteRegistration')
+    trackTikTok('CompleteRegistration')
   },
 
   /**
@@ -60,6 +71,7 @@ export const AnalyticsLogger = {
   contactRevealed: (listingId: string) => {
     logEvent(analytics, 'contact_revealed', { listing_id: listingId })
     trackMeta('Contact', { content_type: 'property', content_ids: [listingId] })
+    trackTikTok('Contact', { content_type: 'product', content_id: listingId })
   },
 
   shareListing: (listingId: string, method: string) =>
