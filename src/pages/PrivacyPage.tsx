@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         Política de Privacidad
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
-        Última actualización: 28 de abril de 2026
+        Última actualización: 16 de agosto de 2026
       </p>
 
       <div className="mt-8 space-y-8">
@@ -303,15 +303,24 @@ export default function PrivacyPage() {
               </a>
             </li>
             <li>
-              <strong>Meta (Facebook e Instagram):</strong> usamos el píxel de
-              Meta para saber si nuestros anuncios funcionan. Meta recibe que
-              ocurrió una acción — se vio una propiedad, se creó una cuenta, se
-              publicó un aviso — junto con el distrito de la propiedad.{' '}
+              <strong>Meta (Facebook e Instagram):</strong> usamos las
+              herramientas de medición de Meta — el píxel en la web y el SDK de
+              Meta dentro de la app — para saber si nuestros anuncios funcionan.
+              Meta recibe que ocurrió una acción — se vio una propiedad, se
+              reveló un contacto, se creó una cuenta, se publicó un aviso —
+              junto con el distrito de la propiedad. Desde la app, Meta también
+              recibe un identificador publicitario del dispositivo (del
+              teléfono, no tuyo) y el hecho de que la app se instaló o se abrió;
+              eso es lo que permite saber si un anuncio produjo una instalación.
+              Puedes restablecer o eliminar ese identificador desde los ajustes
+              de tu teléfono.{' '}
               <strong>
                 No enviamos tu nombre, correo, teléfono ni la dirección exacta
                 de ninguna propiedad
               </strong>
-              , y no usamos la función de emparejamiento avanzado de Meta.{' '}
+              , y no usamos la función de emparejamiento avanzado de Meta. En
+              iOS no mostramos la solicitud de seguimiento de Apple, así que
+              Meta no recibe el identificador IDFA de tu iPhone.{' '}
               <a
                 href="https://www.facebook.com/privacy/policy"
                 target="_blank"
