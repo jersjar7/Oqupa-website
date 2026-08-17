@@ -4,6 +4,18 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-16 — "Cuarto", not "Habitación"
+
+### UX Improvements
+
+- **A room for rent is now called a "Cuarto"** everywhere on the site, instead of "Habitación". It is the word people in Piura actually use, and the compact label on property cards reads "Cuarto" too rather than the abbreviated "Habita.". Nothing changed in the data — existing listings of this type are untouched and nobody needs to re-publish anything. The same change ships in the mobile app.
+
+### Technical
+
+- `firebase-debug.log` is no longer tracked in the repository, and is now ignored.
+
+---
+
 ## 2026-08-13 — A click on an advert can now be traced to a published listing
 
 ### New Features
