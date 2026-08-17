@@ -8,3 +8,7 @@ dist
 .env.staging
 .env.development
 .env.production
+
+# Firebase CLI debug output
+firebase-debug.log
+firebase-debug.*.log

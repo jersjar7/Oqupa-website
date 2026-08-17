@@ -109,7 +109,7 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   oficina: 'Oficina',
   local: 'Local Comercial',
   hospedaje: 'Alojamiento',
-  habitacion: 'Habitación',
+  habitacion: 'Cuarto',
 }
 
 /** Abbreviated labels for compact contexts (branded card overlay). */
@@ -120,7 +120,7 @@ export const PROPERTY_TYPE_SHORT_LABELS: Record<PropertyType, string> = {
   oficina: 'Oficina',
   local: 'Local',
   hospedaje: 'Aloja.',
-  habitacion: 'Habita.',
+  habitacion: 'Cuarto',
 }
 
 export const PROPERTY_TYPE_DESCRIPTIONS: Record<PropertyType, string> = {
