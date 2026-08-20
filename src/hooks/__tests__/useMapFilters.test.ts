@@ -220,4 +220,117 @@ describe('useMapFilters', () => {
       expect(result.current.filtered[0]).toBe(match)
     })
   })
+
+  describe('visible — viewport bounds', () => {
+    // A small box over central Piura. In the southern/western hemisphere both
+    // axes are negative: north > south (less negative), east > west (less negative).
+    const BOUNDS = { north: -5.1, south: -5.3, east: -80.5, west: -80.7 }
+
+    it('equals filtered when no bounds are provided', () => {
+      const items = [item(), item(), item()]
+
+      const { result } = renderHook(() => useMapFilters(items, NO_FILTERS, null))
+
+      expect(result.current.visible).toEqual(result.current.filtered)
+    })
+
+    it('includes an item whose coordinates fall inside the bounds', () => {
+      const inside = item({ lat: -5.2, lng: -80.6 })
+
+      const { result } = renderHook(() => useMapFilters([inside], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(1)
+    })
+
+    it('excludes an item north of the viewport', () => {
+      const tooFarNorth = item({ lat: -5.0, lng: -80.6 })
+
+      const { result } = renderHook(() => useMapFilters([tooFarNorth], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(0)
+    })
+
+    it('excludes an item south of the viewport', () => {
+      const tooFarSouth = item({ lat: -5.4, lng: -80.6 })
+
+      const { result } = renderHook(() => useMapFilters([tooFarSouth], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(0)
+    })
+
+    it('excludes an item east of the viewport', () => {
+      const tooFarEast = item({ lat: -5.2, lng: -80.4 })
+
+      const { result } = renderHook(() => useMapFilters([tooFarEast], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(0)
+    })
+
+    it('excludes an item west of the viewport', () => {
+      const tooFarWest = item({ lat: -5.2, lng: -80.8 })
+
+      const { result } = renderHook(() => useMapFilters([tooFarWest], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(0)
+    })
+
+    it('includes an item sitting exactly on a boundary edge', () => {
+      const onNorthEdge = item({ lat: -5.1, lng: -80.6 })
+
+      const { result } = renderHook(() => useMapFilters([onNorthEdge], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(1)
+    })
+  })
+
+  describe('visible — coordinate source', () => {
+    const BOUNDS = { north: -5.1, south: -5.3, east: -80.5, west: -80.7 }
+
+    it('uses displayLatitude/displayLongitude when present, ignoring the real property coordinates', () => {
+      // Property sits well outside the viewport; the display pin is inside it.
+      // This is the privacy feature: hidden-address listings show an approximate
+      // pin so buyers can see the area without pinpointing the exact address.
+      // If the hook used the real coordinates instead, this listing would vanish
+      // from the map — the bug that hid 7 of 36 listings on 2026-08-06.
+      const hidden = item({
+        lat: -6.0, lng: -81.0,           // real location — outside BOUNDS
+        displayLat: -5.2, displayLng: -80.6, // display pin — inside BOUNDS
+      })
+
+      const { result } = renderHook(() => useMapFilters([hidden], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(1)
+    })
+
+    it('falls back to property.location coordinates when displayLatitude is absent', () => {
+      // Normal listing with no display pin override: the real coordinates are used.
+      const normal = item({
+        lat: -5.2, lng: -80.6,       // real location — inside BOUNDS
+        displayLat: undefined, displayLng: undefined,
+      })
+
+      const { result } = renderHook(() => useMapFilters([normal], NO_FILTERS, BOUNDS))
+
+      expect(result.current.visible).toHaveLength(1)
+    })
+  })
+
+  describe('total', () => {
+    it('always reflects the full item count regardless of active filters', () => {
+      const items = [
+        item({ propertyType: 'casa',         price: 100_000 }),
+        item({ propertyType: 'departamento', price: 200_000 }),
+        item({ propertyType: 'terreno',      price: 300_000 }),
+        item({ propertyType: 'oficina',      price: 400_000 }),
+        item({ propertyType: 'local',        price: 500_000 }),
+      ]
+      // Filters that keep only one item — total must still report 5.
+      const filters: MapFilters = { ...NO_FILTERS, propertyTypes: ['casa'], priceMax: 150_000 }
+
+      const { result } = renderHook(() => useMapFilters(items, filters))
+
+      expect(result.current.filtered).toHaveLength(1)
+      expect(result.current.total).toBe(5)
+    })
+  })
 })
