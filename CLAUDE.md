@@ -275,6 +275,56 @@ The workflow (`.github/workflows/deploy.yml`) injects correct env vars per deplo
 
 Firebase config values are public (visible in compiled JS), so they are hardcoded in the workflow rather than using GitHub Secrets.
 
+## Testing
+
+### Commands
+```bash
+npm test            # run once (CI)
+npm run test:watch  # watch mode
+npm run coverage    # coverage report → coverage/index.html
+```
+
+### Framework & environment
+- **Vitest** (v4) + **@testing-library/react** (v16)
+- Default environment: `node` (set in `vite.config.ts` under `test.environment`)
+- Tests that touch any browser API (DOM, localStorage, navigator, window events) must opt in with the file-level directive `// @vitest-environment jsdom`
+- Path alias `@/` works in test files (resolved by Vite)
+
+### Established patterns
+
+**Pure-function tests** — no directive needed; import and call directly. See `src/lib/__tests__/formatters.test.ts`.
+
+**Hook tests** — `// @vitest-environment jsdom` + `renderHook` from `@testing-library/react`. Keep fixtures minimal: use `as unknown as FullType` casts so fixtures only populate the fields the hook actually reads. See `src/hooks/__tests__/useMapFilters.test.ts`.
+
+**IntersectionObserver mocking** — jsdom has no `IntersectionObserver`. Stub it before each test with `vi.stubGlobal` and capture the constructor callback so tests can trigger intersection events manually. Clean up with `vi.unstubAllGlobals()` in `afterEach`.
+
+**Component-under-hook tests** — when a hook's `ref` must be attached to a real DOM element, render a small `Fixture` component inside the test file instead of using `renderHook`. The fixture wires the ref and exposes state through `data-*` attributes for easy assertion.
+
+**Commit style** — one hook per commit, message format: `test(<hookName>): <what was added>`. Build the suite incrementally (baseline → more cases → complete).
+
+### Coverage progress
+
+| File | Coverage | Notes |
+|------|----------|-------|
+| `src/hooks/useMapFilters.ts` | **100%** | Complete — all filter, bounds, coordinate, and total cases |
+| `src/hooks/useAnimateOnScroll.ts` | 0% | **Next target.** 7 usages across all landing sections |
+| `src/hooks/useDocumentMeta.ts` | 0% | 6 usages; SEO canonical-URL logic (see the 2026-08-10 duplicate incident) |
+| `src/hooks/useGallery.ts` | ~45% | 5 usages; callbacks (`next`, `prev`, `goTo`, touch) not yet covered |
+| `src/hooks/useRevealedFields.ts` | 0% | 4 usages in listing wizard; pure logic, no browser API |
+| `src/hooks/useInfiniteScroll.ts` | 0% | 1 usage (Explore page load-more) |
+| `src/hooks/useMobileMenu.ts` | 0% | 1 usage (Header); Escape key + resize handlers |
+| `src/hooks/useMediaQuery.ts` | 0% | 1 usage; `window.matchMedia` stub needed |
+| `src/hooks/useScrollHeader.ts` | 0% | 1 usage; IntersectionObserver mock (same pattern as useAnimateOnScroll) |
+| `src/hooks/useExpansionPopup.ts` | 0% | 1 usage; localStorage + `setTimeout` (use `vi.useFakeTimers`) |
+| `src/hooks/useMapCameraStorage.ts` | 0% | 1 usage; localStorage read/write |
+| `src/hooks/useExploreInteraction.ts` | 0% | 1 usage; hover debounce (75ms), Escape dismiss, scroll-to-card — use `vi.useFakeTimers` |
+| `src/lib/authErrors.ts` | ~39% | `getLoginAuthError`, `getPhoneAuthError`, `getMagicLinkAuthError`, `getForgotPasswordAuthError` untested |
+| `src/schemas/listingSchema.ts` | 0% | Zod step1–4 + fullListingSchema |
+| `src/schemas/profileSchema.ts` | 0% | Zod profileSchema + changePasswordSchema |
+| `src/app/components/guards/ContentGuard.tsx` | 0% | Same pattern as all other guards (100%); straightforward to add |
+
+Overall coverage last measured: **14.32 %** (statements). Realistic ceiling with Vitest unit tests: **~45–55%**. Beyond that, Firebase emulator tests or Playwright end-to-end tests are the right tool (services, Canvas, analytics SDKs, and `.tsx` component files intentionally have no unit tests in this architecture — see `CONTRIBUTING.md` for the full breakdown).
+
 ## Related Projects
 
 - **Flutter app:** `/Users/jerson/developer/oqupa/` — iOS/Android app for the same Firebase project. Has its own Cloud Functions in `functions/` using nodemailer for realtor application emails.
