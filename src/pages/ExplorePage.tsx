@@ -278,6 +278,7 @@ export default function ExplorePage() {
               <h2 className="text-lg font-bold text-text-primary">Filtros</h2>
               <button
                 onClick={() => setDrawerOpen(false)}
+                aria-label="Cerrar filtros"
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-background-secondary"
               >
                 <X className="h-4 w-4 text-text-secondary" />

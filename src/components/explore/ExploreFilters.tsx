@@ -167,6 +167,7 @@ export default function ExploreFilters({
           name="priceMin"
           autoComplete="off"
           placeholder="Mín"
+          aria-label="Precio mínimo"
           value={filters.priceMin != null ? filters.priceMin.toLocaleString('en-US') : ''}
           onChange={(e) => {
             const raw = e.target.value.replace(/[^0-9]/g, '')
@@ -184,6 +185,7 @@ export default function ExploreFilters({
           name="priceMax"
           autoComplete="off"
           placeholder="Máx"
+          aria-label="Precio máximo"
           value={filters.priceMax != null ? filters.priceMax.toLocaleString('en-US') : ''}
           onChange={(e) => {
             const raw = e.target.value.replace(/[^0-9]/g, '')

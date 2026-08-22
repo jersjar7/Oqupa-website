@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import PhotoCarousel from './PhotoCarousel'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface MobileListingSheetProps {
@@ -12,6 +14,16 @@ interface MobileListingSheetProps {
 
 export default function MobileListingSheet({ item, onClose }: MobileListingSheetProps) {
   const navigate = useNavigate()
+  const containerRef = useFocusTrap<HTMLDivElement>(item != null)
+
+  useEffect(() => {
+    if (!item) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [item, onClose])
 
   return (
     <AnimatePresence>
@@ -29,8 +41,13 @@ export default function MobileListingSheet({ item, onClose }: MobileListingSheet
 
           {/* Sheet */}
           <motion.div
+            ref={containerRef}
             key={`sheet-${item.listing.id}`}
-            className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl bg-white shadow-large"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle de la propiedad"
+            tabIndex={-1}
+            className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl bg-white shadow-large outline-none"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -79,6 +96,7 @@ function SheetContent({
           maxPhotos={5}
           aspectRatio="16/9"
           showArrowsAlways
+          alt={`${typeLabel} en ${property.location.distrito}`}
           blurHash={property.media.photoBlurHashes?.[0]}
           microThumb={property.media.primaryPhotoMicroThumb}
         />

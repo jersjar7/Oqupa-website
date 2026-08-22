@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import BoostTierSelectionModal from './BoostTierSelectionModal'
 import StripePaymentModal from './StripePaymentModal'
 import { useCreateBoostPayment, useBoostTiers, usePollPaymentCompletion } from '@/hooks/useBoost'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { BoostTier } from '@/types/boost'
 
 type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'success' | 'error'
@@ -122,6 +123,18 @@ export default function BoostPurchaseFlow({
     setPaymentId('')
   }, [])
 
+  const successContainerRef = useFocusTrap<HTMLDivElement>(step === 'success')
+  const errorContainerRef = useFocusTrap<HTMLDivElement>(step === 'error')
+
+  useEffect(() => {
+    if (step !== 'error') return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleErrorClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [step, handleErrorClose])
+
   return (
     <>
       {children(openFlow)}
@@ -147,7 +160,12 @@ export default function BoostPurchaseFlow({
 
       {/* Step 3: Processing (polling) */}
       {step === 'processing' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Activando destacado"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        >
           <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-xl">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
             <h3 className="mt-4 font-sans text-lg font-medium text-text-primary">
@@ -162,7 +180,14 @@ export default function BoostPurchaseFlow({
 
       {/* Step 4: Success confirmation */}
       {step === 'success' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div
+          ref={successContainerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Publicación destacada"
+          tabIndex={-1}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 outline-none"
+        >
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
@@ -196,7 +221,12 @@ export default function BoostPurchaseFlow({
       {/* Step 5: Error state */}
       {step === 'error' && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          ref={errorContainerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Error en el pago"
+          tabIndex={-1}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 outline-none"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleErrorClose()
           }}
