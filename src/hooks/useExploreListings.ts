@@ -93,5 +93,6 @@ export function useExploreListings(operationType?: OperationType | null) {
      * present a partial catalogue as the whole one.
      */
     hitPageCeiling,
+    refetch: infiniteQuery.refetch,
   }
 }
