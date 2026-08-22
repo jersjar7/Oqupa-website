@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
     "access:sync": "tsx scripts/syncAccessToRules.ts",
     "access:check": "tsx scripts/syncAccessToRules.ts --check",
     "plan:seed": "tsx scripts/seedGrowthPlan.ts"
@@ -58,6 +59,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.9.0",
