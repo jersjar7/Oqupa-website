@@ -14,6 +14,7 @@ import { Button, Input } from '@/app/components/ui'
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [noAccount, setNoAccount] = useState(false)
 
   const {
     register,
@@ -25,7 +26,13 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(data: ForgotPasswordFormData) {
     setError(null)
+    setNoAccount(false)
     try {
+      const exists = await authService.checkAccountExists(data.email)
+      if (!exists) {
+        setNoAccount(true)
+        return
+      }
       await authService.requestPasswordReset(data.email)
       setSent(true)
     } catch (err) {
@@ -33,6 +40,51 @@ export default function ForgotPasswordPage() {
       setError(errorInfo.message)
       toast.error(errorInfo.message)
     }
+  }
+
+  if (noAccount) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-background-secondary">
+            <svg
+              className="h-8 w-8 text-text-secondary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <h1 className="mt-4 font-serif text-[28px] font-normal text-text-primary">
+            No encontramos una cuenta
+          </h1>
+          <p className="mt-2 text-base text-text-secondary">
+            No hay ninguna cuenta asociada a ese correo. ¿Quieres crear una?
+          </p>
+          <Link
+            to="/app/register"
+            className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+          >
+            Crear cuenta
+          </Link>
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setNoAccount(false)}
+              className="text-base text-secondary hover:text-secondary-hover"
+            >
+              Intentar con otro correo
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (sent) {
