@@ -31,6 +31,10 @@ function formatPEN(amount: number): string {
   return `S/. ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
+function formatUSD(amount: number): string {
+  return `$ ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+}
+
 function formatNumber(n: number): string {
   return n.toLocaleString('es-PE')
 }
@@ -97,6 +101,9 @@ function buildTimeSeries(history: MetricsSnapshot[]) {
     newListingsThisWeek: s.listings.newThisWeek,
     newUsersThisWeek: s.users.newThisWeek,
     weekRevenue: s.payments.weekRevenuePEN,
+    // null on pre-integration snapshots — recharts leaves a gap instead of a zero
+    adSpend: s.metaAds ? s.metaAds.lifetime.spendUSD : null,
+    adInstalls: s.metaAds ? s.metaAds.lifetime.installs : null,
   }))
 }
 
@@ -181,6 +188,42 @@ export default function MetricsPage() {
         />
       </div>
 
+      {/* Meta Ads — only rendered once the snapshot carries the block */}
+      {latest.metaAds && (
+        <>
+          <h2 className="mt-12 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary">
+            Publicidad — Meta Ads
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            <Tile
+              label="Inversión total"
+              value={formatUSD(latest.metaAds.lifetime.spendUSD)}
+              sublabel={`${formatUSD(latest.metaAds.last7d.spendUSD)} últimos 7 días`}
+            />
+            <Tile
+              label="Impresiones"
+              value={formatNumber(latest.metaAds.lifetime.impressions)}
+              sublabel={`${formatNumber(latest.metaAds.last7d.impressions)} últimos 7 días`}
+            />
+            <Tile
+              label="Alcance"
+              value={formatNumber(latest.metaAds.lifetime.reach)}
+              sublabel="personas únicas"
+            />
+            <Tile
+              label="Clicks en anuncios"
+              value={formatNumber(latest.metaAds.lifetime.clicks)}
+              sublabel={`${formatNumber(latest.metaAds.last7d.clicks)} últimos 7 días`}
+            />
+            <Tile
+              label="Instalaciones"
+              value={formatNumber(latest.metaAds.lifetime.installs)}
+              sublabel="atribuidas por Meta"
+            />
+          </div>
+        </>
+      )}
+
       {/* Time-series charts */}
       <h2 className="mt-12 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary">
         Tendencias
@@ -232,6 +275,23 @@ export default function MetricsPage() {
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
+
+        {series.filter((p) => p.adSpend !== null).length >= 2 && (
+          <ChartCard
+            title="Inversión en Meta Ads"
+            subtitle="Gasto acumulado (USD) — desde la integración"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={series}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
+                <YAxis stroke="#6B7280" fontSize={12} />
+                <Tooltip formatter={(v) => formatUSD(Number(v) || 0)} />
+                <Line type="monotone" dataKey="adSpend" stroke={COLORS.primary} strokeWidth={2} dot={false} name="USD" connectNulls />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
 
         <ChartCard
           title="Ingresos por boost"
