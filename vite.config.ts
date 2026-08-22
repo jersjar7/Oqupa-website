@@ -30,6 +30,18 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/main.tsx',          // app bootstrap, not testable logic
+        'src/vite-env.d.ts',     // env type declarations
+        'src/types/**',          // pure TypeScript interfaces, no logic
+        '**/__tests__/**',       // test files themselves
+        '**/*.test.{ts,tsx}',
+      ],
+    },
   },
   server: {
     proxy: {

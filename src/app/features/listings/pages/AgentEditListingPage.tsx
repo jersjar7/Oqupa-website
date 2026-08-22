@@ -226,6 +226,7 @@ export default function AgentEditListingPage() {
                   />
                   <button
                     onClick={() => handleRemoveExisting(index)}
+                    aria-label={`Eliminar foto ${index + 1}`}
                     className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
@@ -248,6 +249,7 @@ export default function AgentEditListingPage() {
                   />
                   <button
                     onClick={() => handleRemoveNew(index)}
+                    aria-label={`Eliminar foto nueva ${index + 1}`}
                     className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
@@ -259,6 +261,7 @@ export default function AgentEditListingPage() {
               {existingPhotoUrls.length + newPhotos.length < 20 && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
+                  aria-label="Agregar foto"
                   className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400 transition-colors hover:border-primary hover:text-primary"
                 >
                   <Upload className="h-6 w-6" />

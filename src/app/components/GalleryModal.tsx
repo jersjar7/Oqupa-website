@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useGallery } from '@/hooks/useGallery'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface GalleryModalProps {
   images: string[]
@@ -10,6 +11,7 @@ interface GalleryModalProps {
 export default function GalleryModal({ images, startIndex, onClose }: GalleryModalProps) {
   const { currentSlide, next, prev, trackRef, onTouchStart, onTouchEnd } =
     useGallery(images.length, startIndex)
+  const containerRef = useFocusTrap<HTMLDivElement>(true)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -27,7 +29,14 @@ export default function GalleryModal({ images, startIndex, onClose }: GalleryMod
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Galería de fotos"
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black outline-none"
+    >
       {/* Counter badge */}
       <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 rounded-full bg-black/60 px-3 py-1 text-sm font-medium text-white">
         {currentSlide + 1} / {images.length}

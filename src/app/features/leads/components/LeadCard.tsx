@@ -58,9 +58,11 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
               onTouchEnd={carousel.onTouchEnd}
             >
               {cardPhotos.map((url, i) => (
-                <div
+                <button
                   key={i}
-                  className="h-full w-full shrink-0 cursor-pointer"
+                  type="button"
+                  aria-label={`Ver foto ${i + 1} en pantalla completa`}
+                  className="block h-full w-full shrink-0 cursor-pointer border-0 p-0"
                   onClick={() => { setModalOpen(true) }}
                 >
                   <AnimatedImage
@@ -70,7 +72,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
                     loading={i === 0 ? 'eager' : 'lazy'}
                     decoding="async"
                   />
-                </div>
+                </button>
               ))}
             </div>
 
