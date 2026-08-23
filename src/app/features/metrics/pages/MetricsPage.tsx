@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Spinner } from '@/app/components/ui'
+import { InfoTip, Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useNumbersData, type MetricsSnapshot } from '@/hooks/useNumbersData'
 
@@ -88,13 +88,16 @@ interface KpiTileProps {
   secondary?: string
   spark?: SparkPoint[]
   sparkColor?: string
+  /** Plain-language explanation of how to read this number. */
+  help?: string
 }
 
-function KpiTile({ label, value, delta, secondary, spark, sparkColor }: KpiTileProps) {
+function KpiTile({ label, value, delta, secondary, spark, sparkColor, help }: KpiTileProps) {
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-white p-5 shadow-light">
-      <div className="font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">
+      <div className="flex items-center font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">
         {label}
+        {help && <InfoTip text={help} />}
       </div>
       <div className="mt-2 font-sans text-3xl font-semibold tracking-tight text-text-primary">
         {value}
@@ -118,14 +121,17 @@ interface ChartCardProps {
   title: string
   subtitle?: string
   heightClass?: string
+  /** Plain-language explanation of how to read this chart. */
+  help?: string
   children: React.ReactNode
 }
 
-function ChartCard({ title, subtitle, heightClass = 'h-64', children }: ChartCardProps) {
+function ChartCard({ title, subtitle, heightClass = 'h-64', help, children }: ChartCardProps) {
   return (
     <div className="rounded-2xl border border-border bg-white p-5 shadow-light">
-      <h2 className="font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">
+      <h2 className="flex items-center font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">
         {title}
+        {help && <InfoTip text={help} />}
       </h2>
       {subtitle && (
         <p className="mt-0.5 font-sans text-xs text-text-tertiary">{subtitle}</p>
@@ -272,6 +278,7 @@ export default function MetricsPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiTile
           label="Listados activos"
+          help="Propiedades publicadas y visibles en el mapa ahora mismo. El «+N esta semana» cuenta las publicadas desde el lunes. La línea muestra los últimos 30 días."
           value={formatNumber(latest.listings.totalActive)}
           delta={`+${formatNumber(latest.listings.newThisWeek)} esta semana`}
           secondary={`${formatNumber(latest.listings.totalAllTime)} publicados en total`}
@@ -280,6 +287,7 @@ export default function MetricsPage() {
         />
         <KpiTile
           label="Usuarios verificados"
+          help="Cuentas que completaron la verificación de teléfono y por eso pueden publicar y contactar. «Cuentas creadas» incluye también las que no terminaron de verificarse."
           value={formatNumber(latest.users.totalVerified)}
           delta={`+${formatNumber(latest.users.newThisWeek)} esta semana`}
           secondary={`${formatNumber(latest.users.totalAllTime)} cuentas creadas`}
@@ -288,6 +296,7 @@ export default function MetricsPage() {
         />
         <KpiTile
           label="Tasa de contacto"
+          help="De todas las vistas a listados, qué porcentaje terminó en un click de contacto (WhatsApp o llamada). Mide si los listados convencen una vez que alguien los abre."
           value={formatPct(contactRate)}
           secondary={`${formatNumber(latest.listings.totalContactClicks)} contactos · ${formatNumber(latest.listings.totalViews)} vistas`}
           spark={sparkOf(series, 'contactRate')}
@@ -295,6 +304,7 @@ export default function MetricsPage() {
         />
         <KpiTile
           label="Ingresos por boost"
+          help="Total cobrado por boosts de visibilidad (pagos completados), en soles. El «+» es lo cobrado desde el lunes."
           value={formatPEN(latest.payments.lifetimeRevenuePEN)}
           delta={`+${formatPEN(latest.payments.weekRevenuePEN)} esta semana`}
           secondary={`${formatNumber(latest.payments.succeededCount)} pagos completados`}
@@ -312,6 +322,7 @@ export default function MetricsPage() {
           <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <KpiTile
               label="Inversión total"
+              help="Lo que Oqupa ha pagado a Meta por anuncios desde el inicio de la campaña, en dólares. Debajo, lo gastado en los últimos 7 días."
               value={`${formatUSD(ads.lifetime.spendUSD)} USD`}
               secondary={`${formatUSD(ads.last7d.spendUSD)} en los últimos 7 días`}
               spark={sparkOf(series, 'adSpend')}
@@ -319,16 +330,19 @@ export default function MetricsPage() {
             />
             <KpiTile
               label="Costo por instalación"
+              help="Inversión total dividida entre las instalaciones que Meta atribuye a los anuncios. Más bajo es mejor: sirve para comparar campañas y creativos entre sí."
               value={cpi === null ? '—' : `${formatUSD(cpi)} USD`}
               secondary={`${formatNumber(ads.lifetime.installs)} instalaciones atribuidas por Meta`}
             />
             <KpiTile
               label="CTR"
+              help="Click-through rate: de cada 100 veces que se mostró el anuncio, cuántas generaron un click. Mide si el anuncio llama la atención."
               value={ctr === null ? '—' : formatPct(ctr, 2)}
               secondary={`${formatNumber(ads.lifetime.clicks)} clicks · ${formatNumber(ads.lifetime.impressions)} impresiones`}
             />
             <KpiTile
               label="Alcance"
+              help="Personas distintas que vieron el anuncio al menos una vez. «Impresiones» cuenta cada vez que se mostró; alcance cuenta personas."
               value={formatNumber(ads.lifetime.reach)}
               secondary="personas únicas que vieron el anuncio"
             />
@@ -343,6 +357,7 @@ export default function MetricsPage() {
       <div className="mt-3">
         <ChartCard
           title="Vistas y contactos"
+          help="Acumulado diario de vistas a listados (verde) y clicks de contacto (naranja). La distancia entre las dos líneas es la brecha entre interés y acción. Los datos empiezan el día del primer snapshot."
           subtitle="Acumulado diario desde el primer snapshot — no hay reconstrucción histórica"
           heightClass="h-72"
         >
@@ -368,11 +383,11 @@ export default function MetricsPage() {
         Composición del inventario activo
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Por operación" subtitle="Venta vs alquiler" heightClass="h-auto">
+        <ChartCard title="Por operación" subtitle="Venta vs alquiler" heightClass="h-auto" help="Cómo se reparte el inventario activo entre venta y alquiler.">
           <ProportionBar map={latest.listings.byOperationType} />
         </ChartCard>
 
-        <ChartCard title="Por tipo de propiedad" subtitle="Casas, departamentos, terrenos…">
+        <ChartCard title="Por tipo de propiedad" subtitle="Casas, departamentos, terrenos…" help="Cuántos listados activos hay por tipo de propiedad.">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={propTypeData} layout="vertical" margin={{ left: 8, right: 24 }} barCategoryGap={6}>
               <CartesianGrid stroke={COLORS.grid} horizontal={false} />
@@ -384,7 +399,7 @@ export default function MetricsPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Por distrito" subtitle="Dónde está concentrada la oferta (top 8)">
+        <ChartCard title="Por distrito" subtitle="Dónde está concentrada la oferta (top 8)" help="Dónde están los listados activos. Los distritos fuera del top 8 se agrupan en «Otros».">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={distritoData} layout="vertical" margin={{ left: 8, right: 24 }} barCategoryGap={6}>
               <CartesianGrid stroke={COLORS.grid} horizontal={false} />
