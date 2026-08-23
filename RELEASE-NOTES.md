@@ -4,6 +4,25 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-23 — Números shows the advertising, and reads at a glance
+
+### New Features
+
+- **Meta Ads now appear on the Números page.** What has been spent, how many people the advert reached, how often it was clicked, and — the two numbers that actually say whether the money is working — the **cost per install** and the **click-through rate**. The figures come from Meta every night alongside the rest of the snapshot, so the dashboard is the one place to see listings, users, revenue and advertising together.
+
+### UX Improvements
+
+- **The page was redesigned to be skimmed, not studied.** Four hero numbers lead — active listings, verified users, contact rate, boost revenue — each with its change since Monday and a 30-day trend strip, instead of ten equally-weighted tiles. The four flat trend panels became one wide chart of views and contacts, the single curve that shows whether interest turns into action.
+- **Every number and chart now has a small "?"** that explains in plain Spanish what it measures and how to read it.
+- **"Por operación" is a labelled bar, not a two-slice donut**, and the district chart groups everything outside the top 8 into "Otros" so it stays legible as inventory grows.
+- **Districts no longer appear twice** because one owner typed "Piura" and another "piura" — the breakdown is grouped case-insensitively (and the nightly snapshot now stores it normalised at the source).
+
+### Technical
+
+- The snapshot type gains an optional `metaAds` block (lifetime and last-7-day windows); the page renders the section only when the block is present, so older snapshots and days Meta is unreachable degrade gracefully.
+
+---
+
 ## 2026-08-16 — "Cuarto", not "Habitación"
 
 ### UX Improvements
