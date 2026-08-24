@@ -62,11 +62,6 @@
         "source": "/youtube",
         "destination": "/explorar?utm_source=youtube&utm_medium=social&utm_campaign=bio",
         "type": 302
-      },
-      {
-        "source": "/amigo",
-        "destination": "/explorar?utm_source=app&utm_medium=share&utm_campaign=banner",
-        "type": 302
       }
     ],
     "rewrites": [
