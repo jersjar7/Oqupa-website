@@ -64,7 +64,7 @@
         "type": 302
       },
       {
-        "source": "/compartido",
+        "source": "/banner",
         "destination": "/explorar?utm_source=app&utm_medium=share&utm_campaign=banner",
         "type": 302
       }
