@@ -4,6 +4,21 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-25 — El tablero del equipo: notas largas, columnas plegables
+
+### UX Improvements
+
+- **Tasks can be as long as they need to be.** The limit went from 500 to 1000 characters, the field now grows with the text instead of scrolling sideways, and a counter shows where you stand from the first character — turning red in the last 100. Adding a task that was too long previously failed with "No se pudo añadir la tarea" and nothing else, which is indistinguishable from a permissions problem.
+- **Long tasks no longer swallow the board.** Cards show three lines in a person's column and two in the shared list, cut with an ellipsis; a chevron expands the rest. The chevron only appears when text is genuinely cut.
+- **Columns fold away.** A minimized column becomes a card with the name and how much is on that plate. Folded columns collect into one stack on the left, so folding one never reshuffles the others; whatever stays open takes the space to the right — a lone column fills it. What you fold is remembered in your own browser.
+- **Columns got wider and the row scrolls sideways** instead of squeezing four onto one screen. A column narrow enough to fit four on a laptop was too narrow to read a real task in.
+- Clicking a task still edits it, and the editor now grows and respects the same limit — it previously had no limit at all and could be edited into the same silent failure.
+
+### Technical
+
+- **Google Analytics was being blocked on oqupa.com.** The Content Security Policy allowed `*.google-analytics.com`, but GA4 also posts to `analytics.google.com` and `www.google.com/g/collect` — neither was listed, so those requests were refused and page views may not have been reaching the reports. The TikTok pixel was half-blocked the same way. All three added.
+- Both error paths on the board now log the underlying failure before showing a message. Discarding it is what made a length rejection look like a permissions fault.
+
 ## 2026-08-25 — The waiting-list form is gone
 
 ### UX Improvements
