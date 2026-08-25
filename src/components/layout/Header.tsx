@@ -32,7 +32,6 @@ const NAV_LINKS: NavLink[] = [
     // so they land in the wizard after signing in. Mirrors HeroSection.
     beforeNavigate: () => setReturnUrl('/app/listings/new'),
   },
-  { label: 'Pide en tu departamento', href: '#', action: 'expand-waitlist-popup' },
   { label: 'Contacto', href: '#contacto' },
 ]
 
