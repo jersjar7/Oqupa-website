@@ -284,8 +284,14 @@ function MemberColumn({
             maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
-          {draft.length > MAX_TASK_TITLE - 100 && (
-            <span className="shrink-0 font-sans text-xs tabular-nums text-text-tertiary">
+          {draft.length > 0 && (
+            <span
+              className={`shrink-0 font-sans text-xs tabular-nums ${
+                draft.length > MAX_TASK_TITLE - 100
+                  ? 'text-error'
+                  : 'text-text-tertiary'
+              }`}
+            >
               {draft.length}/{MAX_TASK_TITLE}
             </span>
           )}
@@ -394,8 +400,14 @@ function TodoContainer({
             maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
-          {draft.length > MAX_TASK_TITLE - 100 && (
-            <span className="shrink-0 font-sans text-xs tabular-nums text-text-tertiary">
+          {draft.length > 0 && (
+            <span
+              className={`shrink-0 font-sans text-xs tabular-nums ${
+                draft.length > MAX_TASK_TITLE - 100
+                  ? 'text-error'
+                  : 'text-text-tertiary'
+              }`}
+            >
               {draft.length}/{MAX_TASK_TITLE}
             </span>
           )}
