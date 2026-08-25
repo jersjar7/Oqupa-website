@@ -19,6 +19,12 @@ import {
  * second board can be added later without migrating documents.
  */
 const BOARD = 'dev' as const
+/** Must match the ceiling in firestore.rules (teamTasks title.size()). The
+ *  client stops you before Firestore does, so a rejection never has to
+ *  explain itself. Raised 500 -> 1000 on 2026-08-25 after a real task was
+ *  refused at 500 with only a generic "could not add" toast. */
+const MAX_TASK_TITLE = 1000
+
 
 /**
  * Spanish relative time: "hace un momento", "hace 5 min", "hace 2 h",
@@ -275,8 +281,14 @@ function MemberColumn({
             placeholder="Añadir tarea…"
             aria-label={`Añadir tarea para ${member.name}`}
             disabled={busy}
+            maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
+          {draft.length > MAX_TASK_TITLE - 100 && (
+            <span className="shrink-0 font-sans text-xs tabular-nums text-text-tertiary">
+              {draft.length}/{MAX_TASK_TITLE}
+            </span>
+          )}
         </div>
       </form>
 
@@ -379,8 +391,14 @@ function TodoContainer({
             placeholder="Añadir algo por hacer…"
             aria-label="Añadir tarea por hacer"
             disabled={busy}
+            maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
+          {draft.length > MAX_TASK_TITLE - 100 && (
+            <span className="shrink-0 font-sans text-xs tabular-nums text-text-tertiary">
+              {draft.length}/{MAX_TASK_TITLE}
+            </span>
+          )}
         </div>
       </form>
 
@@ -462,10 +480,19 @@ export default function TeamBoardPage() {
   if (!currentEmail) return null
 
   function report(action: () => Promise<void>, failure: string) {
-    action().catch(() => toast.error(failure))
+    action().catch((err) => {
+      console.error(failure, err)
+      toast.error(failure)
+    })
   }
 
   async function addTo(assigneeEmail: string | null, title: string) {
+    if (title.length > MAX_TASK_TITLE) {
+      toast.error(
+        `La tarea es muy larga (${title.length} de ${MAX_TASK_TITLE} caracteres)`
+      )
+      return
+    }
     try {
       await teamTaskService.create({
         title,
@@ -473,7 +500,11 @@ export default function TeamBoardPage() {
         assigneeEmail,
         createdByEmail: currentEmail!,
       })
-    } catch {
+    } catch (err) {
+      // Swallowing this is what made a length rejection look like a
+      // permissions fault for an afternoon: the toast said nothing and the
+      // real Firebase message never reached the console.
+      console.error('teamTasks create failed', err)
       toast.error('No se pudo añadir la tarea')
     }
   }
