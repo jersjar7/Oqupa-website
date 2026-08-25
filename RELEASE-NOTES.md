@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-25 — The waiting-list form is gone
+
+### UX Improvements
+
+- **The pop-up asking people to request Oqupa in their department has been removed.** It opened by itself five seconds after the page loaded, on every page except the map, and people in Piura who were trying to publish a property were filling it in believing it was how you publish. A form that interrupts someone mid-task gets mistaken for the task.
+- The same request lived in three places — the floating pop-up, a section on the landing page, and a "Pide en tu departamento" item in the menu. All three are gone, along with the footer link and the banner call-to-action that pointed at them.
+- **The Piura banner keeps its message.** "Lanzamos en Piura y aprendemos de nuestros clientes" still reads as before; only the link underneath it was removed.
+
+### Technical
+
+- The form had not worked since **4 May 2026**. The browser sent a field named `departamento` while the server function required `city`, so every submission was rejected, fell through to a backup path that also failed, and still told the person "¡Recibimos tu solicitud!". No notification email was ever sent, because it was queued past the point the function failed.
+- The 23 stored entries — none newer than that date, all from before launch — were deleted, along with the collection's security rule, its 9 tests and the server function. The reCAPTCHA key stays in use by the bug-report form, so spam protection is unchanged.
+
 ## 2026-08-23 — Números shows the advertising, and reads at a glance
 
 ### New Features
