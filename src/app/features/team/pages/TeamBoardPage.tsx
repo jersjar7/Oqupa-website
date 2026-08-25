@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Plus, Trash2, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
@@ -24,6 +24,69 @@ const BOARD = 'dev' as const
  *  explain itself. Raised 500 -> 1000 on 2026-08-25 after a real task was
  *  refused at 500 with only a generic "could not add" toast. */
 const MAX_TASK_TITLE = 1000
+
+/**
+ * A textarea that grows with its content instead of scrolling sideways.
+ *
+ * These fields hold real notes, not one-line titles — a 700-character task is
+ * normal here — and a single-line input made them impossible to read back
+ * while writing. Enter submits (the habit everyone already has on this
+ * board); Shift+Enter starts a new line.
+ */
+function GrowingTextarea({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  autoFocus,
+  placeholder,
+  ariaLabel,
+  disabled,
+  className,
+}: {
+  value: string
+  onChange: (next: string) => void
+  onSubmit: () => void
+  onCancel?: () => void
+  autoFocus?: boolean
+  placeholder?: string
+  ariaLabel: string
+  disabled?: boolean
+  className: string
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null)
+
+  // Re-measure on every value change, including when the field is cleared
+  // after a submit — otherwise the box keeps the height of the text just sent.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          onSubmit()
+        }
+        if (e.key === 'Escape' && onCancel) onCancel()
+      }}
+      autoFocus={autoFocus}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      maxLength={MAX_TASK_TITLE}
+      className={`${className} resize-none overflow-hidden`}
+    />
+  )
+}
 
 
 /**
@@ -103,18 +166,17 @@ function EditableTitle({
 
   if (editing) {
     return (
-      <input
+      <span onBlur={() => void commit()} className="block">
+      <GrowingTextarea
         autoFocus
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); void commit() }
-          if (e.key === 'Escape') { setDraft(title); setEditing(false) }
-        }}
-        aria-label="Editar tarea"
-        className={`${className} rounded border border-primary bg-white px-1 focus:outline-none focus:ring-2 focus:ring-primary/20`}
+        onChange={setDraft}
+        onSubmit={() => void commit()}
+        onCancel={() => { setDraft(title); setEditing(false) }}
+        ariaLabel="Editar tarea"
+        className={`${className} w-full rounded border border-primary bg-white px-1 focus:outline-none focus:ring-2 focus:ring-primary/20`}
       />
+      </span>
     )
   }
 
@@ -238,8 +300,10 @@ function MemberColumn({
   const [busy, setBusy] = useState(false)
   const activeCount = tasks.filter((t) => !t.doneAt).length
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  // Optional event: the form's onSubmit passes one, the textarea's Enter key
+  // calls it directly.
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault()
     const title = draft.trim()
     if (!title || busy) return
     setBusy(true)
@@ -275,13 +339,13 @@ function MemberColumn({
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <input
+          <GrowingTextarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
+            onSubmit={() => void submit()}
             placeholder="Añadir tarea…"
-            aria-label={`Añadir tarea para ${member.name}`}
+            ariaLabel={`Añadir tarea para ${member.name}`}
             disabled={busy}
-            maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
           {draft.length > 0 && (
@@ -357,8 +421,10 @@ function TodoContainer({
     ]
   }, [members, currentEmail])
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  // Optional event: the form's onSubmit passes one, the textarea's Enter key
+  // calls it directly.
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault()
     const title = draft.trim()
     if (!title || busy) return
     setBusy(true)
@@ -391,13 +457,13 @@ function TodoContainer({
           >
             <Plus className="h-4 w-4" />
           </button>
-          <input
+          <GrowingTextarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
+            onSubmit={() => void submit()}
             placeholder="Añadir algo por hacer…"
-            aria-label="Añadir tarea por hacer"
+            ariaLabel="Añadir tarea por hacer"
             disabled={busy}
-            maxLength={MAX_TASK_TITLE}
             className="w-full bg-transparent py-1 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
           {draft.length > 0 && (
