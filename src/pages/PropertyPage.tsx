@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
+import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -516,6 +517,9 @@ export default function PropertyPage() {
               </div>
               </div>
             )}
+
+            {/* Who published it — from the listing's own copy of the owner's identity */}
+            <OwnerCard listing={listing} />
 
             {/* Owner boost section */}
             {isOwner && listing.status === 'active' && (

@@ -121,6 +121,10 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     currentClaimsCount: (data['currentClaimsCount'] as number) ?? 0,
     assignedRealtorId: data['assignedRealtorId'] as string | undefined,
     assignedRealtorPhoneNumber: data['assignedRealtorPhoneNumber'] as string | undefined,
+    ownerDisplayName: data['ownerDisplayName'] as string | undefined,
+    ownerPhotoKey: data['ownerPhotoKey'] as string | undefined,
+    ownerIsVerified: data['ownerIsVerified'] as boolean | undefined,
+    ownerMemberSinceYear: data['ownerMemberSinceYear'] as number | undefined,
     assignmentStatus: data['assignmentStatus'] as Listing['assignmentStatus'],
     declinedRealtorIds: data['declinedRealtorIds'] as string[] | undefined,
     // Boost fields
