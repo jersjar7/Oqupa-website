@@ -25,7 +25,10 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
   {
-    label: 'Publica Gratis',
+    // "Anunciar", not "Publica Gratis": anunciar is the decided concept word
+    // (see brand.md's glossary), and a nav item names a destination rather
+    // than making a claim — the free claim does its work in the hero.
+    label: 'Anunciar',
     href: '/app/listings/new',
     isRoute: true,
     // Anonymous users bounce through /app/login — stash the destination
