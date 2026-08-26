@@ -248,7 +248,12 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
             className="block h-[348px] w-full object-cover object-[center_38%]"
             loading="eager"
           />
-          <span className="absolute right-5 top-3.5 rounded-[20px] bg-white px-[18px] py-2.5 font-sans text-xs font-bold uppercase tracking-[1px] text-text-primary shadow-[0_2px_6px_rgba(28,28,30,0.14),0_8px_20px_rgba(28,28,30,0.10)] transition-transform duration-200 group-hover:scale-[1.03]">
+          {/* Deliberately quiet. On a 390x844 screen the thumb rests in the
+              bottom third, which here is all map — a bright filled pill there
+              was the easiest tap on the page, and the ad leads with "anunciar
+              is free", not "go browsing". It still has to read as a control,
+              so it keeps a solid ground and uppercase weight. */}
+          <span className="absolute right-4 top-3 rounded-2xl border border-text-primary/10 bg-white/95 px-3.5 py-[7px] font-sans text-[11px] font-bold uppercase tracking-[0.9px] text-text-secondary shadow-[0_1px_4px_rgba(28,28,30,0.10)] transition-transform duration-200 group-hover:scale-[1.03]">
             Ver el mapa
           </span>
         </div>
