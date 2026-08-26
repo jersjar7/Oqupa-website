@@ -22,7 +22,8 @@ interface HeroSectionProps {
  *   It reads better and implies an audience we do not have (52 users, 257
  *   listing views all time), which constraints.md forbids. Same-day is a
  *   verified fact: listings are written straight to status 'active' with no
- *   moderation gate.
+ *   moderation gate. "el mismo día" was dropped because its antecedent went
+ *   with the audience clause, leaving it dangling; "Anuncias hoy" anchors it.
  * - "Sin límite de avisos" is verified too: no cap exists in the rules, the
  *   services or the functions, and one owner already holds 8 listings.
  * - The free claim is made exactly twice — headline and body. It had been made
@@ -38,18 +39,12 @@ interface HeroSectionProps {
  * - the logo wordmark is #FECD60 on cream, which measures 1.43:1.
  */
 
-// Districts with LIVE listings on production, in count order: Castilla 24,
-// Sullana 11, Piura 6, 26 de Octubre 5, Máncora 2, Miguel Checa 1. Nothing
-// aspirational — a coverage claim we cannot back is what constraints.md rules
-// out. Re-check against production before changing this list.
-const DISTRICTS = [
-  'Castilla',
-  'Sullana',
-  'Piura',
-  '26 de Octubre',
-  'Máncora',
-  'Miguel Checa',
-]
+// Districts with live listings on production, cut at a 5+ threshold: Castilla
+// 24, Sullana 11, Piura 6, 26 de Octubre 5 — 46 of the 49 live listings.
+// Máncora (2) and Miguel Checa (1) are real but too thin to stand behind a
+// coverage claim, and one listing is the item a local would test first. The
+// threshold is the rule, not taste. Re-check against production before editing.
+const DISTRICTS = ['Castilla', 'Sullana', 'Piura', '26 de Octubre']
 
 export default function HeroSection({ heroRef }: HeroSectionProps) {
   // Anonymous visitors hitting the CTA land at /app/login (AuthGuard redirect).
@@ -113,8 +108,8 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-y-0 left-1/2 hidden xl:block"
       >
-        <div className="absolute left-6 top-[96px] h-[724px] w-[1135px] max-w-none overflow-hidden rounded-t-xl border border-b-0 border-border bg-white opacity-[0.68] shadow-[0_24px_48px_rgba(28,28,30,0.07)]">
-          <div className="flex h-[34px] items-center gap-2 border-b border-border bg-[#F6F1E8] px-3.5">
+        <div className="absolute left-6 top-[96px] h-[724px] w-[1135px] max-w-none overflow-hidden rounded-t-xl border border-b-0 border-border bg-white shadow-[0_24px_48px_rgba(28,28,30,0.07)]">
+          <div className="relative z-10 flex h-[34px] items-center gap-2 border-b border-border bg-[#F6F1E8] px-3.5 opacity-85">
             <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
@@ -122,10 +117,35 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
               oqupa.com
             </span>
           </div>
+          {/* Two layers with complementary vertical masks, not one flat
+              opacity. A uniform fade lightened everything EXCEPT Google's white
+              "Map | Satellite" box, which became relatively MORE prominent —
+              fading the surround is what promotes a white object. The sharp
+              layer survives only in the band above the phone, where the
+              property-type row proves "cualquier propiedad" in the product's
+              own vocabulary; below the handover it all melts to texture. */}
           <img
             src={webMap}
             alt=""
-            className="block h-[690px] w-full object-cover object-left-top blur-[1.3px]"
+            className="absolute inset-x-0 top-[34px] block h-[690px] w-full object-cover object-left-top opacity-80"
+            style={{
+              maskImage:
+                'linear-gradient(to bottom, #000 0px, #000 114px, transparent 204px)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, #000 0px, #000 114px, transparent 204px)',
+            }}
+            loading="lazy"
+          />
+          <img
+            src={webMap}
+            alt=""
+            className="absolute inset-x-0 top-[34px] block h-[690px] w-full object-cover object-left-top opacity-[0.42] blur-[3.5px]"
+            style={{
+              maskImage:
+                'linear-gradient(to bottom, transparent 0px, transparent 114px, #000 204px)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, transparent 0px, transparent 114px, #000 204px)',
+            }}
             loading="lazy"
           />
         </div>
@@ -158,8 +178,8 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           </h1>
 
           <p className="mt-4 max-w-[350px] font-sans text-[15.5px] leading-[1.5] text-text-secondary sm:max-w-[560px] sm:text-[17px] xl:mt-6 xl:text-[18.5px] xl:leading-[1.55]">
-            Sin comisiones, sin tarifas, sin límite de avisos. Tu propiedad
-            aparece en el mapa el mismo día.
+            Sin comisiones, sin tarifas, sin límite de avisos. Anuncias hoy y
+            tu propiedad ya está en el mapa.
           </p>
 
           <Link
@@ -225,7 +245,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           <img
             src={appMap}
             alt="El mapa de Oqupa con precios reales de propiedades en Piura"
-            className="block h-[348px] w-full object-cover object-[center_30%]"
+            className="block h-[348px] w-full object-cover object-[center_38%]"
             loading="eager"
           />
           <span className="absolute right-5 top-3.5 rounded-[20px] bg-white px-[18px] py-2.5 font-sans text-xs font-bold uppercase tracking-[1px] text-text-primary shadow-[0_2px_6px_rgba(28,28,30,0.14),0_8px_20px_rgba(28,28,30,0.10)] transition-transform duration-200 group-hover:scale-[1.03]">
