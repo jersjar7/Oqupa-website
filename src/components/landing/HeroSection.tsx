@@ -37,14 +37,22 @@ interface HeroSectionProps {
  * and changing them is a design-system call, not a hero one:
  * - the primary button is white on #F47843, which measures 2.76:1 (fails AA);
  * - the logo wordmark is #FECD60 on cream, which measures 1.43:1.
+ *
+ * Headline is Pacific green and the eyebrow orange by Jerson's call
+ * (2026-08-26). Green measures 6.00:1 and is fine. The orange eyebrow measures
+ * 2.66:1 at this size and fails AA — flagged to him, not silently overridden;
+ * #C0501E holds the same look at 4.76:1 if it ever needs fixing.
  */
 
-// Districts with live listings on production, cut at a 5+ threshold: Castilla
-// 24, Sullana 11, Piura 6, 26 de Octubre 5 — 46 of the 49 live listings.
-// Máncora (2) and Miguel Checa (1) are real but too thin to stand behind a
-// coverage claim, and one listing is the item a local would test first. The
-// threshold is the rule, not taste. Re-check against production before editing.
-const DISTRICTS = ['Castilla', 'Sullana', 'Piura', '26 de Octubre']
+// Jerson's list (2026-08-26). NOTE WHAT THIS ROW NOW MEANS: it used to be
+// evidence — districts with 5+ live listings. Of these four only Sullana has
+// listings (11); Paita and Chulucanas have none, and "Tamara" matches no
+// district in the Piura region. So the row states REACH, not stock. Place
+// names under a
+// coverage eyebrow read as "we have properties here" — the inventory claim
+// constraints.md rules out. Jerson's call to run it bare; flagged, not
+// silently overridden.
+const DISTRICTS = ['Sullana', 'Tamara', 'Paita', 'Chulucanas']
 
 export default function HeroSection({ heroRef }: HeroSectionProps) {
   // Anonymous visitors hitting the CTA land at /app/login (AuthGuard redirect).
@@ -71,6 +79,54 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       >
         <img src={googlePlayBadge} alt="Disponible en Google Play" className="h-9 w-auto" />
       </a>
+    </div>
+  )
+
+
+  /**
+   * The site as atmosphere behind the phone. Two layers with complementary
+   * vertical masks rather than one flat opacity: a uniform fade lightens
+   * everything EXCEPT a white UI box, which then reads as relatively MORE
+   * prominent. The sharp layer survives only in the band above the phone, where
+   * the property-type row proves "cualquier propiedad" in the product's own
+   * words; below the handover it all melts to texture.
+   */
+  const browserWindow = (sharpPx: number, fadePx: number) => {
+    const mask = (from: string, to: string) =>
+      `linear-gradient(to bottom, ${from} 0px, ${from} ${sharpPx}px, ${to} ${fadePx}px)`
+    return (
+      <>
+        <div className="flex h-[34px] items-center gap-2 border-b border-border bg-[#F6F1E8] px-3.5 opacity-85">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#DED6C8]" />
+          <span className="ml-3 flex h-[18px] w-52 items-center rounded-full border border-border bg-white px-2.5 text-[10px] text-text-secondary">
+            oqupa.com
+          </span>
+        </div>
+        <div className="relative flex-1">
+          <img
+            src={webMap}
+            alt=""
+            className="absolute inset-0 block h-full w-full object-cover object-left-top opacity-80"
+            style={{ maskImage: mask('#000', 'transparent'), WebkitMaskImage: mask('#000', 'transparent') }}
+            loading="lazy"
+          />
+          <img
+            src={webMap}
+            alt=""
+            className="absolute inset-0 block h-full w-full object-cover object-left-top opacity-[0.42] blur-[3.5px]"
+            style={{ maskImage: mask('transparent', '#000'), WebkitMaskImage: mask('transparent', '#000') }}
+            loading="lazy"
+          />
+        </div>
+      </>
+    )
+  }
+
+  const phoneFrame = (className: string, imgClass: string) => (
+    <div className={className}>
+      <img src={appMap} alt="" className={imgClass} loading="eager" />
     </div>
   )
 
@@ -165,13 +221,13 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       {/* ---------- Copy ---------------------------------------------------- */}
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
         <div className="flex flex-col items-start pt-10 md:pt-14 xl:w-[620px] xl:pt-[132px]">
-          <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary sm:text-xs xl:text-[12.5px] xl:tracking-[0.16em]">
+          <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-primary sm:text-xs xl:text-[12.5px] xl:tracking-[0.16em]">
             Cualquier distrito, cualquier propiedad
           </span>
 
           {/* 64px at lg, not 68: at 68 the first line came within 49px of the
               artwork, which on 96px outer margins reads as a collision. */}
-          <h1 className="mt-4 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.02em] text-text-primary sm:text-[40px] sm:leading-[1.06] xl:mt-6 xl:text-[64px] xl:leading-[1.02]">
+          <h1 className="mt-4 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.02em] text-secondary sm:text-[40px] sm:leading-[1.06] xl:mt-6 xl:text-[64px] xl:leading-[1.02]">
             Anunciar en Piura
             <br />
             no cuesta nada.
@@ -199,7 +255,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
 
           {/* The desktop board carries this signal with the browser window, so
               it would be a duplicate there. */}
-          <div className="mt-5 flex items-center gap-2 xl:hidden">
+          <div className="mt-5 flex items-center gap-2 md:hidden">
             <svg
               width="13"
               height="13"
@@ -239,7 +295,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       <Link
         to="/explorar"
         aria-label="Ver el mapa de propiedades en Piura"
-        className="group mt-10 block xl:hidden"
+        className="group mt-10 block md:hidden"
       >
         <div className="relative mx-auto overflow-hidden rounded-t-2xl shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)] md:hidden">
           <img
@@ -258,15 +314,26 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           </span>
         </div>
 
-        <div className="relative ml-auto -mr-8 hidden w-[394px] rounded-t-[48px] bg-text-primary px-3 pt-3 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)] md:block xl:hidden">
-          <img
-            src={appMap}
-            alt="El mapa de Oqupa con precios reales de propiedades en Piura"
-            className="block h-[300px] w-full rounded-t-[37px] object-cover object-top"
-            loading="eager"
-          />
-        </div>
       </Link>
+
+      {/* ---------- Tablet diorama (md to xl) ------------------------------
+          Earlier passes gave this range a lone cropped phone in a field of
+          cream: it filled nothing and taught nothing, while desktop showed the
+          website and the app in one image. Same diorama here, stacked under the
+          copy, so all three widths make the same argument. The window bleeds off
+          both sides and the bottom, so its only visible edge is the top one. */}
+      <div className="relative mt-14 hidden h-[340px] overflow-hidden md:block xl:hidden">
+        <div
+          aria-hidden="true"
+          className="absolute -left-10 -right-40 top-0 flex h-[420px] flex-col overflow-hidden rounded-t-xl border border-b-0 border-border bg-white shadow-[0_24px_48px_rgba(28,28,30,0.07)]"
+        >
+          {browserWindow(78, 158)}
+        </div>
+        {phoneFrame(
+          'absolute right-16 top-[90px] w-[320px] rounded-[40px] bg-text-primary p-2.5 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)]',
+          'block h-[640px] w-full rounded-[31px] object-cover',
+        )}
+      </div>
     </section>
   )
 }
