@@ -4,6 +4,18 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-26 (2) — El botón de WhatsApp explica por qué pide una cuenta
+
+### UX Improvements
+
+- **Pressing "Escríbele por WhatsApp" without an account now says why, says it is free, and offers the account.** "Verificación requerida … necesitas iniciar sesión" read as a demand with no reason. Now: *"Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos."* with **CREA TU CUENTA**, *Ya tengo cuenta* and *Ahora no*. Signed in with the phone still unverified: *"…verifica tu número. Solo esta vez."*; with the email link still unclicked: *"…termina de verificar tu cuenta."* — so the dialog never promises one step when more remain. The page you came from is remembered, so you land back on the listing. Step 3 of the approved new-user path; the same words ship in the app with its next release, pinned by tests on both sides. Two advisor reviews ranked this the single most effective copy change in the product.
+
+### Technical
+
+- `contactGate.ts` + test; `PropertyPage` reads it. Nothing about security changed — the server still refuses the number to guests and unverified people.
+
+---
+
 ## 2026-08-26 — Quién publica el aviso, y perfiles que ya no son públicos
 
 ### New Features
