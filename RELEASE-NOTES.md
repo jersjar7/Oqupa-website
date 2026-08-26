@@ -4,6 +4,23 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-26 — Quién publica el aviso, y perfiles que ya no son públicos
+
+### New Features
+
+- **Every property page now says who published it.** Name, photo, verified badge and member-since year, in the sidebar under the WhatsApp button — the same four things the app has shown since August. Jerson noticed the gap on staging while verifying the security change below. The card reads the listing's own copy of that information, never the owner's profile; it is hidden while an agent represents the listing, so the name next to the WhatsApp button is never the wrong person.
+
+### Security
+
+- **User profiles are no longer readable by the public.** Since launch, anyone could read every user's record — email, contact details — with no login. A profile is now readable only by its owner or an admin. Nothing changes on any page: the website never read those records to draw a listing, and the WhatsApp number was already handed out by the server only to signed-in, phone-verified people. *(The rule lives in the platform repo and was deployed by hand; this entry records the website side.)*
+- **The admin, metrics, team and marketing allowlists now require a verified email.** The lists are generated into the security rules from `people.ts`; the generator now also demands `email_verified`, so an allowlisted address that has no account yet cannot be claimed by self-signup. Google and Apple sign-ins are always verified; email/password after the verification link. Known edge, not yet fixed: after verifying by email the browser keeps its previous token for up to an hour, so a teammate on email/password may see the team board refuse them briefly.
+
+### Technical
+
+- `OwnerCard` + `ownerCardFor` in `src/app/features/listings/components/`, six tests written first; `Listing` gains the four optional owner fields. Website suite is 372.
+
+---
+
 ## 2026-08-25 — El tablero del equipo: notas largas, columnas plegables
 
 ### UX Improvements
