@@ -80,15 +80,15 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
   )
 
   const districtRow = (
-    <ul className="flex flex-wrap items-center gap-x-2.5 gap-y-1 lg:gap-x-3">
+    <ul className="flex flex-wrap items-center gap-x-2.5 gap-y-1 xl:gap-x-3">
       {DISTRICTS.map((d, i) => (
-        <li key={d} className="flex items-center gap-x-2.5 lg:gap-x-3">
+        <li key={d} className="flex items-center gap-x-2.5 xl:gap-x-3">
           {i > 0 && (
             <span aria-hidden="true" className="text-border">
               ·
             </span>
           )}
-          <span className="font-sans text-xs font-medium tracking-[0.6px] text-text-secondary lg:text-[13px]">
+          <span className="font-sans text-xs font-medium tracking-[0.6px] text-text-secondary xl:text-[13px]">
             {d}
           </span>
         </li>
@@ -99,7 +99,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
   return (
     <section
       ref={heroRef}
-      className="relative overflow-hidden bg-cream pt-20 lg:min-h-[820px]"
+      className="relative overflow-hidden bg-cream pt-20 xl:min-h-[820px]"
     >
       {/* ---------- Desktop atmosphere (lg+) ---------------------------------
           The browser is ATMOSPHERE, not a second subject. Sharp and at full
@@ -111,7 +111,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           in view is the top one, which is where a window should have one. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-1/2 hidden lg:block"
+        className="pointer-events-none absolute inset-y-0 left-1/2 hidden xl:block"
       >
         <div className="absolute left-6 top-[96px] h-[724px] w-[1135px] max-w-none overflow-hidden rounded-t-xl border border-b-0 border-border bg-white opacity-[0.68] shadow-[0_24px_48px_rgba(28,28,30,0.07)]">
           <div className="flex h-[34px] items-center gap-2 border-b border-border bg-[#F6F1E8] px-3.5">
@@ -144,20 +144,20 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
 
       {/* ---------- Copy ---------------------------------------------------- */}
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
-        <div className="flex flex-col items-start pt-10 md:pt-14 lg:w-[620px] lg:pt-[132px]">
-          <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary sm:text-xs lg:text-[12.5px] lg:tracking-[0.16em]">
+        <div className="flex flex-col items-start pt-10 md:pt-14 xl:w-[620px] xl:pt-[132px]">
+          <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary sm:text-xs xl:text-[12.5px] xl:tracking-[0.16em]">
             Cualquier distrito, cualquier propiedad
           </span>
 
           {/* 64px at lg, not 68: at 68 the first line came within 49px of the
               artwork, which on 96px outer margins reads as a collision. */}
-          <h1 className="mt-4 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.02em] text-text-primary sm:text-[40px] sm:leading-[1.06] lg:mt-6 lg:text-[64px] lg:leading-[1.02]">
+          <h1 className="mt-4 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.02em] text-text-primary sm:text-[40px] sm:leading-[1.06] xl:mt-6 xl:text-[64px] xl:leading-[1.02]">
             Anunciar en Piura
             <br />
             no cuesta nada.
           </h1>
 
-          <p className="mt-4 max-w-[350px] font-sans text-[15.5px] leading-[1.5] text-text-secondary sm:max-w-[560px] sm:text-[17px] lg:mt-6 lg:text-[18.5px] lg:leading-[1.55]">
+          <p className="mt-4 max-w-[350px] font-sans text-[15.5px] leading-[1.5] text-text-secondary sm:max-w-[560px] sm:text-[17px] xl:mt-6 xl:text-[18.5px] xl:leading-[1.55]">
             Sin comisiones, sin tarifas, sin límite de avisos. Tu propiedad
             aparece en el mapa el mismo día.
           </p>
@@ -165,13 +165,13 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           <Link
             to="/app/listings/new"
             onClick={stashPublishReturn}
-            className="mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-primary font-sans text-[15px] font-bold uppercase tracking-[0.08em] text-white shadow-[0_2px_6px_rgba(244,120,67,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover sm:w-[320px] lg:w-[302px]"
+            className="mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-primary font-sans text-[15px] font-bold uppercase tracking-[0.08em] text-white shadow-[0_2px_6px_rgba(244,120,67,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover sm:w-[320px] xl:w-[302px]"
           >
             Agrega tu propiedad
           </Link>
 
-          <div className="mt-9 flex flex-col items-start gap-3 lg:mt-12">
-            <span className="font-sans text-[13px] font-medium text-text-primary lg:text-sm">
+          <div className="mt-9 flex flex-col items-start gap-3 xl:mt-12">
+            <span className="font-sans text-[13px] font-medium text-text-primary xl:text-sm">
               El mapa de Piura, en tu teléfono
             </span>
             {storeBadges}
@@ -179,7 +179,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
 
           {/* The desktop board carries this signal with the browser window, so
               it would be a duplicate there. */}
-          <div className="mt-5 flex items-center gap-2 lg:hidden">
+          <div className="mt-5 flex items-center gap-2 xl:hidden">
             <svg
               width="13"
               height="13"
@@ -202,7 +202,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
               The eyebrow claims coverage; this proves it with nouns — and
               "do you cover where my property is?" is the real question for a
               marketplace this size, not price, which is answered twice above. */}
-          <div className="mt-8 lg:mt-14">{districtRow}</div>
+          <div className="mt-8 xl:mt-14">{districtRow}</div>
         </div>
       </div>
 
@@ -219,7 +219,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       <Link
         to="/explorar"
         aria-label="Ver el mapa de propiedades en Piura"
-        className="group mt-10 block lg:hidden"
+        className="group mt-10 block xl:hidden"
       >
         <div className="relative mx-auto overflow-hidden rounded-t-2xl shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)] md:hidden">
           <img
@@ -233,7 +233,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
           </span>
         </div>
 
-        <div className="relative mx-auto hidden w-[400px] rounded-t-[48px] bg-text-primary px-3 pt-3 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)] md:block lg:hidden">
+        <div className="relative ml-auto -mr-8 hidden w-[394px] rounded-t-[48px] bg-text-primary px-3 pt-3 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)] md:block xl:hidden">
           <img
             src={appMap}
             alt="El mapa de Oqupa con precios reales de propiedades en Piura"
