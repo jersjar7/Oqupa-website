@@ -4,6 +4,23 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-26 (3) — La puerta: "Anuncia tu propiedad" en cada página
+
+### New Features
+
+- **"Anuncia tu propiedad" is now the primary button in the header, on every page** — full pages, property pages and the mobile menu. Before, publishing was a plain text link on the landing page only; property pages, where the ads land, said nothing about it. A visitor is taken to create an account with the wizard remembered as the destination; a signed-in person goes straight to the wizard. Step 4 of the approved new-user path. *Anunciar* on the public site, *publicar* inside the product (brand rule of 2026-08-25); the footer link follows the same wording.
+- On phones the header keeps the logo and this one button; the sign-in pill returns on wider screens (the register page and the WhatsApp gate both offer "¿Ya tienes cuenta?"). Sized with the real Gotham metrics so it fits a 360px screen.
+
+### Bug Fixes
+
+- **On a phone, the price took two lines and "Compartir" fell off the screen.** The price now has its own line; views, Guardar and Compartir sit on the row beneath. Unchanged on larger screens.
+
+### Technical
+
+- `PublishCta` in `Header.tsx`, three tests. Hostile review found the first version hidden exactly where it mattered (phones) and then overflowing; both fixed before merge.
+
+---
+
 ## 2026-08-26 (2) — El botón de WhatsApp explica por qué pide una cuenta
 
 ### UX Improvements

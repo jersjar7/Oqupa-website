@@ -387,9 +387,12 @@ export default function PropertyPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left column — listing details */}
           <div className="lg:col-span-2">
-            {/* Price + Destacado badge + Share */}
-            <div className="flex items-center gap-3">
-              <p className="text-2xl font-bold text-primary">
+            {/* Price + Destacado badge + views / save / share.
+                One row from sm up. On a phone the price takes its own line —
+                squeezed into the row it wrapped to "S/." / "540,000" and pushed
+                Compartir off-screen (Jerson, staging, 2026-08-26). */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="whitespace-nowrap text-2xl font-bold text-primary">
                 {formatPrice(listing.price?.amount)}
                 {(() => {
                   const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
@@ -402,18 +405,20 @@ export default function PropertyPage() {
                   Destacado
                 </span>
               )}
-              <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-text-secondary">
-                <Eye className="h-4 w-4 shrink-0" />
-                {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
-              </span>
-              <SaveButton listingId={listing.id} variant="page" />
-              <button
-                onClick={handleShare}
-                className="rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
-                aria-label="Compartir"
-              >
-                Compartir
-              </button>
+              <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
+                <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
+                  <Eye className="h-4 w-4 shrink-0" />
+                  {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
+                </span>
+                <SaveButton listingId={listing.id} variant="page" />
+                <button
+                  onClick={handleShare}
+                  className="whitespace-nowrap rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
+                  aria-label="Compartir"
+                >
+                  Compartir
+                </button>
+              </div>
             </div>
 
             {/* Location */}
