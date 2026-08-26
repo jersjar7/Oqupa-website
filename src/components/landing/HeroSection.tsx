@@ -44,15 +44,20 @@ interface HeroSectionProps {
  * #C0501E holds the same look at 4.76:1 if it ever needs fixing.
  */
 
-// Jerson's list (2026-08-26). NOTE WHAT THIS ROW NOW MEANS: it used to be
-// evidence — districts with 5+ live listings. Of these four only Sullana has
-// listings (11); Paita and Chulucanas have none, and "Tamara" matches no
-// district in the Piura region. So the row states REACH, not stock. Place
-// names under a
-// coverage eyebrow read as "we have properties here" — the inventory claim
-// constraints.md rules out. Jerson's call to run it bare; flagged, not
-// silently overridden.
-const DISTRICTS = ['Sullana', 'Tamara', 'Paita', 'Chulucanas']
+// The seven other provinces of the departamento de Piura — the headline already
+// names Piura itself, so together they state the whole region. Deliberately NOT
+// a listing count: read as geography it is simply true, where a partial list of
+// towns implied stock we do not have in most of them. Two lines is fine; do not
+// trim it back to the provinces with listings, that was a different row.
+const DISTRICTS = [
+  'Sullana',
+  'Paita',
+  'Talara',
+  'Sechura',
+  'Morropón',
+  'Huancabamba',
+  'Ayabaca',
+]
 
 export default function HeroSection({ heroRef }: HeroSectionProps) {
   // Anonymous visitors hitting the CTA land at /app/login (AuthGuard redirect).
@@ -208,7 +213,9 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
 
         {/* Whole, sharp, in front. Its bottom edge and the district row below
             the copy both land on y=798 so the two halves terminate together. */}
-        <div className="absolute left-[344px] top-[210px] w-[280px] rounded-[36px] bg-text-primary p-2.5 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)]">
+        {/* Centred on the browser's visible region rather than pinned to the
+            nav's right margin — it read as hugging the edge out at 344. */}
+        <div className="absolute left-[232px] top-[210px] w-[280px] rounded-[36px] bg-text-primary p-2.5 shadow-[0_2px_6px_rgba(28,28,30,0.14),0_24px_48px_rgba(28,28,30,0.10)]">
           <img
             src={appMap}
             alt=""
