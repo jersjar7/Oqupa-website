@@ -11,6 +11,7 @@ import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
 import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
+import { contactGateCopy } from '@/app/features/listings/contactGate'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -302,6 +303,10 @@ export default function PropertyPage() {
   }
 
   const isOwner = user?.id === listing.ownerId
+  const gate = contactGateCopy({
+    signedIn: Boolean(firebaseUser),
+    emailVerified: firebaseUser?.emailVerified ?? false,
+  })
   const showExact = listing.showExactLocation !== false
   const location = showExact
     ? [
@@ -616,29 +621,39 @@ export default function PropertyPage() {
               className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
             >
               <h3 className="font-serif text-lg font-bold text-text-primary">
-                Verificación requerida
+                {gate.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-                {firebaseUser
-                  ? 'Para contactar al propietario, necesitas verificar tu número de teléfono.'
-                  : 'Para contactar al propietario, necesitas iniciar sesión y verificar tu número de teléfono.'}
+                {gate.body}
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={() => {
                     setShowAuthModal(false)
                     setReturnUrl(window.location.pathname)
-                    navigate(firebaseUser ? '/app/verify' : '/app/login')
+                    navigate(gate.primary.to)
                   }}
                   className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
                 >
-                  {firebaseUser ? 'Verificar teléfono' : 'Iniciar sesión'}
+                  {gate.primary.label}
                 </button>
+                {gate.secondary && (
+                  <button
+                    onClick={() => {
+                      setShowAuthModal(false)
+                      setReturnUrl(window.location.pathname)
+                      navigate(gate.secondary!.to)
+                    }}
+                    className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+                  >
+                    {gate.secondary.label}
+                  </button>
+                )}
                 <button
                   onClick={() => setShowAuthModal(false)}
-                  className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+                  className="flex w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
                 >
-                  Cancelar
+                  Ahora no
                 </button>
               </div>
             </motion.div>
