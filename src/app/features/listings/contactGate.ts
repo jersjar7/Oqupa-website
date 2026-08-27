@@ -48,7 +48,20 @@ export function contactGateCopy({
     title: 'Escríbele al propietario',
     body:
       'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
-    primary: { label: 'CREA TU CUENTA', to: '/app/register' },
+    // The entry screen — Google first, email on request — never the old
+    // email-only form (Jerson on staging, 2026-08-27).
+    primary: { label: 'CREA TU CUENTA', to: '/app/login' },
     secondary: { label: 'Ya tengo cuenta', to: '/app/login' },
   }
+}
+
+/** The return address stashed by the gate: the listing, plus the intent. */
+export function contactReturnUrl(pathname: string): string {
+  return `${pathname}#contactar`
+}
+
+/** True when the person came back to a listing to contact — open WhatsApp
+ *  for them, no second tap (docs/new-user-navigation-path.md). */
+export function wantsAutoContact(hash: string): boolean {
+  return hash === '#contactar'
 }

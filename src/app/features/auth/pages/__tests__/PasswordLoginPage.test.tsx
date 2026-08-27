@@ -1,28 +1,20 @@
 // @vitest-environment jsdom
+// The entry screen after step 6: one door — Google is the obvious action,
+// "Continuar con correo" reveals the form. A mismatch offers both ways forward,
+// because production hides whether an email has an account.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
-// ── Mocks ───────────────────────────────────────────────────────────────────
-
 const mockAuthService = vi.hoisted(() => ({
-  getSignInMethods: vi.fn(),
   loginWithEmailAndPassword: vi.fn(),
-  sendPasswordSetupEmail: vi.fn(),
+  signInWithGoogle: vi.fn(),
 }))
-
-vi.mock('@/services/authService', () => ({
-  authService: mockAuthService,
-}))
-
+vi.mock('@/services/authService', () => ({ authService: mockAuthService }))
 vi.mock('@/lib/authErrors', () => ({
   getLoginAuthError: vi.fn(() => ({ message: 'Credenciales incorrectas' })),
 }))
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
-
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 vi.mock('@/app/components/ui', () => ({
   Input: ({ label, error, revealToggle: _rt, ...props }: any) => (
     <>
@@ -30,109 +22,78 @@ vi.mock('@/app/components/ui', () => ({
       {error && <span role="alert">{error}</span>}
     </>
   ),
-  Button: ({ children, isLoading, ...props }: any) => (
-    <button {...props}>{children}</button>
-  ),
+  Button: ({ children, isLoading, ...props }: any) => <button {...props}>{children}</button>,
 }))
-
-// ── Import after mocks ──────────────────────────────────────────────────────
 
 import PasswordLoginPage from '../PasswordLoginPage'
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function renderPage() {
+function renderPage(entry = '/app/login') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[entry]}>
       <PasswordLoginPage />
-    </MemoryRouter>
+    </MemoryRouter>,
   )
 }
-
+function openEmail() {
+  fireEvent.click(screen.getByRole('button', { name: /continuar con correo/i }))
+}
 function fillForm(email = 'test@example.com', password = 'password123') {
-  fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-    target: { value: email },
-  })
-  fireEvent.change(screen.getByLabelText(/contrase/i), {
-    target: { value: password },
-  })
+  fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), { target: { value: email } })
+  fireEvent.change(screen.getByLabelText(/contrase/i), { target: { value: password } })
 }
 
-// ── Tests ───────────────────────────────────────────────────────────────────
+describe('PasswordLoginPage — the entry screen', () => {
+  beforeEach(() => vi.clearAllMocks())
 
-describe('PasswordLoginPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockAuthService.getSignInMethods.mockResolvedValue(['password'])
-    mockAuthService.loginWithEmailAndPassword.mockResolvedValue(undefined)
+  it('offers Google first and the email form only on request', () => {
+    renderPage()
+    expect(screen.getByRole('button', { name: /continuar con google/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /continuar con correo/i })).toBeDefined()
+    expect(screen.queryByRole('textbox', { name: /correo/i })).toBeNull()
+    expect(screen.queryByText(/enlace mágico/i)).toBeNull()
   })
 
-  describe('rendering', () => {
-    it('renders email and password fields', () => {
-      renderPage()
-      expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
-      expect(screen.getByLabelText(/contrase/i)).toBeDefined()
-    })
-
-    it('renders the submit button', () => {
-      renderPage()
-      expect(screen.getByRole('button', { name: /iniciar/i })).toBeDefined()
-    })
-
-    it('renders forgot password link', () => {
-      renderPage()
-      // Page has two forgot-password links (one in accordion, one below form)
-      expect(screen.getAllByRole('link', { name: /olvidaste/i }).length).toBeGreaterThan(0)
-    })
-
-    it('renders a link to register for users without an account', () => {
-      renderPage()
-      const link = screen.getByRole('link', { name: /crea una/i })
-      expect(link.getAttribute('href')).toBe('/app/register')
-    })
+  it('Google signs in with one click', async () => {
+    mockAuthService.signInWithGoogle.mockResolvedValue({ uid: 'g' })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /continuar con google/i }))
+    await waitFor(() => expect(mockAuthService.signInWithGoogle).toHaveBeenCalled())
   })
 
-  describe('successful login', () => {
-    it('calls loginWithEmailAndPassword with email and password', async () => {
-      renderPage()
-      fillForm()
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(mockAuthService.loginWithEmailAndPassword).toHaveBeenCalledWith(
-          'test@example.com',
-          'password123'
-        )
-      })
-    })
+  it('email + password sign in', async () => {
+    mockAuthService.loginWithEmailAndPassword.mockResolvedValue({ uid: 'u' })
+    renderPage()
+    openEmail()
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: /^continuar$/i }))
+    await waitFor(() =>
+      expect(mockAuthService.loginWithEmailAndPassword).toHaveBeenCalledWith('test@example.com', 'password123'),
+    )
   })
 
-  describe('error handling', () => {
-    it('shows error message on failed login', async () => {
-      mockAuthService.loginWithEmailAndPassword.mockRejectedValue(
-        new Error('auth/wrong-password')
-      )
-      renderPage()
-      fillForm()
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText('Credenciales incorrectas')).toBeDefined()
-      })
-    })
+  it('a mismatch offers to create the account with that email, or recover the password', async () => {
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: 'auth/invalid-credential' })
+    renderPage()
+    openEmail()
+    fillForm('ana@example.com')
+    fireEvent.click(screen.getByRole('button', { name: /^continuar$/i }))
+    await waitFor(() => expect(screen.getByText(/no coinciden/i)).toBeDefined())
+    const create = screen.getByRole('link', { name: /crea tu cuenta con este correo/i })
+    expect(create.getAttribute('href')).toBe('/app/register?email=ana%40example.com')
+    expect(screen.getAllByRole('link', { name: /olvidaste tu contraseña/i }).length).toBeGreaterThan(0)
   })
 
-  describe('legacy magic-link accounts', () => {
-    it('shows legacy notice for emailLink-only accounts', async () => {
-      mockAuthService.getSignInMethods.mockResolvedValue(['emailLink'])
-      mockAuthService.sendPasswordSetupEmail.mockResolvedValue(undefined)
-      renderPage()
-      fillForm()
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(mockAuthService.sendPasswordSetupEmail).toHaveBeenCalledWith(
-          'test@example.com'
-        )
-        expect(screen.getByText(/Revisa tu bandeja/i)).toBeDefined()
-      })
-    })
+  it('other errors show the mapped message', async () => {
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: 'auth/network-request-failed' })
+    renderPage()
+    openEmail()
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: /^continuar$/i }))
+    await waitFor(() => expect(screen.getByText(/credenciales incorrectas/i)).toBeDefined())
+  })
+
+  it('?correo=1 opens the email form directly', () => {
+    renderPage('/app/login?correo=1')
+    expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
   })
 })

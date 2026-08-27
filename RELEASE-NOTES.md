@@ -4,6 +4,26 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-27 — Una sola puerta, el teléfono antes que el correo
+
+### New Features
+
+- **One entry screen for everyone.** *Continuar con Google* first; *Continuar con correo* reveals email and password on the same screen. No sign-up-vs-sign-in choice up front: Google knows; for email, the site cannot tell whether an address has an account (that is deliberate protection), so a mismatch is where both ways forward appear — create the account with that email, or recover the password. Every door — the WhatsApp gate, the header button, the register form — leads here. Magic-link accounts from before April are told how to set a password.
+- **Phone before email.** The email link step sent people out of the site to an inbox before they had done anything; it is now last, and only for email/password accounts. Google accounts skip it and the name step. The code field submits itself on the sixth digit, resend waits 30 s, and a quiet line says what to do if nothing arrives.
+- **The email step notices by itself** when the link is clicked — every few seconds and when you come back to the tab. The "Ya verifiqué" button, which people pressed before clicking the link, is gone.
+- **Back to where you were.** After the pipeline you land on the listing you came from, and if you came to contact the seller, WhatsApp opens for you — no second tap. That stored return address expires after 30 minutes.
+- **The WhatsApp button shows it is working** while it asks the server for the number.
+
+### Security
+
+- Both verifications stay mandatory. The server now refuses a number until the email is verified as well as the phone (deployed ahead of this change). The page refreshes the sign-in token when the email flips, so the team pages open at once.
+
+### Technical
+
+- `pipelineOrder.ts` (order and entry decisions as pure functions, 8 tests), `AuthPipelinePage` rewritten around it (14 tests), entry screen (6), contact return (2). Three hostile review rounds; all findings closed. Suite is 387.
+
+---
+
 ## 2026-08-26 (3) — La puerta: "Anuncia tu propiedad" en cada página
 
 ### New Features

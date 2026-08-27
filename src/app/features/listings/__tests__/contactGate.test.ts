@@ -2,7 +2,7 @@
 // test/ui/shared/contact_gate_modal_test.dart — both apps must say the same
 // thing (auth-change Gate 3). Approved: docs/new-user-navigation-path.md.
 import { describe, it, expect } from 'vitest'
-import { contactGateCopy } from '../contactGate'
+import { contactGateCopy, contactReturnUrl, wantsAutoContact } from '../contactGate'
 
 describe('contactGateCopy', () => {
   it('visitor: says why, says it is free, offers to create an account', () => {
@@ -10,7 +10,7 @@ describe('contactGateCopy', () => {
     expect(c.body).toBe(
       'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
     )
-    expect(c.primary).toEqual({ label: 'CREA TU CUENTA', to: '/app/register' })
+    expect(c.primary).toEqual({ label: 'CREA TU CUENTA', to: '/app/login' })
     expect(c.secondary).toEqual({ label: 'Ya tengo cuenta', to: '/app/login' })
     expect(c.body).not.toMatch(/necesitas|esta función/)
   })
@@ -34,5 +34,16 @@ describe('contactGateCopy', () => {
   it('the title talks about the action, not about verification', () => {
     expect(contactGateCopy({ signedIn: false, emailVerified: false }).title).toBe('Escríbele al propietario')
     expect(contactGateCopy({ signedIn: true, emailVerified: true }).title).toBe('Escríbele al propietario')
+  })
+})
+
+describe('the return address carries the intent', () => {
+  it('stashes the listing with #contactar', () => {
+    expect(contactReturnUrl('/property/abc')).toBe('/property/abc#contactar')
+  })
+  it('only that exact hash triggers the automatic contact', () => {
+    expect(wantsAutoContact('#contactar')).toBe(true)
+    expect(wantsAutoContact('')).toBe(false)
+    expect(wantsAutoContact('#contactar2')).toBe(false)
   })
 })
