@@ -48,7 +48,9 @@ export function contactGateCopy({
     title: 'Escríbele al propietario',
     body:
       'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
-    primary: { label: 'CREA TU CUENTA', to: '/app/register' },
+    // The entry screen — Google first, email on request — never the old
+    // email-only form (Jerson on staging, 2026-08-27).
+    primary: { label: 'CREA TU CUENTA', to: '/app/login' },
     secondary: { label: 'Ya tengo cuenta', to: '/app/login' },
   }
 }

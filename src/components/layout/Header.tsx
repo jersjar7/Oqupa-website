@@ -40,7 +40,9 @@ function PublishCta({ className = '', onNavigate }: { className?: string; onNavi
   // auth store, and the site's most important button must not pop in after
   // Firebase resolves and shift the header (hostile review, 2026-08-26).
   const { firebaseUser } = useAuthStore()
-  const to = firebaseUser ? '/app/listings/new' : '/app/register'
+  // Visitors go to the ONE entry screen (Google first); the wizard is the
+  // stashed return address.
+  const to = firebaseUser ? '/app/listings/new' : '/app/login'
   return (
     <Link
       to={to}

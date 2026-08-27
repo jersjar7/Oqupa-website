@@ -35,7 +35,7 @@ describe('Header — the publish door', () => {
   it('a visitor sees "Anuncia tu propiedad" that leads to creating an account', () => {
     renderHeader('full')
     const cta = screen.getAllByRole('link', { name: /Anuncia tu propiedad/i })[0]
-    expect(cta?.getAttribute('href')).toBe('/app/register')
+    expect(cta?.getAttribute('href')).toBe('/app/login')
     expect(screen.queryByText(/Publica Gratis/i)).toBeNull()
   })
 
