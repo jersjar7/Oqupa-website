@@ -10,7 +10,7 @@ describe('contactGateCopy', () => {
     expect(c.body).toBe(
       'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
     )
-    expect(c.primary).toEqual({ label: 'CREA TU CUENTA', to: '/app/register' })
+    expect(c.primary).toEqual({ label: 'CREA TU CUENTA', to: '/app/login' })
     expect(c.secondary).toEqual({ label: 'Ya tengo cuenta', to: '/app/login' })
     expect(c.body).not.toMatch(/necesitas|esta función/)
   })
