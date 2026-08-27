@@ -52,3 +52,14 @@ export function contactGateCopy({
     secondary: { label: 'Ya tengo cuenta', to: '/app/login' },
   }
 }
+
+/** The return address stashed by the gate: the listing, plus the intent. */
+export function contactReturnUrl(pathname: string): string {
+  return `${pathname}#contactar`
+}
+
+/** True when the person came back to a listing to contact — open WhatsApp
+ *  for them, no second tap (docs/new-user-navigation-path.md). */
+export function wantsAutoContact(hash: string): boolean {
+  return hash === '#contactar'
+}
