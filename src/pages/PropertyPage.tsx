@@ -363,7 +363,7 @@ export default function PropertyPage() {
       window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
-      if (reason === 'needs-login' || reason === 'needs-phone-verification') {
+      if (reason === 'needs-login' || reason === 'needs-phone-verification' || reason === 'needs-email-verification') {
         setShowAuthModal(true)
       } else if (reason === 'rate-limited') {
         toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')

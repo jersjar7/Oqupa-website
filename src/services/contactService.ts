@@ -22,6 +22,7 @@ export interface ListingContact {
 export type ContactDenialReason =
   | 'needs-login'
   | 'needs-phone-verification'
+  | 'needs-email-verification'
   | 'rate-limited'
   | 'unavailable'
 
@@ -54,6 +55,9 @@ export const contactService = {
       const code = (error as FunctionsError)?.code ?? ''
       if (code.includes('unauthenticated')) throw new ContactDenied('needs-login')
       if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification')
+      // The server refuses with its own code when the email link is still
+      // unclicked (phone-first pipeline, 2026-08-26).
+      if (code.includes('permission-denied')) throw new ContactDenied('needs-email-verification')
       if (code.includes('resource-exhausted')) throw new ContactDenied('rate-limited')
       throw new ContactDenied('unavailable')
     }
