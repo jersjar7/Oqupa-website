@@ -89,6 +89,15 @@ export const authService = {
     await sendEmailVerification(user, { url, handleCodeInApp: false })
   },
 
+  // After the email link is clicked the browser keeps its previous ID token —
+  // with email_verified:false — for up to an hour, and the security rules
+  // read that claim. Forcing a refresh makes the new state effective at once.
+  async refreshSession() {
+    const user = auth.currentUser
+    if (!user) return
+    await user.getIdToken(true)
+  },
+
   // Re-fetches the auth user from the server so a freshly verified email
   // (verified in another tab/device) flips emailVerified locally without
   // requiring a sign-out/sign-in.
@@ -253,6 +262,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -285,6 +297,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -312,6 +327,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,

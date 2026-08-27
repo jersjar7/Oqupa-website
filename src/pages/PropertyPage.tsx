@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Sparkles } from 'lucide-react'
@@ -11,7 +11,7 @@ import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
 import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
-import { contactGateCopy } from '@/app/features/listings/contactGate'
+import { contactGateCopy, contactReturnUrl, wantsAutoContact } from '@/app/features/listings/contactGate'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -207,7 +207,7 @@ function PropertyGallery({ images }: { images: string[] }) {
 export default function PropertyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const { listing, property, isLoading, error } = useProperty(id)
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -257,6 +257,19 @@ export default function PropertyPage() {
   }, [id, listing, property?.location?.distrito])
 
   useRecordListingView(id, listing?.ownerId)
+
+  // Back from the pipeline with the intent to contact: open WhatsApp now,
+  // once, and drop the hash so a reload does not do it again.
+  const autoContactDone = useRef(false)
+  useEffect(() => {
+    if (autoContactDone.current || !listing) return
+    if (!wantsAutoContact(hash)) return
+    if (!firebaseUser?.emailVerified || !user?.isPhoneVerified) return
+    autoContactDone.current = true
+    navigate(pathname, { replace: true })
+    void handleWhatsAppClick(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing, hash, firebaseUser, user?.isPhoneVerified])
 
   const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
   const images = photoRefs.map(fullSize)
@@ -331,7 +344,7 @@ export default function PropertyPage() {
   // listing still advertises that a contact exists; only the number is gated.
   // `contactLoading` is declared with the other hooks at the top of the
   // component — it cannot live here, below the early returns.
-  async function handleWhatsAppClick() {
+  async function handleWhatsAppClick(auto = false) {
     if (contactLoading) return
     setContactLoading(true)
     try {
@@ -340,11 +353,14 @@ export default function PropertyPage() {
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
       AnalyticsLogger.contactRevealed(listingIdForContact)
-      window.open(
-        `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
-        '_blank',
-        'noopener,noreferrer',
-      )
+      const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`
+      if (auto) {
+        // Returning from the pipeline: no user gesture, so a new tab would be
+        // blocked by the browser — go there directly instead.
+        window.location.assign(waUrl)
+        return
+      }
+      window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
       if (reason === 'needs-login' || reason === 'needs-phone-verification') {
@@ -503,7 +519,7 @@ export default function PropertyPage() {
             {(
               <div>
               <button
-                onClick={handleWhatsAppClick}
+                onClick={() => handleWhatsAppClick()}
                 disabled={contactLoading}
                 className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#25D366] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
               >
@@ -635,7 +651,7 @@ export default function PropertyPage() {
                 <button
                   onClick={() => {
                     setShowAuthModal(false)
-                    setReturnUrl(window.location.pathname)
+                    setReturnUrl(contactReturnUrl(window.location.pathname))
                     navigate(gate.primary.to)
                   }}
                   className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
@@ -646,7 +662,7 @@ export default function PropertyPage() {
                   <button
                     onClick={() => {
                       setShowAuthModal(false)
-                      setReturnUrl(window.location.pathname)
+                      setReturnUrl(contactReturnUrl(window.location.pathname))
                       navigate(gate.secondary!.to)
                     }}
                     className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"

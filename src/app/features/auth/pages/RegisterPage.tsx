@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -20,6 +21,8 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    // The entry screen hands over the email the person already typed.
+    defaultValues: { email: new URLSearchParams(location.search).get('email') ?? '' },
   })
 
   const passwordValue = watch('password', '')
