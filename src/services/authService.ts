@@ -20,7 +20,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
-  unlink,
   updatePhoneNumber,
 } from 'firebase/auth'
 import {
@@ -367,14 +366,6 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     await signOut(auth)
-  },
-
-  async unlinkPhone() {
-    const currentUser = auth.currentUser
-    if (!currentUser) throw new Error('No authenticated user')
-    const hasPhone = currentUser.providerData.some(p => p.providerId === 'phone')
-    if (!hasPhone) return
-    await unlink(currentUser, 'phone')
   },
 
   cleanupRecaptcha() {
