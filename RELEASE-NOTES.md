@@ -4,6 +4,72 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-27 — Una sola puerta, el teléfono antes que el correo
+
+### New Features
+
+- **One entry screen for everyone.** *Continuar con Google* first; *Continuar con correo* reveals email and password on the same screen. No sign-up-vs-sign-in choice up front: Google knows; for email, the site cannot tell whether an address has an account (that is deliberate protection), so a mismatch is where both ways forward appear — create the account with that email, or recover the password. Every door — the WhatsApp gate, the header button, the register form — leads here. Magic-link accounts from before April are told how to set a password.
+- **Phone before email.** The email link step sent people out of the site to an inbox before they had done anything; it is now last, and only for email/password accounts. Google accounts skip it and the name step. The code field submits itself on the sixth digit, resend waits 30 s, and a quiet line says what to do if nothing arrives.
+- **The email step notices by itself** when the link is clicked — every few seconds and when you come back to the tab. The "Ya verifiqué" button, which people pressed before clicking the link, is gone.
+- **Back to where you were.** After the pipeline you land on the listing you came from, and if you came to contact the seller, WhatsApp opens for you — no second tap. That stored return address expires after 30 minutes.
+- **The WhatsApp button shows it is working** while it asks the server for the number.
+
+### Security
+
+- Both verifications stay mandatory. The server now refuses a number until the email is verified as well as the phone (deployed ahead of this change). The page refreshes the sign-in token when the email flips, so the team pages open at once.
+
+### Technical
+
+- `pipelineOrder.ts` (order and entry decisions as pure functions, 8 tests), `AuthPipelinePage` rewritten around it (14 tests), entry screen (6), contact return (2). Three hostile review rounds; all findings closed. Suite is 387.
+
+---
+
+## 2026-08-26 (3) — La puerta: "Anuncia tu propiedad" en cada página
+
+### New Features
+
+- **"Anuncia tu propiedad" is now the primary button in the header, on every page** — full pages, property pages and the mobile menu. Before, publishing was a plain text link on the landing page only; property pages, where the ads land, said nothing about it. A visitor is taken to create an account with the wizard remembered as the destination; a signed-in person goes straight to the wizard. Step 4 of the approved new-user path. *Anunciar* on the public site, *publicar* inside the product (brand rule of 2026-08-25); the footer link follows the same wording.
+- On phones the header keeps the logo and this one button; the sign-in pill returns on wider screens (the register page and the WhatsApp gate both offer "¿Ya tienes cuenta?"). Sized with the real Gotham metrics so it fits a 360px screen.
+
+### Bug Fixes
+
+- **On a phone, the price took two lines and "Compartir" fell off the screen.** The price now has its own line; views, Guardar and Compartir sit on the row beneath. Unchanged on larger screens.
+
+### Technical
+
+- `PublishCta` in `Header.tsx`, three tests. Hostile review found the first version hidden exactly where it mattered (phones) and then overflowing; both fixed before merge.
+
+---
+
+## 2026-08-26 (2) — El botón de WhatsApp explica por qué pide una cuenta
+
+### UX Improvements
+
+- **Pressing "Escríbele por WhatsApp" without an account now says why, says it is free, and offers the account.** "Verificación requerida … necesitas iniciar sesión" read as a demand with no reason. Now: *"Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos."* with **CREA TU CUENTA**, *Ya tengo cuenta* and *Ahora no*. Signed in with the phone still unverified: *"…verifica tu número. Solo esta vez."*; with the email link still unclicked: *"…termina de verificar tu cuenta."* — so the dialog never promises one step when more remain. The page you came from is remembered, so you land back on the listing. Step 3 of the approved new-user path; the same words ship in the app with its next release, pinned by tests on both sides. Two advisor reviews ranked this the single most effective copy change in the product.
+
+### Technical
+
+- `contactGate.ts` + test; `PropertyPage` reads it. Nothing about security changed — the server still refuses the number to guests and unverified people.
+
+---
+
+## 2026-08-26 — Quién publica el aviso, y perfiles que ya no son públicos
+
+### New Features
+
+- **Every property page now says who published it.** Name, photo, verified badge and member-since year, in the sidebar under the WhatsApp button — the same four things the app has shown since August. Jerson noticed the gap on staging while verifying the security change below. The card reads the listing's own copy of that information, never the owner's profile; it is hidden while an agent represents the listing, so the name next to the WhatsApp button is never the wrong person.
+
+### Security
+
+- **User profiles are no longer readable by the public.** Since launch, anyone could read every user's record — email, contact details — with no login. A profile is now readable only by its owner or an admin. Nothing changes on any page: the website never read those records to draw a listing, and the WhatsApp number was already handed out by the server only to signed-in, phone-verified people. *(The rule lives in the platform repo and was deployed by hand; this entry records the website side.)*
+- **The admin, metrics, team and marketing allowlists now require a verified email.** The lists are generated into the security rules from `people.ts`; the generator now also demands `email_verified`, so an allowlisted address that has no account yet cannot be claimed by self-signup. Google and Apple sign-ins are always verified; email/password after the verification link. Known edge, not yet fixed: after verifying by email the browser keeps its previous token for up to an hour, so a teammate on email/password may see the team board refuse them briefly.
+
+### Technical
+
+- `OwnerCard` + `ownerCardFor` in `src/app/features/listings/components/`, six tests written first; `Listing` gains the four optional owner fields. Website suite is 372.
+
+---
+
 ## 2026-08-25 — El tablero del equipo: notas largas, columnas plegables
 
 ### UX Improvements

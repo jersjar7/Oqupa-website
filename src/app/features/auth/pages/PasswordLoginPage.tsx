@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -7,46 +7,61 @@ import { loginSchema, type LoginFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
 import { getLoginAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
+import { emailEntryOutcome } from '../pipelineOrder'
+
+// One door for everyone (docs/new-user-navigation-path.md, step 6): Google is
+// the obvious action; "Continuar con correo" reveals email + password on the
+// same screen. There is no sign-up vs sign-in choice up front — for Google the
+// provider knows; for email, production hides whether an address has an
+// account (enumeration protection, measured 2026-08-26), so a mismatch is the
+// moment both ways forward are offered: create the account, or recover the
+// password. After a successful sign-in the GuestGuard on this route sends the
+// person into the pipeline or back to where they came from.
 
 export default function PasswordLoginPage() {
+  const location = useLocation()
+  const [showEmail, setShowEmail] = useState(
+    () => new URLSearchParams(location.search).get('correo') === '1',
+  )
   const [error, setError] = useState<string | null>(null)
-  const [legacyNotice, setLegacyNotice] = useState<string | null>(null)
-
+  const [offerWaysForward, setOfferWaysForward] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
+  const typedEmail = watch('email', '')
+
+  async function onGoogle() {
+    setError(null)
+    setGoogleBusy(true)
+    try {
+      await authService.signInWithGoogle()
+    } catch (err) {
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        toast.error('No pudimos entrar con Google. Intenta de nuevo.')
+      }
+    } finally {
+      setGoogleBusy(false)
+    }
+  }
 
   async function onSubmit(data: LoginFormData) {
     setError(null)
-    setLegacyNotice(null)
+    setOfferWaysForward(false)
     try {
-      // Smart recovery: if this account only has the emailLink provider
-      // (a legacy magic-link user), they don't have a password yet.
-      // Send them the set-password flow instead of failing with
-      // "wrong password" — matches the auth migration campaign.
-      const methods = await authService.getSignInMethods(data.email)
-      const hasPassword = methods.includes('password')
-      const hasEmailLinkOnly =
-        methods.length > 0 && !hasPassword && methods.includes('emailLink')
-      if (hasEmailLinkOnly) {
-        await authService.sendPasswordSetupEmail(data.email)
-        setLegacyNotice(
-          'Tu cuenta aún no tiene contraseña. Te enviamos un enlace a ' +
-            data.email +
-            ' para crear una en un solo paso.'
-        )
-        return
-      }
-
       await authService.loginWithEmailAndPassword(data.email, data.password)
     } catch (err) {
-      // Master introduced centralized auth-error handling via getLoginAuthError
-      // + sonner toast. Keep that path; it subsumes the earlier ad-hoc
-      // message-matching code development had.
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined
+      const outcome = emailEntryOutcome(code)
+      if (outcome === 'offer-create-or-recover') {
+        setError('Ese correo y esa contraseña no coinciden.')
+        setOfferWaysForward(true)
+        return
+      }
       const errorInfo = getLoginAuthError(err)
       setError(errorInfo.message)
       toast.error(errorInfo.message)
@@ -57,112 +72,100 @@ export default function PasswordLoginPage() {
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-          Iniciar con contraseña
+          Entra a Oqupa
         </h1>
-        <p className="mt-2 text-center text-base text-text-secondary">
-          Ingresa a tu cuenta de Oqupa
-        </p>
 
-        {/* Migration notice — visible to all users so legacy users (who */}
-        {/* previously signed in with magic link) know what's changed and */}
-        {/* how to set up their new password. Collapsed by default so it */}
-        {/* doesn't distract users who already have a password. */}
-        <details className="mt-6 rounded-xl border border-border bg-background-secondary/60 p-3 text-sm [&[open]>summary>.arrow]:rotate-180">
-          <summary className="flex cursor-pointer list-none items-start gap-2 text-text-primary [&::-webkit-details-marker]:hidden">
-            <svg aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            <span className="flex-1">
-              <strong>¿Usabas enlace mágico para entrar?</strong>{' '}
-              <span className="text-text-secondary">Ahora entramos con contraseña.</span>{' '}
-              <span className="font-medium text-secondary">Ver pasos</span>
-              <svg aria-hidden="true" className="arrow ml-1 inline-block h-3 w-3 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </span>
-          </summary>
-          <div className="mt-3 border-t border-border pt-3 text-text-secondary">
-            <p className="mb-2">
-              Si creaste tu cuenta con enlace mágico antes del <strong>20 de abril de 2026</strong>, aún no tienes contraseña. Crea la tuya así:
-            </p>
-            <ol className="list-decimal space-y-1 pl-5">
-              <li>
-                Haz clic en{' '}
-                <Link to="/app/forgot-password" className="font-medium text-secondary underline">
-                  ¿Olvidaste tu contraseña?
-                </Link>{' '}
-                abajo.
-              </li>
-              <li>Ingresa tu correo de Oqupa.</li>
-              <li>Abre el enlace que te enviemos por correo.</li>
-              <li>Elige tu nueva contraseña y listo.</li>
-            </ol>
-          </div>
-        </details>
+        <div className="mt-8 space-y-3">
+          <button
+            type="button"
+            onClick={onGoogle}
+            disabled={googleBusy}
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-primary font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
+          >
+            <GoogleMark />
+            {googleBusy ? 'Entrando…' : 'Continuar con Google'}
+          </button>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-          <Input
-            label="Correo electrónico"
-            type="email"
-            autoComplete="email"
-            placeholder="tu@correo.com"
-            error={errors.email?.message}
-            {...register('email')}
-          />
-
-          <Input
-            label="Contraseña"
-            type="password"
-            autoComplete="current-password"
-            placeholder="Tu contraseña"
-            error={errors.password?.message}
-            revealToggle
-            {...register('password')}
-          />
-
-          {error && <p className="text-sm text-error">{error}</p>}
-
-          {legacyNotice && (
-            <div className="rounded-md border border-secondary/30 bg-secondary/5 p-3">
-              <p className="text-sm text-text-primary">{legacyNotice}</p>
-              <p className="mt-1 text-xs text-text-secondary">
-                Revisa tu bandeja de entrada (y spam). El enlace expira en 1 hora.
-              </p>
-            </div>
+          {!showEmail && (
+            <button
+              type="button"
+              onClick={() => setShowEmail(true)}
+              className="flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+            >
+              Continuar con correo
+            </button>
           )}
-
-          <Button
-            type="submit"
-            isLoading={isSubmitting}
-            className="w-full"
-          >
-            Iniciar sesión
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <Link
-            to="/app/forgot-password"
-            className="text-base text-secondary hover:text-secondary-hover"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
         </div>
 
-        <div className="mt-6 border-t border-border pt-4 text-center">
-          <span className="text-base text-text-secondary">
-            ¿No tienes cuenta?{' '}
-          </span>
-          <Link
-            to="/app/register"
-            className="text-base font-medium text-secondary hover:text-secondary-hover"
-          >
-            Crea una
+        {showEmail && (
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            <Input
+              label="Correo electrónico"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              placeholder="tu@correo.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <Input
+              label="Contraseña"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Tu contraseña"
+              error={errors.password?.message}
+              revealToggle
+              {...register('password')}
+            />
+            {error && <p className="text-sm text-error">{error}</p>}
+            {offerWaysForward && (
+              <div className="rounded-xl bg-background-secondary/60 p-3 text-sm">
+                <Link
+                  to={`/app/register${typedEmail ? `?email=${encodeURIComponent(typedEmail)}` : ''}`}
+                  className="block font-medium text-secondary hover:text-secondary-hover"
+                >
+                  ¿Nueva en Oqupa? Crea tu cuenta con este correo
+                </Link>
+                <Link
+                  to="/app/forgot-password"
+                  className="mt-2 block text-secondary hover:text-secondary-hover"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+                <p className="mt-2 text-xs text-text-tertiary">
+                  ¿Entrabas con enlace por correo? Esa cuenta aún no tiene contraseña:
+                  créala con &ldquo;¿Olvidaste tu contraseña?&rdquo;.
+                </p>
+              </div>
+            )}
+            <Button type="submit" isLoading={isSubmitting} className="w-full">
+              Continuar
+            </Button>
+          </form>
+        )}
+
+        <div className="mt-8 text-center text-sm text-text-secondary">
+          <Link to="/app/register" className="text-secondary hover:text-secondary-hover">
+            ¿Nueva en Oqupa? Crea tu cuenta
           </Link>
+          {showEmail && (
+            <>
+              <span className="mx-2 text-text-tertiary">·</span>
+              <Link to="/app/forgot-password" className="text-secondary hover:text-secondary-hover">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+function GoogleMark() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#fff" d="M21.35 11.1H12v2.9h5.35c-.25 1.4-1.6 4.1-5.35 4.1a6.1 6.1 0 1 1 0-12.2c1.75 0 2.9.75 3.55 1.4l2.4-2.3A9.6 9.6 0 0 0 12 2.4a9.6 9.6 0 1 0 0 19.2c5.55 0 9.2-3.9 9.2-9.4 0-.6-.05-1.05-.15-1.1z" />
+    </svg>
   )
 }

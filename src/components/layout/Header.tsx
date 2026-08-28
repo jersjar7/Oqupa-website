@@ -24,19 +24,41 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Explorar', href: '/explorar', isRoute: true },
-  {
-    // "Anunciar", not "Publica Gratis": anunciar is the decided concept word
-    // (see brand.md's glossary), and a nav item names a destination rather
-    // than making a claim — the free claim does its work in the hero.
-    label: 'Anunciar',
-    href: '/app/listings/new',
-    isRoute: true,
-    // Anonymous users bounce through /app/login — stash the destination
-    // so they land in the wizard after signing in. Mirrors HeroSection.
-    beforeNavigate: () => setReturnUrl('/app/listings/new'),
-  },
   { label: 'Contacto', href: '#contacto' },
 ]
+
+/**
+ * The door. "Anuncia tu propiedad" as the primary, filled CTA on every page
+ * variant — sellers over 40 publish from a laptop, so this is the website's
+ * most important button (docs/new-user-navigation-path.md, step 4).
+ * *Anunciar* on the public site, *publicar* inside the product (brand rule,
+ * 2026-08-25). A visitor goes to create an account with the wizard stashed
+ * as the return address; a signed-in person goes straight to the wizard.
+ */
+function PublishCta({ className = '', onNavigate }: { className?: string; onNavigate?: () => void }) {
+  // Rendered immediately: a visitor's destination does not depend on the
+  // auth store, and the site's most important button must not pop in after
+  // Firebase resolves and shift the header (hostile review, 2026-08-26).
+  const { firebaseUser } = useAuthStore()
+  // Visitors go to the ONE entry screen (Google first); the wizard is the
+  // stashed return address.
+  const to = firebaseUser ? '/app/listings/new' : '/app/login'
+  return (
+    <Link
+      to={to}
+      onClick={() => {
+        // Always stash the wizard as the return address: a signed-in person
+        // with an unverified phone is bounced to /app/verify by VerifiedGuard
+        // and must land in the wizard afterwards, never on the dashboard.
+        setReturnUrl('/app/listings/new')
+        onNavigate?.()
+      }}
+      className={`inline-flex h-10 items-center justify-center rounded-full bg-primary px-3 font-sans text-xs font-bold uppercase tracking-[0.5px] text-white transition-colors hover:bg-primary-hover sm:h-12 sm:px-6 sm:text-base sm:tracking-[1px] ${className}`}
+    >
+      Anuncia tu propiedad
+    </Link>
+  )
+}
 
 function AuthBlock() {
   const { firebaseUser, user, isInitialized } = useAuthStore()
@@ -49,7 +71,7 @@ function AuthBlock() {
       <Link
         to="/app/login"
         onClick={() => setReturnUrl(location.pathname)}
-        className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+        className="inline-flex h-10 items-center rounded-full border-[1.5px] border-secondary px-4 font-sans text-sm font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover sm:h-12 sm:px-6 sm:text-base"
       >
         Iniciar sesión
       </Link>
@@ -168,7 +190,7 @@ export default function Header({
                 src={logo}
                 alt="Oqupa"
                 className={`transition-all duration-300 ${
-                  isScrolled ? 'h-12' : 'h-[60px]'
+                  isScrolled ? 'h-10 sm:h-12' : 'h-[60px]'
                 }`}
               />
             </Link>
@@ -223,14 +245,23 @@ export default function Header({
                   </a>
                 )
               )}
+              <PublishCta />
               <AuthBlock />
             </nav>
           )}
 
           {/* Minimal variant: auth block only */}
           {variant === 'minimal' && (
-            <div className="flex items-center">
-              <AuthBlock />
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* On a phone the header cannot hold the logo and two full-text
+                  pills (measured: ~530px in a 328px row). The door wins; the
+                  sign-in pill returns at sm. Sign-in stays one tap away — the
+                  register page and the WhatsApp gate both say
+                  "¿Ya tienes cuenta?". Hostile review 2026-08-26. */}
+              <PublishCta className="whitespace-nowrap" />
+              <div className="hidden sm:flex">
+                <AuthBlock />
+              </div>
             </div>
           )}
 
@@ -316,7 +347,8 @@ export default function Header({
                   </a>
                 )
               )}
-              <MobileAuthBlock onNavigate={close} />
+              <PublishCta className="mt-4 w-full" onNavigate={close} />
+            <MobileAuthBlock onNavigate={close} />
             </nav>
           </div>
         </>

@@ -42,7 +42,7 @@ export default function Footer() {
                     onClick={() => setReturnUrl('/app/listings/new')}
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Publica Gratis
+                    Anuncia tu propiedad
                   </Link>
                 </li>
                 <li>
