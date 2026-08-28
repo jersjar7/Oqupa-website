@@ -376,6 +376,8 @@ export default function PropertyPage() {
       ) {
         setPhoneNeedsReverification(reason === 'needs-phone-reverification')
         setShowAuthModal(true)
+      } else if (reason === 'listing-has-no-contact') {
+        toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
         toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')
       } else {

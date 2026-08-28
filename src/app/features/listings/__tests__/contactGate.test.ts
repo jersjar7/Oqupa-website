@@ -68,7 +68,17 @@ describe('the phone was never really linked', () => {
     expect(c.body).toBe(
       'Para escribirle al propietario, verifica tu número otra vez.',
     )
-    expect(c.primary).toEqual({ label: 'VERIFICAR NÚMERO', to: '/app/verify' })
+    // ?reverify=phone is load-bearing, not decoration. /app/verify computes
+    // what is owed from users/{uid}.isPhoneVerified — the very flag the server
+    // has just told us not to believe — so without it the page finds nothing
+    // to ask, "finishes" immediately, returns to the listing, and the stored
+    // return address fires the contact call again. Observed on staging
+    // 2026-08-27: the button appeared to do nothing, and each press added
+    // another 409 to the console.
+    expect(c.primary).toEqual({
+      label: 'VERIFICAR NÚMERO',
+      to: '/app/verify?reverify=phone',
+    })
   })
 
   it('outranks the email wording — the phone is what the server refused on', () => {

@@ -14,12 +14,20 @@ export interface PipelineAccountState {
   emailVerified: boolean
   hasName: boolean
   phoneVerified: boolean
+  /** Ask for the phone regardless of what `phoneVerified` says.
+   *
+   *  Set when the server refused the contact because no phone is attached to
+   *  the account in Firebase Auth, while our own record claims one. Without
+   *  it this function reads the very flag the server refused on, returns no
+   *  steps, and the page finishes instantly — sending the person back to the
+   *  listing, where the stored return address fires the contact call again. */
+  forcePhone?: boolean
 }
 
 export function pipelineStepsFor(s: PipelineAccountState): PipelineStep[] {
   const steps: PipelineStep[] = []
   if (!s.hasName) steps.push('name')
-  if (!s.phoneVerified) steps.push('phone', 'verify-code')
+  if (!s.phoneVerified || s.forcePhone) steps.push('phone', 'verify-code')
   if (!s.emailVerified) steps.push('verify-email')
   return steps
 }

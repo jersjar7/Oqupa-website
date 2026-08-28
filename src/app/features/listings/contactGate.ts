@@ -38,7 +38,7 @@ export function contactGateCopy({
     return {
       title: 'Escríbele al propietario',
       body: 'Para escribirle al propietario, verifica tu número otra vez.',
-      primary: { label: 'VERIFICAR NÚMERO', to: '/app/verify' },
+      primary: { label: 'VERIFICAR NÚMERO', to: '/app/verify?reverify=phone' },
       secondary: null,
     }
   }

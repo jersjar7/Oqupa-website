@@ -27,6 +27,8 @@ export type ContactDenialReason =
    *  verified, so "verify your phone" alone reads as a contradiction. */
   | 'needs-phone-reverification'
   | 'needs-email-verification'
+  /** The LISTING has no number — nothing about the caller is wrong. */
+  | 'listing-has-no-contact'
   | 'rate-limited'
   | 'unavailable'
 
@@ -59,6 +61,9 @@ export const contactService = {
       const code = (error as FunctionsError)?.code ?? ''
       if (code.includes('unauthenticated')) throw new ContactDenied('needs-login')
       if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification')
+      // The seller has no number on file. Telling the buyer to verify THEIR
+      // phone was both false and a dead loop (hostile review, 2026-08-27).
+      if (code.includes('not-found')) throw new ContactDenied('listing-has-no-contact')
       // The server refuses with its own code when the email link is still
       // unclicked (phone-first pipeline, 2026-08-26).
       if (code.includes('permission-denied')) throw new ContactDenied('needs-email-verification')
