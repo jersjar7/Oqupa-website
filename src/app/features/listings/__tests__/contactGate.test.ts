@@ -47,3 +47,43 @@ describe('the return address carries the intent', () => {
     expect(wantsAutoContact('#contactar2')).toBe(false)
   })
 })
+
+describe('the phone was never really linked', () => {
+  // Staging, 2026-08-27, observed rather than imagined: an account whose
+  // profile page says "Teléfono verificado" was refused the number, and the
+  // page showed "No se pudo obtener el contacto. Intenta de nuevo." — which
+  // is wrong twice over. Retrying cannot help, and the person is looking at a
+  // screen that says they ARE verified.
+  //
+  // The server had refused with its own code (the Firestore flag says
+  // verified; Firebase Auth has no phone attached). The app learned that code
+  // when it shipped; the website never did, so every such refusal fell into
+  // the generic bucket. Same words, both apps, is the rule this broke.
+  it('tells them the number needs verifying again, and where to do it', () => {
+    const c = contactGateCopy({
+      signedIn: true,
+      emailVerified: true,
+      phoneNeedsReverification: true,
+    })
+    expect(c.body).toBe(
+      'Para escribirle al propietario, verifica tu número otra vez.',
+    )
+    expect(c.primary).toEqual({ label: 'VERIFICAR NÚMERO', to: '/app/verify' })
+  })
+
+  it('outranks the email wording — the phone is what the server refused on', () => {
+    const c = contactGateCopy({
+      signedIn: true,
+      emailVerified: false,
+      phoneNeedsReverification: true,
+    })
+    expect(c.body).toContain('verifica tu número otra vez')
+  })
+
+  it('leaves the ordinary cases untouched', () => {
+    const c = contactGateCopy({ signedIn: true, emailVerified: true })
+    expect(c.body).toBe(
+      'Para escribirle al propietario, verifica tu número. Solo esta vez.',
+    )
+  })
+})
