@@ -22,10 +22,26 @@ export interface ContactGateCopy {
 export function contactGateCopy({
   signedIn,
   emailVerified,
+  phoneNeedsReverification = false,
 }: {
   signedIn: boolean
   emailVerified: boolean
+  /** The server found no phone attached to this account, though our own
+   *  record claims one. Checked FIRST: it is the thing the server actually
+   *  refused on, and the person is looking at a profile page that tells them
+   *  their number is verified. */
+  phoneNeedsReverification?: boolean
 }): ContactGateCopy {
+  if (signedIn && phoneNeedsReverification) {
+    // "Otra vez" is doing real work here. Without it the sentence contradicts
+    // the screen they just came from, which says the number IS verified.
+    return {
+      title: 'Escríbele al propietario',
+      body: 'Para escribirle al propietario, verifica tu número otra vez.',
+      primary: { label: 'VERIFICAR NÚMERO', to: '/app/verify' },
+      secondary: null,
+    }
+  }
   if (signedIn && !emailVerified) {
     // /app/verify will ask for the email link (and maybe a name) before the
     // phone, so this is more than one step — say so honestly.

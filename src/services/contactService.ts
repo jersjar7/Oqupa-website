@@ -22,6 +22,10 @@ export interface ListingContact {
 export type ContactDenialReason =
   | 'needs-login'
   | 'needs-phone-verification'
+  /** Our record claims a verified phone; Firebase Auth has none attached.
+   *  Distinct because the person is looking at a profile that says they are
+   *  verified, so "verify your phone" alone reads as a contradiction. */
+  | 'needs-phone-reverification'
   | 'needs-email-verification'
   | 'rate-limited'
   | 'unavailable'
@@ -58,6 +62,11 @@ export const contactService = {
       // The server refuses with its own code when the email link is still
       // unclicked (phone-first pipeline, 2026-08-26).
       if (code.includes('permission-denied')) throw new ContactDenied('needs-email-verification')
+      // The server reserves this one for "no phone is actually attached to
+      // this account". Seen on staging 2026-08-27 as a bare 409, because the
+      // website had never been taught the code and fell through to the
+      // generic message — on a page whose profile said "Teléfono verificado".
+      if (code.includes('aborted')) throw new ContactDenied('needs-phone-reverification')
       if (code.includes('resource-exhausted')) throw new ContactDenied('rate-limited')
       throw new ContactDenied('unavailable')
     }
