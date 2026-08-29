@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
-import { getFunctions } from 'firebase/functions'
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 import { getAnalytics } from 'firebase/analytics'
 import { getPerformance } from 'firebase/performance'
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
@@ -58,5 +58,18 @@ if (import.meta.env.DEV) {
 }
 export const storage = getStorage(app)
 export const functions = getFunctions(app, 'southamerica-east1')
+
+// Opt-in local testing against `firebase emulators:start --only functions`
+// instead of deployed staging functions — lets a Cloud Function be exercised
+// before it's merged/deployed anywhere. Firestore/Auth stay pointed at real
+// oqupa-staging (only this line changes), so the emulated function still
+// reads/writes real staging data via the Admin SDK. Off by default: every
+// httpsCallable in the app routes through this same `functions` instance, so
+// leaving it on with no emulator running breaks all of them, not just the one
+// you're testing.
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true') {
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+  console.log('[firebase] Routing Cloud Function calls to local emulator (127.0.0.1:5001)')
+}
 export const analytics = getAnalytics(app)
 export const performance = getPerformance(app)

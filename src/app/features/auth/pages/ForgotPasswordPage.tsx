@@ -19,6 +19,7 @@ export default function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -27,19 +28,29 @@ export default function ForgotPasswordPage() {
   async function onSubmit(data: ForgotPasswordFormData) {
     setError(null)
     setNoAccount(false)
+    // Trimmed once and reused for both calls below — checkAccountExists and
+    // requestPasswordReset must agree on exactly which address they're
+    // talking about, or a stray space could make one see an account the
+    // other doesn't.
+    const email = data.email.trim()
     try {
-      const exists = await authService.checkAccountExists(data.email)
+      const exists = await authService.checkAccountExists(email)
       if (!exists) {
         setNoAccount(true)
         return
       }
-      await authService.requestPasswordReset(data.email)
+      await authService.requestPasswordReset(email)
       setSent(true)
     } catch (err) {
       const errorInfo = getForgotPasswordAuthError(err)
       setError(errorInfo.message)
       toast.error(errorInfo.message)
     }
+  }
+
+  function handleTryAnotherEmail() {
+    setNoAccount(false)
+    reset()
   }
 
   if (noAccount) {
@@ -76,7 +87,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-4">
             <button
               type="button"
-              onClick={() => setNoAccount(false)}
+              onClick={handleTryAnotherEmail}
               className="text-base text-secondary hover:text-secondary-hover"
             >
               Intentar con otro correo

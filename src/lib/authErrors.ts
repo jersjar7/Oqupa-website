@@ -156,6 +156,20 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
       return { message: 'No existe una cuenta con ese correo.', isRetryable: true }
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
+    // Below: codes from the checkAccountExists Cloud Function call (via the
+    // Functions SDK, not the Auth SDK) — this handler now covers errors from
+    // BOTH calls in ForgotPasswordPage's onSubmit, not just
+    // requestPasswordReset. Without these, any checkAccountExists failure
+    // (network blip, cold start, backend down) fell through to the default
+    // below and told the user to "verify your email address", which is
+    // wrong for an infrastructure problem.
+    case 'functions/resource-exhausted':
+      return { message: 'Demasiados intentos. Intenta de nuevo más tarde.', isRetryable: false }
+    case 'functions/unavailable':
+    case 'functions/deadline-exceeded':
+    case 'functions/internal':
+    case 'functions/unknown':
+      return { message: 'Error de conexión con el servidor. Intenta de nuevo en un momento.', isRetryable: true }
     default:
       return { message: 'Error al enviar el correo. Verifica tu dirección.', isRetryable: true }
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRegisterAuthError } from '../authErrors'
+import { getRegisterAuthError, getForgotPasswordAuthError } from '../authErrors'
 
 describe('getRegisterAuthError', () => {
   it('maps email-already-in-use to a sign-in nudge', () => {
@@ -49,5 +49,39 @@ describe('getRegisterAuthError', () => {
       new Error('Firebase: Error (auth/email-already-in-use).')
     )
     expect(info.message).toMatch(/ya existe una cuenta/i)
+  })
+})
+
+describe('getForgotPasswordAuthError', () => {
+  it('maps auth/user-not-found to a no-account message', () => {
+    const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
+    expect(info.message).toMatch(/no existe una cuenta/i)
+  })
+
+  // The checkAccountExists Cloud Function call (via the Functions SDK) can
+  // fail independently of requestPasswordReset (the Auth SDK call) — this
+  // handler now has to interpret errors from BOTH. Before these cases
+  // existed, any checkAccountExists failure fell through to the default
+  // "verify your email address" message, which is wrong for an
+  // infrastructure problem rather than a bad address.
+  it('maps functions/resource-exhausted to a rate-limit message, not a generic one', () => {
+    const info = getForgotPasswordAuthError({ code: 'functions/resource-exhausted' })
+    expect(info.message).toMatch(/demasiados intentos/i)
+    expect(info.isRetryable).toBe(false)
+  })
+
+  it.each(['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'])(
+    'maps %s to a server-connection message rather than "verify your email"',
+    (code) => {
+      const info = getForgotPasswordAuthError({ code })
+      expect(info.message).toMatch(/conexión con el servidor/i)
+      expect(info.message).not.toMatch(/verifica tu dirección/i)
+      expect(info.isRetryable).toBe(true)
+    }
+  )
+
+  it('still falls back to the address-check message for unrecognized auth/* codes', () => {
+    const info = getForgotPasswordAuthError({ code: 'auth/something-else' })
+    expect(info.message).toMatch(/verifica tu dirección/i)
   })
 })

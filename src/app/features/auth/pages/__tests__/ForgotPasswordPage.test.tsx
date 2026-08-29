@@ -98,6 +98,18 @@ describe('ForgotPasswordPage', () => {
         )
       })
     })
+
+    it('trims the email once and uses the same value for both calls', async () => {
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: '  test@example.com  ' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(mockAuthService.requestPasswordReset).toHaveBeenCalledWith('test@example.com')
+      })
+      expect(mockAuthService.checkAccountExists).toHaveBeenCalledWith('test@example.com')
+    })
   })
 
   describe('error handling', () => {
@@ -111,6 +123,22 @@ describe('ForgotPasswordPage', () => {
       await waitFor(() => {
         expect(screen.getByText('Error al enviar correo')).toBeDefined()
       })
+    })
+
+    it('shows a real error (not "no account") when checkAccountExists itself fails', async () => {
+      mockAuthService.checkAccountExists.mockRejectedValue(
+        Object.assign(new Error('backend down'), { code: 'functions/unavailable' })
+      )
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'test@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText('Error al enviar correo')).toBeDefined()
+      })
+      expect(screen.queryByText(/no encontramos una cuenta/i)).toBeNull()
+      expect(mockAuthService.requestPasswordReset).not.toHaveBeenCalled()
     })
   })
 
@@ -152,6 +180,21 @@ describe('ForgotPasswordPage', () => {
       })
       fireEvent.click(screen.getByRole('button', { name: /intentar con otro correo/i }))
       expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
+    })
+
+    it('clears the previously entered email when trying another one', async () => {
+      mockAuthService.checkAccountExists.mockResolvedValue(false)
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'nobody@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/no encontramos una cuenta/i)).toBeDefined()
+      })
+      fireEvent.click(screen.getByRole('button', { name: /intentar con otro correo/i }))
+      const input = screen.getByRole('textbox', { name: /correo/i }) as HTMLInputElement
+      expect(input.value).toBe('')
     })
   })
 })
