@@ -37,20 +37,12 @@ export default function Footer() {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a
-                    href="#expansion"
-                    className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
-                  >
-                    Pide en tu departamento
-                  </a>
-                </li>
-                <li>
                   <Link
                     to="/app/listings/new"
                     onClick={() => setReturnUrl('/app/listings/new')}
                     className="text-sm text-white/80 transition-colors duration-200 hover:text-white"
                   >
-                    Publica Gratis
+                    Anuncia tu propiedad
                   </Link>
                 </li>
                 <li>

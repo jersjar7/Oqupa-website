@@ -100,6 +100,7 @@ export default function ListsPage() {
               }
             }}
             placeholder='Nombre de la lista (ej. "Casa de mis sueños")'
+            aria-label="Nombre de la lista"
             className="flex-1 rounded-lg border border-border px-3 py-2 font-sans text-sm outline-none focus:border-primary"
           />
           <button
@@ -152,6 +153,7 @@ export default function ListsPage() {
                       if (e.key === 'Enter') handleRename(list.id)
                       if (e.key === 'Escape') setRenaming(null)
                     }}
+                    aria-label="Nuevo nombre de la lista"
                     className="flex-1 rounded-lg border border-border px-2 py-1 font-sans text-sm outline-none focus:border-primary"
                   />
                   <button

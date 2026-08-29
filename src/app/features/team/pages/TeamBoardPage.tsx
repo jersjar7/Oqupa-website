@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Check, Plus, Trash2, Undo2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, Minimize2, Plus, Trash2, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
@@ -19,6 +19,75 @@ import {
  * second board can be added later without migrating documents.
  */
 const BOARD = 'dev' as const
+/** Must match the ceiling in firestore.rules (teamTasks title.size()). The
+ *  client stops you before Firestore does, so a rejection never has to
+ *  explain itself. Raised 500 -> 1000 on 2026-08-25 after a real task was
+ *  refused at 500 with only a generic "could not add" toast. */
+const MAX_TASK_TITLE = 1000
+
+/**
+ * A textarea that grows with its content instead of scrolling sideways.
+ *
+ * These fields hold real notes, not one-line titles — a 700-character task is
+ * normal here — and a single-line input made them impossible to read back
+ * while writing. Enter submits (the habit everyone already has on this
+ * board); Shift+Enter starts a new line.
+ */
+function GrowingTextarea({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  autoFocus,
+  placeholder,
+  ariaLabel,
+  disabled,
+  className,
+}: {
+  value: string
+  onChange: (next: string) => void
+  onSubmit: () => void
+  onCancel?: () => void
+  autoFocus?: boolean
+  placeholder?: string
+  ariaLabel: string
+  disabled?: boolean
+  className: string
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null)
+
+  // Re-measure on every value change, including when the field is cleared
+  // after a submit — otherwise the box keeps the height of the text just sent.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          onSubmit()
+        }
+        if (e.key === 'Escape' && onCancel) onCancel()
+      }}
+      autoFocus={autoFocus}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      maxLength={MAX_TASK_TITLE}
+      className={`${className} resize-none overflow-hidden`}
+    />
+  )
+}
+
 
 /**
  * Spanish relative time: "hace un momento", "hace 5 min", "hace 2 h",
@@ -76,14 +145,34 @@ function EditableTitle({
   done,
   onRename,
   className,
+  clampLines,
 }: {
   title: string
   done?: boolean
   onRename: (next: string) => Promise<void> | void
   className: string
+  /** Lines shown before the text is cut with an expand chevron. */
+  clampLines: 2 | 3
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(title)
+  const [expanded, setExpanded] = useState(false)
+  const [clipped, setClipped] = useState(false)
+  const textRef = useRef<HTMLSpanElement | null>(null)
+
+  // Whether the chevron is warranted can only be known after layout — and it
+  // changes when the column is resized or the task is edited, so this re-runs
+  // on both. Without the check every one-line task would carry a dead control.
+  useEffect(() => {
+    const el = textRef.current
+    if (!el) return
+    const measure = () =>
+      setClipped(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [title, expanded, clampLines])
 
   async function commit() {
     const next = draft.trim()
@@ -97,31 +186,179 @@ function EditableTitle({
 
   if (editing) {
     return (
-      <input
+      <span onBlur={() => void commit()} className="block">
+      <GrowingTextarea
         autoFocus
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); void commit() }
-          if (e.key === 'Escape') { setDraft(title); setEditing(false) }
-        }}
-        aria-label="Editar tarea"
-        className={`${className} rounded border border-primary bg-white px-1 focus:outline-none focus:ring-2 focus:ring-primary/20`}
+        onChange={setDraft}
+        onSubmit={() => void commit()}
+        onCancel={() => { setDraft(title); setEditing(false) }}
+        ariaLabel="Editar tarea"
+        className={`${className} w-full rounded border border-primary bg-white px-1 focus:outline-none focus:ring-2 focus:ring-primary/20`}
       />
+      </span>
     )
   }
 
+  const clampClass =
+    expanded ? '' : clampLines === 2 ? 'line-clamp-2' : 'line-clamp-3'
+
+  return (
+    <div className="flex items-start gap-1">
+      <button
+        type="button"
+        onClick={() => { setDraft(title); setEditing(true) }}
+        title="Clic para editar"
+        className={`${className} min-w-0 flex-1 cursor-text rounded px-1 text-left hover:bg-background-secondary/60 ${
+          done ? 'text-text-tertiary line-through' : ''
+        }`}
+      >
+        <span ref={textRef} className={`block whitespace-pre-wrap ${clampClass}`}>
+          {title}
+        </span>
+      </button>
+      {(clipped || expanded) && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? 'Mostrar menos' : 'Mostrar todo'}
+          aria-expanded={expanded}
+          title={expanded ? 'Mostrar menos' : 'Mostrar todo'}
+          className="mt-0.5 shrink-0 rounded p-0.5 text-text-tertiary transition-colors hover:bg-background-secondary/60 hover:text-primary"
+        >
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The column row.
+ *
+ * Minimized columns always collect into a single stack occupying the FIRST
+ * slot, so folding one away never reshuffles the rest. What is left takes the
+ * space to the right: a lone open column fills it, two or more keep a
+ * comfortable fixed width and the row scrolls sideways rather than squeezing
+ * them — a column narrow enough to fit four on a laptop is too narrow to read
+ * a real task in.
+ */
+function BoardColumns({
+  members,
+  minimized,
+  onExpand,
+  activeCountFor,
+  renderColumn,
+}: {
+  members: TeamMember[]
+  minimized: Set<string>
+  onMinimize: (email: string) => void
+  onExpand: (email: string) => void
+  activeCountFor: (email: string) => number
+  renderColumn: (member: TeamMember) => React.ReactNode
+}) {
+  const open = members.filter((m) => !minimized.has(m.email))
+  const folded = members.filter((m) => minimized.has(m.email))
+  const soleOpen = open.length === 1
+
+  const stack = folded.length > 0 && (
+    <div className="flex w-full shrink-0 flex-col gap-2 md:w-72">
+      {folded.map((m) => (
+        <MinimizedColumn
+          key={m.email}
+          member={m}
+          activeCount={activeCountFor(m.email)}
+          onExpand={() => onExpand(m.email)}
+        />
+      ))}
+    </div>
+  )
+
+  // Everything folded: the stack is the whole board, in the first slot.
+  if (open.length === 0) {
+    return <div className="flex gap-4">{stack}</div>
+  }
+
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {stack}
+      {open.map((member) => (
+        <div
+          key={member.email}
+          className={
+            soleOpen
+              ? 'min-w-0 flex-1'
+              : 'w-[22rem] shrink-0'
+          }
+        >
+          {renderColumn(member)}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Which columns this person keeps folded away, remembered in their browser.
+ *
+ * Per person and per device on purpose: how you like the board arranged is
+ * not something to impose on the other three.
+ */
+function useMinimizedColumns(currentEmail: string | null) {
+  const key = `oqupa_team_minimized_${BOARD}_${currentEmail ?? 'anon'}`
+  const [minimized, setMinimized] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(key)
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : [])
+    } catch {
+      return new Set<string>()   // private mode, cleared storage — start open
+    }
+  })
+
+  const update = useCallback(
+    (next: Set<string>) => {
+      setMinimized(next)
+      try {
+        localStorage.setItem(key, JSON.stringify([...next]))
+      } catch {
+        // Storage unavailable: the board still works, it just forgets.
+      }
+    },
+    [key]
+  )
+
+  return [minimized, update] as const
+}
+
+/* ------------------------------------------------------------------ */
+/* A minimized column — just the name and how much is on that plate     */
+/* ------------------------------------------------------------------ */
+
+function MinimizedColumn({
+  member,
+  activeCount,
+  onExpand,
+}: {
+  member: TeamMember
+  activeCount: number
+  onExpand: () => void
+}) {
   return (
     <button
       type="button"
-      onClick={() => { setDraft(title); setEditing(true) }}
-      title="Clic para editar"
-      className={`${className} cursor-text rounded px-1 text-left hover:bg-background-secondary/60 ${
-        done ? 'text-text-tertiary line-through' : ''
-      }`}
+      onClick={onExpand}
+      aria-label={`Abrir la columna de ${member.name}`}
+      title="Abrir"
+      className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-left shadow-light transition-colors hover:border-primary/40 hover:bg-background-secondary/40"
     >
-      {title}
+      <span className="truncate font-sans text-sm font-medium uppercase tracking-wide text-secondary">
+        {member.name}
+      </span>
+      <span className="shrink-0 font-sans text-xs text-text-tertiary">
+        {activeCount} en curso
+      </span>
     </button>
   )
 }
@@ -171,6 +408,7 @@ function TaskCard({
             title={task.title}
             done={isDone}
             onRename={onRename}
+            clampLines={3}
             className="w-full break-words text-sm leading-snug text-text-primary"
           />
         </div>
@@ -219,9 +457,11 @@ function MemberColumn({
   onUnassign,
   onDelete,
   onRename,
+  onMinimize,
 }: {
   member: TeamMember
   tasks: TeamTask[]
+  onMinimize: () => void
   onAdd: (title: string) => Promise<void>
   onRename: (task: TeamTask, title: string) => void
   onToggleDone: (task: TeamTask) => void
@@ -232,8 +472,10 @@ function MemberColumn({
   const [busy, setBusy] = useState(false)
   const activeCount = tasks.filter((t) => !t.doneAt).length
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  // Optional event: the form's onSubmit passes one, the textarea's Enter key
+  // calls it directly.
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault()
     const title = draft.trim()
     if (!title || busy) return
     setBusy(true)
@@ -247,13 +489,24 @@ function MemberColumn({
 
   return (
     <section className="flex flex-col rounded-2xl border border-border bg-white shadow-light">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3">
-        <h2 className="font-sans text-sm font-medium uppercase tracking-wide text-secondary">
+      <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <h2 className="truncate font-sans text-sm font-medium uppercase tracking-wide text-secondary">
           {member.name}
         </h2>
-        <span className="font-sans text-xs text-text-tertiary">
-          {activeCount} en curso
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-sans text-xs text-text-tertiary">
+            {activeCount} en curso
+          </span>
+          <button
+            type="button"
+            onClick={onMinimize}
+            aria-label={`Minimizar la columna de ${member.name}`}
+            title="Minimizar"
+            className="rounded p-0.5 text-text-tertiary transition-colors hover:bg-background-secondary/60 hover:text-primary"
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </header>
 
       <form onSubmit={submit} className="border-b border-border px-3 py-2">
@@ -269,14 +522,26 @@ function MemberColumn({
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <input
+          <GrowingTextarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
+            onSubmit={() => void submit()}
             placeholder="Añadir tarea…"
-            aria-label={`Añadir tarea para ${member.name}`}
+            ariaLabel={`Añadir tarea para ${member.name}`}
             disabled={busy}
             className="w-full bg-transparent py-1 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
+          {draft.length > 0 && (
+            <span
+              className={`shrink-0 font-sans text-xs tabular-nums ${
+                draft.length > MAX_TASK_TITLE - 100
+                  ? 'text-error'
+                  : 'text-text-tertiary'
+              }`}
+            >
+              {draft.length}/{MAX_TASK_TITLE}
+            </span>
+          )}
         </div>
       </form>
 
@@ -339,8 +604,10 @@ function TodoContainer({
     ]
   }, [members, currentEmail])
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  // Optional event: the form's onSubmit passes one, the textarea's Enter key
+  // calls it directly.
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault()
     const title = draft.trim()
     if (!title || busy) return
     setBusy(true)
@@ -373,14 +640,26 @@ function TodoContainer({
           >
             <Plus className="h-4 w-4" />
           </button>
-          <input
+          <GrowingTextarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
+            onSubmit={() => void submit()}
             placeholder="Añadir algo por hacer…"
-            aria-label="Añadir tarea por hacer"
+            ariaLabel="Añadir tarea por hacer"
             disabled={busy}
             className="w-full bg-transparent py-1 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
+          {draft.length > 0 && (
+            <span
+              className={`shrink-0 font-sans text-xs tabular-nums ${
+                draft.length > MAX_TASK_TITLE - 100
+                  ? 'text-error'
+                  : 'text-text-tertiary'
+              }`}
+            >
+              {draft.length}/{MAX_TASK_TITLE}
+            </span>
+          )}
         </div>
       </form>
 
@@ -399,6 +678,7 @@ function TodoContainer({
                 <EditableTitle
                   title={task.title}
                   onRename={(title) => onRename(task, title)}
+                  clampLines={2}
                   className="w-full break-words text-sm text-text-primary md:text-base"
                 />
                 <p className="mt-0.5 pl-1 font-serif text-[11px] font-light italic text-text-tertiary">
@@ -455,6 +735,7 @@ export default function TeamBoardPage() {
   const currentEmail = memberFor(user?.email)?.email ?? null
 
   const members = useMemo(() => membersOf(BOARD), [])
+  const [minimized, setMinimized] = useMinimizedColumns(currentEmail)
   const { todo, byAssignee, isLoading, error } = useTeamTasks(BOARD)
 
   // TeamGuard already redirected anyone off-roster; this is the belt-and-braces
@@ -462,10 +743,19 @@ export default function TeamBoardPage() {
   if (!currentEmail) return null
 
   function report(action: () => Promise<void>, failure: string) {
-    action().catch(() => toast.error(failure))
+    action().catch((err) => {
+      console.error(failure, err)
+      toast.error(failure)
+    })
   }
 
   async function addTo(assigneeEmail: string | null, title: string) {
+    if (title.length > MAX_TASK_TITLE) {
+      toast.error(
+        `La tarea es muy larga (${title.length} de ${MAX_TASK_TITLE} caracteres)`
+      )
+      return
+    }
     try {
       await teamTaskService.create({
         title,
@@ -473,7 +763,11 @@ export default function TeamBoardPage() {
         assigneeEmail,
         createdByEmail: currentEmail!,
       })
-    } catch {
+    } catch (err) {
+      // Swallowing this is what made a length rejection look like a
+      // permissions fault for an afternoon: the toast said nothing and the
+      // real Firebase message never reached the console.
+      console.error('teamTasks create failed', err)
       toast.error('No se pudo añadir la tarea')
     }
   }
@@ -492,11 +786,23 @@ export default function TeamBoardPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {members.map((member) => (
+          <BoardColumns
+            members={members}
+            minimized={minimized}
+            onMinimize={(email) =>
+              setMinimized(new Set([...minimized, email]))
+            }
+            onExpand={(email) =>
+              setMinimized(new Set([...minimized].filter((e) => e !== email)))
+            }
+            activeCountFor={(email) =>
+              (byAssignee[email] ?? []).filter((t) => !t.doneAt).length
+            }
+            renderColumn={(member) => (
               <MemberColumn
                 key={member.email}
                 member={member}
+                onMinimize={() => setMinimized(new Set([...minimized, member.email]))}
                 tasks={byAssignee[member.email] ?? []}
                 onAdd={(title) => addTo(member.email, title)}
                 onToggleDone={(task) =>
@@ -524,8 +830,8 @@ export default function TeamBoardPage() {
                   )
                 }
               />
-            ))}
-          </div>
+            )}
+          />
 
           <TodoContainer
             tasks={todo}

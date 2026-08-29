@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,114 +17,144 @@ import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
 import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
+import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
 
-type PipelineStep = 'verify-email' | 'name' | 'phone' | 'verify-code'
-
-const STEP_ORDER: PipelineStep[] = ['verify-email', 'name', 'phone', 'verify-code']
+// The pipeline: the steps a person still owes, in the approved order — name
+// (only if unknown), phone, code, and the email link LAST, only for accounts
+// whose provider did not already verify it. docs/new-user-navigation-path.md.
+//
+// The order is a pure function (pipelineOrder.ts); this page only renders
+// whichever step is first in what remains, and re-asks after each one.
 
 const stepVariants = {
-  initial: (direction: number) => ({
-    opacity: 0,
-    x: direction * 50,
-  }),
-  animate: {
-    opacity: 1,
-    x: 0,
-  },
-  exit: (direction: number) => ({
-    opacity: 0,
-    x: direction * -50,
-  }),
+  initial: (direction: number) => ({ opacity: 0, x: direction * 50 }),
+  animate: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: direction * -50 }),
 }
+
+const RESEND_SECONDS = 30
+const EMAIL_POLL_MS = 4000
 
 export default function AuthPipelinePage() {
   const navigate = useNavigate()
+  // ?reverify=phone — the server refused the contact because no phone is
+  // attached to this account in Firebase Auth, while our record claims one.
+  // Held in a ref so it survives the store refreshes each step triggers.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const forcePhoneRef = useRef(searchParams.get('reverify') === 'phone')
+
+  // Read once, then strip it from the address bar. Left in place, a reload or
+  // Back-then-Forward re-arms the override and demands the phone all over
+  // again — including from someone waiting on the email step, who is likeliest
+  // to reload (hostile review, 2026-08-27).
+  useEffect(() => {
+    if (searchParams.get('reverify')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('reverify')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const { user, firebaseUser, refreshUser, refreshFirebaseUser } = useAuthStore()
 
-  // Determine starting step based on user state. Email verification gates
-  // the rest of the pipeline — until emailVerified flips to true, no other
-  // step is reachable.
-  const getInitialStep = (): PipelineStep => {
-    if (firebaseUser && !firebaseUser.emailVerified) return 'verify-email'
-    if (!user?.name) return 'name'
-    if (!user?.isPhoneVerified) return 'phone'
-    return 'name' // fallback, should redirect
-  }
-
-  const [step, setStep] = useState<PipelineStep>(getInitialStep)
+  // What is still owed, from the store's current view of the account. After
+  // each step the store is refreshed, this shrinks, and the effect below moves
+  // to the first remaining step — or finishes.
+  const remaining = pipelineStepsFor({
+    emailVerified: Boolean(firebaseUser?.emailVerified),
+    hasName: Boolean(user?.name),
+    phoneVerified: Boolean(user?.isPhoneVerified),
+    forcePhone: forcePhoneRef.current,
+  })
+  const [step, setStep] = useState<PipelineStep | null>(() => remaining[0] ?? null)
+  const totalRef = useRef(remaining.length || 1)
   const [direction, setDirection] = useState(1)
   const [verificationId, setVerificationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [recoveryHint, setRecoveryHint] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [smsCooldown, setSmsCooldown] = useState(0)
-
-  // Store pending phone to save only AFTER verification succeeds
   const pendingPhoneRef = useRef<{ phoneNumber: string; countryName: string } | null>(null)
 
-  const goToStep = (target: PipelineStep) => {
-    const currentIndex = STEP_ORDER.indexOf(step)
-    const targetIndex = STEP_ORDER.indexOf(target)
-    setDirection(targetIndex >= currentIndex ? 1 : -1)
-    setStep(target)
-  }
+  const finish = useCallback(() => {
+    navigate(consumeReturnUrl() ?? '/app', { replace: true })
+  }, [navigate])
 
-  // SMS cooldown timer
+  const remainingKey = remaining.join(',')
+  useEffect(() => {
+    if (!firebaseUser) return
+    if (remaining.length === 0) {
+      finish()
+      return
+    }
+    if (!step || !remaining.includes(step)) {
+      setDirection(1)
+      setStep(remaining[0] ?? null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingKey, firebaseUser])
+
+  const stepsDone = Math.max(0, totalRef.current - remaining.length)
+  const stepNumber = Math.min(totalRef.current, stepsDone + 1)
+  const totalSteps = totalRef.current
+
   useEffect(() => {
     if (smsCooldown <= 0) return
     const timer = setTimeout(() => setSmsCooldown((c) => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [smsCooldown])
 
-  // Redirect if already fully verified (email + name + phone)
   useEffect(() => {
-    if (firebaseUser?.emailVerified && user?.name && user?.isPhoneVerified) {
-      navigate(consumeReturnUrl() ?? '/app')
-    }
-  }, [firebaseUser, user, navigate])
-
-  // If emailVerified flips false unexpectedly (e.g. user re-loaded), pull
-  // them back to the verify-email step. Conversely, when they verify in
-  // another tab and come back to this one, advance past it on next render.
-  useEffect(() => {
-    if (firebaseUser && !firebaseUser.emailVerified && step !== 'verify-email') {
-      goToStep('verify-email')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseUser?.emailVerified])
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!firebaseUser) {
-      navigate('/app/login')
-    }
+    if (!firebaseUser) navigate('/app/login')
   }, [firebaseUser, navigate])
 
-  // Initialize recaptcha when entering phone step
   useEffect(() => {
-    if (step === 'phone') {
-      authService.initializeRecaptcha('recaptcha-container')
-    }
+    if (step === 'phone') authService.initializeRecaptcha('recaptcha-container')
   }, [step])
+  useEffect(() => () => authService.cleanupRecaptcha(), [])
 
-  // Cleanup recaptcha on unmount
+  // The email step checks by itself: every few seconds, and whenever the tab
+  // regains focus (the link was probably opened in another tab or on the
+  // phone). No "ya verifiqué" button — people tap it before clicking the
+  // link and get stuck.
   useEffect(() => {
-    return () => {
-      authService.cleanupRecaptcha()
+    if (step !== 'verify-email') return
+    let cancelled = false
+    let done = false
+    const check = async () => {
+      if (done) return
+      try {
+        const refreshed = await refreshFirebaseUser()
+        if (!cancelled && !done && refreshed?.emailVerified) {
+          done = true
+          await authService.refreshSession()
+          toast.success('Correo verificado')
+          // the store now says verified → the effect above finishes
+        }
+      } catch {
+        /* keep polling */
+      }
     }
-  }, [])
+    void check() // the link may have been clicked during the phone step
+    const interval = setInterval(check, EMAIL_POLL_MS)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [step, refreshFirebaseUser])
 
-  const stepNumber =
-    step === 'verify-email' ? 1
-      : step === 'name' ? 2
-      : step === 'phone' ? 3
-      : 4
-  const totalSteps = 4
+  if (!step) return null
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between text-xs text-text-secondary">
             <span>Paso {stepNumber} de {totalSteps}</span>
@@ -148,43 +178,6 @@ export default function AuthPipelinePage() {
             exit="exit"
             transition={{ duration: 0.25, ease: 'easeInOut' }}
           >
-            {step === 'verify-email' && (
-              <EmailVerifyStep
-                email={firebaseUser?.email ?? null}
-                isSubmitting={isSubmitting}
-                onResend={async () => {
-                  setError(null)
-                  setIsSubmitting(true)
-                  try {
-                    await authService.sendEmailVerificationToCurrentUser()
-                    toast.success('Te enviamos un nuevo enlace')
-                  } catch {
-                    toast.error('No pudimos reenviar el correo. Intenta de nuevo.')
-                  } finally {
-                    setIsSubmitting(false)
-                  }
-                }}
-                onCheck={async () => {
-                  setError(null)
-                  setIsSubmitting(true)
-                  try {
-                    const refreshed = await refreshFirebaseUser()
-                    if (refreshed?.emailVerified) {
-                      toast.success('Correo verificado')
-                      goToStep(user?.name ? 'phone' : 'name')
-                    } else {
-                      setError('Aún no detectamos la verificación. Revisa tu correo.')
-                    }
-                  } catch {
-                    setError('No pudimos verificar el estado. Intenta de nuevo.')
-                  } finally {
-                    setIsSubmitting(false)
-                  }
-                }}
-                error={error}
-              />
-            )}
-
             {step === 'name' && (
               <NameStep
                 error={error}
@@ -196,9 +189,7 @@ export default function AuthPipelinePage() {
                   try {
                     if (!firebaseUser) throw new Error('Not authenticated')
                     await authService.updateUserName(firebaseUser.uid, data.name)
-                    await refreshUser()
-                    toast.success('Nombre guardado')
-                    goToStep('phone')
+                    await refreshUser() // → effect moves to the next step
                   } catch {
                     setError('Error al guardar el nombre')
                     toast.error('Error al guardar el nombre')
@@ -223,26 +214,19 @@ export default function AuthPipelinePage() {
                   try {
                     const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
                     const countryName = data.countryCode === '+51' ? 'peru' : 'unitedStates'
-                    const verId =
-                      await authService.sendPhoneVerificationCode(phoneWithCountry)
+                    const verId = await authService.sendPhoneVerificationCode(phoneWithCountry)
                     setVerificationId(verId)
-                    setSmsCooldown(60)
+                    setSmsCooldown(RESEND_SECONDS)
                     toast.success('Código enviado')
-
-                    // Store pending phone — save to Firestore only after verification
                     pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
-
-                    goToStep('verify-code')
+                    setDirection(1)
+                    setStep('verify-code')
                   } catch (err) {
                     const errorInfo = getPhoneAuthError(err)
                     setError(errorInfo.message)
                     setRecoveryHint(errorInfo.recoveryHint ?? null)
                     toast.error(errorInfo.message)
-
-                    // Re-initialize reCAPTCHA on captcha failures
-                    const code = err && typeof err === 'object' && 'code' in err
-                      ? (err as { code: string }).code
-                      : ''
+                    const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
                     if (code === 'auth/captcha-check-failed' || code === 'auth/missing-client-identifier') {
                       authService.cleanupRecaptcha()
                       authService.initializeRecaptcha('recaptcha-container')
@@ -251,7 +235,6 @@ export default function AuthPipelinePage() {
                     setIsSubmitting(false)
                   }
                 }}
-                onSkip={() => navigate('/app/profile')}
               />
             )}
 
@@ -262,14 +245,17 @@ export default function AuthPipelinePage() {
                 isSubmitting={isSubmitting}
                 cooldown={smsCooldown}
                 onSubmit={async (data) => {
+                  if (isSubmitting) return
                   setError(null)
                   setRecoveryHint(null)
                   setIsSubmitting(true)
                   try {
                     if (!verificationId) throw new Error('No verification ID')
                     await authService.verifyPhoneCode(verificationId, data.code)
-
-                    // Save contact info AFTER successful verification
+                    // The phone is now genuinely linked, so the override has
+                    // done its job. Leaving it set would keep the phone step
+                    // in the list forever and trap the person on it.
+                    forcePhoneRef.current = false
                     const pending = pendingPhoneRef.current
                     if (pending && firebaseUser) {
                       await authService.updateUserContactInfo(firebaseUser.uid, {
@@ -279,10 +265,8 @@ export default function AuthPipelinePage() {
                       })
                       pendingPhoneRef.current = null
                     }
-
-                    await refreshUser()
-                    toast.success('¡Teléfono verificado! No olvides volver a activar tu bloqueador de anuncios.')
-                    navigate(consumeReturnUrl() ?? '/app')
+                    await refreshUser() // → effect moves on, or finishes
+                    toast.success('Teléfono verificado')
                   } catch (err) {
                     const errorInfo = getPhoneAuthError(err)
                     setError(errorInfo.message)
@@ -294,12 +278,14 @@ export default function AuthPipelinePage() {
                 }}
                 onResend={() => {
                   if (smsCooldown > 0) return
-                  goToStep('phone')
+                  setDirection(-1)
+                  setStep('phone')
                   setError(null)
                   setRecoveryHint(null)
                 }}
                 onChangeNumber={() => {
-                  goToStep('phone')
+                  setDirection(-1)
+                  setStep('phone')
                   setError(null)
                   setRecoveryHint(null)
                   setVerificationId(null)
@@ -307,10 +293,27 @@ export default function AuthPipelinePage() {
                 }}
               />
             )}
+
+            {step === 'verify-email' && (
+              <EmailVerifyStep
+                email={firebaseUser?.email ?? null}
+                isSubmitting={isSubmitting}
+                onResend={async () => {
+                  setIsSubmitting(true)
+                  try {
+                    await authService.sendEmailVerificationToCurrentUser()
+                    toast.success('Te enviamos un nuevo enlace')
+                  } catch {
+                    toast.error('No pudimos reenviar el correo. Intenta de nuevo.')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 
-        {/* Invisible recaptcha container */}
         <div id="recaptcha-container" />
       </div>
     </div>
@@ -326,23 +329,17 @@ function NameStep({
   isSubmitting: boolean
   onSubmit: (data: NameFormData) => void
 }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<NameFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<NameFormData>({
     resolver: zodResolver(nameSchema),
   })
-
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         ¿Cómo te llamas?
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Tu nombre aparecerá en tus publicaciones
+        Tu nombre aparecerá en tus anuncios
       </p>
-
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <Input
           label="Nombre completo"
@@ -352,14 +349,8 @@ function NameStep({
           error={errors.name?.message}
           {...register('name')}
         />
-
         {error && <p className="text-sm text-error">{error}</p>}
-
-        <Button
-          type="submit"
-          isLoading={isSubmitting}
-          className="w-full"
-        >
+        <Button type="submit" isLoading={isSubmitting} className="w-full">
           Continuar
         </Button>
       </form>
@@ -373,46 +364,33 @@ function PhoneStep({
   isSubmitting,
   cooldown,
   onSubmit,
-  onSkip,
 }: {
   error: string | null
   recoveryHint: string | null
   isSubmitting: boolean
   cooldown: number
   onSubmit: (data: PhoneFormData) => void
-  onSkip: () => void
 }) {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<PhoneFormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<PhoneFormData>({
     resolver: zodResolver(phoneSchema),
     defaultValues: { countryCode: '+51' },
   })
-
   const selectedCode = watch('countryCode')
   const placeholder = selectedCode === '+1' ? '(555) 123-4567' : '912 345 678'
-
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         Tu número de teléfono
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviaremos un código SMS para verificar tu número
+        Te enviaremos un código por SMS
       </p>
-
-      <div className="mt-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-text-primary">
-        ¿Tienes un bloqueador de anuncios activo? Puede interferir con el envío del código. Desactívalo temporalmente antes de continuar.
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <div className="flex gap-2">
           <div className="relative">
             <select
               {...register('countryCode')}
+              aria-label="País"
               className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
             >
               <option value="+51">+51</option>
@@ -420,16 +398,14 @@ function PhoneStep({
             </select>
             <svg
               className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
           <Input
             type="tel"
+            inputMode="tel"
             autoComplete="tel-national"
             autoFocus
             placeholder={placeholder}
@@ -437,35 +413,22 @@ function PhoneStep({
             {...register('phoneNumber')}
           />
         </div>
-
+        <p className="text-sm text-text-secondary">
+          Tu número confirma que eres una persona real. Nadie más puede usarlo para publicar.
+        </p>
         {error && (
           <div>
             <p className="text-sm text-error">{error}</p>
-            {recoveryHint && (
-              <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
-            )}
+            {recoveryHint && <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>}
           </div>
         )}
-
-        <Button
-          type="submit"
-          isLoading={isSubmitting}
-          disabled={cooldown > 0}
-          className="w-full"
-        >
+        <Button type="submit" isLoading={isSubmitting} disabled={cooldown > 0} className="w-full">
           {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar código'}
         </Button>
       </form>
-
-      <div className="mt-4 text-center">
-        <button
-          type="button"
-          onClick={onSkip}
-          className="text-sm text-text-tertiary hover:text-text-secondary"
-        >
-          Verificar después
-        </button>
-      </div>
+      <p className="mt-6 text-center text-xs text-text-tertiary">
+        ¿Tienes un bloqueador de anuncios? Puede impedir el envío del código.
+      </p>
     </>
   )
 }
@@ -487,13 +450,25 @@ function VerifyCodeStep({
   onResend: () => void
   onChangeNumber: () => void
 }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<VerificationCodeFormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<VerificationCodeFormData>({
     resolver: zodResolver(verificationCodeSchema),
   })
+  const rawCode = watch('code') ?? ''
+  const code = rawCode.replace(/\D/g, '').slice(0, 6)
+  const submittedRef = useRef<string | null>(null)
+
+  // Submits itself on the sixth digit (typed or pasted). A wrong code
+  // re-arms when the digits change.
+  useEffect(() => {
+    const digits = code
+    if (digits.length === 6 && submittedRef.current !== digits && !isSubmitting) {
+      submittedRef.current = digits
+      // Submit the cleaned digits, not the raw field: "123 456" pasted from an
+      // SMS must still verify.
+      onSubmit({ code: digits })
+    }
+    if (digits.length < 6) submittedRef.current = null
+  }, [code, isSubmitting, onSubmit])
 
   return (
     <>
@@ -501,9 +476,8 @@ function VerifyCodeStep({
         Ingresa el código
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Enviamos un código de 6 dígitos a tu teléfono
+        Te enviamos 6 dígitos por SMS
       </p>
-
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <Input
           type="text"
@@ -511,48 +485,36 @@ function VerifyCodeStep({
           autoComplete="one-time-code"
           autoFocus
           placeholder="000000"
-          maxLength={6}
+          aria-label="Código de 6 dígitos"
           className="text-center text-2xl tracking-[0.5em]"
           error={errors.code?.message}
           {...register('code')}
         />
-
+        {isSubmitting && <p className="text-center text-sm text-text-secondary">Verificando…</p>}
         {error && (
           <div>
             <p className="text-sm text-error">{error}</p>
-            {recoveryHint && (
-              <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>
-            )}
+            {recoveryHint && <p className="mt-1 text-sm text-text-tertiary">{recoveryHint}</p>}
           </div>
         )}
-
-        <Button
-          type="submit"
-          isLoading={isSubmitting}
-          className="w-full"
-        >
-          Verificar
-        </Button>
       </form>
-
-      <div className="mt-4 flex items-center justify-center gap-4">
+      <div className="mt-6 flex items-center justify-center gap-4">
         <button
           type="button"
           onClick={onResend}
           disabled={cooldown > 0}
-          className={`text-base ${cooldown > 0 ? 'text-text-tertiary cursor-not-allowed' : 'text-secondary hover:text-secondary-hover'}`}
+          className={`text-base ${cooldown > 0 ? 'cursor-not-allowed text-text-tertiary' : 'text-secondary hover:text-secondary-hover'}`}
         >
           {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar código'}
         </button>
         <span className="text-text-tertiary">|</span>
-        <button
-          type="button"
-          onClick={onChangeNumber}
-          className="text-base text-secondary hover:text-secondary-hover"
-        >
+        <button type="button" onClick={onChangeNumber} className="text-base text-secondary hover:text-secondary-hover">
           Cambiar número
         </button>
       </div>
+      <p className="mt-6 text-center text-xs text-text-tertiary">
+        ¿No llega? A veces tarda unos minutos, según tu operador.
+      </p>
     </>
   )
 }
@@ -561,58 +523,36 @@ function EmailVerifyStep({
   email,
   isSubmitting,
   onResend,
-  onCheck,
-  error,
 }: {
   email: string | null
   isSubmitting: boolean
   onResend: () => void
-  onCheck: () => void
-  error: string | null
 }) {
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
-        Verifica tu correo
+        Revisa tu correo
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviamos un enlace de verificación
+        Te enviamos un enlace
         {email ? (
           <>
-            {' '}a{' '}
-            <span className="font-medium text-text-primary">{email}</span>
+            {' '}a <span className="font-medium text-text-primary">{email}</span>
           </>
         ) : null}
-        . Abre el enlace y vuelve a esta página.
+        . Ábrelo y vuelve aquí — lo detectamos solos.
       </p>
-
-      <div className="mt-8 space-y-3">
-        <Button
-          type="button"
-          onClick={onCheck}
-          isLoading={isSubmitting}
-          className="w-full"
-        >
-          Ya verifiqué
-        </Button>
-
-        <div className="text-center">
-          <Button
-            type="button"
-            onClick={onResend}
-            variant="text"
-            disabled={isSubmitting}
-          >
-            Reenviar correo
-          </Button>
-        </div>
-
-        {error && <p className="text-sm text-error">{error}</p>}
+      <div className="mt-8 flex items-center justify-center gap-2 text-sm text-text-secondary">
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-secondary" />
+        Esperando el clic en el enlace…
       </div>
-
+      <div className="mt-6 text-center">
+        <Button type="button" onClick={onResend} variant="text" disabled={isSubmitting}>
+          Reenviar correo
+        </Button>
+      </div>
       <p className="mt-6 text-center text-xs text-text-tertiary">
-        El enlace puede tardar un par de minutos en llegar. Revisa también
-        tu carpeta de spam.
+        Puede tardar un par de minutos. Revisa también la carpeta de spam.
       </p>
     </>
   )

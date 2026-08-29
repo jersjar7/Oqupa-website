@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Sparkles } from 'lucide-react'
@@ -10,6 +10,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { formatPrice, setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
+import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
+import { contactGateCopy, contactReturnUrl, wantsAutoContact } from '@/app/features/listings/contactGate'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger } from '@/lib/analytics'
@@ -62,9 +64,11 @@ function PropertyGallery({ images }: { images: string[] }) {
           onTouchEnd={mobileCarousel.onTouchEnd}
         >
           {images.map((url, i) => (
-            <div
+            <button
               key={i}
-              className="h-[300px] w-full shrink-0 cursor-pointer"
+              type="button"
+              aria-label={`Ver foto ${i + 1} en pantalla completa`}
+              className="block h-[300px] w-full shrink-0 cursor-pointer border-0 p-0"
               onClick={() => openModal(i)}
             >
               <AnimatedImage
@@ -74,7 +78,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
               />
-            </div>
+            </button>
           ))}
         </div>
 
@@ -131,20 +135,24 @@ function PropertyGallery({ images }: { images: string[] }) {
       {/* Desktop grid */}
       <div className="mx-auto hidden max-w-6xl px-4 pt-6 md:block">
         {images.length === 1 ? (
-          <div
-            className="group h-[420px] cursor-pointer overflow-hidden rounded-xl"
+          <button
+            type="button"
+            aria-label="Ver foto 1 en pantalla completa"
+            className="group block h-[420px] w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0"
             onClick={() => openModal(0)}
           >
             <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
-          </div>
+          </button>
         ) : (
           <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
-            <div
-              className="group col-span-2 row-span-2 cursor-pointer overflow-hidden"
+            <button
+              type="button"
+              aria-label="Ver foto 1 en pantalla completa"
+              className="group col-span-2 row-span-2 block cursor-pointer overflow-hidden border-0 p-0"
               onClick={() => openModal(0)}
             >
               <AnimatedImage src={images[0]} alt="Foto 1" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" decoding="async" />
-            </div>
+            </button>
             {visibleImages.slice(1).map((url, i) => {
               const imageIndex = i + 1
               const totalRight = visibleImages.length - 1
@@ -152,9 +160,15 @@ function PropertyGallery({ images }: { images: string[] }) {
               const gridClass = getRightImageClass(i, totalRight)
 
               return (
-                <div
+                <button
                   key={imageIndex}
-                  className={`group relative cursor-pointer overflow-hidden ${gridClass}`}
+                  type="button"
+                  aria-label={
+                    isLast && hasMore
+                      ? `Ver todas las ${images.length} fotos`
+                      : `Ver foto ${imageIndex + 1} en pantalla completa`
+                  }
+                  className={`group relative block cursor-pointer overflow-hidden border-0 p-0 ${gridClass}`}
                   onClick={() => openModal(imageIndex)}
                 >
                   <AnimatedImage
@@ -171,7 +185,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                       </span>
                     </div>
                   )}
-                </div>
+                </button>
               )
             })}
           </div>
@@ -193,10 +207,14 @@ function PropertyGallery({ images }: { images: string[] }) {
 export default function PropertyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const { listing, property, isLoading, error } = useProperty(id)
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  // Set only when the server says no phone is attached to this account,
+  // so the gate can say "otra vez" instead of contradicting the profile
+  // page, which shows the number as verified.
+  const [phoneNeedsReverification, setPhoneNeedsReverification] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   // MUST stay up here with the other hooks. This lived further down, next to
   // the WhatsApp handler it belongs to, where it replaced a plain `const` in
@@ -244,6 +262,19 @@ export default function PropertyPage() {
 
   useRecordListingView(id, listing?.ownerId)
 
+  // Back from the pipeline with the intent to contact: open WhatsApp now,
+  // once, and drop the hash so a reload does not do it again.
+  const autoContactDone = useRef(false)
+  useEffect(() => {
+    if (autoContactDone.current || !listing) return
+    if (!wantsAutoContact(hash)) return
+    if (!firebaseUser?.emailVerified || !user?.isPhoneVerified) return
+    autoContactDone.current = true
+    navigate(pathname, { replace: true })
+    void handleWhatsAppClick(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing, hash, firebaseUser, user?.isPhoneVerified])
+
   const photoRefs = property?.media?.photoKeys ?? property?.media?.propertyPhotoUrls ?? []
   const images = photoRefs.map(fullSize)
 
@@ -289,6 +320,11 @@ export default function PropertyPage() {
   }
 
   const isOwner = user?.id === listing.ownerId
+  const gate = contactGateCopy({
+    signedIn: Boolean(firebaseUser),
+    emailVerified: firebaseUser?.emailVerified ?? false,
+    phoneNeedsReverification,
+  })
   const showExact = listing.showExactLocation !== false
   const location = showExact
     ? [
@@ -313,7 +349,7 @@ export default function PropertyPage() {
   // listing still advertises that a contact exists; only the number is gated.
   // `contactLoading` is declared with the other hooks at the top of the
   // component — it cannot live here, below the early returns.
-  async function handleWhatsAppClick() {
+  async function handleWhatsAppClick(auto = false) {
     if (contactLoading) return
     setContactLoading(true)
     try {
@@ -322,15 +358,26 @@ export default function PropertyPage() {
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
       AnalyticsLogger.contactRevealed(listingIdForContact)
-      window.open(
-        `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`,
-        '_blank',
-        'noopener,noreferrer',
-      )
+      const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`
+      if (auto) {
+        // Returning from the pipeline: no user gesture, so a new tab would be
+        // blocked by the browser — go there directly instead.
+        window.location.assign(waUrl)
+        return
+      }
+      window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
-      if (reason === 'needs-login' || reason === 'needs-phone-verification') {
+      if (
+        reason === 'needs-login' ||
+        reason === 'needs-phone-verification' ||
+        reason === 'needs-phone-reverification' ||
+        reason === 'needs-email-verification'
+      ) {
+        setPhoneNeedsReverification(reason === 'needs-phone-reverification')
         setShowAuthModal(true)
+      } else if (reason === 'listing-has-no-contact') {
+        toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
         toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')
       } else {
@@ -369,9 +416,12 @@ export default function PropertyPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left column — listing details */}
           <div className="lg:col-span-2">
-            {/* Price + Destacado badge + Share */}
-            <div className="flex items-center gap-3">
-              <p className="text-2xl font-bold text-primary">
+            {/* Price + Destacado badge + views / save / share.
+                One row from sm up. On a phone the price takes its own line —
+                squeezed into the row it wrapped to "S/." / "540,000" and pushed
+                Compartir off-screen (Jerson, staging, 2026-08-26). */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="whitespace-nowrap text-2xl font-bold text-primary">
                 {formatPrice(listing.price?.amount)}
                 {(() => {
                   const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
@@ -384,18 +434,20 @@ export default function PropertyPage() {
                   Destacado
                 </span>
               )}
-              <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-text-secondary">
-                <Eye className="h-4 w-4 shrink-0" />
-                {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
-              </span>
-              <SaveButton listingId={listing.id} variant="page" />
-              <button
-                onClick={handleShare}
-                className="rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
-                aria-label="Compartir"
-              >
-                Compartir
-              </button>
+              <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
+                <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
+                  <Eye className="h-4 w-4 shrink-0" />
+                  {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
+                </span>
+                <SaveButton listingId={listing.id} variant="page" />
+                <button
+                  onClick={handleShare}
+                  className="whitespace-nowrap rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
+                  aria-label="Compartir"
+                >
+                  Compartir
+                </button>
+              </div>
             </div>
 
             {/* Location */}
@@ -480,9 +532,10 @@ export default function PropertyPage() {
             {(
               <div>
               <button
-                onClick={handleWhatsAppClick}
+                onClick={() => handleWhatsAppClick()}
                 disabled={contactLoading}
-                className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#25D366] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98]"
+                aria-busy={contactLoading}
+                className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#25D366] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-[#1DA851] hover:shadow-medium active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -492,7 +545,7 @@ export default function PropertyPage() {
                 >
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                 </svg>
-                Escríbele por WhatsApp
+                {contactLoading ? 'Un momento…' : 'Escríbele por WhatsApp'}
               </button>
               <div className="mt-3 space-y-2 px-1 text-xs leading-relaxed text-text-secondary">
                 <p>
@@ -504,6 +557,9 @@ export default function PropertyPage() {
               </div>
               </div>
             )}
+
+            {/* Who published it — from the listing's own copy of the owner's identity */}
+            <OwnerCard listing={listing} />
 
             {/* Owner boost section */}
             {isOwner && listing.status === 'active' && (
@@ -600,29 +656,39 @@ export default function PropertyPage() {
               className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
             >
               <h3 className="font-serif text-lg font-bold text-text-primary">
-                Verificación requerida
+                {gate.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-                {firebaseUser
-                  ? 'Para contactar al propietario, necesitas verificar tu número de teléfono.'
-                  : 'Para contactar al propietario, necesitas iniciar sesión y verificar tu número de teléfono.'}
+                {gate.body}
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={() => {
                     setShowAuthModal(false)
-                    setReturnUrl(window.location.pathname)
-                    navigate(firebaseUser ? '/app/verify' : '/app/login')
+                    setReturnUrl(contactReturnUrl(window.location.pathname))
+                    navigate(gate.primary.to)
                   }}
                   className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
                 >
-                  {firebaseUser ? 'Verificar teléfono' : 'Iniciar sesión'}
+                  {gate.primary.label}
                 </button>
+                {gate.secondary && (
+                  <button
+                    onClick={() => {
+                      setShowAuthModal(false)
+                      setReturnUrl(contactReturnUrl(window.location.pathname))
+                      navigate(gate.secondary!.to)
+                    }}
+                    className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+                  >
+                    {gate.secondary.label}
+                  </button>
+                )}
                 <button
                   onClick={() => setShowAuthModal(false)}
-                  className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
+                  className="flex w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
                 >
-                  Cancelar
+                  Ahora no
                 </button>
               </div>
             </motion.div>

@@ -50,6 +50,14 @@ export interface Listing {
   boostTier?: 'sevenDays' | 'fifteenDays' | 'thirtyDays'
   boostScore: number
 
+  // Owner identity, denormalised onto the listing (ADR-015 Phase 3.3) so a
+  // card never needs the owner's user record — which is private (B6).
+  // Stamped at creation by the server; kept current on profile edits.
+  ownerDisplayName?: string
+  ownerPhotoKey?: string
+  ownerIsVerified?: boolean
+  ownerMemberSinceYear?: number
+
   // Location privacy fields
   showExactLocation: boolean
   displayLatitude?: number

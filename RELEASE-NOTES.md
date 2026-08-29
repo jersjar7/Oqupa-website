@@ -4,6 +4,119 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-27 — Una sola puerta, el teléfono antes que el correo
+
+### New Features
+
+- **One entry screen for everyone.** *Continuar con Google* first; *Continuar con correo* reveals email and password on the same screen. No sign-up-vs-sign-in choice up front: Google knows; for email, the site cannot tell whether an address has an account (that is deliberate protection), so a mismatch is where both ways forward appear — create the account with that email, or recover the password. Every door — the WhatsApp gate, the header button, the register form — leads here. Magic-link accounts from before April are told how to set a password.
+- **Phone before email.** The email link step sent people out of the site to an inbox before they had done anything; it is now last, and only for email/password accounts. Google accounts skip it and the name step. The code field submits itself on the sixth digit, resend waits 30 s, and a quiet line says what to do if nothing arrives.
+- **The email step notices by itself** when the link is clicked — every few seconds and when you come back to the tab. The "Ya verifiqué" button, which people pressed before clicking the link, is gone.
+- **Back to where you were.** After the pipeline you land on the listing you came from, and if you came to contact the seller, WhatsApp opens for you — no second tap. That stored return address expires after 30 minutes.
+- **The WhatsApp button shows it is working** while it asks the server for the number.
+
+### Security
+
+- Both verifications stay mandatory. The server now refuses a number until the email is verified as well as the phone (deployed ahead of this change). The page refreshes the sign-in token when the email flips, so the team pages open at once.
+
+### Technical
+
+- `pipelineOrder.ts` (order and entry decisions as pure functions, 8 tests), `AuthPipelinePage` rewritten around it (14 tests), entry screen (6), contact return (2). Three hostile review rounds; all findings closed. Suite is 387.
+
+---
+
+## 2026-08-26 (3) — La puerta: "Anuncia tu propiedad" en cada página
+
+### New Features
+
+- **"Anuncia tu propiedad" is now the primary button in the header, on every page** — full pages, property pages and the mobile menu. Before, publishing was a plain text link on the landing page only; property pages, where the ads land, said nothing about it. A visitor is taken to create an account with the wizard remembered as the destination; a signed-in person goes straight to the wizard. Step 4 of the approved new-user path. *Anunciar* on the public site, *publicar* inside the product (brand rule of 2026-08-25); the footer link follows the same wording.
+- On phones the header keeps the logo and this one button; the sign-in pill returns on wider screens (the register page and the WhatsApp gate both offer "¿Ya tienes cuenta?"). Sized with the real Gotham metrics so it fits a 360px screen.
+
+### Bug Fixes
+
+- **On a phone, the price took two lines and "Compartir" fell off the screen.** The price now has its own line; views, Guardar and Compartir sit on the row beneath. Unchanged on larger screens.
+
+### Technical
+
+- `PublishCta` in `Header.tsx`, three tests. Hostile review found the first version hidden exactly where it mattered (phones) and then overflowing; both fixed before merge.
+
+---
+
+## 2026-08-26 (2) — El botón de WhatsApp explica por qué pide una cuenta
+
+### UX Improvements
+
+- **Pressing "Escríbele por WhatsApp" without an account now says why, says it is free, and offers the account.** "Verificación requerida … necesitas iniciar sesión" read as a demand with no reason. Now: *"Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos."* with **CREA TU CUENTA**, *Ya tengo cuenta* and *Ahora no*. Signed in with the phone still unverified: *"…verifica tu número. Solo esta vez."*; with the email link still unclicked: *"…termina de verificar tu cuenta."* — so the dialog never promises one step when more remain. The page you came from is remembered, so you land back on the listing. Step 3 of the approved new-user path; the same words ship in the app with its next release, pinned by tests on both sides. Two advisor reviews ranked this the single most effective copy change in the product.
+
+### Technical
+
+- `contactGate.ts` + test; `PropertyPage` reads it. Nothing about security changed — the server still refuses the number to guests and unverified people.
+
+---
+
+## 2026-08-26 — Quién publica el aviso, y perfiles que ya no son públicos
+
+### New Features
+
+- **Every property page now says who published it.** Name, photo, verified badge and member-since year, in the sidebar under the WhatsApp button — the same four things the app has shown since August. Jerson noticed the gap on staging while verifying the security change below. The card reads the listing's own copy of that information, never the owner's profile; it is hidden while an agent represents the listing, so the name next to the WhatsApp button is never the wrong person.
+
+### Security
+
+- **User profiles are no longer readable by the public.** Since launch, anyone could read every user's record — email, contact details — with no login. A profile is now readable only by its owner or an admin. Nothing changes on any page: the website never read those records to draw a listing, and the WhatsApp number was already handed out by the server only to signed-in, phone-verified people. *(The rule lives in the platform repo and was deployed by hand; this entry records the website side.)*
+- **The admin, metrics, team and marketing allowlists now require a verified email.** The lists are generated into the security rules from `people.ts`; the generator now also demands `email_verified`, so an allowlisted address that has no account yet cannot be claimed by self-signup. Google and Apple sign-ins are always verified; email/password after the verification link. Known edge, not yet fixed: after verifying by email the browser keeps its previous token for up to an hour, so a teammate on email/password may see the team board refuse them briefly.
+
+### Technical
+
+- `OwnerCard` + `ownerCardFor` in `src/app/features/listings/components/`, six tests written first; `Listing` gains the four optional owner fields. Website suite is 372.
+
+---
+
+## 2026-08-25 — El tablero del equipo: notas largas, columnas plegables
+
+### UX Improvements
+
+- **Tasks can be as long as they need to be.** The limit went from 500 to 1000 characters, the field now grows with the text instead of scrolling sideways, and a counter shows where you stand from the first character — turning red in the last 100. Adding a task that was too long previously failed with "No se pudo añadir la tarea" and nothing else, which is indistinguishable from a permissions problem.
+- **Long tasks no longer swallow the board.** Cards show three lines in a person's column and two in the shared list, cut with an ellipsis; a chevron expands the rest. The chevron only appears when text is genuinely cut.
+- **Columns fold away.** A minimized column becomes a card with the name and how much is on that plate. Folded columns collect into one stack on the left, so folding one never reshuffles the others; whatever stays open takes the space to the right — a lone column fills it. What you fold is remembered in your own browser.
+- **Columns got wider and the row scrolls sideways** instead of squeezing four onto one screen. A column narrow enough to fit four on a laptop was too narrow to read a real task in.
+- Clicking a task still edits it, and the editor now grows and respects the same limit — it previously had no limit at all and could be edited into the same silent failure.
+
+### Technical
+
+- **Google Analytics was being blocked on oqupa.com.** The Content Security Policy allowed `*.google-analytics.com`, but GA4 also posts to `analytics.google.com` and `www.google.com/g/collect` — neither was listed, so those requests were refused and page views may not have been reaching the reports. The TikTok pixel was half-blocked the same way. All three added.
+- Both error paths on the board now log the underlying failure before showing a message. Discarding it is what made a length rejection look like a permissions fault.
+
+## 2026-08-25 — The waiting-list form is gone
+
+### UX Improvements
+
+- **The pop-up asking people to request Oqupa in their department has been removed.** It opened by itself five seconds after the page loaded, on every page except the map, and people in Piura who were trying to publish a property were filling it in believing it was how you publish. A form that interrupts someone mid-task gets mistaken for the task.
+- The same request lived in three places — the floating pop-up, a section on the landing page, and a "Pide en tu departamento" item in the menu. All three are gone, along with the footer link and the banner call-to-action that pointed at them.
+- **The Piura banner keeps its message.** "Lanzamos en Piura y aprendemos de nuestros clientes" still reads as before; only the link underneath it was removed.
+
+### Technical
+
+- The form had not worked since **4 May 2026**. The browser sent a field named `departamento` while the server function required `city`, so every submission was rejected, fell through to a backup path that also failed, and still told the person "¡Recibimos tu solicitud!". No notification email was ever sent, because it was queued past the point the function failed.
+- The 23 stored entries — none newer than that date, all from before launch — were deleted, along with the collection's security rule, its 9 tests and the server function. The reCAPTCHA key stays in use by the bug-report form, so spam protection is unchanged.
+
+## 2026-08-23 — Números shows the advertising, and reads at a glance
+
+### New Features
+
+- **Meta Ads now appear on the Números page.** What has been spent, how many people the advert reached, how often it was clicked, and — the two numbers that actually say whether the money is working — the **cost per install** and the **click-through rate**. The figures come from Meta every night alongside the rest of the snapshot, so the dashboard is the one place to see listings, users, revenue and advertising together.
+
+### UX Improvements
+
+- **The page was redesigned to be skimmed, not studied.** Four hero numbers lead — active listings, verified users, contact rate, boost revenue — each with its change since Monday and a 30-day trend strip, instead of ten equally-weighted tiles. The four flat trend panels became one wide chart of views and contacts, the single curve that shows whether interest turns into action.
+- **Every number and chart now has a small "?"** that explains in plain Spanish what it measures and how to read it.
+- **"Por operación" is a labelled bar, not a two-slice donut**, and the district chart groups everything outside the top 8 into "Otros" so it stays legible as inventory grows.
+- **Districts no longer appear twice** because one owner typed "Piura" and another "piura" — the breakdown is grouped case-insensitively (and the nightly snapshot now stores it normalised at the source).
+
+### Technical
+
+- The snapshot type gains an optional `metaAds` block (lifetime and last-7-day windows); the page renders the section only when the block is present, so older snapshots and days Meta is unreachable degrade gracefully.
+
+---
+
 ## 2026-08-16 — "Cuarto", not "Habitación"
 
 ### UX Improvements

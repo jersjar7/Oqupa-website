@@ -139,9 +139,11 @@ export default function LeadDetailPage() {
             onTouchEnd={mobileCarousel.onTouchEnd}
           >
             {cardImages.map((url, i) => (
-              <div
+              <button
                 key={i}
-                className="h-[300px] w-full shrink-0 cursor-pointer"
+                type="button"
+                aria-label={`Ver foto ${i + 1} en pantalla completa`}
+                className="block h-[300px] w-full shrink-0 cursor-pointer border-0 p-0"
                 onClick={() => openModal(i)}
               >
                 <img
@@ -151,7 +153,7 @@ export default function LeadDetailPage() {
                   loading={i === 0 ? 'eager' : 'lazy'}
                   decoding="async"
                 />
-              </div>
+              </button>
             ))}
           </div>
 
@@ -190,20 +192,24 @@ export default function LeadDetailPage() {
       {fullSizeImages.length > 0 && (
         <div className="mx-auto mt-4 hidden max-w-4xl px-4 sm:px-6 md:block">
           {fullSizeImages.length === 1 ? (
-            <div
-              className="h-[420px] cursor-pointer overflow-hidden rounded-xl"
+            <button
+              type="button"
+              aria-label="Ver foto 1 en pantalla completa"
+              className="block h-[420px] w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0"
               onClick={() => openModal(0)}
             >
               <img src={fullSizeImages[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
-            </div>
+            </button>
           ) : (
             <div className="grid h-[420px] grid-cols-4 grid-rows-2 gap-1 overflow-hidden rounded-xl">
-              <div
-                className="col-span-2 row-span-2 cursor-pointer"
+              <button
+                type="button"
+                aria-label="Ver foto 1 en pantalla completa"
+                className="col-span-2 row-span-2 block cursor-pointer border-0 p-0"
                 onClick={() => openModal(0)}
               >
                 <img src={fullSizeImages[0]} alt="Foto 1" className="h-full w-full object-cover" decoding="async" />
-              </div>
+              </button>
               {visibleDesktopImages.slice(1).map((url, i) => {
                 const imageIndex = i + 1
                 const totalRight = visibleDesktopImages.length - 1
@@ -211,9 +217,15 @@ export default function LeadDetailPage() {
                 const gridClass = getRightImageClass(i, totalRight)
 
                 return (
-                  <div
+                  <button
                     key={imageIndex}
-                    className={`relative cursor-pointer ${gridClass}`}
+                    type="button"
+                    aria-label={
+                      isLast && hasMoreImages
+                        ? `Ver todas las ${photoRefs.length} fotos`
+                        : `Ver foto ${imageIndex + 1} en pantalla completa`
+                    }
+                    className={`relative block cursor-pointer border-0 p-0 ${gridClass}`}
                     onClick={() => openModal(imageIndex)}
                   >
                     <img
@@ -230,7 +242,7 @@ export default function LeadDetailPage() {
                         </span>
                       </div>
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
