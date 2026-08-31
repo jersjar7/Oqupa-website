@@ -4,6 +4,25 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-08-30 — El rechazo dice cuál es el problema
+
+### Bug Fixes
+
+- **A listing with no number is no longer the buyer's fault.** A fully verified buyer who asked for the contact of a listing whose seller never provided a number was told to verify their own phone — sent to a page with nothing left to ask them, bounced back, and the request fired again. The server now gives that case its own reason and the site says *"Esta publicación no tiene un número de contacto."* and stops there.
+- **"Teléfono verificado" on the profile page and "no se pudo obtener el contacto" no longer contradict each other.** An account whose number was never actually attached to Firebase got a generic "try again" error, and trying again could not help. It now explains that the number needs verifying once more — *"verifica tu número otra vez"* — with a button that leads to the page that asks.
+- **Reloading no longer demands the phone a second time.** `?reverify=phone` was read but left in the address bar, so a reload — or Back then Forward — re-armed it for someone who had just finished. It is now stripped as soon as it is read. The likeliest victim was a person waiting on the email step, which is exactly where people reload.
+
+### Security
+
+- **The session refreshes the moment a phone is linked.** The browser held its previous credential — the one without the number — for up to an hour, and security rules can read only the credential, never the account. Without this, anyone who verified a number and published immediately would be refused by a rule that could not yet see the phone they had just linked.
+- **`unlinkPhone` removed.** It had no callers, and any future one would have produced the exact state the contact check refuses: a phone unlinked in Firebase while the profile still claims it is verified.
+
+### Technical
+
+- Firestore rules-test count is 285. CI recomputes it and fails the build when the prose disagrees.
+
+---
+
 ## 2026-08-27 — Una sola puerta, el teléfono antes que el correo
 
 ### New Features
