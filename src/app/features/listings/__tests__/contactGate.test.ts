@@ -97,3 +97,32 @@ describe('the phone was never really linked', () => {
     )
   })
 })
+
+// Added 2026-08-30, after the app was found doing the opposite on a real
+// iPhone: its gate sent "Crear cuenta" to the pipeline and "Ya tengo cuenta"
+// to a separate login route, and only the pipeline route finished the errand.
+// Someone who already had an account pressed WhatsApp, signed in, and landed
+// on the map.
+//
+// The website has never had that bug for one structural reason — both buttons
+// go to the same door, so there is no second path that can forget. That is an
+// invariant, not a coincidence, and nothing was holding it in place.
+describe('both doors lead to the same place, so neither can forget the errand', () => {
+  it('a visitor: create-account and already-have-an-account go to one screen', () => {
+    const c = contactGateCopy({ signedIn: false, emailVerified: false })
+    expect(c.secondary).not.toBeNull()
+    expect(c.secondary!.to).toBe(c.primary.to)
+  })
+
+  it('whatever the state, a secondary action never points somewhere else', () => {
+    const states = [
+      { signedIn: false, emailVerified: false },
+      { signedIn: true, emailVerified: false },
+      { signedIn: true, emailVerified: true },
+    ]
+    for (const s of states) {
+      const c = contactGateCopy(s)
+      if (c.secondary) expect(c.secondary.to).toBe(c.primary.to)
+    }
+  })
+})
