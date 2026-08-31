@@ -47,3 +47,53 @@ describe('the return address carries the intent', () => {
     expect(wantsAutoContact('#contactar2')).toBe(false)
   })
 })
+
+describe('the phone was never really linked', () => {
+  // Staging, 2026-08-27, observed rather than imagined: an account whose
+  // profile page says "Teléfono verificado" was refused the number, and the
+  // page showed "No se pudo obtener el contacto. Intenta de nuevo." — which
+  // is wrong twice over. Retrying cannot help, and the person is looking at a
+  // screen that says they ARE verified.
+  //
+  // The server had refused with its own code (the Firestore flag says
+  // verified; Firebase Auth has no phone attached). The app learned that code
+  // when it shipped; the website never did, so every such refusal fell into
+  // the generic bucket. Same words, both apps, is the rule this broke.
+  it('tells them the number needs verifying again, and where to do it', () => {
+    const c = contactGateCopy({
+      signedIn: true,
+      emailVerified: true,
+      phoneNeedsReverification: true,
+    })
+    expect(c.body).toBe(
+      'Para escribirle al propietario, verifica tu número otra vez.',
+    )
+    // ?reverify=phone is load-bearing, not decoration. /app/verify computes
+    // what is owed from users/{uid}.isPhoneVerified — the very flag the server
+    // has just told us not to believe — so without it the page finds nothing
+    // to ask, "finishes" immediately, returns to the listing, and the stored
+    // return address fires the contact call again. Observed on staging
+    // 2026-08-27: the button appeared to do nothing, and each press added
+    // another 409 to the console.
+    expect(c.primary).toEqual({
+      label: 'VERIFICAR NÚMERO',
+      to: '/app/verify?reverify=phone',
+    })
+  })
+
+  it('outranks the email wording — the phone is what the server refused on', () => {
+    const c = contactGateCopy({
+      signedIn: true,
+      emailVerified: false,
+      phoneNeedsReverification: true,
+    })
+    expect(c.body).toContain('verifica tu número otra vez')
+  })
+
+  it('leaves the ordinary cases untouched', () => {
+    const c = contactGateCopy({ signedIn: true, emailVerified: true })
+    expect(c.body).toBe(
+      'Para escribirle al propietario, verifica tu número. Solo esta vez.',
+    )
+  })
+})

@@ -47,3 +47,28 @@ describe('emailEntryOutcome', () => {
     expect(emailEntryOutcome(undefined)).toBe('error')
   })
 })
+
+describe('re-verifying a phone the record wrongly believes is verified', () => {
+  // Staging 2026-08-27: pressing VERIFICAR NÚMERO did nothing and each press
+  // added a 409. /app/verify computed what was owed from the same flag the
+  // server had just refused on, found nothing, finished instantly, returned to
+  // the listing, and the stored return address fired the contact call again.
+  it('asks for the phone even when the record says it is verified', () => {
+    const steps = pipelineStepsFor({
+      emailVerified: true,
+      hasName: true,
+      phoneVerified: true,
+      forcePhone: true,
+    })
+    expect(steps).toContain('phone')
+  })
+
+  it('without the override, a verified account still owes nothing', () => {
+    const steps = pipelineStepsFor({
+      emailVerified: true,
+      hasName: true,
+      phoneVerified: true,
+    })
+    expect(steps).toEqual([])
+  })
+})

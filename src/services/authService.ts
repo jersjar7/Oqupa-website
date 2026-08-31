@@ -20,7 +20,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
-  unlink,
   updatePhoneNumber,
 } from 'firebase/auth'
 import {
@@ -233,6 +232,23 @@ export const authService = {
       await signInWithCredential(auth, credential)
     }
 
+    // Mint a token that carries the phone.
+    //
+    // Linking updates the ACCOUNT at once, but the browser keeps the token it
+    // already holds — without the phone_number claim — for up to an hour, and
+    // security rules can read only the claim, never the account. Without this
+    // refresh, someone who verifies their number and immediately publishes is
+    // refused by a rule that cannot yet see the phone they just linked. The
+    // email step has done the same since 6a, for the same reason.
+    //
+    // Swallowed on failure: the phone IS linked, and throwing here would send
+    // a verified person back to the SMS step. The claim catches up on its own.
+    try {
+      await auth.currentUser?.getIdToken(true)
+    } catch {
+      // Intentionally ignored — see above.
+    }
+
     // Update Firestore
     if (auth.currentUser) {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), {
@@ -350,14 +366,6 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     await signOut(auth)
-  },
-
-  async unlinkPhone() {
-    const currentUser = auth.currentUser
-    if (!currentUser) throw new Error('No authenticated user')
-    const hasPhone = currentUser.providerData.some(p => p.providerId === 'phone')
-    if (!hasPhone) return
-    await unlink(currentUser, 'phone')
   },
 
   cleanupRecaptcha() {

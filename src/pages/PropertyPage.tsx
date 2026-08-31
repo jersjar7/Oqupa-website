@@ -211,6 +211,10 @@ export default function PropertyPage() {
   const { listing, property, isLoading, error } = useProperty(id)
   const { firebaseUser, user } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  // Set only when the server says no phone is attached to this account,
+  // so the gate can say "otra vez" instead of contradicting the profile
+  // page, which shows the number as verified.
+  const [phoneNeedsReverification, setPhoneNeedsReverification] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   // MUST stay up here with the other hooks. This lived further down, next to
   // the WhatsApp handler it belongs to, where it replaced a plain `const` in
@@ -319,6 +323,7 @@ export default function PropertyPage() {
   const gate = contactGateCopy({
     signedIn: Boolean(firebaseUser),
     emailVerified: firebaseUser?.emailVerified ?? false,
+    phoneNeedsReverification,
   })
   const showExact = listing.showExactLocation !== false
   const location = showExact
@@ -363,8 +368,16 @@ export default function PropertyPage() {
       window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
-      if (reason === 'needs-login' || reason === 'needs-phone-verification' || reason === 'needs-email-verification') {
+      if (
+        reason === 'needs-login' ||
+        reason === 'needs-phone-verification' ||
+        reason === 'needs-phone-reverification' ||
+        reason === 'needs-email-verification'
+      ) {
+        setPhoneNeedsReverification(reason === 'needs-phone-reverification')
         setShowAuthModal(true)
+      } else if (reason === 'listing-has-no-contact') {
+        toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
         toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')
       } else {

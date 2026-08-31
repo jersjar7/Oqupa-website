@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -37,6 +37,24 @@ const EMAIL_POLL_MS = 4000
 
 export default function AuthPipelinePage() {
   const navigate = useNavigate()
+  // ?reverify=phone — the server refused the contact because no phone is
+  // attached to this account in Firebase Auth, while our record claims one.
+  // Held in a ref so it survives the store refreshes each step triggers.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const forcePhoneRef = useRef(searchParams.get('reverify') === 'phone')
+
+  // Read once, then strip it from the address bar. Left in place, a reload or
+  // Back-then-Forward re-arms the override and demands the phone all over
+  // again — including from someone waiting on the email step, who is likeliest
+  // to reload (hostile review, 2026-08-27).
+  useEffect(() => {
+    if (searchParams.get('reverify')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('reverify')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const { user, firebaseUser, refreshUser, refreshFirebaseUser } = useAuthStore()
 
   // What is still owed, from the store's current view of the account. After
@@ -46,6 +64,7 @@ export default function AuthPipelinePage() {
     emailVerified: Boolean(firebaseUser?.emailVerified),
     hasName: Boolean(user?.name),
     phoneVerified: Boolean(user?.isPhoneVerified),
+    forcePhone: forcePhoneRef.current,
   })
   const [step, setStep] = useState<PipelineStep | null>(() => remaining[0] ?? null)
   const totalRef = useRef(remaining.length || 1)
@@ -233,6 +252,10 @@ export default function AuthPipelinePage() {
                   try {
                     if (!verificationId) throw new Error('No verification ID')
                     await authService.verifyPhoneCode(verificationId, data.code)
+                    // The phone is now genuinely linked, so the override has
+                    // done its job. Leaving it set would keep the phone step
+                    // in the list forever and trap the person on it.
+                    forcePhoneRef.current = false
                     const pending = pendingPhoneRef.current
                     if (pending && firebaseUser) {
                       await authService.updateUserContactInfo(firebaseUser.uid, {
