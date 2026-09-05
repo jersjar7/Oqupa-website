@@ -7,7 +7,6 @@ import { MemoryRouter } from 'react-router-dom'
 
 const mockAuthService = vi.hoisted(() => ({
   requestPasswordReset: vi.fn(),
-  checkAccountExists: vi.fn(),
 }))
 
 vi.mock('@/services/authService', () => ({
@@ -54,7 +53,6 @@ describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuthService.requestPasswordReset.mockResolvedValue(undefined)
-    mockAuthService.checkAccountExists.mockResolvedValue(true)
   })
 
   describe('rendering', () => {
@@ -99,7 +97,7 @@ describe('ForgotPasswordPage', () => {
       })
     })
 
-    it('trims the email once and uses the same value for both calls', async () => {
+    it('trims the email before sending', async () => {
       renderPage()
       fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
         target: { value: '  test@example.com  ' },
@@ -108,7 +106,33 @@ describe('ForgotPasswordPage', () => {
       await waitFor(() => {
         expect(mockAuthService.requestPasswordReset).toHaveBeenCalledWith('test@example.com')
       })
-      expect(mockAuthService.checkAccountExists).toHaveBeenCalledWith('test@example.com')
+    })
+
+    it('shows the same confirmation regardless of whether the account exists', async () => {
+      // No checkAccountExists call exists anymore — the page never learns,
+      // and never shows, whether a given email has an account. This is the
+      // enumeration-protection behavior from docs/forgot-password-enumeration-decision.md.
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'nobody@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/correo enviado/i)).toBeDefined()
+      })
+      expect(screen.queryByText(/no encontramos una cuenta/i)).toBeNull()
+    })
+
+    it('offers a "maybe you don\'t have an account" hint with a register link', async () => {
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'test@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/no tienes cuenta con ese correo/i)).toBeDefined()
+      })
+      expect(screen.getByRole('link', { name: /crear cuenta/i })).toBeDefined()
     })
   })
 
@@ -123,78 +147,6 @@ describe('ForgotPasswordPage', () => {
       await waitFor(() => {
         expect(screen.getByText('Error al enviar correo')).toBeDefined()
       })
-    })
-
-    it('shows a real error (not "no account") when checkAccountExists itself fails', async () => {
-      mockAuthService.checkAccountExists.mockRejectedValue(
-        Object.assign(new Error('backend down'), { code: 'functions/unavailable' })
-      )
-      renderPage()
-      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-        target: { value: 'test@example.com' },
-      })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText('Error al enviar correo')).toBeDefined()
-      })
-      expect(screen.queryByText(/no encontramos una cuenta/i)).toBeNull()
-      expect(mockAuthService.requestPasswordReset).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('no account found', () => {
-    it('shows a "no account" message instead of sending an email', async () => {
-      mockAuthService.checkAccountExists.mockResolvedValue(false)
-      renderPage()
-      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-        target: { value: 'nobody@example.com' },
-      })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText(/no encontramos una cuenta/i)).toBeDefined()
-      })
-      expect(mockAuthService.requestPasswordReset).not.toHaveBeenCalled()
-    })
-
-    it('offers a link to create an account', async () => {
-      mockAuthService.checkAccountExists.mockResolvedValue(false)
-      renderPage()
-      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-        target: { value: 'nobody@example.com' },
-      })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByRole('link', { name: /crear cuenta/i })).toBeDefined()
-      })
-    })
-
-    it('lets the user go back and try a different email', async () => {
-      mockAuthService.checkAccountExists.mockResolvedValue(false)
-      renderPage()
-      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-        target: { value: 'nobody@example.com' },
-      })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText(/no encontramos una cuenta/i)).toBeDefined()
-      })
-      fireEvent.click(screen.getByRole('button', { name: /intentar con otro correo/i }))
-      expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
-    })
-
-    it('clears the previously entered email when trying another one', async () => {
-      mockAuthService.checkAccountExists.mockResolvedValue(false)
-      renderPage()
-      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
-        target: { value: 'nobody@example.com' },
-      })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText(/no encontramos una cuenta/i)).toBeDefined()
-      })
-      fireEvent.click(screen.getByRole('button', { name: /intentar con otro correo/i }))
-      const input = screen.getByRole('textbox', { name: /correo/i }) as HTMLInputElement
-      expect(input.value).toBe('')
     })
   })
 })
