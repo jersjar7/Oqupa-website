@@ -53,17 +53,12 @@ describe('getRegisterAuthError', () => {
 })
 
 describe('getForgotPasswordAuthError', () => {
-  it('maps auth/user-not-found to a no-account message', () => {
+  it('does NOT reveal that the account is missing for auth/user-not-found (enumeration protection)', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
-    expect(info.message).toMatch(/no existe una cuenta/i)
+    expect(info.message).not.toMatch(/no existe una cuenta/i)
+    expect(info.message).toMatch(/verifica tu dirección/i)
   })
 
-  // The checkAccountExists Cloud Function call (via the Functions SDK) can
-  // fail independently of requestPasswordReset (the Auth SDK call) — this
-  // handler now has to interpret errors from BOTH. Before these cases
-  // existed, any checkAccountExists failure fell through to the default
-  // "verify your email address" message, which is wrong for an
-  // infrastructure problem rather than a bad address.
   it('maps functions/resource-exhausted to a rate-limit message, not a generic one', () => {
     const info = getForgotPasswordAuthError({ code: 'functions/resource-exhausted' })
     expect(info.message).toMatch(/demasiados intentos/i)

@@ -152,17 +152,15 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
   switch (code) {
     case 'auth/too-many-requests':
       return { message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.', isRetryable: false }
-    case 'auth/user-not-found':
-      return { message: 'No existe una cuenta con ese correo.', isRetryable: true }
+    // auth/user-not-found is deliberately NOT special-cased here — doing so
+    // would tell the caller whether the address has an account, which is the
+    // enumeration leak docs/forgot-password-enumeration-decision.md fixed.
+    // It falls through to the generic default message below.
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
-    // Below: codes from the checkAccountExists Cloud Function call (via the
-    // Functions SDK, not the Auth SDK) — this handler now covers errors from
-    // BOTH calls in ForgotPasswordPage's onSubmit, not just
-    // requestPasswordReset. Without these, any checkAccountExists failure
-    // (network blip, cold start, backend down) fell through to the default
-    // below and told the user to "verify your email address", which is
-    // wrong for an infrastructure problem.
+    // Below: functions/* codes are dead today (ForgotPasswordPage no longer
+    // calls checkAccountExists), kept in case a future caller of this
+    // handler reintroduces a Functions SDK call.
     case 'functions/resource-exhausted':
       return { message: 'Demasiados intentos. Intenta de nuevo más tarde.', isRetryable: false }
     case 'functions/unavailable':
