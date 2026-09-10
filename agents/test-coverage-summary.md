@@ -22,3 +22,8 @@
 - Coverage before: 16.84%
 - Coverage after:  17.05%
 - Tests written:   13 tests covering: isScrolled starts as false, hook return shape (isScrolled + heroRef), IntersectionObserver created only when heroRef is attached to a real DOM element, rootMargin '0px 0px -60px 0px' passed to observer, threshold 0 passed to observer, observe() called with the hero element, isScrolled set to true when hero is NOT intersecting (scrolled past), isScrolled set to false when hero IS intersecting (scroll back up), remains false when hero starts intersecting, toggles correctly across multiple intersection changes, observer.disconnect() called on unmount, no disconnect when ref is null (no observer created)
+
+## useExpansionPopup.ts — 2026-09-10
+- Coverage before: 17.05%
+- Coverage after:  17.42%
+- Tests written:   21 tests covering: return shape, isReady starts false and becomes true after 5s delay, still false just before delay, timer cleared on unmount, isExpanded=true when localStorage key absent, isExpanded=false when localStorage key present, collapse() sets isExpanded false and persists key to localStorage, collapse() idempotency, expand() sets isExpanded true from collapsed state, expand() does not write to localStorage, expand() idempotency, collapse→expand round-trip, markJoined() does not immediately change isExpanded, markJoined() does not set localStorage before timeout, markJoined() collapses and persists key after SUCCESS_DISPLAY_MS, still expanded just before markJoined timeout fires, and independent firing of isReady (5s) and markJoined (3s) timers
