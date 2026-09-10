@@ -166,17 +166,6 @@ describe('useMapCameraStorage', () => {
       expect(result.current.savedCamera).toBeNull()
     })
 
-    it('does not throw when localStorage.getItem itself throws', () => {
-      const ls = {
-        getItem: vi.fn(() => { throw new Error('SecurityError') }),
-        setItem: vi.fn(),
-        removeItem: vi.fn(),
-      }
-      vi.stubGlobal('localStorage', ls)
-
-      expect(() => renderHook(() => useMapCameraStorage())).not.toThrow()
-    })
-
     it('returns null when localStorage.getItem throws', () => {
       const ls = {
         getItem: vi.fn(() => { throw new Error('SecurityError') }),

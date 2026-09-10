@@ -57,3 +57,15 @@ No issues found.
 Test count: 21 → 21 (no tests removed or added). All 21 pass.
 
 ---
+
+## useMapCameraStorage.test.ts — 2026-09-10
+
+**Flagged:**
+- **Redundant test:** "does not throw when localStorage.getItem itself throws" — the test's only assertion was `expect(() => renderHook(() => useMapCameraStorage())).not.toThrow()`. The immediately following test, "returns null when localStorage.getItem throws", uses an identical setup and calls `renderHook` to completion before reading `result.current.savedCamera`. Any uncaught exception from inside the hook would cause `renderHook` itself to throw, failing the second test automatically. The `.not.toThrow()` wrapper adds zero detection capability that the second test does not already provide.
+
+**Fixed:**
+- Removed the "does not throw when localStorage.getItem itself throws" test — fully redundant with "returns null when localStorage.getItem throws".
+
+Test count: 24 → 23. All 23 pass.
+
+---
