@@ -7,3 +7,8 @@
 - Coverage before: 15.25%
 - Coverage after:  15.74%
 - Tests written:   19 tests covering skipReveal mode (all fields visible, wasInitial bypass), initial condition seeding, the one-way ratchet (revealed set only grows), progressive reveal on re-render, wasInitial frozen from first render, and edge cases (empty conditions, new fields added after mount)
+
+## useMobileMenu.ts — 2026-09-10
+- Coverage before: 15.95%
+- Coverage after:  16.63%
+- Tests written:   25 tests covering: initial state (isOpen=false, returned API shape), toggle() open/close state transitions, body scroll-lock styles applied on open and cleared on close, body.style.top set to negative scrollY, window.scrollTo called with saved scroll position on close, scroll position captured at open time not close time, close() as standalone function (sets isOpen=false, clears styles, restores scroll, no-throw when already closed), Escape keydown closes menu when open but ignores other keys and does nothing when already closed, resize handler closes when viewport >768px but not at exactly 768px or below, resize ignored when menu is closed, event listener cleanup after unmount (Escape and resize no longer trigger), and effect re-registration across open/close cycles
