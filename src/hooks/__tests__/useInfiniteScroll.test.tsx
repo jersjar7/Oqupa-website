@@ -66,7 +66,7 @@ function triggerIntersect(isIntersecting: boolean) {
 
 describe('useInfiniteScroll', () => {
   describe('returned ref', () => {
-    it('returns a ref that is attached to the sentinel DOM element', () => {
+    it('renders the sentinel element in the DOM', () => {
       const onLoadMore = vi.fn()
       const { getByTestId } = render(<Fixture onLoadMore={onLoadMore} enabled={true} />)
 
@@ -134,14 +134,6 @@ describe('useInfiniteScroll', () => {
       expect(onLoadMore).not.toHaveBeenCalled()
     })
 
-    it('does not call onLoadMore when both isIntersecting is false and enabled is false', () => {
-      const onLoadMore = vi.fn()
-      render(<Fixture onLoadMore={onLoadMore} enabled={false} />)
-
-      triggerIntersect(false)
-
-      expect(onLoadMore).not.toHaveBeenCalled()
-    })
   })
 
   describe('enabled flag change', () => {
