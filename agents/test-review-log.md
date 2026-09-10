@@ -40,3 +40,8 @@ Test count: 12 → 11. All 11 pass.
 Test count: 14 → 13. All 13 pass.
 
 ---
+
+## useScrollHeader.test.tsx — 2026-09-10
+No issues found.
+
+---
