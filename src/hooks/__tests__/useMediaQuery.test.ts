@@ -85,16 +85,6 @@ describe('useIsDesktop', () => {
       expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 768px)')
     })
 
-    it('reflects matchMedia.matches synchronously after the initial effect runs', () => {
-      // Both the useState initializer and the effect read from the same stub,
-      // so the rendered value must be consistent with the stub's initial value.
-      mqlStub = makeMqlStub('(min-width: 768px)', false)
-      vi.stubGlobal('matchMedia', vi.fn(() => mqlStub))
-
-      const { result } = renderHook(() => useIsDesktop())
-
-      expect(result.current).toBe(false)
-    })
   })
 
   // ── event listener registration ─────────────────────────────────────────────

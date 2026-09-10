@@ -28,3 +28,15 @@ No issues found.
 Test count: 12 → 11. All 11 pass.
 
 ---
+
+## useMediaQuery.test.ts — 2026-09-10
+
+**Flagged:**
+- **Duplicate test:** "reflects matchMedia.matches synchronously after the initial effect runs" (in `initial state` describe block) — identical setup and assertion to "returns false when matchMedia.matches is false on mount": both create a stub with `initialMatches: false`, stub `window.matchMedia`, render the hook, and assert `result.current` is `false`. The comment attempted to frame it as testing the effect's `setMatches` call, but because the same stub backs both the `useState` initializer and the effect, the result is indistinguishable from the first read. No new code path or behaviour was exercised.
+
+**Fixed:**
+- Removed the duplicate test. The "returns false when matchMedia.matches is false on mount" test already pins the same behaviour.
+
+Test count: 14 → 13. All 13 pass.
+
+---
