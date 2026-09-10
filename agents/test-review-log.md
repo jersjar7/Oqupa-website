@@ -69,3 +69,17 @@ Test count: 21 → 21 (no tests removed or added). All 21 pass.
 Test count: 24 → 23. All 23 pass.
 
 ---
+
+## useExploreInteraction.test.ts — 2026-09-10
+
+**Flagged:**
+- **Test that always passes regardless of implementation:** "stops responding to Escape after unmount" (in `Escape key listener` describe block) — the only assertion was `expect(() => fireKeydown('Escape')).not.toThrow()`. In React 19, calling `setState` on an unmounted component is a silent no-op (no throw, no warning). Whether or not `removeEventListener` is called in the cleanup, pressing Escape after unmount never throws. Removing `return () => window.removeEventListener('keydown', handler)` from the source would not break this test.
+- **Test that always passes regardless of implementation:** "does not call setHoveredId after unmount if null timeout was pending" (in `debounce timer cleanup on unmount` describe block) — the assertion `expect(() => act(() => vi.advanceTimersByTime(75))).not.toThrow()` has the same flaw. In React 19, a pending `setTimeout` calling `setHoveredId(null)` on an unmounted component is a silent no-op. Removing `clearTimeout` from the cleanup effect would not break this test.
+
+**Fixed:**
+- Replaced the always-passing `not.toThrow()` assertion in "stops responding to Escape after unmount" with `vi.spyOn(window, 'removeEventListener')`: asserts the spy was called with `'keydown'` during unmount. This directly verifies the cleanup runs `removeEventListener` and will fail if the cleanup is removed from the source.
+- Renamed "does not call setHoveredId after unmount if null timeout was pending" → "clears the pending debounce timeout on unmount" and replaced the always-passing `not.toThrow()` assertion with `vi.getTimerCount()`: asserts 1 pending timer before unmount and 0 after, directly verifying `clearTimeout` was called. Same pattern applied to `useExpansionPopup.test.ts`.
+
+Test count: 35 → 35 (no tests removed or added). All 35 pass.
+
+---

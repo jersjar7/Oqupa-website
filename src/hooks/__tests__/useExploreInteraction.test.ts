@@ -355,13 +355,14 @@ describe('useExploreInteraction', () => {
     })
 
     it('stops responding to Escape after unmount', () => {
+      const removeListenerSpy = vi.spyOn(window, 'removeEventListener')
       const { result, unmount } = renderHook(() => useExploreInteraction())
       act(() => result.current.handleMarkerClick('listing-1'))
 
       act(() => unmount())
 
-      // Must not throw — listener has been removed.
-      expect(() => fireKeydown('Escape')).not.toThrow()
+      // The keydown listener must have been removed from window during cleanup.
+      expect(removeListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     })
 
     it('remains responsive to Escape across multiple state cycles', () => {
@@ -382,16 +383,19 @@ describe('useExploreInteraction', () => {
   // ── debounce timer cleanup on unmount ─────────────────────────────────────────
 
   describe('debounce timer cleanup on unmount', () => {
-    it('does not call setHoveredId after unmount if null timeout was pending', () => {
+    it('clears the pending debounce timeout on unmount', () => {
       const { result, unmount } = renderHook(() => useExploreInteraction())
       act(() => result.current.handleMarkerHover('listing-1'))
       act(() => result.current.handleMarkerHover(null)) // starts 75ms debounce
 
-      // Unmount while debounce is still pending.
+      // One pending timer before unmount.
+      expect(vi.getTimerCount()).toBe(1)
+
+      // Unmount while debounce is still pending — cleanup must clear the timeout.
       act(() => unmount())
 
-      // Advancing past the debounce window should not throw (the ref is cleared).
-      expect(() => act(() => vi.advanceTimersByTime(75))).not.toThrow()
+      // Zero pending timers confirms clearTimeout was called by the cleanup effect.
+      expect(vi.getTimerCount()).toBe(0)
     })
 
     it('does not throw when unmounted before any hover interaction', () => {
