@@ -1,3 +1,15 @@
+## useMobileMenu.test.ts — 2026-09-10
+
+**Flagged:**
+- **Misleading test name:** "does not call window.scrollTo more than once when called repeatedly" — the assertion is `toHaveBeenCalledTimes(2)`, which is more than once. The test name directly contradicts the assertion. The inline comment inside the test was also self-contradictory ("scrollTo should only have been called once... second close also calls scrollTo (no guard)"). The actual behaviour being pinned is that `close()` calls `scrollTo` unconditionally on every invocation — there is no `isOpen` guard in the source — so two `close()` calls produce two `scrollTo` calls.
+
+**Fixed:**
+- Renamed "does not call window.scrollTo more than once when called repeatedly" → "calls window.scrollTo on every close() call — no isOpen guard in implementation" and updated the internal comment to accurately describe what is being asserted.
+
+Test count: 25 → 25 (no tests removed or added). All 25 pass.
+
+---
+
 ## useRevealedFields.test.ts — 2026-09-10
 No issues found.
 

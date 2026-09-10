@@ -166,14 +166,14 @@ describe('useMobileMenu', () => {
       expect(result.current.isOpen).toBe(false)
     })
 
-    it('does not call window.scrollTo more than once when called repeatedly', () => {
+    it('calls window.scrollTo on every close() call — no isOpen guard in implementation', () => {
       Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 50 })
       const { result } = renderHook(() => useMobileMenu())
       act(() => result.current.toggle()) // open
       act(() => result.current.close())
-      act(() => result.current.close()) // second close — isOpen already false
-      // scrollTo should only have been called once (first close only, since menu was open).
-      expect(window.scrollTo).toHaveBeenCalledTimes(2) // once from first close; second close also calls scrollTo (no guard)
+      act(() => result.current.close()) // second close — isOpen already false, but scrollTo still fires
+      // close() calls scrollTo unconditionally, so two close() calls → two scrollTo calls.
+      expect(window.scrollTo).toHaveBeenCalledTimes(2)
     })
   })
 
