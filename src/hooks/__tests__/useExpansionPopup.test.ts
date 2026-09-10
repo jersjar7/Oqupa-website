@@ -85,18 +85,16 @@ describe('useExpansionPopup — isReady', () => {
     expect(result.current.isReady).toBe(false)
   })
 
-  it('clears the timer on unmount so no state update fires after unmount', () => {
-    const { result, unmount } = renderHook(() => useExpansionPopup())
-    expect(result.current.isReady).toBe(false)
+  it('clears the timer on unmount', () => {
+    const { unmount } = renderHook(() => useExpansionPopup())
+
+    // One setTimeout is pending (the isReady delay)
+    expect(vi.getTimerCount()).toBe(1)
 
     unmount()
 
-    // Advancing timers after unmount should not throw (timer was cleared)
-    expect(() => {
-      act(() => {
-        vi.advanceTimersByTime(SHOW_DELAY_MS)
-      })
-    }).not.toThrow()
+    // clearTimeout in the useEffect cleanup must have cancelled it
+    expect(vi.getTimerCount()).toBe(0)
   })
 })
 

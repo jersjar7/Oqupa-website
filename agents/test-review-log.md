@@ -45,3 +45,15 @@ Test count: 14 → 13. All 13 pass.
 No issues found.
 
 ---
+
+## useExpansionPopup.test.ts — 2026-09-10
+
+**Flagged:**
+- **Test that always passes regardless of implementation:** "clears the timer on unmount so no state update fires after unmount" — the assertion was `expect(() => { act(() => vi.advanceTimersByTime(SHOW_DELAY_MS)) }).not.toThrow()`. In React 19, calling `setState` on an unmounted component is a silent no-op (no throw, no warning), so this assertion passes whether `clearTimeout` is called or not. Removing the cleanup from the source would not break this test.
+
+**Fixed:**
+- Replaced the always-passing `not.toThrow()` assertion with `vi.getTimerCount()`: asserts there is exactly 1 pending timer before unmount and exactly 0 after unmount. This directly verifies that `clearTimeout` was called by the useEffect cleanup and will fail if the cleanup is removed.
+
+Test count: 21 → 21 (no tests removed or added). All 21 pass.
+
+---
