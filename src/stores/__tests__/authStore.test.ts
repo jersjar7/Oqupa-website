@@ -518,6 +518,24 @@ describe('authStore', () => {
 
       expect(useAuthStore.getState().user?.createdAt).toEqual(expectedDate)
     })
+
+    it('falls back to new Date() when createdAt is an unexpected type (e.g. number)', async () => {
+      // Exercises line 27 of authStore.ts: the final `return new Date()` in parseTimestamp
+      const fbUser = makeFirebaseUser('uid-ts3')
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, {
+          email: 'ts3@test.com',
+          isActive: true,
+          createdAt: 1234567890, // number — not string, not Timestamp, not null/undefined
+        })
+      )
+
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+
+      expect(useAuthStore.getState().user?.createdAt).toBeInstanceOf(Date)
+    })
   })
 
   // ── Reset ───────────────────────────────────────────────────────────────

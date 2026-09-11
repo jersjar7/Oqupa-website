@@ -74,4 +74,27 @@ describe('getOrCreateClientId', () => {
     const id = getOrCreateClientId()
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   })
+
+  it('uses in-memory fallback when localStorage is unavailable on the window object', async () => {
+    // Stub localStorage to be null/falsy so the !window.localStorage branch fires (lines 29-30)
+    const originalLocalStorage = Object.getOwnPropertyDescriptor(window, 'localStorage')
+    Object.defineProperty(window, 'localStorage', {
+      value: null,
+      configurable: true,
+      writable: true,
+    })
+
+    const { getOrCreateClientId } = await import('../clientId')
+    const id = getOrCreateClientId()
+    expect(id).toMatch(/^[0-9a-f-]{36}$/)
+
+    // Calling again returns the same in-memory id
+    const second = getOrCreateClientId()
+    expect(second).toBe(id)
+
+    // Restore localStorage
+    if (originalLocalStorage) {
+      Object.defineProperty(window, 'localStorage', originalLocalStorage)
+    }
+  })
 })

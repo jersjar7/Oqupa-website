@@ -305,6 +305,42 @@ describe('storageService', () => {
       expect(result.blurHash).toBe('blur')
       expect(result.microThumb).toBe('') // empty because it failed
     })
+
+    it('uses image/webp fallback when compressed.type is empty (lines 79, 89)', async () => {
+      // makeFile with empty type → compressed.type is '' → || 'image/webp' branch fires
+      const noTypeFile = makeFile('photo.bin', '')
+      const compressedNoType = makeFile('compressed.bin', '')
+      imageCompressionMock.mockResolvedValue(compressedNoType)
+      generateBlurHashMock.mockResolvedValue('hash')
+      callableFnMock.mockResolvedValue({
+        data: { uploads: [{ uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }] },
+      })
+
+      const result = await storageService.uploadPropertyPhoto('prop-1', noTypeFile)
+
+      // Verify the callable was called with image/webp as contentType fallback
+      expect(callableFnMock).toHaveBeenCalledWith(expect.objectContaining({
+        contentType: 'image/webp',
+      }))
+      expect(result.objectKey).toBe('k')
+    })
+
+    it('skips micro-thumbnail when canvas getContext returns null (lines 117-124)', async () => {
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      generateBlurHashMock.mockResolvedValue('hash')
+
+      // Override canvas mock to return null for getContext
+      fakeCanvas.getContext.mockReturnValue(null)
+
+      const result = await storageService.uploadPropertyPhoto(
+        'prop-1',
+        makeFile(),
+        undefined,
+        { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }
+      )
+
+      expect(result.microThumb).toBe('') // no context → microThumb stays empty
+    })
   })
 
   // ── uploadUserPhoto ──────────────────────────────────────────────────────

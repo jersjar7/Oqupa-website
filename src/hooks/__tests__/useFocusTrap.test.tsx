@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, renderHook } from '@testing-library/react'
 import { useRef } from 'react'
 import { useFocusTrap } from '../useFocusTrap'
 
@@ -192,5 +192,13 @@ describe('useFocusTrap', () => {
     // After unmount, there is no container to dispatch events to — no assertions needed
     // Just verify it does not throw
     expect(() => unmount()).not.toThrow()
+  })
+
+  it('returns early when active=true but the ref is not attached to a DOM element (line 17)', () => {
+    // Use renderHook without attaching the ref to any element — containerRef.current stays null.
+    // The effect should reach `if (!container) return` and exit without throwing.
+    expect(() => {
+      renderHook(() => useFocusTrap<HTMLDivElement>(true))
+    }).not.toThrow()
   })
 })

@@ -324,4 +324,33 @@ describe('paintBrandedCard', () => {
     const allText = mockCtx.fillText.mock.calls.map((c) => String(c[0])).join(' ')
     expect(allText).toContain('oqupa.com')
   })
+
+  it('fetchAsBlob img.onerror path (lines 74-76): fetch ok=true but blob img fails to load', async () => {
+    // fetch succeeds and blob() resolves, but the img element fires onerror when
+    // the blob URL is set as src. imgShouldError=true triggers this.
+    // After fetchAsBlob returns null, loadViaImgElement takes over (also returns null
+    // due to imgShouldError), and finally paintBrandedCard falls back to no photo.
+    imgShouldError = true
+    // fetchMock stays at ok=true (set in beforeEach) so fetchAsBlob enters the blob path
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), ['https://images.oqupa.com/photo.webp'])
+    expect(blob).toBeInstanceOf(Blob)
+    // URL.revokeObjectURL should have been called (from the img.onerror handler in fetchAsBlob)
+    expect(URL.revokeObjectURL).toHaveBeenCalled()
+  })
+
+  it('resolveUrl rewrites Firebase Storage URLs in DEV mode (line 41)', async () => {
+    // Stub DEV=true so resolveUrl rewrites the firebasestorage URL to /__storage
+    vi.stubEnv('DEV', 'true')
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const firebaseUrl = 'https://firebasestorage.googleapis.com/v0/b/bucket/o/photo.webp'
+    const blob = await paintBrandedCard(makeConfig(), [firebaseUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // The fetch should be called with the rewritten /__storage URL
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/__storage'),
+      expect.any(Object),
+    )
+    vi.unstubAllEnvs()
+  })
 })

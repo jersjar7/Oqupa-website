@@ -223,4 +223,22 @@ describe('attribution', () => {
     visit('https://oqupa.com/publicar', 'https://oqupa.com/explorar')
     expect(attributionForListing()).toBeNull()
   })
+
+  // ── inferSource line 85: hostname === window.location.hostname ─────────────
+  //
+  // `captureAttribution` calls `isInternal()` before `inferSource`, which means
+  // internal referrers are stripped to '' before inferSource ever sees them.
+  // Line 85 is therefore only reachable by calling __testing.inferSource()
+  // directly with an internal URL while window.location.hostname is set.
+
+  it('inferSource returns null when the referrer hostname matches window.location.hostname (line 85)', () => {
+    // Set window.location.hostname to simulate being on oqupa.com
+    Object.defineProperty(window, 'location', {
+      value: { search: '', pathname: '/', hostname: 'oqupa.com' },
+      writable: true,
+    })
+    // Call inferSource directly with a referrer from the same host
+    const result = __testing.inferSource('https://oqupa.com/explorar')
+    expect(result).toBeNull()
+  })
 })

@@ -244,4 +244,36 @@ describe('buildBrandedCardConfig', () => {
       expect(buildBrandedCardConfig(mkListing(), mkProperty(), 'square').format).toBe('square')
     })
   })
+
+  describe('label and currency fallbacks', () => {
+    it('falls back to raw propertyType when not in PROPERTY_TYPE_SHORT_LABELS', () => {
+      // Exercises the `?? property.propertyType` branch (line 37)
+      const config = buildBrandedCardConfig(
+        mkListing(),
+        mkProperty({ propertyType: 'penthouse' as Property['propertyType'] }),
+        'story',
+      )
+      expect(config.propertyType).toBe('penthouse')
+    })
+
+    it('falls back to S/. when currency is not in CURRENCY_SYMBOLS', () => {
+      // Exercises the `?? 'S/.'` branch (line 40)
+      const config = buildBrandedCardConfig(
+        mkListing({ price: { amount: 500, currency: 'EUR' as Listing['price']['currency'] } }),
+        mkProperty({ operationType: 'venta' }),
+        'story',
+      )
+      expect(config.priceText).toContain('S/.')
+    })
+
+    it('falls back to /mes when rentalDurationType suffix is missing from RENTAL_DURATION_PRICE_SUFFIX', () => {
+      // Exercises the `?? '/mes'` branch (line 44)
+      const config = buildBrandedCardConfig(
+        mkListing({ price: { amount: 1200, currency: 'PEN' } }),
+        mkProperty({ operationType: 'alquiler', rentalDurationType: 'unknown' as Property['rentalDurationType'] }),
+        'story',
+      )
+      expect(config.priceText).toContain('/mes')
+    })
+  })
 })

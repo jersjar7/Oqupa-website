@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
 // ── Hoisted mocks (accessible inside vi.mock factories) ───────────────────────
@@ -363,5 +363,104 @@ describe('useBugReportForm', () => {
       })
       expect(result.current.isSubmitting).toBe(false)
     })
+  })
+})
+
+// ── RECAPTCHA_ENABLED = true (lines 79-90) ────────────────────────────────────
+//
+// Same pattern as useExpansionForm: RECAPTCHA_ENABLED is a module-level const.
+// Stub the env var, reset modules, and re-import to exercise the reCAPTCHA path.
+
+describe('useBugReportForm — RECAPTCHA_ENABLED branch (lines 79-90)', () => {
+  beforeEach(() => {
+    submitBugReportMock.mockReset()
+    submitBugReportMock.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  async function importWithRecaptchaEnabled() {
+    vi.stubEnv('VITE_RECAPTCHA_SITE_KEY', 'test-site-key')
+    vi.resetModules()
+    const hookMod = await import('../useBugReportForm')
+    const recaptchaMod = await import('@/lib/recaptcha')
+    const functionsMod = await import('firebase/functions')
+    return { hookMod, recaptchaMod, functionsMod }
+  }
+
+  function fillValidBugReport(result: { current: ReturnType<typeof import('../useBugReportForm').useBugReportForm> }) {
+    act(() => {
+      result.current.handleChange(makeEvent({ name: 'contact', value: 'user@test.com' }))
+      result.current.handleChange(
+        makeEvent({ name: 'description', value: 'The login button does nothing when clicked' })
+      )
+    })
+  }
+
+  it('calls getRecaptchaToken and httpsCallable when RECAPTCHA_ENABLED is true (happy path)', async () => {
+    const { hookMod, recaptchaMod, functionsMod } = await importWithRecaptchaEnabled()
+    const { useBugReportForm: useForm } = hookMod
+
+    const submitCallable = vi.fn().mockResolvedValue({})
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('test-token')
+    vi.mocked(functionsMod.httpsCallable).mockReturnValue(
+      submitCallable as ReturnType<typeof functionsMod.httpsCallable>
+    )
+
+    const { result } = renderHook(() => useForm())
+    fillValidBugReport(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    expect(recaptchaMod.getRecaptchaToken).toHaveBeenCalledWith('bug_report')
+    expect(submitCallable).toHaveBeenCalled()
+    // submitted = true → fallback direct write should NOT be called
+    expect(submitBugReportMock).not.toHaveBeenCalled()
+    expect(result.current.isSuccess).toBe(true)
+  })
+
+  it('falls back to direct write when getRecaptchaToken throws (inner catch block)', async () => {
+    const { hookMod, recaptchaMod } = await importWithRecaptchaEnabled()
+    const { useBugReportForm: useForm } = hookMod
+
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockRejectedValue(new Error('reCAPTCHA blocked'))
+
+    const { result } = renderHook(() => useForm())
+    fillValidBugReport(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    // reCAPTCHA threw → catch swallows → submitted stays false → fallback direct write
+    expect(submitBugReportMock).toHaveBeenCalledOnce()
+    expect(result.current.isSuccess).toBe(true)
+  })
+
+  it('falls back to direct write when httpsCallable throws (inner catch block)', async () => {
+    const { hookMod, recaptchaMod, functionsMod } = await importWithRecaptchaEnabled()
+    const { useBugReportForm: useForm } = hookMod
+
+    const failingCallable = vi.fn().mockRejectedValue(new Error('cloud function error'))
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('token-ok')
+    vi.mocked(functionsMod.httpsCallable).mockReturnValue(
+      failingCallable as ReturnType<typeof functionsMod.httpsCallable>
+    )
+
+    const { result } = renderHook(() => useForm())
+    fillValidBugReport(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    // callable threw → catch swallows → submitted stays false → fallback direct write
+    expect(submitBugReportMock).toHaveBeenCalledOnce()
+    expect(result.current.isSuccess).toBe(true)
   })
 })

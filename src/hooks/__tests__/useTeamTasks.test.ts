@@ -213,4 +213,32 @@ describe('useTeamTasks', () => {
 
     expect(subscribeMock).toHaveBeenCalledWith('dev', expect.any(Function), expect.any(Function))
   })
+
+  it('sortForColumn: done task placed after in-progress when in-progress tasks are first in input (line 26)', async () => {
+    // With 3 tasks: [in-progress, in-progress, done] — V8's insertion sort
+    // compares (done, in-progress) as a=done, b=in-progress, hitting line 26.
+    const doneAt = new Date(2026, 5, 1)
+    const tasks = [
+      mkTask({ assigneeEmail: 'carol@test.com', doneAt: null, createdAt: new Date(2026, 0, 3) }),
+      mkTask({ assigneeEmail: 'carol@test.com', doneAt: null, createdAt: new Date(2026, 0, 2) }),
+      mkTask({ assigneeEmail: 'carol@test.com', doneAt, createdAt: new Date(2026, 0, 1) }),
+    ]
+
+    subscribeMock.mockImplementation(
+      (_team: string, onData: (tasks: TeamTask[]) => void) => {
+        onData(tasks)
+        return () => {}
+      },
+    )
+
+    const { result } = renderHook(() => useTeamTasks('dev'))
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const col = result.current.byAssignee['carol@test.com']!
+    // The done task must be last (sort pushes it after in-progress)
+    expect(col[col.length - 1]!.doneAt).toBe(doneAt)
+    // The two in-progress tasks must come first
+    expect(col[0]!.doneAt).toBeNull()
+    expect(col[1]!.doneAt).toBeNull()
+  })
 })

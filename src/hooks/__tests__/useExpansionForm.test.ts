@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
 // ── Hoisted mocks ────────────────────────────────────────────────────────────
@@ -450,5 +450,103 @@ describe('useExpansionForm', () => {
       })
       expect(result.current.isSubmitting).toBe(false)
     })
+  })
+})
+
+// ── RECAPTCHA_ENABLED = true (lines 129-137) ──────────────────────────────────
+//
+// RECAPTCHA_ENABLED is a module-level const: !!import.meta.env.VITE_RECAPTCHA_SITE_KEY
+// The only way to set it to true is to stub the env var, reset modules, and
+// re-import the hook via a dynamic import so the module is re-evaluated.
+//
+// After vi.resetModules(), each vi.mock() factory is re-run on the next import.
+// The `@/lib/recaptcha` factory creates a fresh vi.fn() — import it after the
+// hook to get the same module instance and spy on it with vi.mocked().
+// The `firebase/functions` factory also creates fresh vi.fn()s — same pattern.
+
+describe('useExpansionForm — RECAPTCHA_ENABLED branch (lines 129-137)', () => {
+  beforeEach(() => {
+    addWaitlistEntryMock.mockReset()
+    addWaitlistEntryMock.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  async function importWithRecaptchaEnabled() {
+    vi.stubEnv('VITE_RECAPTCHA_SITE_KEY', 'test-site-key')
+    vi.resetModules()
+    const hookMod = await import('../useExpansionForm')
+    // Import the mocked modules AFTER the hook so we get the same freshly-created
+    // module instances that the hook will use at call time.
+    const recaptchaMod = await import('@/lib/recaptcha')
+    const functionsMod = await import('firebase/functions')
+    return { hookMod, recaptchaMod, functionsMod }
+  }
+
+  it('calls getRecaptchaToken and httpsCallable when RECAPTCHA_ENABLED is true (happy path)', async () => {
+    const { hookMod, recaptchaMod, functionsMod } = await importWithRecaptchaEnabled()
+    const { useExpansionForm: useForm } = hookMod
+
+    const submitWaitlistCallable = vi.fn().mockResolvedValue({})
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('test-token')
+    vi.mocked(functionsMod.httpsCallable).mockReturnValue(
+      submitWaitlistCallable as ReturnType<typeof functionsMod.httpsCallable>
+    )
+
+    const { result } = renderHook(() => useForm())
+    fillValidForm(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    expect(recaptchaMod.getRecaptchaToken).toHaveBeenCalledWith('waitlist_signup')
+    expect(submitWaitlistCallable).toHaveBeenCalled()
+    // submitted = true → the fallback direct write should NOT be called
+    expect(addWaitlistEntryMock).not.toHaveBeenCalled()
+    expect(result.current.isSuccess).toBe(true)
+  })
+
+  it('falls back to direct write when getRecaptchaToken throws (catch block, line 135-138)', async () => {
+    const { hookMod, recaptchaMod } = await importWithRecaptchaEnabled()
+    const { useExpansionForm: useForm } = hookMod
+
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockRejectedValue(new Error('reCAPTCHA blocked'))
+
+    const { result } = renderHook(() => useForm())
+    fillValidForm(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    // reCAPTCHA threw → catch swallows it → submitted stays false → fallback direct write
+    expect(addWaitlistEntryMock).toHaveBeenCalledOnce()
+    expect(result.current.isSuccess).toBe(true)
+  })
+
+  it('falls back to direct write when httpsCallable throws (inner catch block, line 135-138)', async () => {
+    const { hookMod, recaptchaMod, functionsMod } = await importWithRecaptchaEnabled()
+    const { useExpansionForm: useForm } = hookMod
+
+    const failingCallable = vi.fn().mockRejectedValue(new Error('cloud function error'))
+    vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('token-ok')
+    vi.mocked(functionsMod.httpsCallable).mockReturnValue(
+      failingCallable as ReturnType<typeof functionsMod.httpsCallable>
+    )
+
+    const { result } = renderHook(() => useForm())
+    fillValidForm(result)
+
+    await act(async () => {
+      await result.current.handleSubmit(makeSubmitEvent())
+    })
+
+    // callable threw → catch swallows it → submitted stays false → fallback direct write
+    expect(addWaitlistEntryMock).toHaveBeenCalledOnce()
+    expect(result.current.isSuccess).toBe(true)
   })
 })

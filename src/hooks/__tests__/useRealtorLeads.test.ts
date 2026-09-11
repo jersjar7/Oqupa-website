@@ -61,6 +61,7 @@ const {
   useClaimLead,
   useAssignRealtor,
   useUnassignRealtor,
+  useAcceptAssignment,
   useDeclineAssignment,
 } = await import('../useRealtorLeads')
 
@@ -403,5 +404,47 @@ describe('useDeclineAssignment', () => {
       }
     })
     expect(toastMock.error).toHaveBeenCalledWith('Error al rechazar la asignacion')
+  })
+})
+
+describe('useAcceptAssignment', () => {
+  beforeEach(() => {
+    firestoreServiceMock.acceptAssignment.mockReset()
+    toastMock.success.mockReset()
+    toastMock.error.mockReset()
+    navigateMock.mockReset()
+    firestoreServiceMock.acceptAssignment.mockResolvedValue(undefined)
+  })
+
+  it('calls acceptAssignment with the listingId', async () => {
+    const { result } = renderHook(() => useAcceptAssignment(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync('listing-1')
+    })
+    expect(firestoreServiceMock.acceptAssignment).toHaveBeenCalledWith('listing-1')
+  })
+
+  it('shows success toast after accepting', async () => {
+    const { result } = renderHook(() => useAcceptAssignment(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync('listing-1')
+    })
+    expect(toastMock.success).toHaveBeenCalledWith(
+      '¡Invitación aceptada!',
+      expect.objectContaining({ description: 'Ahora gestionas esta propiedad.' }),
+    )
+  })
+
+  it('shows error toast when accepting fails (line 133)', async () => {
+    firestoreServiceMock.acceptAssignment.mockRejectedValue(new Error('fail'))
+    const { result } = renderHook(() => useAcceptAssignment(), { wrapper })
+    await act(async () => {
+      try {
+        await result.current.mutateAsync('listing-1')
+      } catch {
+        // expected
+      }
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Error al aceptar la invitación')
   })
 })

@@ -1183,4 +1183,65 @@ describe('firestoreService', () => {
       expect(docMock).toHaveBeenCalledWith(expect.anything(), 'listings', 'listing-xyz')
     })
   })
+
+  // ── toDate() string branch (line 76) ──────────────────────────────────────
+  // When a Firestore document has a string timestamp (e.g. a legacy record),
+  // toDate() converts it via new Date(value). Covered via getListingById.
+
+  describe('toDate() — string timestamp branch (line 76)', () => {
+    it('converts a string createdAt to a Date when fetching a listing', async () => {
+      getDocMock.mockResolvedValueOnce(
+        makeDocSnap('listing-str', makeListingData({ createdAt: '2026-01-01T00:00:00Z' }))
+      )
+      const listing = await firestoreService.getListingById('listing-str')
+      expect(listing).not.toBeNull()
+      expect(listing!.createdAt).toBeInstanceOf(Date)
+    })
+
+    it('falls back to new Date(0) and warns for unexpected timestamp type (line 77-78)', async () => {
+      // Pass a number — not a Timestamp object, not a string → hits the unexpected branch
+      getDocMock.mockResolvedValueOnce(
+        makeDocSnap('listing-num', makeListingData({ createdAt: 99999 }))
+      )
+      const listing = await firestoreService.getListingById('listing-num')
+      expect(listing).not.toBeNull()
+      // new Date(0) is the epoch fallback
+      expect(listing!.createdAt.getTime()).toBe(new Date(0).getTime())
+    })
+  })
+
+  // ── stripUndefined() — continue branch (line 51) ──────────────────────────
+  // When a field value is undefined, stripUndefined skips it (continue).
+  // Covered by calling createListing with optional fields set to undefined.
+
+  describe('stripUndefined() — undefined key is omitted (line 51)', () => {
+    it('omits undefined optional fields when creating a listing', async () => {
+      await firestoreService.createListing({
+        role: 'owner',
+        ownerId: 'user-1',
+        propertyId: 'prop-1',
+        description: 'Test',
+        operationType: 'venta',
+        price: { amount: 100000, currency: 'USD' },
+        status: 'draft',
+        contactClickCount: 0,
+        wantsRealtorHelp: false,
+        maxRealtors: 3,
+        currentClaimsCount: 0,
+        isBoosted: false,
+        boostScore: 1,
+        showExactLocation: true,
+        // Optional fields intentionally set to undefined — triggers the continue branch in stripUndefined
+        publishedAt: undefined,
+        expiresAt: undefined,
+        boostedUntil: undefined,
+      })
+      expect(setDocMock).toHaveBeenCalledOnce()
+      // The payload written to Firestore should not contain the undefined fields
+      const payload = setDocMock.mock.calls[0][1] as Record<string, unknown>
+      expect(payload).not.toHaveProperty('publishedAt')
+      expect(payload).not.toHaveProperty('expiresAt')
+      expect(payload).not.toHaveProperty('boostedUntil')
+    })
+  })
 })

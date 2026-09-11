@@ -147,6 +147,45 @@ describe('growthPlanService', () => {
       expect(days[0].completedAt).toEqual(completedDate)
     })
 
+    it('passes a Date object through toDate unchanged (instanceof Date branch)', () => {
+      // Exercises line 19: `if (value instanceof Date) return value`
+      const completedDate = new Date('2026-09-05T12:00:00Z')
+      const onNext = vi.fn()
+      growthPlanService.subscribeToPlan(onNext, vi.fn())
+
+      fireOnChange([
+        makeSnapshotDoc('2026-09-05', {
+          day: 5, week: 1, phase: '', theme: '', category: '', action: '',
+          why: '', minutes: 0, spend: 0, doneWhen: '', owner: 'jerson',
+          status: 'done', notes: '',
+          completedAt: completedDate, // already a Date object, not a Timestamp
+          completedByEmail: 'jerson@oqupa.com',
+        }),
+      ])
+
+      const days = onNext.mock.calls[0][0]
+      expect(days[0].completedAt).toBe(completedDate)
+    })
+
+    it('returns null when completedAt has no toDate method (unexpected object)', () => {
+      // Exercises line 21: `typeof ts.toDate === 'function' ? ts.toDate() : null`
+      const onNext = vi.fn()
+      growthPlanService.subscribeToPlan(onNext, vi.fn())
+
+      fireOnChange([
+        makeSnapshotDoc('2026-09-06', {
+          day: 6, week: 1, phase: '', theme: '', category: '', action: '',
+          why: '', minutes: 0, spend: 0, doneWhen: '', owner: 'jerson',
+          status: 'done', notes: '',
+          completedAt: { notATimestamp: true }, // object without toDate()
+          completedByEmail: '',
+        }),
+      ])
+
+      const days = onNext.mock.calls[0][0]
+      expect(days[0].completedAt).toBeNull()
+    })
+
     it('uses "pending" status as fallback for unknown status values', () => {
       const onNext = vi.fn()
       growthPlanService.subscribeToPlan(onNext, vi.fn())

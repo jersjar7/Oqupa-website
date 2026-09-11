@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -199,6 +199,58 @@ describe('useNumbersData', () => {
       const { result } = renderHook(() => useNumbersData())
       await waitFor(() => expect(result.current.isLoading).toBe(false))
       expect(result.current.history).toEqual([])
+    })
+  })
+
+  describe('unmount-during-load (cancelled guard)', () => {
+    it('does not update state after unmount during successful load (line 66 cancelled branch)', async () => {
+      // Exercises `if (cancelled) return` on line 66 when component unmounts before getDocs resolves
+      let resolveSnapshot!: (snap: ReturnType<typeof makeSnapshot>) => void
+      getDocsMock.mockReturnValue(
+        new Promise<ReturnType<typeof makeSnapshot>>((resolve) => {
+          resolveSnapshot = resolve
+        })
+      )
+
+      const { unmount } = renderHook(() => useNumbersData())
+
+      // Unmount immediately — sets cancelled = true
+      act(() => {
+        unmount()
+      })
+
+      // Resolve the getDocs promise after unmount — the cancelled guard should block setState
+      await act(async () => {
+        resolveSnapshot(makeSnapshot([makeDoc('2026-09-10')]))
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      // No assertion needed; if the cancelled guard is missing, React warns about state updates
+      // after unmount. The test passes if no error is thrown.
+      expect(getDocsMock).toHaveBeenCalledOnce()
+    })
+
+    it('does not update state after unmount during an error (line 72 cancelled branch)', async () => {
+      // Exercises `if (cancelled) return` on line 72 when component unmounts before getDocs rejects
+      let rejectSnapshot!: (err: Error) => void
+      getDocsMock.mockReturnValue(
+        new Promise<never>((_resolve, reject) => {
+          rejectSnapshot = reject
+        })
+      )
+
+      const { unmount } = renderHook(() => useNumbersData())
+
+      act(() => {
+        unmount()
+      })
+
+      await act(async () => {
+        rejectSnapshot(new Error('network failure'))
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(getDocsMock).toHaveBeenCalledOnce()
     })
   })
 })

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Mock firestoreService to avoid Firebase initialisation
@@ -105,5 +105,30 @@ describe('useListListings', () => {
     expect(getListingWithPropertyMock).toHaveBeenCalledWith('id-1')
     expect(getListingWithPropertyMock).toHaveBeenCalledWith('id-2')
     expect(getListingWithPropertyMock).toHaveBeenCalledWith('id-3')
+  })
+
+  it('does not update state after unmount during fetch (cancelled branch)', async () => {
+    // Exercises lines 20 and 25: `if (!cancelled)` guards when cancelled = true
+    let resolvePromise!: () => void
+    getListingWithPropertyMock.mockReturnValue(
+      new Promise<{ listing: { id: string }; property: Record<string, never> } | null>((resolve) => {
+        resolvePromise = () => resolve({ listing: { id: 'l1' }, property: {} })
+      })
+    )
+
+    const { unmount } = renderHook(() => useListListings(['l1']))
+
+    // Unmount before the promise resolves — cancels the effect
+    act(() => {
+      unmount()
+    })
+
+    // Now resolve the promise — should not throw or update state
+    act(() => {
+      resolvePromise()
+    })
+
+    // If we reach here without errors, the cancelled guard worked correctly
+    expect(getListingWithPropertyMock).toHaveBeenCalledOnce()
   })
 })

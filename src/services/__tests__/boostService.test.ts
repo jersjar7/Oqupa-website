@@ -386,5 +386,22 @@ describe('boostService', () => {
       const result = await boostService.getPaymentById('pay-abc')
       expect(result!.expiresAt).toBeUndefined()
     })
+
+    it('converts a string timestamp createdAt to Date (line 29 of boostService.ts)', async () => {
+      // Exercises `if (typeof value === 'string') return new Date(value)`
+      const data = makePaymentData({ createdAt: '2026-09-10T08:00:00Z' })
+      getDocMock.mockResolvedValue(makeDocRef('pay-abc', data))
+      const result = await boostService.getPaymentById('pay-abc')
+      expect(result!.createdAt).toBeInstanceOf(Date)
+      expect(result!.createdAt.getFullYear()).toBe(2026)
+    })
+
+    it('falls back to new Date(0) when createdAt is an unexpected type (line 30 of boostService.ts)', async () => {
+      // Exercises the final `return new Date(0)` for a non-null, non-object, non-string value
+      const data = makePaymentData({ createdAt: 12345 })
+      getDocMock.mockResolvedValue(makeDocRef('pay-abc', data))
+      const result = await boostService.getPaymentById('pay-abc')
+      expect(result!.createdAt.getTime()).toBe(new Date(0).getTime())
+    })
   })
 })

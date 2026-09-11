@@ -279,5 +279,30 @@ describe('contentLinkService', () => {
       const link = getConvertedLink({ date: null, createdAt: null, createdByEmail: '' })
       expect(link.url).toBe('')
     })
+
+    it('passes a Date object through toDate unchanged (instanceof Date branch, line 29)', () => {
+      // Exercises line 29: `if (value instanceof Date) return value`
+      const dateObj = new Date('2026-09-15T08:00:00Z')
+      const link = getConvertedLink({
+        date: null,
+        url: 'https://x.com',
+        createdAt: dateObj, // already a Date — not a Firestore Timestamp
+        createdByEmail: '',
+      })
+      expect(link.createdAt).toBe(dateObj)
+    })
+
+    it('returns null from toDate when object has no toDate method (line 31 false branch)', () => {
+      // Exercises line 31: `typeof ts.toDate === 'function' ? ts.toDate() : null`
+      // When the object exists but has no toDate(), toDate() returns null → ?? new Date() fires
+      const link = getConvertedLink({
+        date: null,
+        url: 'https://x.com',
+        createdAt: { notATimestamp: true }, // object without toDate()
+        createdByEmail: '',
+      })
+      // toDate() returned null, so the ?? new Date() fallback fires
+      expect(link.createdAt).toBeInstanceOf(Date)
+    })
   })
 })

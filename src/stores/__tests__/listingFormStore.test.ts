@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useListingFormStore } from '../listingFormStore'
 
 // ---------------------------------------------------------------------------
@@ -266,6 +266,32 @@ describe('listingFormStore', () => {
       })
       expect(() => store().nextStep()).not.toThrow()
       spy.mockRestore()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // loadFromSession — module-reload tests
+  // -------------------------------------------------------------------------
+  describe('loadFromSession — rehydration on module init', () => {
+    afterEach(() => {
+      vi.resetModules()
+      sessionStorage.clear()
+    })
+
+    it('rehydrates step from sessionStorage when the module loads', async () => {
+      // Write a valid JSON session before module init
+      sessionStorage.setItem('oqupa-listing-form', JSON.stringify({ step: 3, description: 'restored' }))
+      vi.resetModules()
+      const { useListingFormStore: freshStore } = await import('../listingFormStore')
+      expect(freshStore.getState().step).toBe(3)
+    })
+
+    it('falls back to step 1 when sessionStorage contains invalid JSON', async () => {
+      // Write corrupted JSON so JSON.parse throws (covers lines 97-98)
+      sessionStorage.setItem('oqupa-listing-form', 'NOT_JSON{{{')
+      vi.resetModules()
+      const { useListingFormStore: freshStore } = await import('../listingFormStore')
+      expect(freshStore.getState().step).toBe(1)
     })
   })
 })

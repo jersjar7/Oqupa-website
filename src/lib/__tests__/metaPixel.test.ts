@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { initMetaPixel, trackMeta, trackMetaCustom, __testing } from '../metaPixel'
+
+// ── Production-mode helper ────────────────────────────────────────────────────
+
+async function importInProductionMode() {
+  vi.resetModules()
+  vi.stubEnv('MODE', 'production')
+  return import('../metaPixel')
+}
 
 // In test mode, MODE is never 'production', so isProduction is always false.
 // All exported functions have production-only guards — the tests below pin
@@ -71,5 +79,118 @@ describe('trackMetaCustom — non-production guard', () => {
 
   it('does not throw when window.fbq is undefined', () => {
     expect(() => trackMetaCustom('CustomEvent')).not.toThrow()
+  })
+})
+
+// ── Production-mode tests (MODE === 'production') ─────────────────────────────
+
+describe('initMetaPixel — production mode', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.resetModules()
+    delete (window as unknown as Record<string, unknown>).fbq
+    delete (window as unknown as Record<string, unknown>)._fbq
+  })
+
+  it('sets window.fbq in production', async () => {
+    const { initMetaPixel: init } = await importInProductionMode()
+    // Stub <script> insertion to avoid actually loading fbevents.js
+    const origGetElements = document.getElementsByTagName.bind(document)
+    vi.spyOn(document, 'getElementsByTagName').mockImplementation((tag: string) => {
+      if (tag === 'script') {
+        const fakeScript = origGetElements('script')[0] ?? document.createElement('script')
+        const fakeParent = { insertBefore: vi.fn() }
+        Object.defineProperty(fakeScript, 'parentNode', { value: fakeParent, configurable: true })
+        return [fakeScript] as unknown as HTMLCollectionOf<Element>
+      }
+      return origGetElements(tag)
+    })
+    init()
+    expect((window as unknown as Record<string, unknown>).fbq).toBeDefined()
+  })
+
+  it('does not reinitialize when called multiple times (started guard)', async () => {
+    const { initMetaPixel: init } = await importInProductionMode()
+    // Provide a fake script with a parentNode so insertBefore does not throw
+    const fakeScript = document.createElement('script')
+    const fakeParent = { insertBefore: vi.fn() }
+    Object.defineProperty(fakeScript, 'parentNode', { value: fakeParent, configurable: true })
+    vi.spyOn(document, 'getElementsByTagName').mockReturnValue(
+      [fakeScript] as unknown as HTMLCollectionOf<HTMLScriptElement>
+    )
+    init()
+    const fbqAfterFirst = (window as unknown as Record<string, unknown>).fbq
+    init()
+    expect((window as unknown as Record<string, unknown>).fbq).toBe(fbqAfterFirst)
+  })
+
+  it('does not set fbq again when window.fbq already exists (pixel already loaded)', async () => {
+    const { initMetaPixel: init } = await importInProductionMode()
+    const existingFbq = vi.fn()
+    vi.stubGlobal('fbq', existingFbq)
+    vi.spyOn(document, 'getElementsByTagName').mockReturnValue(
+      [] as unknown as HTMLCollectionOf<HTMLScriptElement>
+    )
+    vi.spyOn(document.documentElement, 'appendChild').mockReturnValue(document.createElement('script'))
+    init()
+    // When window.fbq already exists, the IIFE returns early; fbq stays as the existing one
+    expect((window as unknown as Record<string, unknown>).fbq).toBe(existingFbq)
+  })
+})
+
+describe('trackMeta — production mode', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.resetModules()
+    delete (window as unknown as Record<string, unknown>).fbq
+  })
+
+  it('calls window.fbq("track", event, params) in production', async () => {
+    const { trackMeta: track } = await importInProductionMode()
+    const fbqSpy = vi.fn()
+    vi.stubGlobal('fbq', fbqSpy)
+    track('ViewContent', { content_type: 'property' })
+    expect(fbqSpy).toHaveBeenCalledWith('track', 'ViewContent', { content_type: 'property' })
+  })
+
+  it('does not throw in production when fbq is undefined', async () => {
+    const { trackMeta: track } = await importInProductionMode()
+    expect(() => track('ViewContent')).not.toThrow()
+  })
+
+  it('swallows errors from fbq in production (catch block)', async () => {
+    const { trackMeta: track } = await importInProductionMode()
+    vi.stubGlobal('fbq', vi.fn(() => { throw new Error('blocked') }))
+    expect(() => track('PageView')).not.toThrow()
+  })
+})
+
+describe('trackMetaCustom — production mode', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.resetModules()
+    delete (window as unknown as Record<string, unknown>).fbq
+  })
+
+  it('calls window.fbq("trackCustom", event, params) in production', async () => {
+    const { trackMetaCustom: trackCustom } = await importInProductionMode()
+    const fbqSpy = vi.fn()
+    vi.stubGlobal('fbq', fbqSpy)
+    trackCustom('ListingPublished', { operation_type: 'venta' })
+    expect(fbqSpy).toHaveBeenCalledWith('trackCustom', 'ListingPublished', { operation_type: 'venta' })
+  })
+
+  it('does not throw in production when fbq is undefined', async () => {
+    const { trackMetaCustom: trackCustom } = await importInProductionMode()
+    expect(() => trackCustom('CustomEvent')).not.toThrow()
+  })
+
+  it('swallows errors from fbq in production (catch block)', async () => {
+    const { trackMetaCustom: trackCustom } = await importInProductionMode()
+    vi.stubGlobal('fbq', vi.fn(() => { throw new Error('blocked') }))
+    expect(() => trackCustom('ListingPublished')).not.toThrow()
   })
 })
