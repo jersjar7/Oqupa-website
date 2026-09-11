@@ -166,6 +166,29 @@ describe('initErrorBuffer + getCapturedErrors', () => {
 
     expect(spy).toHaveBeenCalledWith('pass-through test')
   })
+
+  it('captures an object with a non-serialisable value (JSON.stringify throws)', async () => {
+    vi.resetModules()
+    const { initErrorBuffer, getCapturedErrors } = await import('../errorBuffer')
+    initErrorBuffer()
+
+    // Create an object that throws when JSON.stringify is called on it
+    const circular: Record<string, unknown> = {}
+    circular['self'] = circular // circular reference → JSON.stringify throws
+
+    // The unhandledrejection handler calls describe(event.reason); passing a
+    // non-serialisable object exercises the catch branch inside describe().
+    const rejectionEvent = new PromiseRejectionEvent('unhandledrejection', {
+      promise: Promise.resolve(),
+      reason: circular,
+    })
+    window.dispatchEvent(rejectionEvent)
+
+    const output = getCapturedErrors()
+    // Should have captured something (the String() fallback path)
+    expect(output).toContain('unhandledrejection')
+    expect(output.length).toBeGreaterThan(0)
+  })
 })
 
 describe('ring buffer cap at 20 entries', () => {

@@ -121,4 +121,106 @@ describe('attribution', () => {
 
     window.localStorage.setItem = original
   })
+
+  // ── inferSource branches ────────────────────────────────────────────────
+
+  it('infers google from a google.com referrer', () => {
+    visit('https://oqupa.com/', 'https://www.google.com/search?q=oqupa')
+    expect(attributionForListing()).toMatchObject({ firstSource: 'google' })
+  })
+
+  it('infers tiktok from a tiktok.com referrer', () => {
+    visit('https://oqupa.com/', 'https://www.tiktok.com/@oqupa')
+    expect(attributionForListing()).toMatchObject({ firstSource: 'tiktok' })
+  })
+
+  it('infers whatsapp from a wa.me referrer', () => {
+    visit('https://oqupa.com/', 'https://wa.me/51999999999')
+    expect(attributionForListing()).toMatchObject({ firstSource: 'whatsapp' })
+  })
+
+  it('uses the raw hostname as source for unrecognised referrers', () => {
+    visit('https://oqupa.com/', 'https://remax.com.pe/propiedades')
+    // remax.com.pe strips www. then matches none of the known channels
+    expect(attributionForListing()).toMatchObject({ firstSource: 'remax.com.pe' })
+  })
+
+  it('inferSource returns null for empty referrer', () => {
+    // Empty referrer with no campaign → isEmpty, nothing recorded
+    visit('https://oqupa.com/')
+    expect(attributionForListing()).toBeNull()
+  })
+
+  // ── isInternal catch (malformed URL) ───────────────────────────────────
+
+  it('does not treat a malformed referrer as internal', () => {
+    // A referrer that throws in new URL() — must be treated as non-internal
+    // (but also has no inferrable source), so isEmpty → nothing stored.
+    visit('https://oqupa.com/publicar', 'not-a-valid-url')
+    expect(attributionForListing()).toBeNull()
+  })
+
+  // ── read() catch (corrupted JSON in localStorage) ──────────────────────
+
+  it('treats corrupted JSON in localStorage as a fresh session', () => {
+    // Write corrupt data directly — read() must not throw and must return null.
+    window.localStorage.setItem(__testing.STORAGE_KEY, 'NOT_VALID_JSON{{{')
+    // A new campaign visit after corrupt storage should record correctly.
+    visit('https://oqupa.com/?utm_source=facebook&utm_campaign=new-start')
+    expect(attributionForListing()).toMatchObject({
+      firstSource: 'facebook',
+      firstCampaign: 'new-start',
+    })
+  })
+
+  // ── attributionForListing: only timestamps, no identifiable source ─────
+
+  it('returns null from attributionForListing when stored record has no source/campaign/clickId on either touch', () => {
+    // Force-write a record that has `at` timestamps but zero signal fields.
+    // This exercises the early-exit inside attributionForListing().
+    const emptyTouch = {
+      source: null, medium: null, campaign: null, content: null,
+      term: null, clickId: null, referrer: null,
+      landingPath: '/explorar', at: new Date().toISOString(),
+    }
+    window.localStorage.setItem(
+      __testing.STORAGE_KEY,
+      JSON.stringify({ first: emptyTouch, last: emptyTouch }),
+    )
+    expect(attributionForListing()).toBeNull()
+  })
+
+  // ── lastWasPaidClick flag ───────────────────────────────────────────────
+
+  it('sets lastWasPaidClick when the last touch has a gclid', () => {
+    visit('https://oqupa.com/?utm_source=facebook&utm_campaign=first')
+    visit('https://oqupa.com/explorar?utm_source=google&gclid=GOOGLE_CLICK_ID')
+    expect(attributionForListing()).toMatchObject({
+      firstSource: 'facebook',
+      lastWasPaidClick: 'true',
+    })
+    // The click id value itself must not be stored.
+    expect(JSON.stringify(attributionForListing())).not.toContain('GOOGLE_CLICK_ID')
+  })
+
+  // ── read(): localStorage contains JSON without first.at ────────────────────
+
+  it('treats stored JSON without first.at as a fresh session', () => {
+    // Write a record that has first/last but no `at` field on first.
+    window.localStorage.setItem(
+      __testing.STORAGE_KEY,
+      JSON.stringify({ first: { source: 'facebook' }, last: { source: 'google' } }),
+    )
+    // read() should return null (no at field), so attributionForListing() returns null.
+    expect(attributionForListing()).toBeNull()
+  })
+
+  // ── plain revisit from our own domain stores nothing ──────────────────────
+
+  it('stores nothing for an internal page navigation with no campaign', () => {
+    // A link from one oqupa.com page to another — isInternal strips the referrer,
+    // no campaign params → nothing to attribute.
+    visit('https://oqupa.com/publicar', 'https://oqupa.com/explorar')
+    expect(attributionForListing()).toBeNull()
+  })
 })
