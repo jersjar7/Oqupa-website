@@ -20,7 +20,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
-  unlink,
   updatePhoneNumber,
 } from 'firebase/auth'
 import {
@@ -89,6 +88,15 @@ export const authService = {
     await sendEmailVerification(user, { url, handleCodeInApp: false })
   },
 
+  // After the email link is clicked the browser keeps its previous ID token —
+  // with email_verified:false — for up to an hour, and the security rules
+  // read that claim. Forcing a refresh makes the new state effective at once.
+  async refreshSession() {
+    const user = auth.currentUser
+    if (!user) return
+    await user.getIdToken(true)
+  },
+
   // Re-fetches the auth user from the server so a freshly verified email
   // (verified in another tab/device) flips emailVerified locally without
   // requiring a sign-out/sign-in.
@@ -107,6 +115,22 @@ export const authService = {
 
   async getSignInMethods(email: string): Promise<string[]> {
     return fetchSignInMethodsForEmail(auth, email)
+  },
+
+  // Server-side "does this email have an account" check via the
+  // `checkAccountExists` Cloud Function. Unlike getSignInMethods above,
+  // this is reliable even with Email Enumeration Protection enabled on the
+  // Auth project — that setting makes fetchSignInMethodsForEmail always
+  // resolve to an empty array, client-side, regardless of whether the
+  // account exists. Only the Admin SDK (server-side) can answer this.
+  async checkAccountExists(email: string): Promise<boolean> {
+    const functions = getFunctions(undefined, 'southamerica-east1')
+    const checkAccountExists = httpsCallable<{ email: string }, { exists: boolean }>(
+      functions,
+      'checkAccountExists',
+    )
+    const result = await checkAccountExists({ email })
+    return result.data.exists
   },
 
   async sendPasswordSetupEmail(email: string) {
@@ -224,6 +248,23 @@ export const authService = {
       await signInWithCredential(auth, credential)
     }
 
+    // Mint a token that carries the phone.
+    //
+    // Linking updates the ACCOUNT at once, but the browser keeps the token it
+    // already holds — without the phone_number claim — for up to an hour, and
+    // security rules can read only the claim, never the account. Without this
+    // refresh, someone who verifies their number and immediately publishes is
+    // refused by a rule that cannot yet see the phone they just linked. The
+    // email step has done the same since 6a, for the same reason.
+    //
+    // Swallowed on failure: the phone IS linked, and throwing here would send
+    // a verified person back to the SMS step. The claim catches up on its own.
+    try {
+      await auth.currentUser?.getIdToken(true)
+    } catch {
+      // Intentionally ignored — see above.
+    }
+
     // Update Firestore
     if (auth.currentUser) {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), {
@@ -253,6 +294,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -285,6 +329,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -312,6 +359,9 @@ export const authService = {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        // The provider already knows the name — the pipeline then skips the
+        // name step, as the approved path says (hostile review, 2026-08-26).
+        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -332,14 +382,6 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     await signOut(auth)
-  },
-
-  async unlinkPhone() {
-    const currentUser = auth.currentUser
-    if (!currentUser) throw new Error('No authenticated user')
-    const hasPhone = currentUser.providerData.some(p => p.providerId === 'phone')
-    if (!hasPhone) return
-    await unlink(currentUser, 'phone')
   },
 
   cleanupRecaptcha() {

@@ -22,13 +22,6 @@ export default function PiuraOnlyBanner() {
           y aprendemos de nuestros clientes antes de expandirnos a más
           departamentos.
         </p>
-
-        <a
-          href="#expansion"
-          className="mt-4 inline-block text-sm font-medium text-primary transition-colors duration-200 hover:text-primary-hover"
-        >
-          ¿Estás fuera de Piura? ¡Cuéntanos que quieres Oqupa en tu departamento!
-        </a>
       </div>
     </section>
   )

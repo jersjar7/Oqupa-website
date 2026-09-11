@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -20,6 +21,8 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    // The entry screen hands over the email the person already typed.
+    defaultValues: { email: new URLSearchParams(location.search).get('email') ?? '' },
   })
 
   const passwordValue = watch('password', '')
@@ -56,7 +59,25 @@ export default function RegisterPage() {
           Empieza a publicar en Oqupa
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+        <button
+          type="button"
+          onClick={async () => {
+            setError(null)
+            try {
+              await authService.signInWithGoogle()
+            } catch (err) {
+              const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
+              if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+                toast.error('No pudimos entrar con Google. Intenta de nuevo.')
+              }
+            }
+          }}
+          className="mt-8 flex h-12 w-full items-center justify-center rounded-full bg-primary font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+        >
+          Continuar con Google
+        </button>
+        <p className="mt-6 text-center text-sm text-text-tertiary">o con tu correo</p>
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <Input
             label="Correo electrónico"
             type="email"

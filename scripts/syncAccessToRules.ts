@@ -34,6 +34,13 @@ function block(fn: string, area: AccessArea, indent: string): string {
     `${indent}function ${fn}() {`,
     `${indent}  return request.auth != null &&`,
     `${indent}         request.auth.token.email != null &&`,
+    // The address must be PROVEN, not merely claimed. Self-signup is open on
+    // both clients with no domain restriction, so an allowlisted address that
+    // has no Auth account yet could be registered by anyone and the token would
+    // carry it with email_verified:false. Google/Apple tokens are always
+    // verified; email/password tokens only after the verification link.
+    // Hostile review of B6, 2026-08-25 — staging had exactly that gap.
+    `${indent}         request.auth.token.email_verified == true &&`,
     `${indent}         request.auth.token.email.lower() in [`,
     emails,
     `${indent}         ];`,

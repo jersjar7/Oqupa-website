@@ -7,7 +7,6 @@ import SolutionSection from '@/components/landing/SolutionSection'
 import ShowcaseSection from '@/components/landing/ShowcaseSection'
 import PricingSection from '@/components/landing/PricingSection'
 import PiuraOnlyBanner from '@/components/landing/PiuraOnlyBanner'
-import ExpansionSection from '@/components/landing/ExpansionSection'
 
 interface LayoutContext {
   heroRef: React.RefObject<HTMLElement | null>
@@ -63,7 +62,6 @@ export default function LandingPage() {
       <SolutionSection />
       <PricingSection />
       <PiuraOnlyBanner />
-      <ExpansionSection />
     </>
   )
 }

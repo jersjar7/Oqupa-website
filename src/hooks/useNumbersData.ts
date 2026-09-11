@@ -25,6 +25,20 @@ export interface MetricsSnapshot {
     weekRevenuePEN: number
     succeededCount: number
   }
+  // Present only on snapshots taken after the Meta Ads integration shipped,
+  // and null on days the Marketing API was unreachable.
+  metaAds?: {
+    lifetime: MetaAdsWindow
+    last7d: MetaAdsWindow
+  } | null
+}
+
+export interface MetaAdsWindow {
+  spendUSD: number
+  impressions: number
+  reach: number
+  clicks: number
+  installs: number
 }
 
 interface UseNumbersData {

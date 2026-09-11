@@ -22,7 +22,6 @@ import { db, functions } from '@/lib/firebase'
 import { getOrCreateClientId } from '@/lib/clientId'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
-import type { WaitlistEntry } from '@/types/waitlist'
 import type { ContactTimeSlot, SupportedCountryCode, OperationType } from '@/types/enums'
 import type { ListingWithProperty, ExploreListingsPage } from '@/types/explore'
 import type { RealtorApplication } from '@/types/realtorApplication'
@@ -122,6 +121,10 @@ function listingFromDoc(id: string, data: Record<string, unknown>): Listing {
     currentClaimsCount: (data['currentClaimsCount'] as number) ?? 0,
     assignedRealtorId: data['assignedRealtorId'] as string | undefined,
     assignedRealtorPhoneNumber: data['assignedRealtorPhoneNumber'] as string | undefined,
+    ownerDisplayName: data['ownerDisplayName'] as string | undefined,
+    ownerPhotoKey: data['ownerPhotoKey'] as string | undefined,
+    ownerIsVerified: data['ownerIsVerified'] as boolean | undefined,
+    ownerMemberSinceYear: data['ownerMemberSinceYear'] as number | undefined,
     assignmentStatus: data['assignmentStatus'] as Listing['assignmentStatus'],
     declinedRealtorIds: data['declinedRealtorIds'] as string[] | undefined,
     // Boost fields
@@ -245,37 +248,6 @@ export const firestoreService = {
       // surfacing. The caller falls back to the public location.
       return null
     }
-  },
-
-  async addWaitlistEntry(
-    entry: Omit<WaitlistEntry, 'createdAt'>
-  ) {
-    const waitlistRef = collection(db, 'waitlist')
-    const docRef = await addDoc(waitlistRef, {
-      ...entry,
-      createdAt: serverTimestamp(),
-    })
-
-    // Queue notification email via Firebase Trigger Email extension
-    const mailRef = collection(db, 'mail')
-    await addDoc(mailRef, {
-      to: 'admin@oqupa.com',
-      message: {
-        subject: `Solicitud de expansión: ${entry.departamento} (${entry.name})`,
-        html: `
-          <h2>Nueva solicitud de expansión</h2>
-          <p>Un usuario quiere que Oqupa llegue a su departamento.</p>
-          <table style="border-collapse:collapse;font-family:sans-serif;">
-            <tr><td style="padding:8px;font-weight:bold;">Nombre:</td><td style="padding:8px;">${entry.name}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Teléfono:</td><td style="padding:8px;">${entry.phone}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Email:</td><td style="padding:8px;">${entry.email}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;">Departamento:</td><td style="padding:8px;">${entry.departamento}</td></tr>
-          </table>
-        `,
-      },
-    })
-
-    return docRef
   },
 
   // Direct mail-collection write. Degraded fallback for when reCAPTCHA is
