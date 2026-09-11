@@ -103,6 +103,61 @@ describe('loadRecaptchaScript — with site key', () => {
   })
 })
 
+describe('timeout paths — fake timers', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.stubEnv('VITE_RECAPTCHA_SITE_KEY', 'test-site-key-123')
+    document.querySelectorAll('script[src*="recaptcha"]').forEach((s) => s.remove())
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('rejects with "script load timeout" when script never fires onload or onerror', async () => {
+    const { loadRecaptchaScript: load } = await import('../recaptcha')
+
+    // Intercept appendChild but do NOT dispatch 'load' or 'error' — let the timeout fire
+    vi.spyOn(document.head, 'appendChild').mockImplementation((el) => el)
+
+    let caughtError: Error | null = null
+    load().catch((e: Error) => { caughtError = e })
+
+    // Advance 5001ms past the 5000ms timeout
+    await vi.advanceTimersByTimeAsync(5001)
+    expect(caughtError?.message).toBe('reCAPTCHA script load timeout')
+  })
+
+  it('rejects with "reCAPTCHA token timeout" when execute never resolves', async () => {
+    const { getRecaptchaToken: getToken } = await import('../recaptcha')
+
+    // Let the script "load" so loadRecaptchaScript resolves immediately
+    vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
+      const script = el as HTMLScriptElement
+      queueMicrotask(() => script.dispatchEvent(new Event('load')))
+      return el
+    })
+
+    // Mock grecaptcha.enterprise.ready but never call the callback — token never resolves
+    vi.stubGlobal('grecaptcha', {
+      enterprise: {
+        ready: vi.fn(), // never invokes callback
+        execute: vi.fn(),
+      },
+    })
+
+    let caughtError: Error | null = null
+    getToken('submit').catch((e: Error) => { caughtError = e })
+
+    // Flush microtasks (script onload), then advance past the 5000ms token timeout
+    await vi.advanceTimersByTimeAsync(5001)
+    expect(caughtError?.message).toBe('reCAPTCHA token timeout')
+  })
+})
+
 describe('getRecaptchaToken — with site key', () => {
   beforeEach(() => {
     vi.resetModules()

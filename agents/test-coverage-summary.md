@@ -102,3 +102,38 @@
 - Coverage before: ~21.65%
 - Coverage after:  ~21.69%
 - Tests written:   16 tests covering dateKey (0-padded month/day, all edge months), daysInMonth (31-day months, 28/29-day February, 30-day months, first/last element format, YYYY-MM-DD format, consecutive order, 1-indexed month output)
+
+## useBoundaryPolygons.ts — 2026-09-11
+- Coverage before: ~21.69%
+- Coverage after:  ~22.4% (48.21% overall)
+- Tests written:   23 tests covering: early return when map or geometryLib is null, permissive default for isInsideBoundary before polygons load, Polygon GeoJSON loading (fetch called with URL, Polygon instances created, coordinate mapping [lng,lat]→LatLng(lat,lng)), MultiPolygon GeoJSON loading (all rings rendered as separate Polygons), multi-layer loading (separate fetch per layer), isInsideBoundary returns true when containsLocation matches, returns false when no polygon matches, cleanup (setMap(null) called on all instances on unmount), cancellation (no setState after fetch resolves post-unmount), GeoJSON fetch result cached (second mount skips fetch)
+- Key patterns: unique URL counter per test to avoid module-level geojsonCache pollution; mocked @/lib/constants BOUNDARY_LAYERS getter; vi.stubGlobal('google', ...) with Polygon constructor capturing instances
+
+## AuthPipelinePage.submissions.test.tsx — 2026-09-11
+- Coverage before: ~48.21%
+- Coverage after:  ~49.32% (overall)
+- Tests written:   21 tests for AuthPipelinePage form submission handlers: name step (updateUserName success/failure, refreshUser, toast, advance to phone), phone step (sendPhoneVerificationCode with +51 prefix, advance to verify-code, success toast, captcha-check-failed error+reinit, skip button navigate), verify-code step (verifyPhoneCode with verificationId, updateUserContactInfo, navigate /app or returnUrl, error toast, stays on step, Cambiar número back to phone), email-verify error path (sendEmailVerificationToCurrentUser throws, refreshFirebaseUser throws), resend button disabled when cooldown > 0
+- Key fix: phone Input has no label prop → use screen.getByPlaceholderText('912 345 678')
+
+## CompleteSignInPage.success.test.tsx — 2026-09-11
+- Coverage before: ~49.32%
+- Coverage after:  ~49.46% (overall)
+- Tests written:   6 tests covering success paths: navigate to /app/verify when phone not verified, navigate to /app when phone verified, navigate to return URL when exists, call completeMagicLinkSignIn with stored email, manual email form submission (navigate to /app/verify when not verified)
+- Key pattern: useAuthStore must expose static .getState() method via Object.assign
+
+## SetPasswordPage.extra.test.tsx — 2026-09-11
+- Coverage before: ~49.46%
+- Coverage after:  ~49.64% (overall)
+- Tests written:   8 tests covering: success redirect to /app after confirmSetPassword, confirmSetPassword called with correct args (oobCode/password/email), generic error message for unknown errors, emailVerified state (Correo verificado heading, email shown, navigate to /app/verify on Continuar, invalid state on verification failure, no nuevo enlace link for verifyEmail mode)
+
+## PhotoCarousel.tsx (explore/PhotoCarousel) — 2026-09-11
+- Coverage before: ~49.64%
+- Coverage after:  ~49.96% (overall)
+- Tests written:   19 tests covering: zero photos (empty-state SVG, no img elements, useGallery called with 0), single photo (AnimatedImage eager loading, no arrows/dots, card() URL, custom alt text), multiple photos (prev/next arrows, dot indicators, prev()/next()/goTo() calls, AnimatedImage eager + lazy img), maxPhotos limit, blurHash placeholder, microThumb preference over blurHash, onPhotoClick callback
+- Key fix: vi.hoisted() required for mockBlurHashToDataUrl because mock factory runs before module-scope const
+
+## recaptcha.ts (timeout callbacks) — 2026-09-11
+- Coverage before: ~49.96% (2 statements short of 50.00%)
+- Coverage after:  50.00% (overall)
+- Tests written:   2 tests using vi.useFakeTimers() to cover timeout callback statements: (1) loadRecaptchaScript rejects with "reCAPTCHA script load timeout" when script never fires onload or onerror (advance 5001ms), (2) getRecaptchaToken rejects with "reCAPTCHA token timeout" when grecaptcha.enterprise.ready never calls the callback (advance 5001ms)
+- Key pattern: use .catch() to capture rejection before advancing timers (avoids unhandled rejection warnings); call vi.useFakeTimers() in beforeEach so it applies before any await import()
