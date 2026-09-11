@@ -818,6 +818,99 @@ describe('firestoreService', () => {
       await firestoreService.getActiveListingsWithProperties()
       expect(whereMock).toHaveBeenCalledWith('status', '==', 'active')
     })
+
+    it('returns listings paired with their properties', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        { id: 'listing-1', data: makeListingData({ propertyId: 'prop-1' }) },
+      ]))
+      getDocMock.mockResolvedValue(makeDocSnap('prop-1', makePropertyData()))
+
+      const result = await firestoreService.getActiveListingsWithProperties()
+      expect(result).toHaveLength(1)
+      expect(result[0]!.listing.id).toBe('listing-1')
+      expect(result[0]!.property.id).toBe('prop-1')
+    })
+
+    it('excludes listings whose property does not exist', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        { id: 'listing-1', data: makeListingData({ propertyId: 'missing-prop' }) },
+      ]))
+      getDocMock.mockResolvedValue(makeDocSnap('missing-prop', {}, false))
+
+      const result = await firestoreService.getActiveListingsWithProperties()
+      expect(result).toHaveLength(0)
+    })
+  })
+
+  // ── getActiveListingsWithPropertiesPaginated ──────────────────────────────
+
+  describe('getActiveListingsWithPropertiesPaginated', () => {
+    it('returns an ExploreListingsPage with items, lastDoc, hasMore', async () => {
+      const docs = [{ id: 'listing-1', data: makeListingData({ propertyId: 'prop-1' }) }]
+      const rawDocs = docs.map((d) => ({ ...makeDocSnap(d.id, d.data), data: () => d.data }))
+      getDocsMock.mockResolvedValue({ docs: rawDocs })
+      getDocMock.mockResolvedValue(makeDocSnap('prop-1', makePropertyData()))
+
+      const result = await firestoreService.getActiveListingsWithPropertiesPaginated(30)
+      expect(result.items).toHaveLength(1)
+      expect(result.lastDoc).toBe(rawDocs[0])
+      expect(result.hasMore).toBe(false) // 1 doc, pageSize=30
+    })
+
+    it('sets hasMore=true when docs count equals pageSize', async () => {
+      const docs = Array.from({ length: 2 }, (_, i) => ({
+        id: `listing-${i}`,
+        data: makeListingData({ propertyId: `prop-${i}` }),
+      }))
+      const rawDocs = docs.map((d) => ({ ...makeDocSnap(d.id, d.data), data: () => d.data }))
+      getDocsMock.mockResolvedValue({ docs: rawDocs })
+      getDocMock.mockImplementation((ref: { path: string }) => {
+        const id = ref.path.split('/').pop()!
+        return Promise.resolve(makeDocSnap(id, makePropertyData()))
+      })
+
+      const result = await firestoreService.getActiveListingsWithPropertiesPaginated(2)
+      expect(result.hasMore).toBe(true)
+    })
+
+    it('returns lastDoc=undefined when no docs returned', async () => {
+      getDocsMock.mockResolvedValue({ docs: [] })
+      const result = await firestoreService.getActiveListingsWithPropertiesPaginated(30)
+      expect(result.lastDoc).toBeUndefined()
+      expect(result.items).toHaveLength(0)
+    })
+
+    it('filters by operationType when provided', async () => {
+      getDocsMock.mockResolvedValue({ docs: [] })
+      await firestoreService.getActiveListingsWithPropertiesPaginated(30, undefined, 'venta')
+      expect(whereMock).toHaveBeenCalledWith('operationType', '==', 'venta')
+    })
+  })
+
+  // ── getUserListingsWithProperties ────────────────────────────────────────
+
+  describe('getUserListingsWithProperties', () => {
+    it('returns listings paired with properties for a user', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        { id: 'listing-1', data: makeListingData({ propertyId: 'prop-1' }) },
+      ]))
+      getDocMock.mockResolvedValue(makeDocSnap('prop-1', makePropertyData()))
+
+      const result = await firestoreService.getUserListingsWithProperties('user-1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.listing.id).toBe('listing-1')
+      expect(result[0]!.property.id).toBe('prop-1')
+    })
+
+    it('excludes listings without matching property', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        { id: 'listing-1', data: makeListingData({ propertyId: 'orphan-prop' }) },
+      ]))
+      getDocMock.mockResolvedValue(makeDocSnap('orphan-prop', {}, false))
+
+      const result = await firestoreService.getUserListingsWithProperties('user-1')
+      expect(result).toHaveLength(0)
+    })
   })
 
   // ── getUserListings ──────────────────────────────────────────────────────
@@ -836,6 +929,197 @@ describe('firestoreService', () => {
       getDocsMock.mockResolvedValue(makeDocsSnap([]))
       await firestoreService.getUserListings('user-xyz')
       expect(whereMock).toHaveBeenCalledWith('ownerId', '==', 'user-xyz')
+    })
+  })
+
+  // ── getAvailableLeads ────────────────────────────────────────────────────
+
+  describe('getAvailableLeads', () => {
+    it('returns empty array when no listings match', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      const result = await firestoreService.getAvailableLeads()
+      expect(result).toEqual([])
+    })
+
+    it('filters out listings where all claim slots are full', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'listing-full',
+          data: makeListingData({ maxRealtors: 3, currentClaimsCount: 3, wantsRealtorHelp: true, propertyId: 'p1' }),
+        },
+      ]))
+      const result = await firestoreService.getAvailableLeads()
+      expect(result).toHaveLength(0)
+    })
+
+    it('includes listings with open slots and existing property', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'listing-open',
+          data: makeListingData({ maxRealtors: 3, currentClaimsCount: 1, wantsRealtorHelp: true, propertyId: 'p1' }),
+        },
+      ]))
+      getDocMock.mockResolvedValue(makeDocSnap('p1', makePropertyData()))
+      const result = await firestoreService.getAvailableLeads()
+      expect(result).toHaveLength(1)
+    })
+
+    it('when currentUserId is provided, fetches claims and excludes already-claimed listings', async () => {
+      // First getDocs call: listings
+      getDocsMock.mockResolvedValueOnce(makeDocsSnap([
+        { id: 'listing-claimed', data: makeListingData({ maxRealtors: 3, currentClaimsCount: 0, wantsRealtorHelp: true, propertyId: 'p1' }) },
+        { id: 'listing-open', data: makeListingData({ maxRealtors: 3, currentClaimsCount: 0, wantsRealtorHelp: true, propertyId: 'p2' }) },
+      ]))
+      // Second getDocs call: existing claims for this realtor
+      getDocsMock.mockResolvedValueOnce(makeDocsSnap([
+        { id: 'claim-1', data: { listingId: 'listing-claimed', realtorId: 'realtor-1' } },
+      ]))
+      // Property fetches
+      getDocMock.mockImplementation((ref: { path: string }) => {
+        const id = ref.path.split('/').pop()!
+        return Promise.resolve(makeDocSnap(id, makePropertyData()))
+      })
+
+      const result = await firestoreService.getAvailableLeads('realtor-1')
+      // listing-claimed is excluded, listing-open remains
+      expect(result).toHaveLength(1)
+      expect(result[0]!.listing.id).toBe('listing-open')
+    })
+  })
+
+  // ── getAllRealtorApplications ─────────────────────────────────────────────
+
+  describe('getAllRealtorApplications', () => {
+    it('returns all applications without status filter', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'uid-1',
+          data: {
+            userId: 'uid-1',
+            fullName: 'Juan',
+            phone: '987',
+            email: 'j@e.com',
+            businessName: 'JG',
+            yearsExperience: 3,
+            serviceZones: [],
+            motivation: '',
+            status: 'pending',
+            submittedAt: { toDate: () => new Date('2026-09-01') },
+          },
+        },
+      ]))
+      const result = await firestoreService.getAllRealtorApplications()
+      expect(result).toHaveLength(1)
+      expect(result[0]!.fullName).toBe('Juan')
+    })
+
+    it('applies status filter when provided', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      await firestoreService.getAllRealtorApplications('approved')
+      expect(whereMock).toHaveBeenCalledWith('status', '==', 'approved')
+    })
+
+    it('does not add status filter when not provided', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      await firestoreService.getAllRealtorApplications()
+      const whereCalls = whereMock.mock.calls as unknown[][]
+      const statusWhere = whereCalls.find((c) => c[0] === 'status')
+      expect(statusWhere).toBeUndefined()
+    })
+  })
+
+  // ── getClaimsForListing ──────────────────────────────────────────────────
+
+  describe('getClaimsForListing', () => {
+    it('returns claims filtered by listingId', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'claim-1',
+          data: {
+            listingId: 'listing-1',
+            realtorId: 'r1',
+            listingOwnerId: 'owner-1',
+            claimedAt: { toDate: () => new Date('2026-09-01') },
+            claimMonth: '2026-09',
+            realtorName: 'Juan',
+            realtorPhone: '+51987',
+            realtorBusinessName: 'JG',
+            ownerContacted: false,
+            assignedByOwner: false,
+          },
+        },
+        {
+          id: 'claim-2',
+          data: {
+            listingId: 'listing-other',
+            realtorId: 'r2',
+            listingOwnerId: 'owner-1',
+            claimedAt: { toDate: () => new Date('2026-09-02') },
+            claimMonth: '2026-09',
+            realtorName: 'Ana',
+            realtorPhone: '+51912',
+            realtorBusinessName: 'AG',
+            ownerContacted: false,
+            assignedByOwner: false,
+          },
+        },
+      ]))
+
+      const result = await firestoreService.getClaimsForListing('owner-1', 'listing-1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.listingId).toBe('listing-1')
+    })
+
+    it('queries with listingOwnerId filter', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      await firestoreService.getClaimsForListing('owner-xyz', 'listing-1')
+      expect(whereMock).toHaveBeenCalledWith('listingOwnerId', '==', 'owner-xyz')
+    })
+  })
+
+  // ── getClaimedLeadsWithDetails ───────────────────────────────────────────
+
+  describe('getClaimedLeadsWithDetails', () => {
+    it('returns empty array when no claims exist', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      const result = await firestoreService.getClaimedLeadsWithDetails('realtor-1')
+      expect(result).toEqual([])
+    })
+
+    it('queries claims by realtorId', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      await firestoreService.getClaimedLeadsWithDetails('realtor-xyz')
+      expect(whereMock).toHaveBeenCalledWith('realtorId', '==', 'realtor-xyz')
+    })
+
+    it('returns claims with listing and property when all exist', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'claim-1',
+          data: {
+            listingId: 'listing-1',
+            realtorId: 'realtor-1',
+            listingOwnerId: 'owner-1',
+            claimedAt: { toDate: () => new Date('2026-09-01') },
+            claimMonth: '2026-09',
+            realtorName: 'Juan',
+            realtorPhone: '+51987',
+            realtorBusinessName: 'JG',
+            ownerContacted: false,
+            assignedByOwner: false,
+          },
+        },
+      ]))
+      // First getDoc: listing
+      getDocMock.mockResolvedValueOnce(makeDocSnap('listing-1', makeListingData({ propertyId: 'prop-1' })))
+      // Second getDoc: property
+      getDocMock.mockResolvedValueOnce(makeDocSnap('prop-1', makePropertyData()))
+
+      const result = await firestoreService.getClaimedLeadsWithDetails('realtor-1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.claim.id).toBe('claim-1')
+      expect(result[0]!.listing.id).toBe('listing-1')
+      expect(result[0]!.property.id).toBe('prop-1')
     })
   })
 })
