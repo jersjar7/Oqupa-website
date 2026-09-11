@@ -359,6 +359,167 @@ describe('authStore', () => {
     })
   })
 
+  // ── refreshUser ─────────────────────────────────────────────────────────
+
+  describe('refreshUser', () => {
+    it('does nothing when no firebaseUser is set', async () => {
+      // Store is already reset (no firebaseUser), so refreshUser should be a no-op
+      await act(async () => {
+        await useAuthStore.getState().refreshUser()
+      })
+      expect(getDoc as Mock).not.toHaveBeenCalled()
+    })
+
+    it('refreshes the user from Firestore when firebaseUser is set', async () => {
+      const fbUser = makeFirebaseUser('uid-refresh')
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, { email: 'initial@test.com', isActive: true })
+      )
+
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+
+      expect(useAuthStore.getState().user?.email).toBe('initial@test.com')
+
+      // Now refresh with updated data
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, { email: 'updated@test.com', isActive: true })
+      )
+
+      await act(async () => {
+        await useAuthStore.getState().refreshUser()
+      })
+
+      expect(useAuthStore.getState().user?.email).toBe('updated@test.com')
+    })
+
+    it('does not update user when Firestore doc does not exist', async () => {
+      const fbUser = makeFirebaseUser('uid-refresh2')
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, { email: 'keep@test.com', isActive: true })
+      )
+
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+
+      const userBefore = useAuthStore.getState().user
+
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(false))
+
+      await act(async () => {
+        await useAuthStore.getState().refreshUser()
+      })
+
+      // User should remain unchanged
+      expect(useAuthStore.getState().user?.email).toBe(userBefore?.email)
+    })
+  })
+
+  // ── refreshFirebaseUser ──────────────────────────────────────────────────
+
+  describe('refreshFirebaseUser', () => {
+    it('returns null when no current user', async () => {
+      mockAuth.currentUser = null
+      let result: unknown
+      await act(async () => {
+        result = await useAuthStore.getState().refreshFirebaseUser()
+      })
+      expect(result).toBeNull()
+    })
+
+    it('reloads the current user and updates firebaseUser in the store', async () => {
+      const mockCurrentUser = {
+        uid: 'uid-refresh',
+        email: 'test@test.com',
+        reload: vi.fn().mockResolvedValue(undefined),
+      }
+      mockAuth.currentUser = mockCurrentUser
+
+      let result: unknown
+      await act(async () => {
+        result = await useAuthStore.getState().refreshFirebaseUser()
+      })
+
+      expect(mockCurrentUser.reload).toHaveBeenCalledOnce()
+      // After reload, auth.currentUser is read again
+      expect(result).toBe(mockCurrentUser)
+      expect(useAuthStore.getState().firebaseUser).toBe(mockCurrentUser)
+    })
+  })
+
+  // ── setUser ──────────────────────────────────────────────────────────────
+
+  describe('setUser', () => {
+    it('sets user to the provided value', () => {
+      const mockUser = {
+        id: 'user-1',
+        email: 'test@test.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true,
+        isPhoneVerified: false,
+        isIdentityVerified: false,
+        isVerifiedRealtor: false,
+        claimsThisMonth: 0,
+        claimMonth: '2026-09',
+      }
+      act(() => {
+        useAuthStore.getState().setUser(mockUser as import('@/types/user').User)
+      })
+      expect(useAuthStore.getState().user).toBe(mockUser)
+    })
+
+    it('sets user to null', () => {
+      act(() => {
+        useAuthStore.getState().setUser(null)
+      })
+      expect(useAuthStore.getState().user).toBeNull()
+    })
+  })
+
+  // ── parseTimestamp (via firestoreDocToUser) ──────────────────────────────
+
+  describe('parseTimestamp (indirectly tested through initialize)', () => {
+    it('parses a string date for createdAt', async () => {
+      const fbUser = makeFirebaseUser('uid-ts')
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, {
+          email: 'ts@test.com',
+          isActive: true,
+          createdAt: '2026-01-15T10:00:00Z',
+        })
+      )
+
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+
+      const state = useAuthStore.getState()
+      expect(state.user?.createdAt).toBeInstanceOf(Date)
+      expect(state.user?.createdAt.getFullYear()).toBe(2026)
+    })
+
+    it('converts Firestore Timestamp object for createdAt', async () => {
+      const expectedDate = new Date('2026-03-10T08:00:00Z')
+      const fbUser = makeFirebaseUser('uid-ts2')
+      ;(getDoc as Mock).mockResolvedValueOnce(
+        makeFirestoreDoc(true, {
+          email: 'ts2@test.com',
+          isActive: true,
+          createdAt: { toDate: () => expectedDate },
+        })
+      )
+
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+
+      expect(useAuthStore.getState().user?.createdAt).toEqual(expectedDate)
+    })
+  })
+
   // ── Reset ───────────────────────────────────────────────────────────────
 
   describe('reset', () => {

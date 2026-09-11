@@ -1,14 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { act } from '@testing-library/react'
 
-// listService is Firebase-backed; mock it so the module can be imported
-// without initialising Firebase. The pure-function exports are what we test.
+// ── Mocks ─────────────────────────────────────────────────────────────────────
+
+const subscribeMock = vi.fn()
+
 vi.mock('@/services/listService', () => ({
   listService: {
-    subscribe: vi.fn(() => () => {}),
+    subscribe: (...args: unknown[]) => subscribeMock(...args),
   },
 }))
 
-import { isSavedInAnyList, getListsContaining } from '../listStore'
+import { isSavedInAnyList, getListsContaining, useListStore } from '../listStore'
 import type { UserList } from '@/types/userList'
 
 // ---------------------------------------------------------------------------
@@ -94,5 +97,113 @@ describe('getListsContaining', () => {
     const b = list('b', ['listing-x'])
     const result = getListsContaining([a, b], 'listing-x')
     expect(result).toHaveLength(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// useListStore — initialize and reset
+// ---------------------------------------------------------------------------
+
+describe('useListStore', () => {
+  beforeEach(() => {
+    subscribeMock.mockReset()
+    subscribeMock.mockReturnValue(vi.fn()) // returns unsubscribe fn
+    // Reset the store to its initial state
+    act(() => {
+      useListStore.setState({ lists: [], isLoading: false, _unsubscribe: null })
+    })
+  })
+
+  describe('initialize', () => {
+    it('calls listService.subscribe with the given uid', () => {
+      act(() => {
+        useListStore.getState().initialize('uid-123')
+      })
+      expect(subscribeMock).toHaveBeenCalledWith('uid-123', expect.any(Function))
+    })
+
+    it('sets isLoading to true while subscribing', () => {
+      // subscribe returns a fn that never fires the callback
+      subscribeMock.mockReturnValue(vi.fn())
+      act(() => {
+        useListStore.getState().initialize('uid-abc')
+      })
+      expect(useListStore.getState().isLoading).toBe(true)
+    })
+
+    it('stores the unsubscribe function returned by listService.subscribe', () => {
+      const unsubFn = vi.fn()
+      subscribeMock.mockReturnValue(unsubFn)
+      act(() => {
+        useListStore.getState().initialize('uid-abc')
+      })
+      expect(useListStore.getState()._unsubscribe).toBe(unsubFn)
+    })
+
+    it('updates lists and sets isLoading=false when the subscription callback fires', () => {
+      let capturedCallback: ((lists: ReturnType<typeof list>[]) => void) | null = null
+      subscribeMock.mockImplementation((_uid: string, cb: (lists: ReturnType<typeof list>[]) => void) => {
+        capturedCallback = cb
+        return vi.fn()
+      })
+
+      act(() => {
+        useListStore.getState().initialize('uid-abc')
+      })
+
+      const newLists = [list('list-1', ['p1'])]
+      act(() => {
+        capturedCallback?.(newLists)
+      })
+
+      expect(useListStore.getState().lists).toEqual(newLists)
+      expect(useListStore.getState().isLoading).toBe(false)
+    })
+
+    it('calls the previous unsubscribe before re-subscribing', () => {
+      const firstUnsub = vi.fn()
+      subscribeMock.mockReturnValueOnce(firstUnsub)
+
+      act(() => {
+        useListStore.getState().initialize('uid-1')
+      })
+
+      // Initialize again — should call the first unsubscribe
+      subscribeMock.mockReturnValue(vi.fn())
+      act(() => {
+        useListStore.getState().initialize('uid-2')
+      })
+
+      expect(firstUnsub).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('reset', () => {
+    it('clears lists, isLoading, and _unsubscribe', () => {
+      const unsubFn = vi.fn()
+      subscribeMock.mockReturnValue(unsubFn)
+
+      act(() => {
+        useListStore.getState().initialize('uid-123')
+        useListStore.getState().reset()
+      })
+
+      const state = useListStore.getState()
+      expect(state.lists).toEqual([])
+      expect(state.isLoading).toBe(false)
+      expect(state._unsubscribe).toBeNull()
+    })
+
+    it('calls _unsubscribe during reset', () => {
+      const unsubFn = vi.fn()
+      subscribeMock.mockReturnValue(unsubFn)
+
+      act(() => {
+        useListStore.getState().initialize('uid-123')
+        useListStore.getState().reset()
+      })
+
+      expect(unsubFn).toHaveBeenCalledOnce()
+    })
   })
 })
