@@ -196,11 +196,12 @@ describe('PhotoCarousel — blurHash and microThumb', () => {
 
   it('prefers microThumb over blurHash when both are provided', () => {
     render(<PhotoCarousel photoRefs={['ref-1']} blurHash="LKO2?U%2" microThumb="abc123" />)
-    // The first slide div should use the microThumb as background
-    const firstSlide = document.querySelector('[style*="backgroundImage"]') as HTMLElement | null
-    if (firstSlide) {
-      expect(firstSlide.style.backgroundImage).toContain('data:image/webp;base64,abc123')
-    }
+    // The first slide div (`.shrink-0`) carries the background-image inline style
+    // when a placeholder is present. React writes it via the element's style property,
+    // which jsdom reflects as the camelCase backgroundImage accessor.
+    const firstSlide = document.querySelector('.shrink-0') as HTMLElement | null
+    expect(firstSlide).not.toBeNull()
+    expect(firstSlide!.style.backgroundImage).toContain('data:image/webp;base64,abc123')
   })
 })
 

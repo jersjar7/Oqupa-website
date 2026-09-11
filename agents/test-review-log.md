@@ -318,3 +318,80 @@ No issues found. No-key early return, script injection, load/error events, scrip
 No issues found.
 
 ---
+
+## useBoundaryPolygons.test.ts — 2026-09-11
+No issues found. Early-return guards, GeoJSON loading (Polygon and MultiPolygon), coordinate swapping ([lng,lat] → LatLng(lat,lng)), multi-layer fetch, isInsideBoundary (permissive default while loading, containsLocation forwarding), cleanup (setMap(null) on all instances, no-throw on empty polygon ref), cancellation (deferred-fetch unmount prevents setIsLoaded, multi-layer mid-fetch unmount), and the module-level geojsonCache (fetch count does not increase on second mount) are all correctly covered. The "does not throw when unmounted before fetch resolves" test correctly pins that the synchronous cleanup does not throw when polygonsRef.current is empty — not an always-passing assertion.
+
+---
+
+## AuthPipelinePage.submissions.test.tsx — 2026-09-11
+No issues found. Name step (updateUserName, refreshUser, toast.success, advance to phone, error stays on step), phone step (sendPhoneVerificationCode with +51 prefix via placeholder selector, toast.success, captcha-check-failed reinit asserting both cleanupRecaptcha and initializeRecaptcha, skip navigate), verify-code step (verifyPhoneCode with stored verificationId, updateUserContactInfo with whatsappPhoneNumber, navigate /app or returnUrl, error toast, stays on step, Cambiar número goes back), email-verify error path (sendEmailVerificationToCurrentUser throws → toast.error, refreshFirebaseUser throws → inline error), and resend button disabled-state guard (cooldown > 0) are all tested and catch real regressions.
+
+---
+
+## CompleteSignInPage.success.test.tsx — 2026-09-11
+No issues found. Auto-completing from localStorage email (navigate to /app/verify when phone not verified, to /app when phone verified), return URL (completeMagicLinkSignIn called, consumeReturnUrl called — navigation to unregistered route is expected and commented), and manual email form (completeMagicLinkSignIn called with typed email, navigate to /app/verify) are all covered. The return-URL test correctly limits its assertion to what the test router can observe.
+
+---
+
+## SetPasswordPage.extra.test.tsx — 2026-09-11
+No issues found. Success path (navigate to /app, confirmSetPassword called with correct oobCode/password/email), generic error path (message containing "no pudimos configurar"), emailVerified state (heading, email shown, Continuar navigates to /app/verify), expired-code invalid state (enlace de verificación expiró text), and the verifyEmail-mode link suppression ("Solicitar un nuevo enlace" absent for verifyEmail mode) are all covered with concrete assertions.
+
+---
+
+## PhotoCarousel.test.tsx (explore/PhotoCarousel) — 2026-09-11
+
+**Flagged:**
+- **Test that always passes regardless of implementation:** "prefers microThumb over blurHash when both are provided" — wrapped the key assertion in `if (firstSlide) { ... }`. In jsdom, the style attribute selector `[style*="backgroundImage"]` (camelCase) never matches because jsdom serialises inline styles as `background-image` (kebab-case). The `document.querySelector` returned null, the `if` guard silently skipped the assertion, and the test passed no matter what the component rendered.
+
+**Fixed:**
+- Replaced the `[style*="backgroundImage"]` selector with `.shrink-0` (the class on the first slide's wrapper div in the component source). Removed the `if (firstSlide)` guard and added `expect(firstSlide).not.toBeNull()` followed by the unconditional `expect(firstSlide!.style.backgroundImage).toContain(...)` assertion. The test now fails if the element is absent or if the background style is wrong.
+
+Test count: 19 → 19 (no tests removed or added). All 19 pass.
+
+---
+
+## recaptcha.test.ts (timeout callbacks) — 2026-09-11
+No issues found. Script-load timeout ("reCAPTCHA script load timeout" at 5001ms with fake timers, `vi.useFakeTimers()` in `beforeEach` so it applies before `await import`) and token timeout ("reCAPTCHA token timeout" at 5001ms when `grecaptcha.enterprise.ready` never calls callback) are correctly covered. The `.catch()` capture pattern before advancing fake timers avoids unhandled-rejection warnings. No always-passing assertions detected.
+
+---
+
+## Third batch closing summary — 2026-09-11
+
+Six final batch test files reviewed (written on 2026-09-11 to reach the 50% coverage milestone).
+
+| File | Issues | Fixes |
+|------|--------|-------|
+| `useBoundaryPolygons.test.ts` | 0 | — |
+| `AuthPipelinePage.submissions.test.tsx` | 0 | — |
+| `CompleteSignInPage.success.test.tsx` | 0 | — |
+| `SetPasswordPage.extra.test.tsx` | 0 | — |
+| `PhotoCarousel.test.tsx` | 1 | Conditional assertion replaced with unconditional + null guard |
+| `recaptcha.test.ts` (timeout paths) | 0 | — |
+
+---
+
+## Overall campaign summary — 2026-09-11
+
+Three review sessions covering 51 distinct test files written across the full coverage campaign (first batch: hooks and simple utilities; second batch: stores, services, schemas, components, and complex hooks; third batch: boundary hook, auth page submissions, and the 50% milestone files).
+
+| Metric | Count |
+|--------|-------|
+| Total test files reviewed | 51 |
+| Files with issues found | 8 |
+| Total issues flagged | 11 |
+| Tests removed (redundant/always-passing) | 3 |
+| Tests replaced (duplicate or misleading) | 3 |
+| Tests renamed (misleading names) | 2 |
+| Tests fixed in-place (wrong assertion) | 3 |
+| Suite size after all fixes | 1849 passing, 5 skipped (104 test files) |
+
+**Issue breakdown by type:**
+- Always-passing assertions (React 19 silent no-op or unconditional pass): 4 (`useExpansionPopup`, `useExploreInteraction` ×2, `PhotoCarousel`)
+- Misleading test names: 2 (`useMobileMenu`, `useInfiniteScroll`)
+- Redundant/duplicate tests: 4 (`useInfiniteScroll`, `useMediaQuery`, `useMapCameraStorage`, `planContent`, `appStoreLinks`)
+- Wrong assertion target: 1 (`PhotoCarousel` — broken selector)
+
+Coverage at campaign close: **50.00% statements** (target met).
+
+---
