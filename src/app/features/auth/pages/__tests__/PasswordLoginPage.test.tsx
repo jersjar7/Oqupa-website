@@ -118,6 +118,29 @@ describe('PasswordLoginPage', () => {
         expect(screen.getByText('Credenciales incorrectas')).toBeDefined()
       })
     })
+
+    it('shows error toast when login fails', async () => {
+      const { toast } = vi.mocked(await import('sonner'))
+      mockAuthService.loginWithEmailAndPassword.mockRejectedValue(
+        new Error('auth/wrong-password')
+      )
+      renderPage()
+      fillForm()
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Credenciales incorrectas')
+      })
+    })
+
+    it('shows error when getSignInMethods itself throws', async () => {
+      mockAuthService.getSignInMethods.mockRejectedValue(new Error('network-error'))
+      renderPage()
+      fillForm()
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText('Credenciales incorrectas')).toBeDefined()
+      })
+    })
   })
 
   describe('legacy magic-link accounts', () => {

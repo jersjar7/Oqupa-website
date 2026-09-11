@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -96,5 +96,25 @@ describe('useRecordListingView', () => {
     await new Promise((r) => setTimeout(r, 0))
     // Test passes if we reach this point without an unhandled rejection.
     expect(recordListingViewMock).toHaveBeenCalled()
+  })
+
+  it('does not re-fire when the effect re-runs with the same listing:principal key (line 23 dedup guard)', () => {
+    // To hit line 23, the effect must re-run but produce the same key.
+    // We achieve this by giving the hook a dynamic prop so the effect re-runs,
+    // but keeping listingId+firebaseUser.uid the same so the key is unchanged.
+    fakeAuth = { firebaseUser: { uid: 'viewer-1' }, user: { id: 'viewer-1' } }
+    const { rerender } = renderHook(
+      (props: { id: string; owner: string }) => useRecordListingView(props.id, props.owner),
+      { initialProps: { id: 'listing-1', owner: 'owner-1' } },
+    )
+    // First render fires once (key = 'listing-1:viewer-1', stored in firedKeyRef)
+    expect(recordListingViewMock).toHaveBeenCalledTimes(1)
+
+    // Change ownerId to trigger the effect deps to change, but use the same listingId.
+    // The key is listingId:uid = 'listing-1:viewer-1' — same as before.
+    // When the effect re-runs, line 23 fires and returns early.
+    rerender({ id: 'listing-1', owner: 'owner-2' })
+    // Still only called once — the dedup guard blocked the second fire
+    expect(recordListingViewMock).toHaveBeenCalledTimes(1)
   })
 })

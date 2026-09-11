@@ -208,6 +208,32 @@ describe('buildSubtitle', () => {
         availableLeads: 0, leadsLoading: false,
       })).toBe('Sin oportunidades nuevas por ahora. Revisa el resumen de tus anuncios abajo.')
     })
+
+    it('singular lead (line 98)', () => {
+      expect(buildSubtitle({
+        isAdmin: false, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: 1, leadsLoading: false,
+      })).toBe('1 oportunidad disponible para agentes.')
+    })
+
+    it('loading state (line 94)', () => {
+      expect(buildSubtitle({
+        isAdmin: false, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: undefined, leadsLoading: true,
+      })).toBe('Cargando oportunidades disponibles.')
+    })
+  })
+
+  describe('admin only — loading state (line 86)', () => {
+    it('shows loading message when pendingAppsLoading is true for admin-only', () => {
+      expect(buildSubtitle({
+        isAdmin: true, isRealtor: false,
+        pendingApps: undefined, pendingAppsLoading: true,
+        availableLeads: undefined, leadsLoading: false,
+      })).toBe('Cargando aplicaciones pendientes.')
+    })
   })
 
   describe('pure owner', () => {
