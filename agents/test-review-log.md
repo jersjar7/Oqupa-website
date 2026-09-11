@@ -83,3 +83,238 @@ Test count: 24 → 23. All 23 pass.
 Test count: 35 → 35 (no tests removed or added). All 35 pass.
 
 ---
+
+## Second batch review — 2026-09-10
+
+The following files were written in the second batch session (commits 3bd5258 through c43c700). Each was reviewed against the criteria in `test-verifier.md`. Issues found are documented per-file below.
+
+---
+
+## useContentLinks.test.ts (reactive hooks portion) — 2026-09-10
+No issues found. The pure-function section (dateKey, daysInMonth) was reviewed in the first batch. The reactive hooks section (useContentLinks, useShelvedLinks) correctly mocks the service, verifies loading state, grouping logic, sort order, null-date filtering, error handling, and re-subscription on prop change.
+
+---
+
+## people.test.ts — 2026-09-10
+No issues found. emailsWith, personFor, and peopleWith are all tested with known-good and known-bad inputs, null/undefined, case-insensitivity, and consistency invariants.
+
+---
+
+## teamRoster.test.ts — 2026-09-10
+No issues found. isTeamMemberEmail, isMarketingMemberEmail, canAccessTeam, memberFor, membersOf, and TEAM_MEMBERS all have targeted tests with representative inputs and null/undefined safety checks.
+
+---
+
+## planContent.test.ts — 2026-09-10
+
+**Flagged:**
+- **Duplicate test:** "all days have a valid PlanOwner value" (line 123) is an exact duplicate of "owner is either 'jerson' or 'engineering' for every day" (line 81). Both iterate PLAN_DAYS and assert that each day's `owner` is contained in `['jerson', 'engineering']`. No new code path or edge case is exercised by the second test.
+
+**Fixed:**
+- Replaced "all days have a valid PlanOwner value" with "each day has only the required fields (no unexpected nulls in action/doneWhen)" which verifies that `action`, `doneWhen`, `why`, `phase`, `theme`, and `category` are all strings — an assertion that complements the existing field presence check without duplicating the owner check.
+
+Test count: 13 → 13 (replaced, not removed). All 13 pass.
+
+---
+
+## appStoreLinks.test.ts — 2026-09-10
+
+**Flagged:**
+- **Redundant test:** "both URLs use HTTPS" — tests 1 and 2 already use regex patterns anchored at `^https://apps.apple.com/` and `^https://play.google.com/`, which implicitly verify HTTPS. The third test (`startsWith('https://')`) adds no new detection capability.
+
+**Fixed:**
+- Replaced "both URLs use HTTPS" with "both URLs contain the expected path structure" which asserts `APP_STORE_URL` contains `/app/` and `GOOGLE_PLAY_URL` contains `/store/apps/details`. This pins structural correctness not covered by tests 1 and 2.
+
+Test count: 3 → 3 (replaced, not removed). All 3 pass.
+
+---
+
+## constants.test.ts — 2026-09-10
+No issues found. All exported constants are tested with type checks, range guards, and structural assertions appropriate for their types.
+
+---
+
+## metaPixel.test.ts — 2026-09-10
+No issues found. Production guard is correctly tested via the `__testing.isProduction` export, and all three exported functions verify early-return behaviour and no side-effects in non-production mode.
+
+---
+
+## tiktokPixel.test.ts — 2026-09-10
+No issues found. Same pattern as metaPixel — production guard, no side-effects in test environment, idempotency verified.
+
+---
+
+## stripe.test.ts — 2026-09-10
+No issues found. The singleton test correctly verifies reference equality of the same Promise object across two calls within the same module instance.
+
+---
+
+## listingFormStore.test.ts — 2026-09-10
+No issues found. Initial state, navigation (nextStep/prevStep/setStep with direction and boundary clamping), updateData merge, setEditMode, reset, sessionStorage persistence, File exclusion, and QuotaExceededError survival are all tested.
+
+---
+
+## listStore.test.ts — 2026-09-10
+No issues found. Pure helper functions (isSavedInAnyList, getListsContaining) and the Zustand store (initialize, subscription callback, re-subscribe cleanup, reset) are all covered.
+
+---
+
+## brandedCardConfig.test.ts — 2026-09-10
+No issues found. All fields of buildBrandedCardConfig are exercised with concrete assertions; rental duration defaults, null specs, and currency symbols are all covered.
+
+---
+
+## enums.test.ts — 2026-09-10
+No issues found. Enum values, all label maps, property type lists, and utility functions (isAlquilerOnlyType, propertyTypeHasRooms, propertyTypeIsRoom) are all tested with representative inputs.
+
+---
+
+## exploreEmptyState.test.ts — 2026-09-10
+No issues found. All three branches of getExploreEmptyMessage are covered including the precedence rule (total=0 takes priority over filteredCount).
+
+---
+
+## peruDepartamentos.test.ts — 2026-09-10
+No issues found. Array membership, absence of Piura, no duplicates, and alphabetical sort are all verified.
+
+---
+
+## realtorApplicationSchema.test.ts — 2026-09-10
+No issues found. Boundary values (0/50 for yearsExperience, 20/500 for motivation, 0/100 for businessName) and rejection cases are all tested.
+
+---
+
+## useGrowthPlan.test.ts — 2026-09-10
+No issues found. todayKey pure function tested; hook covers initial state, data delivery, week grouping, doneCount, remainingMinutes, today identification, error handling, and per-week doneCount.
+
+---
+
+## useTeamTasks.test.ts — 2026-09-10
+No issues found. Sorting logic (in-progress before done, done by doneAt DESC, in-progress by createdAt DESC) is well-covered; grouping by lowercase assignee email and the re-subscribe guard are also tested.
+
+---
+
+## useListListings.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useListings.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useProperty.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useBoost.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useAdmin.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useRealtorLeads.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useBugReportForm.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useExpansionForm.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## useNumbersData.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## contentLinkService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## teamTaskService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## growthPlanService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## listService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## contactService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## boostService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## authStore.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## listStore.test.ts (extended) — 2026-09-10
+No issues found.
+
+---
+
+## storageService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## blurhash.test.ts — 2026-09-10
+No issues found. blurHashToDataUrl and generateBlurHash both tested with success path, error paths (bad hash, null context), custom dimensions, and correct pixel/encode call arguments.
+
+---
+
+## analytics.test.ts — 2026-09-10
+No issues found. All AnalyticsLogger methods tested for GA event name+params, Meta/TikTok forwarding, optional parameter inclusion, and truncation behaviour.
+
+---
+
+## authService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## firestoreService.test.ts — 2026-09-10
+No issues found.
+
+---
+
+## clientId.test.ts — 2026-09-10
+No issues found. UUID generation, singleton rehydration, localStorage error fallback, and crypto API fallbacks (getRandomValues, Math.random) all tested.
+
+---
+
+## recaptcha.test.ts — 2026-09-10
+No issues found. No-key early return, script injection, load/error events, scriptLoaded guard, and grecaptcha.enterprise.ready path all tested.
+
+---
+
+## fieldStyles.test.ts — 2026-09-10
+No issues found.
+
+---

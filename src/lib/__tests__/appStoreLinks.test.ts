@@ -13,8 +13,8 @@ describe('app store links', () => {
     expect(GOOGLE_PLAY_URL).toContain('com.oqupa.app')
   })
 
-  it('both URLs use HTTPS', () => {
-    expect(APP_STORE_URL.startsWith('https://')).toBe(true)
-    expect(GOOGLE_PLAY_URL.startsWith('https://')).toBe(true)
+  it('both URLs contain the expected path structure', () => {
+    expect(APP_STORE_URL).toContain('/app/')
+    expect(GOOGLE_PLAY_URL).toContain('/store/apps/details')
   })
 })

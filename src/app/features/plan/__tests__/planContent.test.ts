@@ -120,10 +120,14 @@ describe('PLAN_DAYS', () => {
     expect(PLAN_DAYS.some((d) => d.spend > 0)).toBe(true)
   })
 
-  it('all days have a valid PlanOwner value', () => {
-    const validOwners: string[] = ['jerson', 'engineering']
+  it('each day has only the required fields (no unexpected nulls in action/doneWhen)', () => {
     for (const planDay of PLAN_DAYS) {
-      expect(validOwners).toContain(planDay.owner)
+      expect(typeof planDay.action).toBe('string')
+      expect(typeof planDay.doneWhen).toBe('string')
+      expect(typeof planDay.why).toBe('string')
+      expect(typeof planDay.phase).toBe('string')
+      expect(typeof planDay.theme).toBe('string')
+      expect(typeof planDay.category).toBe('string')
     }
   })
 })
