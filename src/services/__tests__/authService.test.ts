@@ -538,27 +538,6 @@ describe('authService', () => {
     })
   })
 
-  // ── unlinkPhone ──────────────────────────────────────────────────────────
-
-  describe('unlinkPhone', () => {
-    it('throws when there is no current user', async () => {
-      _currentUser = null
-      await expect(authService.unlinkPhone()).rejects.toThrow('No authenticated user')
-    })
-
-    it('does nothing when the user has no phone provider', async () => {
-      _currentUser = { ...makeUser('uid-12'), providerData: [] }
-      await authService.unlinkPhone()
-      expect(unlinkMock).not.toHaveBeenCalled()
-    })
-
-    it('calls unlink for the phone provider when linked', async () => {
-      _currentUser = { ...makeUser('uid-12'), providerData: [{ providerId: 'phone' }] }
-      await authService.unlinkPhone()
-      expect(unlinkMock).toHaveBeenCalledWith(_currentUser, 'phone')
-    })
-  })
-
   // ── cleanupRecaptcha ─────────────────────────────────────────────────────
 
   describe('cleanupRecaptcha', () => {

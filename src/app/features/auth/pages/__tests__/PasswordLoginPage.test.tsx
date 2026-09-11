@@ -97,6 +97,7 @@ describe("PasswordLoginPage — the entry screen", () => {
         new Error("auth/wrong-password"),
       );
       renderPage();
+      openEmail();
       fillForm();
       fireEvent.submit(document.querySelector("form")!);
       await waitFor(() => {
@@ -110,6 +111,7 @@ describe("PasswordLoginPage — the entry screen", () => {
         new Error("auth/wrong-password"),
       );
       renderPage();
+      openEmail();
       fillForm();
       fireEvent.submit(document.querySelector("form")!);
       await waitFor(() => {
@@ -122,6 +124,7 @@ describe("PasswordLoginPage — the entry screen", () => {
         new Error("network-error"),
       );
       renderPage();
+      openEmail();
       fillForm();
       fireEvent.submit(document.querySelector("form")!);
       await waitFor(() => {

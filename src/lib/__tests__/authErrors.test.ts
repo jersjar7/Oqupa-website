@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest'
-<<<<<<< HEAD
 import {
   getRegisterAuthError,
   getLoginAuthError,
@@ -7,9 +6,6 @@ import {
   getMagicLinkAuthError,
   getForgotPasswordAuthError,
 } from '../authErrors'
-=======
-import { getRegisterAuthError, getForgotPasswordAuthError } from '../authErrors'
->>>>>>> d8b526a38edc6987593301aeebb8d91cb46316a3
 
 // ---------------------------------------------------------------------------
 // getRegisterAuthError — already covered; kept for regression
@@ -65,7 +61,6 @@ describe('getRegisterAuthError', () => {
   })
 })
 
-<<<<<<< HEAD
 // ---------------------------------------------------------------------------
 // getLoginAuthError
 // ---------------------------------------------------------------------------
@@ -290,52 +285,22 @@ describe('getMagicLinkAuthError', () => {
 describe('getForgotPasswordAuthError', () => {
   it('maps too-many-requests to a non-retryable cooldown message', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/too-many-requests' })
-=======
-describe('getForgotPasswordAuthError', () => {
+    expect(info.message).toMatch(/demasiados intentos/i)
+    expect(info.isRetryable).toBe(false)
+  })
+
   it('does NOT reveal that the account is missing for auth/user-not-found (enumeration protection)', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
     expect(info.message).not.toMatch(/no existe una cuenta/i)
     expect(info.message).toMatch(/verifica tu dirección/i)
   })
 
-  it('maps functions/resource-exhausted to a rate-limit message, not a generic one', () => {
+  it('maps functions/resource-exhausted to a rate-limit message', () => {
     const info = getForgotPasswordAuthError({ code: 'functions/resource-exhausted' })
->>>>>>> d8b526a38edc6987593301aeebb8d91cb46316a3
     expect(info.message).toMatch(/demasiados intentos/i)
     expect(info.isRetryable).toBe(false)
   })
 
-<<<<<<< HEAD
-  it('maps user-not-found to a retryable no-account message', () => {
-    const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
-    expect(info.message).toMatch(/no existe una cuenta/i)
-    expect(info.isRetryable).toBe(true)
-  })
-
-  it('maps network-request-failed to a retryable connectivity message', () => {
-    const info = getForgotPasswordAuthError({ code: 'auth/network-request-failed' })
-    expect(info.message).toMatch(/conexión a internet/i)
-    expect(info.isRetryable).toBe(true)
-  })
-
-  it('falls back to a generic retryable message for unknown codes', () => {
-    const info = getForgotPasswordAuthError({ code: 'auth/something-else' })
-    expect(info.message).toMatch(/error al enviar el correo/i)
-    expect(info.isRetryable).toBe(true)
-  })
-
-  it('extracts auth/* code from an Error message string', () => {
-    const info = getForgotPasswordAuthError(
-      new Error('Firebase: Error (auth/user-not-found).')
-    )
-    expect(info.message).toMatch(/no existe una cuenta/i)
-  })
-
-  it('handles undefined gracefully, falling back to default', () => {
-    const info = getForgotPasswordAuthError(undefined)
-    expect(info.message).toMatch(/error al enviar el correo/i)
-    expect(info.isRetryable).toBe(true)
-=======
   it.each(['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'])(
     'maps %s to a server-connection message rather than "verify your email"',
     (code) => {
@@ -346,9 +311,21 @@ describe('getForgotPasswordAuthError', () => {
     }
   )
 
-  it('still falls back to the address-check message for unrecognized auth/* codes', () => {
+  it('maps network-request-failed to a retryable connectivity message', () => {
+    const info = getForgotPasswordAuthError({ code: 'auth/network-request-failed' })
+    expect(info.message).toMatch(/conexión a internet/i)
+    expect(info.isRetryable).toBe(true)
+  })
+
+  it('falls back to the address-check message for unrecognized auth/* codes', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/something-else' })
     expect(info.message).toMatch(/verifica tu dirección/i)
->>>>>>> d8b526a38edc6987593301aeebb8d91cb46316a3
+    expect(info.isRetryable).toBe(true)
+  })
+
+  it('handles undefined gracefully, falling back to default', () => {
+    const info = getForgotPasswordAuthError(undefined)
+    expect(info.message).toMatch(/error al enviar el correo/i)
+    expect(info.isRetryable).toBe(true)
   })
 })

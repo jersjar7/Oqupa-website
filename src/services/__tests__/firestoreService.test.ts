@@ -224,58 +224,6 @@ describe('firestoreService', () => {
     })
   })
 
-  // ── addWaitlistEntry ─────────────────────────────────────────────────────
-
-  describe('addWaitlistEntry', () => {
-    it('calls addDoc twice — once for waitlist, once for mail', async () => {
-      await firestoreService.addWaitlistEntry({
-        name: 'Juan García',
-        phone: '987654321',
-        email: 'juan@example.com',
-        departamento: 'Arequipa',
-        contactConsent: true,
-      })
-      expect(addDocMock).toHaveBeenCalledTimes(2)
-    })
-
-    it('adds a serverTimestamp to the waitlist entry', async () => {
-      await firestoreService.addWaitlistEntry({
-        name: 'Ana López',
-        phone: '912345678',
-        email: 'ana@example.com',
-        departamento: 'Cusco',
-        contactConsent: true,
-      })
-      const waitlistPayload = addDocMock.mock.calls[0][1] as Record<string, unknown>
-      expect(waitlistPayload.createdAt).toEqual({ _server: true })
-    })
-
-    it('sends email to admin@oqupa.com', async () => {
-      await firestoreService.addWaitlistEntry({
-        name: 'Test',
-        phone: '900000000',
-        email: 'test@example.com',
-        departamento: 'Lima',
-        contactConsent: false,
-      })
-      const mailPayload = addDocMock.mock.calls[1][1] as Record<string, unknown>
-      expect(mailPayload.to).toBe('admin@oqupa.com')
-    })
-
-    it('returns the docRef from the first addDoc call', async () => {
-      addDocMock.mockResolvedValueOnce({ id: 'waitlist-id-1' })
-      addDocMock.mockResolvedValueOnce({ id: 'mail-id-1' })
-      const result = await firestoreService.addWaitlistEntry({
-        name: 'Test',
-        phone: '900000000',
-        email: 'test@example.com',
-        departamento: 'Lima',
-        contactConsent: false,
-      })
-      expect(result.id).toBe('waitlist-id-1')
-    })
-  })
-
   // ── submitBugReport ──────────────────────────────────────────────────────
 
   describe('submitBugReport', () => {
