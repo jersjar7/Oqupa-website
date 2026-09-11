@@ -1122,4 +1122,65 @@ describe('firestoreService', () => {
       expect(result[0]!.property.id).toBe('prop-1')
     })
   })
+
+  // ── getAgentAssignedListingsWithProperties ─────────────────────────────
+
+  describe('getAgentAssignedListingsWithProperties', () => {
+    it('returns empty array when agent has no assigned listings', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      const result = await firestoreService.getAgentAssignedListingsWithProperties('agent-1')
+      expect(result).toHaveLength(0)
+    })
+
+    it('queries listings by assignedRealtorId', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([]))
+      await firestoreService.getAgentAssignedListingsWithProperties('agent-1')
+      expect(whereMock).toHaveBeenCalledWith('assignedRealtorId', '==', 'agent-1')
+    })
+
+    it('returns matched listing+property pairs', async () => {
+      getDocsMock
+        .mockResolvedValueOnce(makeDocsSnap([
+          { id: 'listing-1', data: makeListingData({ propertyId: 'prop-1' }) },
+        ]))
+        .mockResolvedValueOnce(makeDocsSnap([
+          { id: 'prop-1', data: makePropertyData() },
+        ]))
+
+      const result = await firestoreService.getAgentAssignedListingsWithProperties('agent-1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.listing.id).toBe('listing-1')
+      expect(result[0]!.property.id).toBe('prop-1')
+    })
+
+    it('excludes listings whose property does not exist', async () => {
+      getDocsMock
+        .mockResolvedValueOnce(makeDocsSnap([
+          { id: 'listing-1', data: makeListingData({ propertyId: 'prop-missing' }) },
+        ]))
+        .mockResolvedValueOnce(makeDocsSnap([]))
+
+      const result = await firestoreService.getAgentAssignedListingsWithProperties('agent-1')
+      expect(result).toHaveLength(0)
+    })
+  })
+
+  // ── unassignRealtor ────────────────────────────────────────────────────
+
+  describe('unassignRealtor', () => {
+    it('calls updateDoc with deleteField for assignment fields', async () => {
+      await firestoreService.unassignRealtor('listing-xyz')
+      expect(updateDocMock).toHaveBeenCalledOnce()
+      const payload = updateDocMock.mock.calls[0][1] as Record<string, unknown>
+      // deleteField is mocked to return { __deleteField: true }
+      expect(payload.assignedRealtorId).toBeDefined()
+      expect(payload.assignedRealtorPhoneNumber).toBeDefined()
+      expect(payload.assignmentStatus).toBeDefined()
+    })
+
+    it('targets the correct listing document', async () => {
+      await firestoreService.unassignRealtor('listing-xyz')
+      expect(docMock).toHaveBeenCalledWith(expect.anything(), 'listings', 'listing-xyz')
+    })
+  })
 })
