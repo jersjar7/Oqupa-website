@@ -461,6 +461,56 @@ describe('storageService', () => {
         entityId: 'prop-2',
       }))
     })
+
+    it('calls onProgress callback with aggregated progress across all files', async () => {
+      // Override the XHR mock from the outer describe.beforeEach to also fire a progress event
+      const progressXhr = new MockXHR()
+      progressXhr.send = vi.fn(function (_body: unknown) {
+        const event = { lengthComputable: true, loaded: 50, total: 100 }
+        progressXhr.upload.onprogress?.(event)
+        setTimeout(() => progressXhr.onload?.(), 0)
+      })
+      // The section's beforeEach overrides XMLHttpRequest; re-stub to use progressXhr
+      vi.stubGlobal('XMLHttpRequest', function MockXHRWithProgress(this: {
+        status: number
+        upload: {
+          onprogress: ((e: { lengthComputable: boolean; loaded: number; total: number }) => void) | null
+        }
+        onload: (() => void) | null
+        onerror: (() => void) | null
+        open: ReturnType<typeof vi.fn>
+        setRequestHeader: ReturnType<typeof vi.fn>
+        send: ReturnType<typeof vi.fn>
+      }) {
+        this.status = 200
+        this.upload = progressXhr.upload
+        this.onload = null
+        this.onerror = null
+        this.open = progressXhr.open
+        this.setRequestHeader = progressXhr.setRequestHeader
+        Object.defineProperty(this, 'onload', {
+          get: () => progressXhr.onload,
+          set: (fn) => { progressXhr.onload = fn },
+          configurable: true,
+        })
+        this.send = function (body: unknown) { progressXhr.send(body) }
+      })
+
+      const files = [makeFile('a.jpg')]
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      generateBlurHashMock.mockResolvedValue('hash')
+      callableFnMock.mockResolvedValue({
+        data: { uploads: [{ uploadUrl: 'https://r2.example.com/a', objectKey: 'key-a' }] },
+      })
+
+      const progressValues: number[] = []
+      await storageService.uploadMultiplePropertyPhotos('prop-3', files, (p) => {
+        progressValues.push(p)
+      })
+
+      // Should have been called with some progress value(s)
+      expect(progressValues.length).toBeGreaterThan(0)
+    })
   })
 
   // ── deleteR2Photos ────────────────────────────────────────────────────────

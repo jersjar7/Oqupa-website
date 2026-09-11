@@ -250,4 +250,65 @@ describe('shareListing', () => {
     expect(result).toBe('copied')
     expect(clipboardMock).toHaveBeenCalledOnce()
   })
+
+  it('uses the raw propertyType as fallback when not in PROPERTY_TYPE_LABELS', async () => {
+    // This exercises the `?? params.propertyType` fallback in shareListing (line 80)
+    const clipboardMock = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', {
+      clipboard: { writeText: clipboardMock },
+    })
+    const paramsWithUnknownType: ShareListingParams = {
+      ...baseParams,
+      propertyType: 'penthouse' as ShareListingParams['propertyType'],
+    }
+    await shareListing(paramsWithUnknownType)
+    const calledWith = clipboardMock.mock.calls[0]?.[0] as string
+    // The unknown type 'penthouse' should appear verbatim in the shared text
+    expect(calledWith).toContain('penthouse')
+  })
+})
+
+// ── generateShareText — branch fallbacks ──────────────────────────────────────
+describe('generateShareText — label fallbacks', () => {
+  it('uses raw propertyType when not in PROPERTY_TYPE_LABELS', () => {
+    // Exercises the `?? params.propertyType` branch at lines 25-28
+    const params: ShareListingParams = {
+      ...baseParams,
+      propertyType: 'penthouse' as ShareListingParams['propertyType'],
+    }
+    const text = generateShareText(params)
+    expect(text).toContain('penthouse')
+  })
+
+  it('uses raw operationType when not in OPERATION_TYPE_LABELS', () => {
+    // Exercises the `?? params.operationType` branch
+    const params: ShareListingParams = {
+      ...baseParams,
+      operationType: 'permuta' as ShareListingParams['operationType'],
+    }
+    const text = generateShareText(params)
+    expect(text).toContain('permuta')
+  })
+
+  it('uses raw currency symbol when not in CURRENCY_SYMBOLS', () => {
+    // Exercises the `?? 'S/.'` currency fallback
+    const params: ShareListingParams = {
+      ...baseParams,
+      priceCurrency: 'EUR' as ShareListingParams['priceCurrency'],
+    }
+    const text = generateShareText(params)
+    // Fallback is 'S/.'
+    expect(text).toContain('S/.')
+  })
+
+  it('defaults rentalDurationType to longTerm when undefined', () => {
+    // Exercises the `|| 'longTerm'` fallback at line 39
+    const params: ShareListingParams = {
+      ...baseParams,
+      operationType: 'alquiler',
+      rentalDurationType: undefined, // no rentalDurationType provided
+    }
+    const text = generateShareText(params)
+    expect(text).toContain('/mes') // longTerm suffix
+  })
 })

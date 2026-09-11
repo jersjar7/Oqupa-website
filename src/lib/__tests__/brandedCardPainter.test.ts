@@ -72,9 +72,16 @@ function makeImage(width = 200, height = 200): HTMLImageElement {
   return img
 }
 
+// ── controls ─────────────────────────────────────────────────────────────────
+
+/** When true, the img src setter fires onerror instead of onload. */
+let imgShouldError = false
+
 // ── setup / teardown ─────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  imgShouldError = false
+
   // Canvas context mock
   mockCtx = makeMockCtx()
   mockCanvas = document.createElement('canvas') as HTMLCanvasElement & { toBlob: ReturnType<typeof vi.fn> }
@@ -90,21 +97,24 @@ beforeEach(() => {
   vi.spyOn(document, 'createElement').mockImplementation((tag) => {
     if (tag === 'canvas') return mockCanvas
     // For <img> elements created inside loadImage/loadViaImgElement, we return
-    // a real img element but trigger onload synchronously via a microtask.
+    // a real img element but trigger onload/onerror synchronously via a microtask.
     if (tag === 'img') {
       const img = origCreateElement('img')
-      // Override src setter to fire onload immediately
+      // Override src setter to fire onload or onerror based on the control flag
       let _src = ''
       Object.defineProperty(img, 'src', {
         get: () => _src,
         set: (v: string) => {
           _src = v
           if (v && v !== '') {
-            // Trigger onload async
             Promise.resolve().then(() => {
-              Object.defineProperty(img, 'naturalWidth', { value: 100, configurable: true })
-              Object.defineProperty(img, 'naturalHeight', { value: 100, configurable: true })
-              img.onload?.({} as Event)
+              if (imgShouldError) {
+                img.onerror?.({} as Event)
+              } else {
+                Object.defineProperty(img, 'naturalWidth', { value: 100, configurable: true })
+                Object.defineProperty(img, 'naturalHeight', { value: 100, configurable: true })
+                img.onload?.({} as Event)
+              }
             })
           }
         },
@@ -262,22 +272,34 @@ describe('paintBrandedCard', () => {
     expect(fontSpy).toHaveBeenCalled()
   })
 
-  it('handles cdn-cgi photo URL (retries with direct R2 URL on fetch failure)', async () => {
-    // Tier 1 fetch fails for cdn-cgi URL, triggering Tier 3 retry with direct R2 URL.
-    // Both fetches fail; the painter should still succeed (skips the photo).
+  it('handles cdn-cgi photo URL — all tiers fail, skips photo gracefully', async () => {
+    // Tier 1 & Tier 3 fetch fail; Tier 2 & Tier 4 img fail (onerror).
+    // This exercises lines 101-102 (onerror in loadViaImgElement) and 138-149 (Tier 3 path).
     fetchMock.mockRejectedValue(new Error('CORS blocked'))
+    imgShouldError = true
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
     const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
     expect(blob).toBeInstanceOf(Blob)
   })
 
-  it('handles cdn-cgi URL where direct URL has a relative path source', async () => {
+  it('handles cdn-cgi URL where direct URL has a relative path source — all tiers fail', async () => {
     // cdn-cgi URL where the source after /cdn-cgi/image/<opts>/ is a relative path
     fetchMock.mockRejectedValue(new Error('network error'))
+    imgShouldError = true
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/photos/abc.webp'
     const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
+    expect(blob).toBeInstanceOf(Blob)
+  })
+
+  it('handles img onerror in Tier 2 (loadViaImgElement) for non-cdn-cgi URL', async () => {
+    // Tier 1 fetch fails (ok=false) → Tier 2 img onerror fires.
+    // This exercises lines 101-102 of loadViaImgElement and the null return of loadImage.
+    fetchMock.mockResolvedValue({ ok: false })
+    imgShouldError = true
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), ['https://images.oqupa.com/photo.webp'])
     expect(blob).toBeInstanceOf(Blob)
   })
 
