@@ -87,7 +87,7 @@ describe('MetricsGuard', () => {
     it('renders children for an allowlisted gmail account', () => {
       mockAuthState.isInitialized = true
       mockAuthState.isLoading = false
-      mockAuthState.user = { email: 'libardo.pico26@gmail.com' }
+      mockAuthState.user = { email: 'becjanmor@gmail.com' }
       renderWithRouter()
       expect(screen.getByTestId('metrics-content')).toBeDefined()
     })
@@ -127,7 +127,7 @@ describe('MetricsGuard', () => {
 
     it('lowercases email before matching', () => {
       expect(isMetricsAllowedEmail('Admin@Oqupa.com')).toBe(true)
-      expect(isMetricsAllowedEmail('LiBardo.Pico26@Gmail.com')).toBe(true)
+      expect(isMetricsAllowedEmail('BecJanMor@Gmail.com')).toBe(true)
     })
   })
 })
