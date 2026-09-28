@@ -117,12 +117,20 @@ describe('the four areas are genuinely separate', () => {
     expect(canAccess('godoy.degs@gmail.com', 'admin')).toBe(false)
   })
 
-  it('Kaden and Libardo keep Números and gain Contenido, nothing more', () => {
+  it('Kaden and Libardo lost Números on 2026-09-28 and keep only Contenido', () => {
     for (const email of ['kadenthecanadian@gmail.com', 'libardo.pico26@gmail.com']) {
-      expect(canAccess(email, 'metrics')).toBe(true)
+      expect(canAccess(email, 'metrics')).toBe(false)
       expect(canAccess(email, 'marketing')).toBe(true)
       expect(canAccess(email, 'dev')).toBe(false)
       expect(canAccess(email, 'admin')).toBe(false)
     }
+  })
+
+  it('Sam gained Números on 2026-09-28 alongside the dev board', () => {
+    const email = 'samuelsotointernational@gmail.com'
+    expect(canAccess(email, 'metrics')).toBe(true)
+    expect(canAccess(email, 'dev')).toBe(true)
+    expect(canAccess(email, 'marketing')).toBe(false)
+    expect(canAccess(email, 'admin')).toBe(false)
   })
 })
