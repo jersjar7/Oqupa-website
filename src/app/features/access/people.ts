@@ -60,16 +60,16 @@ export const PEOPLE: Person[] = [
   // this order.
   { name: 'Sarah',   email: 'sarahwalkerdev@gmail.com',          access: ['dev'] },
   { name: 'Kenny',   email: 'kennethtquintana@gmail.com',        access: ['dev'] },
-  { name: 'Sam',     email: 'samuelsotointernational@gmail.com', access: ['dev'] },
+  { name: 'Sam',     email: 'samuelsotointernational@gmail.com', access: ['dev', 'metrics'] },
 
   // Marketing
   { name: 'Becca',   email: 'becjanmor@gmail.com',               access: ['metrics', 'marketing'] },
   { name: 'Hernán',  email: 'hrn.mv11@gmail.com',                access: ['marketing'] },
   { name: 'Daniel',  email: 'godoy.degs@gmail.com',              access: ['marketing'] },
 
-  // Números + Contenido
-  { name: 'Kaden',   email: 'kadenthecanadian@gmail.com',        access: ['metrics', 'marketing'] },
-  { name: 'Libardo', email: 'libardo.pico26@gmail.com',          access: ['metrics', 'marketing'] },
+  // Contenido (removed from Números on 2026-09-28 at Jerson's instruction)
+  { name: 'Kaden',   email: 'kadenthecanadian@gmail.com',        access: ['marketing'] },
+  { name: 'Libardo', email: 'libardo.pico26@gmail.com',          access: ['marketing'] },
 
   // Removed from Números on 2026-08-01 at Jerson's instruction. Listed here as
   // a record of the decision, with no access granted. Safe to delete.
