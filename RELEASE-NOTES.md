@@ -4,6 +4,20 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-02 — Olvidé mi contraseña ya no delata cuentas; 50 suites de pruebas
+
+### Bug Fixes
+
+- **"Olvidé mi contraseña" no longer reveals whether an email has an account** (Sarah). The August rework had the page ask the server whether the address existed and say *"No encontramos una cuenta"* when it did not — an enumeration oracle, and the reason the feature was held off production on 30 August. Her 5 September fixes removed that call and the special-cased "no account" message: the page now says the same thing for every address, and `auth/user-not-found` falls through to the generic message. The rest of the rework ships with it: proper error handling, the email trimmed before use, and a reset flow that completes.
+- **Both doors of the contact gate lead to the same screen** — pinned by a test (30 Aug).
+
+### Technical
+
+- **Dependency audit clean** (Sarah): browserslist updated to clear the high-severity audit failures.
+- **Test coverage to 50 % of statements** (Samuel, 9–11 Sep): complete suites for the services (auth, firestore, storage, boost, contact, lists, growth plan, content links, team tasks), the hooks, the stores, the schemas and the lib helpers — about fifty commits, each reviewed by a verifier pass that replaced always-passing assertions. No change to what visitors see.
+
+---
+
 ## 2026-08-30 — El rechazo dice cuál es el problema
 
 ### Bug Fixes
