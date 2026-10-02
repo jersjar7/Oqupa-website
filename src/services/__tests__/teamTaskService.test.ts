@@ -265,7 +265,7 @@ describe('teamTaskService', () => {
   describe('rename', () => {
     it('calls updateDoc with the new title', async () => {
       await teamTaskService.rename('task-1', 'Updated task title')
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ title: 'Updated task title' })
+      expect(updateDocMock).toHaveBeenCalledWith(expect.anything(), { title: 'Updated task title' })
     })
   })
 
