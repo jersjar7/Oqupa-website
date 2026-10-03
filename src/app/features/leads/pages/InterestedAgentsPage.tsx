@@ -184,9 +184,11 @@ export default function InterestedAgentsPage() {
             </p>
             <button
               onClick={() => claims.refetch()}
-              className="mt-2 text-sm font-medium text-primary hover:text-primary-hover"
+              disabled={claims.isFetching}
+              aria-busy={claims.isFetching}
+              className="mt-2 text-sm font-medium text-primary hover:text-primary-hover disabled:cursor-wait disabled:opacity-60"
             >
-              Reintentar
+              {claims.isFetching ? 'Reintentando…' : 'Reintentar'}
             </button>
           </div>
         )}

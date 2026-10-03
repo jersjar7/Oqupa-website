@@ -70,6 +70,7 @@ export default function ExplorePage() {
     isFetchingNextPage,
     hitPageCeiling,
     refetch,
+    isRefetching,
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -157,9 +158,11 @@ export default function ExplorePage() {
               <p className="text-sm text-error">Error al cargar propiedades</p>
               <button
                 onClick={() => refetch()}
-                className="rounded-full bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+                disabled={isRefetching}
+                aria-busy={isRefetching}
+                className="rounded-full bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover disabled:cursor-wait disabled:opacity-70"
               >
-                Reintentar
+                {isRefetching ? 'Reintentando…' : 'Reintentar'}
               </button>
             </motion.div>
           )}

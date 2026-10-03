@@ -242,8 +242,13 @@ function DisponiblesPane({
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
         <p className="text-red-700">Error al cargar las oportunidades.</p>
-        <button onClick={() => query.refetch()} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">
-          Reintentar
+        <button
+          onClick={() => query.refetch()}
+          disabled={query.isFetching}
+          aria-busy={query.isFetching}
+          className="mt-2 text-sm font-medium text-primary hover:text-primary-hover disabled:cursor-wait disabled:opacity-60"
+        >
+          {query.isFetching ? 'Reintentando…' : 'Reintentar'}
         </button>
       </div>
     )

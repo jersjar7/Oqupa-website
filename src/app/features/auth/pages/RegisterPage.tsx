@@ -13,6 +13,10 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
+  // Same as the login page: while Google's popup is open the button says so and
+  // ignores clicks. Without it nothing changed, and a second click aborted the
+  // first popup (button audit, 2026-10-03).
+  const [googleBusy, setGoogleBusy] = useState(false)
 
   const {
     register,
@@ -62,7 +66,9 @@ export default function RegisterPage() {
         <button
           type="button"
           onClick={async () => {
+            if (googleBusy) return
             setError(null)
+            setGoogleBusy(true)
             try {
               await authService.signInWithGoogle()
             } catch (err) {
@@ -70,11 +76,15 @@ export default function RegisterPage() {
               if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
                 toast.error('No pudimos entrar con Google. Intenta de nuevo.')
               }
+            } finally {
+              setGoogleBusy(false)
             }
           }}
-          className="mt-8 flex h-12 w-full items-center justify-center rounded-full bg-primary font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+          disabled={googleBusy}
+          aria-busy={googleBusy}
+          className="mt-8 flex h-12 w-full items-center justify-center rounded-full bg-primary font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
-          Continuar con Google
+          {googleBusy ? 'Entrando…' : 'Continuar con Google'}
         </button>
         <p className="mt-6 text-center text-sm text-text-tertiary">o con tu correo</p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">

@@ -66,7 +66,10 @@ export const teamTaskService = {
     )
     return onSnapshot(
       q,
-      (snap) => onChange(snap.docs.map((d) => docToTask(d.id, d.data()))),
+      (snap) =>
+        // 'estimate': a just-written serverTimestamp (e.g. doneAt) shows the local
+        // time at once instead of null until the server confirms.
+        onChange(snap.docs.map((d) => docToTask(d.id, d.data({ serverTimestamps: 'estimate' })))),
       onError,
     )
   },

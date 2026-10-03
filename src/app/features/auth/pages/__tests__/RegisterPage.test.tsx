@@ -15,6 +15,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 const mockAuthService = vi.hoisted(() => ({
   registerWithEmailAndPassword: vi.fn(),
   sendEmailVerificationToCurrentUser: vi.fn(),
+  signInWithGoogle: vi.fn(),
 }))
 
 vi.mock('@/services/authService', () => ({
@@ -237,6 +238,41 @@ describe('RegisterPage', () => {
       })
       expect(mockNavigate).not.toHaveBeenCalled()
       expect(mockAuthService.sendEmailVerificationToCurrentUser).not.toHaveBeenCalled()
+    })
+  })
+
+  // Button audit, 2026-10-03: "Continuar con Google" here had no busy state.
+  // Nothing changed while the popup opened, and a second click aborted the
+  // first popup (auth/cancelled-popup-request). The login page already did it
+  // right; this matches it.
+  describe('Continuar con Google', () => {
+    it('says it is working and ignores a second click while the popup is open', async () => {
+      let finish!: () => void
+      mockAuthService.signInWithGoogle.mockReturnValue(
+        new Promise<void>((resolve) => { finish = resolve }),
+      )
+      renderPage()
+
+      const google = screen.getByRole('button', { name: /continuar con google/i })
+      fireEvent.click(google)
+
+      const busy = await screen.findByRole('button', { name: /entrando/i })
+      expect((busy as HTMLButtonElement).disabled).toBe(true)
+      fireEvent.click(busy)
+      expect(mockAuthService.signInWithGoogle).toHaveBeenCalledTimes(1)
+
+      finish()
+      await screen.findByRole('button', { name: /continuar con google/i })
+    })
+
+    it('is usable again after the popup fails', async () => {
+      mockAuthService.signInWithGoogle.mockRejectedValue({ code: 'auth/popup-closed-by-user' })
+      renderPage()
+
+      fireEvent.click(screen.getByRole('button', { name: /continuar con google/i }))
+
+      const again = await screen.findByRole('button', { name: /continuar con google/i })
+      await waitFor(() => expect((again as HTMLButtonElement).disabled).toBe(false))
     })
   })
 })

@@ -41,6 +41,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
+        // Screen readers announce the button as busy, not just disabled.
+        aria-busy={isLoading || undefined}
         className={`inline-flex items-center justify-center gap-2 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none active:scale-[0.97] ${isDisabled ? styles.disabled : styles.base} ${className}`}
         {...props}
       >

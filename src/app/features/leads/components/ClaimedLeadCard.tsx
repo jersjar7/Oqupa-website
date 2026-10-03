@@ -145,10 +145,13 @@ export default function ClaimedLeadCard({
             type="button"
             onClick={openWhatsApp}
             disabled={opening}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50"
+            aria-busy={opening}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 disabled:cursor-wait disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" />
-            Contactar por WhatsApp
+            {/* Says what is happening, like the buyer's button ("Un momento…"),
+                instead of only fading (button audit, 2026-10-03). */}
+            {opening ? 'Un momento…' : 'Contactar por WhatsApp'}
           </button>
         </div>
       </div>

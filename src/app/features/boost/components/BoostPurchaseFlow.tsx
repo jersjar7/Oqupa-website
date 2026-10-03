@@ -142,7 +142,10 @@ export default function BoostPurchaseFlow({
       {/* Step 1: Tier selection */}
       <BoostTierSelectionModal
         isOpen={step === 'tier-selection'}
-        onClose={() => setStep('closed')}
+        // Not closable while the payment is being created: closing it then
+        // let the Stripe window pop up later, unexpectedly (button audit,
+        // 2026-10-03).
+        onClose={() => { if (!createPayment.isPending) setStep('closed') }}
         onConfirm={handleTierConfirm}
         isProcessing={createPayment.isPending}
       />

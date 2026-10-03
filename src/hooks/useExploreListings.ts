@@ -94,5 +94,7 @@ export function useExploreListings(operationType?: OperationType | null) {
      */
     hitPageCeiling,
     refetch: infiniteQuery.refetch,
+    /** True while a retry is in flight — the error overlay's button says so. */
+    isRefetching: infiniteQuery.isRefetching,
   }
 }

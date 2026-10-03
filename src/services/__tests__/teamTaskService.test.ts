@@ -114,6 +114,19 @@ describe('teamTaskService', () => {
       expect(tasks[0]!.doneAt).toBeNull()
     })
 
+    // Button audit, 2026-10-03: marking a task done writes doneAt with
+    // serverTimestamp(). Read plainly, that pending value is null until the
+    // server confirms, so the check did not fill in when clicked. Reading with
+    // serverTimestamps: 'estimate' shows the local time at once.
+    it('reads pending server timestamps as estimates, so "done" shows at once', () => {
+      const data = vi.fn(() => ({ title: 'T', team: 'dev', doneAt: null }))
+      const onChange = vi.fn()
+      teamTaskService.subscribe('dev', onChange, vi.fn())
+      fireOnChange([{ id: 't1', data } as unknown as ReturnType<typeof makeSnapshotDoc>])
+
+      expect(data).toHaveBeenCalledWith({ serverTimestamps: 'estimate' })
+    })
+
     it('calls onError when Firestore fires an error', () => {
       const onError = vi.fn()
       teamTaskService.subscribe('dev', vi.fn(), onError)

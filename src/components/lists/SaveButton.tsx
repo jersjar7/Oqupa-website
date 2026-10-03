@@ -168,7 +168,9 @@ function ListPopover({ listingId, uid, lists, anchorRef, onClose }: ListPopoverP
 
   async function handleCreate() {
     const name = newListName.trim()
-    if (!name) return
+    // Enter calls this directly, past the "OK" button's disabled state — so a
+    // second Enter while saving made a second list (button audit, 2026-10-03).
+    if (!name || busy) return
     setBusy('new')
     try {
       const listId = await listService.createList(uid, name)

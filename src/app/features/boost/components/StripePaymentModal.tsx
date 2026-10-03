@@ -144,7 +144,10 @@ export default function StripePaymentModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title="Pago seguro">
+    // Escape and a backdrop click are ignored while the payment is being
+    // confirmed — only "Cancelar" was blocked before, so the window could be
+    // closed mid-payment (button audit, 2026-10-03).
+    <Modal isOpen={isOpen} onClose={() => { if (!isSubmitting) onCancel() }} title="Pago seguro">
       {mountError ? (
         <div className="py-6 text-center">
           <p className="text-error">{mountError}</p>

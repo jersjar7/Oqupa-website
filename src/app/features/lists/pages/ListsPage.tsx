@@ -25,7 +25,9 @@ export default function ListsPage() {
 
   async function handleCreate() {
     const name = newListName.trim()
-    if (!name) return
+    // Enter calls this directly, past the button's disabled state — so a
+    // second Enter while saving made a second list (button audit, 2026-10-03).
+    if (!name || busy) return
     setBusy('new')
     try {
       await listService.createList(firebaseUser!.uid, name)
@@ -53,7 +55,7 @@ export default function ListsPage() {
 
   async function handleRename(listId: string) {
     const name = renameValue.trim()
-    if (!name) return
+    if (!name || busy) return
     setBusy(listId)
     try {
       await listService.renameList(firebaseUser!.uid, listId, name)
