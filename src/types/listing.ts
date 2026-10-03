@@ -23,7 +23,10 @@ export interface Listing {
   description: string
   operationType: OperationType
   price: Price
+  /** Legacy public copy of the seller's contact — stripped server-side (ADR-015 Phase 5). Never write it. */
   contactInfo?: ContactInfo
+  /** The seller's own notes to buyers. Public by design; never holds a phone number. */
+  contactNotes?: string
   status: ListingStatus
   viewCount: number
   contactClickCount: number

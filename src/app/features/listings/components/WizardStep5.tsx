@@ -25,6 +25,12 @@ function formatPriceDisplay(amount: number | undefined, currency: Currency): str
   return `${CURRENCY_SYMBOLS[currency]} ${formatted}`
 }
 
+/** Top-level `contactNotes` for a listing, or nothing when the seller left none. */
+function sellerContactNotes(notes: string | undefined): { contactNotes?: string } {
+  const trimmed = notes?.trim()
+  return trimmed ? { contactNotes: trimmed } : {}
+}
+
 export default function WizardStep5() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -208,7 +214,11 @@ export default function WizardStep5() {
             photoKeys: allPhotoKeys,
             photoBlurHashes: allBlurHashes,
           },
-          contactInfo: user.contactInfo,
+          // ADR-015 Phase 5: the seller's phone is NOT copied onto the listing.
+          // The document is world-readable; buyers get the number from
+          // getListingContact. The server strips any copy that arrives anyway.
+          // The seller's own notes to buyers are not secret, so they are kept.
+          ...sellerContactNotes(user.contactInfo?.additionalContactNotes),
           showExactLocation: data.showExactLocation,
         })
 
@@ -299,7 +309,8 @@ export default function WizardStep5() {
           propertyId,
           description: data.description,
           price: { amount: formData.amount, currency: formData.currency },
-          contactInfo: user.contactInfo,
+          // ADR-015 Phase 5: no contactInfo — see the edit path above.
+          ...sellerContactNotes(user.contactInfo?.additionalContactNotes),
           status: 'active' as const,
           publishedAt: now,
           expiresAt,
