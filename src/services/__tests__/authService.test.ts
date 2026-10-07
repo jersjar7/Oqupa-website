@@ -119,6 +119,7 @@ function makeUser(uid: string, email = `${uid}@test.com`) {
     uid,
     email,
     reload: vi.fn().mockResolvedValue(undefined),
+    getIdToken: vi.fn().mockResolvedValue('token'),
     providerData: [] as { providerId: string }[],
   }
 }
@@ -271,6 +272,38 @@ describe('authService', () => {
     it('calls sendPasswordResetEmail with the given email', async () => {
       await authService.requestPasswordReset('reset@test.com')
       expect(sendPasswordResetMock).toHaveBeenCalledWith(expect.anything(), 'reset@test.com')
+    })
+  })
+
+  // ── refreshSession ───────────────────────────────────────────────────────
+
+  describe('refreshSession', () => {
+    it('does nothing when there is no current user', async () => {
+      _currentUser = null
+      await expect(authService.refreshSession()).resolves.toBeUndefined()
+    })
+
+    it('calls getIdToken(true) to force-refresh the token', async () => {
+      const user = makeUser('uid-r')
+      _currentUser = user
+      await authService.refreshSession()
+      expect(user.getIdToken).toHaveBeenCalledWith(true)
+    })
+  })
+
+  // ── checkAccountExists ───────────────────────────────────────────────────
+
+  describe('checkAccountExists', () => {
+    it('returns true when the Cloud Function reports the account exists', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: true } })
+      const result = await authService.checkAccountExists('user@test.com')
+      expect(result).toBe(true)
+    })
+
+    it('returns false when the Cloud Function reports the account does not exist', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: false } })
+      const result = await authService.checkAccountExists('ghost@test.com')
+      expect(result).toBe(false)
     })
   })
 

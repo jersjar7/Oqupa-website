@@ -55,6 +55,16 @@ describe('setReturnUrl / consumeReturnUrl', () => {
     setReturnUrl('/second')
     expect(consumeReturnUrl()).toBe('/second')
   })
+
+  it('returns the raw string when the stored value is a legacy plain path (not JSON)', () => {
+    localStorage.setItem('oqupa_returnUrl', '/legacy/path')
+    expect(consumeReturnUrl()).toBe('/legacy/path')
+  })
+
+  it('returns null when the stored value is a legacy plain string that does not start with /', () => {
+    localStorage.setItem('oqupa_returnUrl', 'legacy-no-slash')
+    expect(consumeReturnUrl()).toBeNull()
+  })
 })
 
 // ---------------------------------------------------------------------------
