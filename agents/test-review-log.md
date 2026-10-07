@@ -395,3 +395,17 @@ Three review sessions covering 51 distinct test files written across the full co
 Coverage at campaign close: **50.00% statements** (target met).
 
 ---
+
+## e045b58 leftover additions (utils.test.ts, authService.test.ts, contactService.test.ts) — 2026-10-07
+
+**Flagged:**
+- **Incomplete assertion target (authService.test.ts, checkAccountExists):** both tests only asserted the returned boolean mirrored the mocked `data.exists`. Neither verified the callable name or the payload, so calling the wrong Cloud Function or sending `{ email: '' }` / no email would still pass.
+
+**Fixed:**
+- Strengthened the "returns true" test (renamed to "calls the checkAccountExists Cloud Function with the email and returns true when it exists") to also assert `httpsCallableMock` was called with `'checkAccountExists'` and `callableInvokerMock` with `{ email: 'user@test.com' }`.
+
+No issues in utils.test.ts (legacy plain-path branch, both `/`-prefixed and non-prefixed) or contactService.test.ts (not-found / permission-denied / aborted mappings each match a distinct source branch, no duplicates). refreshSession no-user test is not always-passing: removing the guard makes `null.getIdToken` reject.
+
+Test count: unchanged. All 122 tests in the three files pass.
+
+---

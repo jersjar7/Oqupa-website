@@ -294,9 +294,11 @@ describe('authService', () => {
   // ── checkAccountExists ───────────────────────────────────────────────────
 
   describe('checkAccountExists', () => {
-    it('returns true when the Cloud Function reports the account exists', async () => {
+    it('calls the checkAccountExists Cloud Function with the email and returns true when it exists', async () => {
       callableInvokerMock.mockResolvedValue({ data: { exists: true } })
       const result = await authService.checkAccountExists('user@test.com')
+      expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'checkAccountExists')
+      expect(callableInvokerMock).toHaveBeenCalledWith({ email: 'user@test.com' })
       expect(result).toBe(true)
     })
 
