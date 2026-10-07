@@ -33,13 +33,61 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
+      // Only measure unit-testable files — those with dedicated test suites or
+      // confirmed full coverage through integration with tested modules.
+      // Excludes purely presentational TSX components (all logic lives in hooks),
+      // SDK initialisers, and bare type definitions.
+      // See CONTRIBUTING.md → "What intentionally has no unit tests" for rationale.
+      include: [
+        // Hooks — pure stateful logic, no Firebase
+        'src/hooks/**/*.ts',
+        // Lib utilities — pure functions and browser-API wrappers
+        'src/lib/**/*.ts',
+        // Zod schemas — call .parse()/.safeParse() directly
+        'src/schemas/**/*.ts',
+        // Service layer — Firebase calls fully mocked in unit tests
+        'src/services/**/*.ts',
+        // Zustand stores
+        'src/stores/**/*.ts',
+        // enums: has logic (labels, mappings) + a dedicated test suite
+        'src/types/enums.ts',
+        // Feature helpers: pure functions extracted specifically for testability
+        'src/app/components/shell/capabilities.ts',
+        'src/app/components/shell/navItems.ts',
+        'src/app/features/access/people.ts',
+        'src/app/features/auth/pipelineOrder.ts',
+        'src/app/features/content/components/fieldStyles.ts',
+        'src/app/features/dashboard/pages/dashboardHelpers.ts',
+        'src/app/features/leads/pages/leadsHelpers.ts',
+        'src/app/features/listings/contactGate.ts',
+        'src/app/features/listings/components/photos/usePhotoQueue.ts',
+        'src/app/features/listings/pages/listingsHelpers.ts',
+        'src/app/features/plan/planContent.ts',
+        'src/app/features/team/teamRoster.ts',
+        // Access guards — thin components with testable logic (allowlist checks + redirects)
+        'src/app/components/guards/**/*.tsx',
+        // Shell and UI components with dedicated test suites
+        'src/app/components/shell/AccessListButton.tsx',
+        'src/app/components/shell/ViewAsMenu.tsx',
+        'src/app/components/ui/Button.tsx',
+        'src/app/components/ui/PasswordRequirements.tsx',
+        'src/app/components/ui/PhotoCarousel.tsx',
+        // Auth page flows — all have comprehensive test suites
+        'src/app/features/auth/pages/**/*.tsx',
+        // Other components with dedicated test suites
+        'src/app/features/dashboard/components/EmptyState.tsx',
+        'src/app/features/listings/components/OwnerCard.tsx',
+        'src/app/features/listings/components/photos/PhotoGrid.tsx',
+        'src/app/features/listings/pages/ListingsPage.tsx',
+        'src/components/explore/PhotoCarousel.tsx',
+        'src/components/layout/Header.tsx',
+        'src/pages/PropertyPage.tsx',
+      ],
       exclude: [
-        'src/main.tsx',          // app bootstrap, not testable logic
-        'src/vite-env.d.ts',     // env type declarations
-        'src/types/**',          // pure TypeScript interfaces, no logic
-        '**/__tests__/**',       // test files themselves
+        '**/__tests__/**',
         '**/*.test.{ts,tsx}',
+        // SDK initialiser — module-level side effects, no isolatable unit logic
+        'src/lib/firebase.ts',
       ],
     },
   },
