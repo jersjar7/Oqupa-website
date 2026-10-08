@@ -260,21 +260,27 @@ describe('listingFormStore', () => {
 
     it('survives sessionStorage throwing QuotaExceededError without throwing', () => {
       const origSetItem = sessionStorage.setItem.bind(sessionStorage)
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         const err = new DOMException('quota exceeded', 'QuotaExceededError')
         throw err
       })
       expect(() => store().nextStep()).not.toThrow()
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('quota exceeded'))
       spy.mockRestore()
+      warnSpy.mockRestore()
     })
 
-    it('swallows non-QuotaExceededError exceptions from sessionStorage (line 108 false branch)', () => {
+    it('swallows non-QuotaExceededError exceptions silently, without the quota warning (line 108 false branch)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         // Throw a different DOMException — not QuotaExceededError
         throw new DOMException('security error', 'SecurityError')
       })
       expect(() => store().nextStep()).not.toThrow()
+      expect(warnSpy).not.toHaveBeenCalled()
       spy.mockRestore()
+      warnSpy.mockRestore()
     })
   })
 

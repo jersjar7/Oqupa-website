@@ -350,9 +350,10 @@ describe('paintBrandedCard', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('cdn-cgi URL where tier 3 fetch (direct URL) succeeds (line 144 true branch)', async () => {
-    // Tier 1 fetch fails for the cdn-cgi URL; tier 2 img fails; tier 3 fetch succeeds for the direct URL.
-    // Result3 is non-null → line 144 `if (result3) return result3` is taken.
+  it('cdn-cgi URL: retries the fetch with the stripped direct URL after tiers 1 and 2 fail', async () => {
+    // Tier 1 fetch rejects for the cdn-cgi URL and tier 2 img errors, so loadImage falls through
+    // to tier 3 and fetches the direct R2 URL. imgShouldError also makes the blob <img> fail,
+    // so result3 is still null here — this pins the retry, not the tier-3 success return.
     const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
     const directUrl = 'https://images.oqupa.com/photos/abc.webp'
     fetchMock.mockImplementation((url: string) => {
@@ -362,11 +363,13 @@ describe('paintBrandedCard', () => {
         blob: () => Promise.resolve(new Blob(['fake-image'], { type: 'image/jpeg' })),
       })
     })
-    imgShouldError = true // tier 2 img fails for cdn-cgi URL; but tier 3 fetch succeeds before img is tried
+    imgShouldError = true
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
     expect(blob).toBeInstanceOf(Blob)
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining(directUrl), expect.any(Object))
+    // The cdn-cgi URL is tried first; the direct URL only afterwards
+    expect(fetchMock.mock.calls[0]![0]).toContain('cdn-cgi')
+    expect(fetchMock).toHaveBeenCalledWith(directUrl, expect.any(Object))
   })
 
   it('resolveUrl rewrites Firebase Storage URLs in DEV mode (line 41)', async () => {

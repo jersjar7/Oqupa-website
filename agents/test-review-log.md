@@ -409,3 +409,29 @@ No issues in utils.test.ts (legacy plain-path branch, both `/`-prefixed and non-
 Test count: unchanged. All 122 tests in the three files pass.
 
 ---
+
+## 18d2c90 batch (21 test files, 28+ new tests) — 2026-10-07
+
+Reviewed every test added in `test(coverage): improve branch coverage from 82.21% to 85.28%`.
+
+**Flagged:**
+- **Misleading name + self-contradictory comment (brandedCardPainter.test.ts):** "cdn-cgi URL where tier 3 fetch (direct URL) succeeds (line 144 true branch)". With `imgShouldError = true` the blob `<img>` inside `fetchAsBlob` also errors, so `result3` is null and the success branch is never taken. The same commit wraps that branch in `/* v8 ignore */` as untestable, which confirms it. The test only proves the direct-URL retry was attempted.
+- **Weak assertion (listingFormStore.test.ts):** the new "non-QuotaExceededError" test and the older QuotaExceededError test both only asserted `not.toThrow()`. The only thing line 108 decides is whether `console.warn` fires, so the "false branch" test could not tell the two branches apart.
+- **Weak assertion (errorBuffer.test.ts):** the stack-undefined test only checked the message was present. Removing `?? ''` would print "undefined" and the test would still pass.
+- **Weak assertion (authStore.test.ts, claimMonth default):** a `/^\d{4}-\d{2}$/` regex passes even with an off-by-one `getMonth()` bug.
+- **Incomplete assertion (authService.test.ts, verifyPhoneCode non-phone provider):** asserted the link path ran but not that the update-phone path did not.
+
+**Fixed:**
+- brandedCardPainter: renamed to "cdn-cgi URL: retries the fetch with the stripped direct URL after tiers 1 and 2 fail", rewrote the comment to match, and asserted ordering (first fetch is the cdn-cgi URL, then the exact direct URL).
+- listingFormStore: spied `console.warn`. The Quota test asserts it was called; the non-Quota test asserts it was not.
+- errorBuffer: asserts `'TypeError: stack missing'` and `not.toContain('undefined')`.
+- authStore: claimMonth compared to the exact computed `YYYY-MM`.
+- authService: added `expect(updatePhoneNumberMock).not.toHaveBeenCalled()`.
+
+No issues in dashboardHelpers, ListingsPage, useGrowthPlan, formatters, shareUtils, metaPixel, tiktokPixel, utils (TTL), boostService, contentLinkService, firestoreService, storageService, or teamTaskService additions.
+
+**Outside verifier scope, for the user:** this commit also adds `/* v8 ignore */` to 13 production source files. Several hide branches that are reachable and worth testing rather than dead: `useExploreListings` `if (isFetchingNextPage) return` (prevents duplicate fetches); `useBoundaryPolygons` `if (!cancelled)` (already exercised by an existing test); and `brandedCardPainter` tier-3/tier-4 success returns (testable with a URL-aware img mock). As a result, the CLAUDE.md entry "brandedCardPainter 100% branches" is not accurate. Source files were not modified by the verifier.
+
+Test count: unchanged. Full suite: 104 files, 1842 passed, 5 skipped.
+
+---

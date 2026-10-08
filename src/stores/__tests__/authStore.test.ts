@@ -598,7 +598,10 @@ describe('authStore', () => {
 
     it('defaults claimMonth to current year-month when absent (line 80 ?? branch)', async () => {
       const user = await loadUserWithData({ email: 'x@test.com', isActive: true })
-      expect(user?.claimMonth).toMatch(/^\d{4}-\d{2}$/)
+      const now = new Date()
+      // getMonth() is 0-based — an exact match catches a missing +1
+      const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      expect(user?.claimMonth).toBe(expected)
     })
 
     it('populates contactInfo with defaults when contactInfo present but fields absent (lines 46-49)', async () => {

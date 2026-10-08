@@ -667,6 +667,7 @@ describe('authService', () => {
       await authService.verifyPhoneCode('v-id', '123456')
       // some() callback ran with 'google.com', returned false → linkWithCredential path
       expect(linkWithCredentialMock).toHaveBeenCalledOnce()
+      expect(updatePhoneNumberMock).not.toHaveBeenCalled()
     })
 
     it('updates phone number when user already has phone linked', async () => {

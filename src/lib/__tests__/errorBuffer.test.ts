@@ -183,7 +183,9 @@ describe('initErrorBuffer + getCapturedErrors', () => {
     window.dispatchEvent(rejectionEvent)
 
     const output = getCapturedErrors()
-    expect(output).toContain('stack missing')
+    expect(output).toContain('TypeError: stack missing')
+    // Without the ?? '' fallback the template literal would print "undefined"
+    expect(output).not.toContain('undefined')
   })
 
   it('captures an object with a non-serialisable value (JSON.stringify throws)', async () => {
