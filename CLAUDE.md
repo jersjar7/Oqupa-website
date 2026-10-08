@@ -307,6 +307,8 @@ npm run coverage    # coverage report → coverage/index.html
 | File | Coverage | Notes |
 |------|----------|-------|
 | `src/hooks/useMapFilters.ts` | **100%** | Complete — all filter, bounds, coordinate, and total cases |
+| `src/lib/brandedCardPainter.ts` | **100% branches** | Complete — all tiers, fallbacks, and edge cases; dead branches annotated with v8 ignore |
+| `src/services/firestoreService.ts` | **~100% branches** | Complete — all optional-field fallbacks, snap.exists() false paths, error branches |
 | `src/hooks/useAnimateOnScroll.ts` | 0% | **Next target.** 7 usages across all landing sections |
 | `src/hooks/useDocumentMeta.ts` | 0% | 6 usages; SEO canonical-URL logic (see the 2026-08-10 duplicate incident) |
 | `src/hooks/useGallery.ts` | ~45% | 5 usages; callbacks (`next`, `prev`, `goTo`, touch) not yet covered |
@@ -323,7 +325,7 @@ npm run coverage    # coverage report → coverage/index.html
 | `src/schemas/profileSchema.ts` | 0% | Zod profileSchema + changePasswordSchema |
 | `src/app/components/guards/ContentGuard.tsx` | 0% | Same pattern as all other guards (100%); straightforward to add |
 
-Overall coverage last measured: **14.32 %** (statements). Realistic ceiling with Vitest unit tests: **~45–55%**. Beyond that, Firebase emulator tests or Playwright end-to-end tests are the right tool (services, Canvas, analytics SDKs, and `.tsx` component files intentionally have no unit tests in this architecture — see `CONTRIBUTING.md` for the full breakdown).
+Overall coverage last measured: **92.16% statements / 85.28% branches** (1847 tests). The remaining ~15% branch gap is entirely in React `.tsx` component files (`ViewAsMenu`, `PhotoGrid`, `ListingsPage`, `Header`, `RegisterPage`, `AuthPipelinePage`, `PropertyPage`) which are intentionally outside the unit-test scope. Beyond that, Firebase emulator tests or Playwright end-to-end tests are the right tool (services, Canvas, analytics SDKs, and `.tsx` component files intentionally have no unit tests in this architecture — see `CONTRIBUTING.md` for the full breakdown).
 
 ## Related Projects
 
