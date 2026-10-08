@@ -64,14 +64,6 @@ function makeConfig(overrides: Partial<BrandedCardConfig> = {}): BrandedCardConf
   }
 }
 
-/** An HTMLImageElement stub with fixed natural dimensions. */
-function makeImage(width = 200, height = 200): HTMLImageElement {
-  const img = new Image()
-  Object.defineProperty(img, 'naturalWidth', { value: width })
-  Object.defineProperty(img, 'naturalHeight', { value: height })
-  return img
-}
-
 // ── controls ─────────────────────────────────────────────────────────────────
 
 /** When true (or when the predicate returns true for the src), fires onerror instead of onload. */
@@ -380,7 +372,7 @@ describe('paintBrandedCard', () => {
 
   it('resolveUrl rewrites Firebase Storage URLs in DEV mode (line 41)', async () => {
     // Stub DEV=true so resolveUrl rewrites the firebasestorage URL to /__storage
-    vi.stubEnv('DEV', 'true')
+    vi.stubEnv('DEV', true)
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const firebaseUrl = 'https://firebasestorage.googleapis.com/v0/b/bucket/o/photo.webp'
     const blob = await paintBrandedCard(makeConfig(), [firebaseUrl])

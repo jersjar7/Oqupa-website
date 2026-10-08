@@ -22,14 +22,14 @@ const {
     deleteDocMock: vi.fn().mockResolvedValue(undefined),
     getDocMock: vi.fn(),
     getDocsMock: vi.fn(),
-    queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-    collectionMock: vi.fn(() => ({ __col: true })),
-    docMock: vi.fn((_db: unknown, ...parts: string[]) => ({ path: parts.join('/') })),
-    whereMock: vi.fn(() => ({ __where: true })),
-    orderByMock: vi.fn(() => ({ __orderBy: true })),
-    limitMock: vi.fn(() => ({ __limit: true })),
-    startAfterMock: vi.fn(() => ({ __startAfter: true })),
-    writeBatchMock: vi.fn(() => ({
+    queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+    collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: true })),
+    docMock: vi.fn((...args: unknown[]) => ({ path: args.slice(1).join('/') })),
+    whereMock: vi.fn((..._args: unknown[]) => ({ __where: true })),
+    orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
+    limitMock: vi.fn((..._args: unknown[]) => ({ __limit: true })),
+    startAfterMock: vi.fn((..._args: unknown[]) => ({ __startAfter: true })),
+    writeBatchMock: vi.fn((..._args: unknown[]) => ({
       set: batchSetMock,
       update: batchUpdateMock,
       commit: batchCommitMock,
@@ -37,9 +37,9 @@ const {
     batchSetMock,
     batchUpdateMock,
     batchCommitMock,
-    httpsCallableMock: vi.fn(() => callableFnMock),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
     callableFnMock,
-    getOrCreateClientIdMock: vi.fn(() => 'client-id-123'),
+    getOrCreateClientIdMock: vi.fn((..._args: unknown[]) => 'client-id-123'),
   }
 })
 
@@ -246,7 +246,7 @@ describe('firestoreService', () => {
         pageUrl: 'https://oqupa.com',
         userAgent: 'Chrome',
       })
-      const payload = addDocMock.mock.calls[0][1] as Record<string, unknown>
+      const payload = addDocMock.mock.calls[0]![1] as Record<string, unknown>
       expect(payload.to).toBe('admin@oqupa.com')
     })
 
@@ -258,7 +258,7 @@ describe('firestoreService', () => {
         pageUrl: 'https://oqupa.com',
         userAgent: 'Chrome',
       })
-      const payload = addDocMock.mock.calls[0][1] as { message: { html: string } }
+      const payload = addDocMock.mock.calls[0]![1] as { message: { html: string } }
       expect(payload.message.html).toContain('&lt;script&gt;')
       expect(payload.message.html).not.toContain('<script>')
     })
@@ -411,7 +411,7 @@ describe('firestoreService', () => {
     it('calls updateDoc with status and serverTimestamp', async () => {
       await firestoreService.updateListingStatus('listing-1', 'deactivated')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('deactivated')
       expect(payload.updatedAt).toEqual({ _server: true })
     })
@@ -422,7 +422,7 @@ describe('firestoreService', () => {
   describe('deactivateListing', () => {
     it('calls updateListingStatus with "deactivated"', async () => {
       await firestoreService.deactivateListing('listing-1')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('deactivated')
     })
   })
@@ -432,7 +432,7 @@ describe('firestoreService', () => {
   describe('activateListing', () => {
     it('calls updateDoc with status=active, publishedAt, expiresAt, and updatedAt', async () => {
       await firestoreService.activateListing('listing-1')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('active')
       expect(payload.publishedAt).toEqual({ _server: true })
       expect(payload.expiresAt).toBeInstanceOf(Date)
@@ -442,7 +442,7 @@ describe('firestoreService', () => {
     it('sets expiresAt to approximately 30 days from now', async () => {
       const before = Date.now()
       await firestoreService.activateListing('listing-1')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       const after = Date.now()
       const expiresMs = (payload.expiresAt as Date).getTime()
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
@@ -482,7 +482,7 @@ describe('firestoreService', () => {
         media: { propertyPhotoUrls: [] },
         isAvailable: true,
       })
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.updatedAt).toEqual({ _server: true })
     })
   })
@@ -506,6 +506,7 @@ describe('firestoreService', () => {
         isBoosted: false,
         boostScore: 1,
         showExactLocation: true,
+        media: { propertyPhotoUrls: [] },
       })
       expect(typeof id).toBe('string')
       expect(id).toMatch(/^listing_/)
@@ -527,8 +528,9 @@ describe('firestoreService', () => {
         isBoosted: false,
         boostScore: 1,
         showExactLocation: true,
+        media: { propertyPhotoUrls: [] },
       })
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.viewCount).toBe(0)
       expect(payload.createdAt).toEqual({ _server: true })
       expect(payload.updatedAt).toEqual({ _server: true })
@@ -541,14 +543,14 @@ describe('firestoreService', () => {
     it('calls updateDoc with the provided fields and updatedAt', async () => {
       await firestoreService.updateListing('listing-1', { description: 'Updated description' })
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.description).toBe('Updated description')
       expect(payload.updatedAt).toEqual({ _server: true })
     })
 
     it('strips the id field from the update payload', async () => {
       await firestoreService.updateListing('listing-1', { description: 'New desc' })
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(Object.keys(payload)).not.toContain('id')
     })
   })
@@ -558,7 +560,7 @@ describe('firestoreService', () => {
   describe('updateProperty', () => {
     it('calls updateDoc with the provided fields and updatedAt', async () => {
       await firestoreService.updateProperty('prop-1', { normalizedAddress: 'New address' })
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.normalizedAddress).toBe('New address')
       expect(payload.updatedAt).toEqual({ _server: true })
     })
@@ -612,7 +614,7 @@ describe('firestoreService', () => {
         serviceZones: [],
         motivation: 'Test',
       })
-      const appPayload = batchSetMock.mock.calls[0][1] as Record<string, unknown>
+      const appPayload = batchSetMock.mock.calls[0]![1] as Record<string, unknown>
       expect(appPayload.status).toBe('pending')
     })
   })
@@ -685,8 +687,8 @@ describe('firestoreService', () => {
     it('commits batch with isVerifiedRealtor=true and status=approved', async () => {
       await firestoreService.approveRealtorApplication('uid-1', 'admin-uid')
       expect(batchUpdateMock).toHaveBeenCalledTimes(2)
-      const userUpdate = batchUpdateMock.mock.calls[0][1] as Record<string, unknown>
-      const appUpdate = batchUpdateMock.mock.calls[1][1] as Record<string, unknown>
+      const userUpdate = batchUpdateMock.mock.calls[0]![1] as Record<string, unknown>
+      const appUpdate = batchUpdateMock.mock.calls[1]![1] as Record<string, unknown>
       expect(userUpdate.isVerifiedRealtor).toBe(true)
       expect(appUpdate.status).toBe('approved')
       expect(appUpdate.reviewedBy).toBe('admin-uid')
@@ -698,8 +700,8 @@ describe('firestoreService', () => {
   describe('rejectRealtorApplication', () => {
     it('commits batch with realtorApplicationStatus=rejected', async () => {
       await firestoreService.rejectRealtorApplication('uid-1', 'admin-uid')
-      const userUpdate = batchUpdateMock.mock.calls[0][1] as Record<string, unknown>
-      const appUpdate = batchUpdateMock.mock.calls[1][1] as Record<string, unknown>
+      const userUpdate = batchUpdateMock.mock.calls[0]![1] as Record<string, unknown>
+      const appUpdate = batchUpdateMock.mock.calls[1]![1] as Record<string, unknown>
       expect(userUpdate.realtorApplicationStatus).toBe('rejected')
       expect(appUpdate.status).toBe('rejected')
     })
@@ -710,7 +712,7 @@ describe('firestoreService', () => {
   describe('assignRealtorToListing', () => {
     it('calls updateDoc with realtorId, phone, and pending_acceptance status', async () => {
       await firestoreService.assignRealtorToListing('listing-1', 'realtor-1', '+51987654321')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.assignedRealtorId).toBe('realtor-1')
       expect(payload.assignedRealtorPhoneNumber).toBe('+51987654321')
       expect(payload.assignmentStatus).toBe('pending_acceptance')
@@ -722,7 +724,7 @@ describe('firestoreService', () => {
   describe('acceptAssignment', () => {
     it('calls updateDoc with assignmentStatus=accepted', async () => {
       await firestoreService.acceptAssignment('listing-1')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.assignmentStatus).toBe('accepted')
     })
   })
@@ -732,7 +734,7 @@ describe('firestoreService', () => {
   describe('declineAssignment', () => {
     it('clears realtor fields and appends agentId to declinedRealtorIds', async () => {
       await firestoreService.declineAssignment('listing-1', ['agent-old'], 'agent-new')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.assignedRealtorId).toBeNull()
       expect(payload.assignedRealtorPhoneNumber).toBeNull()
       expect(payload.assignmentStatus).toBeNull()
@@ -933,7 +935,7 @@ describe('firestoreService', () => {
       getDocsMock.mockResolvedValue({ docs: [rawDoc] })
       getDocMock.mockResolvedValue(makeDocSnap('prop-rental', makePropertyData({ rentalDurationType: 'long-term' })))
       const result = await firestoreService.getActiveListingsWithPropertiesPaginated(30)
-      expect((result.items[0]!.property as Record<string, unknown>).rentalDurationType).toBe('long-term')
+      expect((result.items[0]!.property as unknown as Record<string, unknown>).rentalDurationType).toBe('long-term')
     })
   })
 
@@ -1348,7 +1350,7 @@ describe('firestoreService', () => {
     it('calls updateDoc with deleteField for assignment fields', async () => {
       await firestoreService.unassignRealtor('listing-xyz')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1] as Record<string, unknown>
+      const payload = updateDocMock.mock.calls[0]![1] as Record<string, unknown>
       // deleteField is mocked to return { __deleteField: true }
       expect(payload.assignedRealtorId).toBeDefined()
       expect(payload.assignedRealtorPhoneNumber).toBeDefined()
@@ -1408,6 +1410,7 @@ describe('firestoreService', () => {
         isBoosted: false,
         boostScore: 1,
         showExactLocation: true,
+        media: { propertyPhotoUrls: [] },
         // Optional fields intentionally set to undefined — triggers the continue branch in stripUndefined
         publishedAt: undefined,
         expiresAt: undefined,
@@ -1415,7 +1418,7 @@ describe('firestoreService', () => {
       })
       expect(setDocMock).toHaveBeenCalledOnce()
       // The payload written to Firestore should not contain the undefined fields
-      const payload = setDocMock.mock.calls[0][1] as Record<string, unknown>
+      const payload = setDocMock.mock.calls[0]![1] as Record<string, unknown>
       expect(payload).not.toHaveProperty('publishedAt')
       expect(payload).not.toHaveProperty('expiresAt')
       expect(payload).not.toHaveProperty('boostedUntil')

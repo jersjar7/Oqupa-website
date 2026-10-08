@@ -10,12 +10,12 @@ const {
   addDocMock: vi.fn().mockResolvedValue({ id: 'new-link-id' }),
   updateDocMock: vi.fn().mockResolvedValue(undefined),
   deleteDocMock: vi.fn().mockResolvedValue(undefined),
-  onSnapshotMock: vi.fn(() => vi.fn()), // returns unsubscribe fn
-  queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-  collectionMock: vi.fn(() => ({ __col: 'contentLinks' })),
-  docMock: vi.fn((_db: unknown, col: string, id: string) => ({ path: `${col}/${id}` })),
-  whereMock: vi.fn(() => ({ __where: true })),
-  orderByMock: vi.fn(() => ({ __orderBy: true })),
+  onSnapshotMock: vi.fn((..._args: unknown[]) => vi.fn()), // returns unsubscribe fn
+  queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+  collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'contentLinks' })),
+  docMock: vi.fn((...args: unknown[]) => ({ path: `${args[1]}/${args[2]}` })),
+  whereMock: vi.fn((..._args: unknown[]) => ({ __where: true })),
+  orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
 }))
 
 vi.mock('firebase/firestore', () => ({
@@ -95,7 +95,7 @@ describe('contentLinkService', () => {
       ])
 
       expect(onChange).toHaveBeenCalledOnce()
-      const links = onChange.mock.calls[0][0]
+      const links = onChange.mock.calls[0]![0]
       expect(links).toHaveLength(1)
       expect(links[0]!.id).toBe('link-1')
       expect(links[0]!.date).toBe('2026-09-10')
@@ -142,7 +142,7 @@ describe('contentLinkService', () => {
       ])
 
       expect(onChange).toHaveBeenCalledOnce()
-      const links = onChange.mock.calls[0][0]
+      const links = onChange.mock.calls[0]![0]
       expect(links[0]!.date).toBeNull()
     })
 
@@ -165,7 +165,7 @@ describe('contentLinkService', () => {
         createdByEmail: 'editor@oqupa.com',
       })
       expect(addDocMock).toHaveBeenCalledOnce()
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.date).toBe('2026-09-15')
       expect(payload.label).toBe('TikTok video')
       expect(payload.url).toBe('https://tiktok.com/v/1')
@@ -180,7 +180,7 @@ describe('contentLinkService', () => {
         url: 'https://example.com',
         createdByEmail: 'editor@oqupa.com',
       })
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.date).toBeNull()
     })
   })
@@ -191,12 +191,12 @@ describe('contentLinkService', () => {
     it('calls updateDoc with the new date', async () => {
       await contentLinkService.setDate('link-1', '2026-10-01')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ date: '2026-10-01' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ date: '2026-10-01' })
     })
 
     it('calls updateDoc with null to move to shelf', async () => {
       await contentLinkService.setDate('link-1', null)
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ date: null })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ date: null })
     })
   })
 
@@ -206,7 +206,7 @@ describe('contentLinkService', () => {
     it('calls updateDoc with label and url', async () => {
       await contentLinkService.update('link-1', { label: 'New Label', url: 'https://new-url.com' })
       expect(updateDocMock).toHaveBeenCalledOnce()
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ label: 'New Label', url: 'https://new-url.com' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ label: 'New Label', url: 'https://new-url.com' })
     })
   })
 
@@ -226,7 +226,7 @@ describe('contentLinkService', () => {
       const onChange = vi.fn()
       contentLinkService.subscribeToShelf(onChange, vi.fn())
       fireOnChange([makeSnapshotDoc('test-id', data)])
-      return onChange.mock.calls[0][0][0] as { date: string | null; label?: string; createdAt: Date; url: string }
+      return onChange.mock.calls[0]![0][0] as { date: string | null; label?: string; createdAt: Date; url: string; createdByEmail: string }
     }
 
     it('uses the string date value as-is', () => {

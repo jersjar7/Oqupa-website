@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, act, renderHook } from '@testing-library/react'
-import { useRef } from 'react'
+import { render, renderHook } from '@testing-library/react'
 import { useFocusTrap } from '../useFocusTrap'
 
 // ---------------------------------------------------------------------------
@@ -33,17 +32,6 @@ function EmptyFixture({ active }: FixtureProps) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function tab(shiftKey = false) {
-  const event = new KeyboardEvent('keydown', {
-    key: 'Tab',
-    shiftKey,
-    bubbles: true,
-    cancelable: true,
-  })
-  document.dispatchEvent(event)
-  return event
-}
-
 afterEach(() => {
   vi.restoreAllMocks()
 })
@@ -183,7 +171,6 @@ describe('useFocusTrap', () => {
 
   it('removes keydown listener after unmount', () => {
     const { getByTestId, unmount } = render(<Fixture active={true} />)
-    const firstButton = getByTestId('btn-first')
     const lastButton = getByTestId('btn-last')
 
     lastButton.focus()

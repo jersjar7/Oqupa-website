@@ -7,7 +7,6 @@ import {
   membersOf,
   TEAM_MEMBERS,
 } from '../teamRoster'
-import { PEOPLE } from '@/app/features/access/people'
 
 // ---------------------------------------------------------------------------
 // isTeamMemberEmail

@@ -48,10 +48,6 @@ describe('useInfiniteScroll', () => {
 
   it('calls onLoadMore when the sentinel intersects and enabled is true', () => {
     const onLoadMore = vi.fn()
-    const Fixture = () => {
-      const ref = useInfiniteScroll(onLoadMore, true)
-      return ref
-    }
     renderHook(() => useInfiniteScroll(onLoadMore, true))
 
     // Sentinel ref not attached in renderHook — observer.observe never called

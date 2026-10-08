@@ -12,14 +12,14 @@ const {
   return {
     getDocMock: vi.fn(),
     getDocsMock: vi.fn(),
-    queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-    collectionMock: vi.fn(() => ({ __col: 'payments' })),
-    docMock: vi.fn((_db: unknown, col: string, id: string) => ({ path: `${col}/${id}` })),
-    whereMock: vi.fn(() => ({ __where: true })),
-    orderByMock: vi.fn(() => ({ __orderBy: true })),
-    limitMock: vi.fn(() => ({ __limit: true })),
-    getFunctionsMock: vi.fn(() => ({ __functions: true })),
-    httpsCallableMock: vi.fn(() => callableFnMock),
+    queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+    collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'payments' })),
+    docMock: vi.fn((...args: unknown[]) => ({ path: `${args[1]}/${args[2]}` })),
+    whereMock: vi.fn((..._args: unknown[]) => ({ __where: true })),
+    orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
+    limitMock: vi.fn((..._args: unknown[]) => ({ __limit: true })),
+    getFunctionsMock: vi.fn((..._args: unknown[]) => ({ __functions: true })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
     callableFnMock,
   }
 })

@@ -244,7 +244,7 @@ describe('useBugReportForm', () => {
         await result.current.handleSubmit(makeSubmitEvent())
       })
       expect(submitBugReportMock).toHaveBeenCalledOnce()
-      const payload = submitBugReportMock.mock.calls[0][0]
+      const payload = submitBugReportMock.mock.calls[0]![0]
       expect(payload.contact).toBe('test@example.com')
       expect(payload.description).toBe('The login button does nothing when clicked')
       expect(payload).toHaveProperty('technical')
@@ -263,7 +263,7 @@ describe('useBugReportForm', () => {
       await act(async () => {
         await result.current.handleSubmit(makeSubmitEvent())
       })
-      const payload = submitBugReportMock.mock.calls[0][0]
+      const payload = submitBugReportMock.mock.calls[0]![0]
       expect(payload.contact).toBe('user@test.com')
       expect(payload.description).toBe('Something is broken here')
     })
@@ -407,7 +407,7 @@ describe('useBugReportForm — RECAPTCHA_ENABLED branch (lines 79-90)', () => {
     const submitCallable = vi.fn().mockResolvedValue({})
     vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('test-token')
     vi.mocked(functionsMod.httpsCallable).mockReturnValue(
-      submitCallable as ReturnType<typeof functionsMod.httpsCallable>
+      submitCallable as unknown as ReturnType<typeof functionsMod.httpsCallable>
     )
 
     const { result } = renderHook(() => useForm())
@@ -449,7 +449,7 @@ describe('useBugReportForm — RECAPTCHA_ENABLED branch (lines 79-90)', () => {
     const failingCallable = vi.fn().mockRejectedValue(new Error('cloud function error'))
     vi.mocked(recaptchaMod.getRecaptchaToken).mockResolvedValue('token-ok')
     vi.mocked(functionsMod.httpsCallable).mockReturnValue(
-      failingCallable as ReturnType<typeof functionsMod.httpsCallable>
+      failingCallable as unknown as ReturnType<typeof functionsMod.httpsCallable>
     )
 
     const { result } = renderHook(() => useForm())
