@@ -63,10 +63,20 @@ jobs:
       #   range to upgrade to, and npm's "fix" is a DOWNGRADE to 7.11.0.
       #   REVISIT when React Router publishes a stable release above 8.2.0.
       #
+      #   GHSA-m9gg-hp2v-232j, GHSA-f596-whhp-79r4 — @grpc/grpc-js < 1.13.6,
+      #   pulled in by firebase → @firebase/firestore. Both are gRPC SERVER
+      #   flaws (getAuthContext accepting unauthorized certs; handler error
+      #   messages leaked in status). This app runs no gRPC server, and the
+      #   browser build of Firestore uses WebChannel, not grpc-js — no grpc-js
+      #   code is in dist/ (checked 2026-10-08). Every firebase release up to
+      #   13.0.0 pins grpc-js ~1.9.0, so no upgrade fixes it; npm's "fix" is a
+      #   DOWNGRADE to firebase 9.14.0.
+      #   REVISIT when @firebase/firestore depends on @grpc/grpc-js >= 1.13.6.
+      #
       # Every other advisory, at high or critical, still fails the build.
       - name: Dependency audit
         env:
-          ALLOWED: GHSA-qwww-vcr4-c8h2
+          ALLOWED: GHSA-qwww-vcr4-c8h2,GHSA-m9gg-hp2v-232j,GHSA-f596-whhp-79r4
         run: |
           npm audit --audit-level=high --json > /tmp/audit.json 2>/dev/null || true
           node <<'GATE'
