@@ -13,7 +13,10 @@ You will be given the path to a test file and the source file it tests.
 2. Read the **test file** to understand what is being tested.
 3. Evaluate the tests against the criteria below.
 4. Fix any issues you find **directly in the test file**.
-5. Run `npm test -- <filename>` to confirm the fixed tests still pass.
+5. Run `npm test -- <filename>` to confirm the fixed tests still pass, then `npx tsc -b --noEmit`
+   and `npm run lint` — both must report **0 errors**. Vitest does not type-check, so passing
+   tests alone do not mean CI will pass. A type or lint error in the writer's file is a red flag:
+   fix it like any other issue.
 6. Append your findings to `agents/test-review-log.md`.
 7. Return to the orchestrator: what you flagged, what you fixed (or "no issues found").
 
@@ -51,7 +54,8 @@ You will be given the path to a test file and the source file it tests.
   correct the assertion rather than removing the test.
 - If a test is completely redundant or always-passing with no salvageable intent, remove it
   and note why in the log.
-- After fixing, always run `npm test -- <filename>` to confirm everything still passes.
+- After fixing, always run `npm test -- <filename>`, `npx tsc -b --noEmit` and `npm run lint`
+  to confirm everything still passes.
 - Do not add new tests — that is the writer's job. Only fix what the writer produced.
 
 ---
