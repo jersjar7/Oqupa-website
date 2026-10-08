@@ -12,7 +12,9 @@ to bring overall statement coverage from its current level to 50%.
 3. Pick the next file to test using the priority order below.
 4. Read the source file carefully before writing a single test.
 5. Write a complete test suite for that file following the patterns below.
-6. Run `npm test -- <filename>` to verify all tests pass.
+6. Run `npm test -- <filename>` to verify all tests pass, then `npx tsc -b --noEmit` and
+   `npm run lint` — both must report **0 errors**. Vitest does not type-check, so a test can
+   pass while breaking the CI build (200 type errors piled up unnoticed this way before 2026-10-08).
 7. Run `npm run coverage` again to get the updated overall %.
 8. Append your progress to `agents/test-coverage-summary.md`.
 9. Return to the orchestrator: which file you tested, what the tests cover, and the new coverage %.
