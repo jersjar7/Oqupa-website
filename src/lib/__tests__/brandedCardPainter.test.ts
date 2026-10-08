@@ -339,6 +339,36 @@ describe('paintBrandedCard', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalled()
   })
 
+  it('loads a non-http photo URL directly (line 122 true branch: useFallbackChain=true, url not http//__storage)', async () => {
+    // A data URL does not start with 'http' or '/__storage', so loadImage takes the early
+    // return path (direct <img> load), bypassing the fetch fallback chain.
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    const blob = await paintBrandedCard(makeConfig(), [dataUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // fetch should NOT have been called for the data URL (took the direct path)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('cdn-cgi URL where tier 3 fetch (direct URL) succeeds (line 144 true branch)', async () => {
+    // Tier 1 fetch fails for the cdn-cgi URL; tier 2 img fails; tier 3 fetch succeeds for the direct URL.
+    // Result3 is non-null → line 144 `if (result3) return result3` is taken.
+    const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
+    const directUrl = 'https://images.oqupa.com/photos/abc.webp'
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('cdn-cgi')) return Promise.reject(new Error('CORS blocked'))
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['fake-image'], { type: 'image/jpeg' })),
+      })
+    })
+    imgShouldError = true // tier 2 img fails for cdn-cgi URL; but tier 3 fetch succeeds before img is tried
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining(directUrl), expect.any(Object))
+  })
+
   it('resolveUrl rewrites Firebase Storage URLs in DEV mode (line 41)', async () => {
     // Stub DEV=true so resolveUrl rewrites the firebasestorage URL to /__storage
     vi.stubEnv('DEV', 'true')

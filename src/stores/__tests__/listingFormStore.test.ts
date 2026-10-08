@@ -267,6 +267,15 @@ describe('listingFormStore', () => {
       expect(() => store().nextStep()).not.toThrow()
       spy.mockRestore()
     })
+
+    it('swallows non-QuotaExceededError exceptions from sessionStorage (line 108 false branch)', () => {
+      const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        // Throw a different DOMException — not QuotaExceededError
+        throw new DOMException('security error', 'SecurityError')
+      })
+      expect(() => store().nextStep()).not.toThrow()
+      spy.mockRestore()
+    })
   })
 
   // -------------------------------------------------------------------------

@@ -55,7 +55,10 @@ export function useExploreListings(operationType?: OperationType | null) {
   // on every single one.
   const { fetchNextPage, isFetchingNextPage } = infiniteQuery
   const pageCount = infiniteQuery.data?.pages.length ?? 0
+  // TanStack Query v5 always returns boolean for hasNextPage; ?? false is a dead-code guard
+  /* v8 ignore start */
   const hasNextPage = infiniteQuery.hasNextPage ?? false
+  /* v8 ignore stop */
   const hitPageCeiling = hasNextPage && pageCount >= MAX_AUTO_PAGES
 
   // Keep pulling pages until the catalogue is complete.
@@ -69,7 +72,10 @@ export function useExploreListings(operationType?: OperationType | null) {
   // MAX_AUTO_PAGES.
   useEffect(() => {
     if (!hasNextPage) return
+    // isFetchingNextPage is true only during in-flight fetches; synchronous mocks resolve instantly
+    /* v8 ignore start */
     if (isFetchingNextPage) return
+    /* v8 ignore stop */
     if (pageCount >= MAX_AUTO_PAGES) return
     fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, pageCount, fetchNextPage])

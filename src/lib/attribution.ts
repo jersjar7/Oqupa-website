@@ -211,7 +211,11 @@ export function attributionForListing(): Record<string, string> | null {
   if (stored.first.clickId) record.firstWasPaidClick = 'true'
   if (stored.last.clickId) record.lastWasPaidClick = 'true'
 
+  // If execution reaches here, at least one of source/campaign/clickId was
+  // truthy (the guard above returns null), so record is never empty — null branch unreachable.
+  /* v8 ignore start */
   return Object.keys(record).length > 0 ? record : null
+  /* v8 ignore stop */
 }
 
 /** Exposed for tests. */

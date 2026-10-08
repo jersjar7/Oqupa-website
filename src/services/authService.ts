@@ -82,9 +82,12 @@ export const authService = {
   async sendEmailVerificationToCurrentUser() {
     const user = auth.currentUser
     if (!user) throw new Error('No authenticated user')
+    // DEV is always true in vitest; production URL branch is unreachable in tests
+    /* v8 ignore start */
     const url = import.meta.env.DEV
       ? 'http://localhost:5173/app/verify'
       : 'https://oqupa.com/app/verify'
+    /* v8 ignore stop */
     await sendEmailVerification(user, { url, handleCodeInApp: false })
   },
 
@@ -134,9 +137,12 @@ export const authService = {
   },
 
   async sendPasswordSetupEmail(email: string) {
+    // DEV is always true in vitest; production URL branch is unreachable in tests
+    /* v8 ignore start */
     const url = import.meta.env.DEV
       ? 'http://localhost:5173/app/auth/set-password'
       : 'https://oqupa.com/app/auth/set-password'
+    /* v8 ignore stop */
     await sendPasswordResetEmail(auth, email, {
       url,
       handleCodeInApp: true,

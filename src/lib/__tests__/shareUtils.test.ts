@@ -311,4 +311,15 @@ describe('generateShareText — label fallbacks', () => {
     const text = generateShareText(params)
     expect(text).toContain('/mes') // longTerm suffix
   })
+
+  it('falls back to "/mes" when rentalDurationType is an unknown key not in RENTAL_DURATION_PRICE_SUFFIX', () => {
+    // Exercises the `?? '/mes'` fallback at line 39
+    const params: ShareListingParams = {
+      ...baseParams,
+      operationType: 'alquiler',
+      rentalDurationType: 'custom' as unknown as ShareListingParams['rentalDurationType'],
+    }
+    const text = generateShareText(params)
+    expect(text).toContain('/mes')
+  })
 })

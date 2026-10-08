@@ -538,6 +538,81 @@ describe('authStore', () => {
     })
   })
 
+  // ── firestoreDocToUser — optional field branches ─────────────────────────
+
+  describe('firestoreDocToUser optional fields (via initialize)', () => {
+    async function loadUserWithData(data: Record<string, unknown>) {
+      const fbUser = makeFirebaseUser('uid-opts')
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, data))
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+      return useAuthStore.getState().user
+    }
+
+    it('defaults email to empty string when absent (line 40 ?? "" branch)', async () => {
+      const user = await loadUserWithData({ isActive: true })
+      expect(user?.email).toBe('')
+    })
+
+    it('defaults isActive to true when absent (line 57 ?? true branch)', async () => {
+      const user = await loadUserWithData({ email: 'x@test.com' })
+      expect(user?.isActive).toBe(true)
+    })
+
+    it('defaults isPhoneVerified to false when absent (line 58 ?? false branch)', async () => {
+      const user = await loadUserWithData({ email: 'x@test.com', isActive: true })
+      expect(user?.isPhoneVerified).toBe(false)
+    })
+
+    it('defaults isIdentityVerified to false when absent (line 59 ?? false branch)', async () => {
+      const user = await loadUserWithData({ email: 'x@test.com', isActive: true })
+      expect(user?.isIdentityVerified).toBe(false)
+    })
+
+    it('parses identityVerifiedAt when present (line 60 true branch)', async () => {
+      const expectedDate = new Date('2026-06-01T00:00:00Z')
+      const user = await loadUserWithData({
+        email: 'x@test.com', isActive: true,
+        identityVerifiedAt: { toDate: () => expectedDate },
+      })
+      expect(user?.identityVerifiedAt).toEqual(expectedDate)
+    })
+
+    it('parses realtorApplicationDate when present (line 69 true branch)', async () => {
+      const expectedDate = new Date('2026-05-10T00:00:00Z')
+      const user = await loadUserWithData({
+        email: 'x@test.com', isActive: true,
+        realtorApplicationDate: { toDate: () => expectedDate },
+      })
+      expect(user?.realtorApplicationDate).toEqual(expectedDate)
+    })
+
+    it('populates realtorServiceZones when present (line 76 true branch)', async () => {
+      const user = await loadUserWithData({
+        email: 'x@test.com', isActive: true,
+        realtorServiceZones: ['Piura', 'Paita'],
+      })
+      expect(user?.realtorServiceZones).toEqual(['Piura', 'Paita'])
+    })
+
+    it('defaults claimMonth to current year-month when absent (line 80 ?? branch)', async () => {
+      const user = await loadUserWithData({ email: 'x@test.com', isActive: true })
+      expect(user?.claimMonth).toMatch(/^\d{4}-\d{2}$/)
+    })
+
+    it('populates contactInfo with defaults when contactInfo present but fields absent (lines 46-49)', async () => {
+      const user = await loadUserWithData({
+        email: 'x@test.com', isActive: true,
+        contactInfo: { whatsappPhoneNumber: '999999999' },
+        // countryCode and preferredContactTimeSlot omitted
+      })
+      expect(user?.contactInfo).not.toBeUndefined()
+      expect(user?.contactInfo?.countryCode).toBe('peru')
+      expect(user?.contactInfo?.preferredContactTimeSlot).toBe('anytime')
+    })
+  })
+
   // ── Reset ───────────────────────────────────────────────────────────────
 
   describe('reset', () => {
