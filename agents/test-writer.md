@@ -98,6 +98,10 @@ Cast with `as unknown as FullType` rather than satisfying every required field.
 - **Do not** write tests for `.tsx` component files (intentional architecture decision — see CLAUDE.md).
 - **Do not** write tests for files that import directly from `src/lib/firebase.ts` — they require
   the Firebase emulator and are out of scope for unit tests.
+- **Never** edit source files — only test files, `agents/test-coverage-summary.md`, and the
+  coverage table in CLAUDE.md. This includes adding `/* v8 ignore */` comments: they raise the
+  coverage number without testing anything. If a branch looks unreachable, leave it uncovered
+  and list it in your summary with the reason, so a human can decide.
 - **Do not** write trivial tests that always pass regardless of implementation.
 - Write tests that would **catch a real bug** if the implementation broke.
 
