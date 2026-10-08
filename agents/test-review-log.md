@@ -439,3 +439,25 @@ Test count: unchanged. Full suite: 104 files, 1842 passed, 5 skipped.
 **Correction (same day):** the entry above originally listed `useBoundaryPolygons` `if (!cancelled)` (line 77) as reachable. It is not: nothing is awaited between the last `if (cancelled) return` (line 42) and line 77, so `cancelled` cannot change in between. The existing test named "line 74 cancelled branch" actually exercises line 42. The v8 ignore there is legitimate.
 
 ---
+
+## 783c6b7 — v8-ignore follow-up (useExploreListings, brandedCardPainter) — 2026-10-08
+
+Each new test was checked by temporarily deleting the branch it covers and re-running it.
+
+**Scope check:** the source changes remove exactly the three requested ignores (`isFetchingNextPage` guard, tier-3 and tier-4 success returns) and nothing else.
+
+**useExploreListings.test.tsx:** no issues. Deleting `if (isFetchingNextPage) return` makes the new test fail.
+
+**Flagged (brandedCardPainter.test.ts):**
+- **Always-passing assertion:** both new tier-3/tier-4 success tests asserted `expect(mockCtx.drawImage).toHaveBeenCalled()`. `paintBrandedCard` always draws the logo with `drawImage` (source line 417), so this holds even when no photo loads. Deleting `if (result3) return result3` or `if (result4) return result4` left both tests green.
+- The tier-3 test also could not tell tier 3 from tier 4. With tier 3's return deleted, tier 4 loads the same photo, so the photo is still drawn.
+- Same flaw in two older tests: "calls drawImage when a photo is loaded successfully" (its own comment said "photo and/or the logo") and "works with multiple photos" (asserted only that a Blob came back).
+
+**Fixed:**
+- Tier 3 and tier 4: `drawImage` must be called exactly 2 times (photo + logo; the logo alone is 1). Tier 3 also asserts `lastImgSrc === 'blob:fake-url'`, proving tier 4 never ran.
+- "calls drawImage when a photo is loaded successfully" now expects exactly 2 calls; "works with multiple photos" expects exactly 3.
+- Mutation re-check: with either branch deleted, its test now fails. Source restored afterwards.
+
+Test count: unchanged. Full suite: 104 files, 1845 passed, 5 skipped.
+
+---

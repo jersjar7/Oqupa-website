@@ -187,8 +187,8 @@ describe('paintBrandedCard', () => {
   it('calls drawImage when a photo is loaded successfully', async () => {
     const { paintBrandedCard } = await import('../brandedCardPainter')
     await paintBrandedCard(makeConfig(), ['https://images.oqupa.com/photo.webp'])
-    // drawImage may be called for the photo and/or the logo
-    expect(mockCtx.drawImage).toHaveBeenCalled()
+    // One call for the photo plus one for the logo — the logo alone would be 1
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
   })
 
   it('works with multiple photos', async () => {
@@ -199,6 +199,8 @@ describe('paintBrandedCard', () => {
     ]
     const blob = await paintBrandedCard(makeConfig(), urls)
     expect(blob).toBeInstanceOf(Blob)
+    // Both photos drawn as strips, plus the logo
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(3)
   })
 
   it('works when no photos are provided (empty array)', async () => {
@@ -408,8 +410,10 @@ describe('paintBrandedCard', () => {
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
     expect(blob).toBeInstanceOf(Blob)
-    // Photo was drawn — tier 3 returned a non-null img
-    expect(mockCtx.drawImage).toHaveBeenCalled()
+    // Photo + logo were drawn — the logo alone would be 1 call
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
+    // Tier 3 returned the blob img, so tier 4 never set the direct URL as an img src
+    expect(lastImgSrc).toBe('blob:fake-url')
   })
 
   it('cdn-cgi URL tier 4 success: loadViaImgElement resolves for the direct URL (result4 path)', async () => {
@@ -425,8 +429,8 @@ describe('paintBrandedCard', () => {
     const { paintBrandedCard } = await import('../brandedCardPainter')
     const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
     expect(blob).toBeInstanceOf(Blob)
-    // Photo was drawn — tier 4 returned a non-null img
-    expect(mockCtx.drawImage).toHaveBeenCalled()
+    // Photo + logo were drawn — the logo alone would be 1 call
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
     // The last img src was the direct URL (tier 4 used loadViaImgElement(directUrl))
     expect(lastImgSrc).toBe(directUrl)
   })
