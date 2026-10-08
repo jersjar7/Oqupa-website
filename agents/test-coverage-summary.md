@@ -137,3 +137,13 @@
 - Coverage after:  50.00% (overall)
 - Tests written:   2 tests using vi.useFakeTimers() to cover timeout callback statements: (1) loadRecaptchaScript rejects with "reCAPTCHA script load timeout" when script never fires onload or onerror (advance 5001ms), (2) getRecaptchaToken rejects with "reCAPTCHA token timeout" when grecaptcha.enterprise.ready never calls the callback (advance 5001ms)
 - Key pattern: use .catch() to capture rejection before advancing timers (avoids unhandled rejection warnings); call vi.useFakeTimers() in beforeEach so it applies before any await import()
+
+## Replace v8 ignores with real tests (reachable branches) — 2026-10-07
+- Coverage before: 92.16% statements / 85.28% branches (1847 tests)
+- Coverage after:  92.17% statements / 85.33% branches (1850 tests)
+- Source edits: removed /* v8 ignore start/stop */ from (1) useExploreListings.ts `if (isFetchingNextPage) return`, (2) brandedCardPainter.ts `if (result3) return result3`, (3) brandedCardPainter.ts `if (result4) return result4`
+- Tests written: 3 new tests:
+  - useExploreListings — `isFetchingNextPage` guard: deferred page-2 promise keeps isFetchingNextPage=true while in-flight; asserts service call count stays at exactly 2, then resolves page 2 and confirms all 47 items load
+  - brandedCardPainter — tier-3 success: `imgShouldError` upgraded to accept `boolean | ((src: string) => boolean)` predicate; predicate fails cdn-cgi srcs but passes blob URLs ('blob:fake-url'); fetch rejects for cdn-cgi URLs and resolves for the direct URL → tier-3 `fetchAsBlob` returns a non-null img → `if (result3) return result3` true branch taken; asserts drawImage called
+  - brandedCardPainter — tier-4 success: fetch rejects all URLs; predicate fails cdn-cgi and tier-2 img; tier-3 fetchAsBlob also fails (fetch rejects) → tier-4 `loadViaImgElement(directUrl)` succeeds (directUrl has no 'cdn-cgi') → `if (result4) return result4` true branch taken; asserts drawImage called and lastImgSrc === directUrl
+- Key pattern: URL-aware `imgShouldError` predicate `(src) => src.includes('cdn-cgi')` distinguishes between cdn-cgi image URLs (should fail) and blob URLs or direct R2 URLs (should succeed), enabling isolated per-tier success coverage

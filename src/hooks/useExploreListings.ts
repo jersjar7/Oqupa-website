@@ -72,10 +72,7 @@ export function useExploreListings(operationType?: OperationType | null) {
   // MAX_AUTO_PAGES.
   useEffect(() => {
     if (!hasNextPage) return
-    // isFetchingNextPage is true only during in-flight fetches; synchronous mocks resolve instantly
-    /* v8 ignore start */
     if (isFetchingNextPage) return
-    /* v8 ignore stop */
     if (pageCount >= MAX_AUTO_PAGES) return
     fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, pageCount, fetchNextPage])

@@ -144,16 +144,10 @@ async function loadImage(url: string, useFallbackChain = true): Promise<HTMLImag
     const directUrl = stripCdnCgi(url)
     if (directUrl !== url) {
       const result3 = await fetchAsBlob(directUrl, 15_000)
-      // Same success-path logic as tier 1/2 above; imgShouldError test mock prevents
-      // testing these true branches without a URL-aware img mock
-      /* v8 ignore start */
       if (result3) return result3
-      /* v8 ignore stop */
 
       const result4 = await loadViaImgElement(directUrl, 15_000)
-      /* v8 ignore start */
       if (result4) return result4
-      /* v8 ignore stop */
     }
 
     return null
