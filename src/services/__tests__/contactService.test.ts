@@ -108,6 +108,27 @@ describe('contactService', () => {
       })
     })
 
+    it('throws ContactDenied("listing-has-no-contact") for not-found error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/not-found' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'listing-has-no-contact',
+      })
+    })
+
+    it('throws ContactDenied("needs-email-verification") for permission-denied error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/permission-denied' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'needs-email-verification',
+      })
+    })
+
+    it('throws ContactDenied("needs-phone-reverification") for aborted error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/aborted' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'needs-phone-reverification',
+      })
+    })
+
     it('throws ContactDenied("rate-limited") for resource-exhausted error', async () => {
       callableFnMock.mockRejectedValue({ code: 'functions/resource-exhausted' })
       await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({

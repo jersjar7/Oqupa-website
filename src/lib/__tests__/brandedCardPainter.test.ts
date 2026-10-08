@@ -74,13 +74,16 @@ function makeImage(width = 200, height = 200): HTMLImageElement {
 
 // ── controls ─────────────────────────────────────────────────────────────────
 
-/** When true, the img src setter fires onerror instead of onload. */
-let imgShouldError = false
+/** When true (or when the predicate returns true for the src), fires onerror instead of onload. */
+let imgShouldError: boolean | ((src: string) => boolean) = false
+/** The last non-empty src set on any mock img element. */
+let lastImgSrc = ''
 
 // ── setup / teardown ─────────────────────────────────────────────────────────
 
 beforeEach(() => {
   imgShouldError = false
+  lastImgSrc = ''
 
   // Canvas context mock
   mockCtx = makeMockCtx()
@@ -107,8 +110,9 @@ beforeEach(() => {
         set: (v: string) => {
           _src = v
           if (v && v !== '') {
+            lastImgSrc = v
             Promise.resolve().then(() => {
-              if (imgShouldError) {
+              if (typeof imgShouldError === 'function' ? imgShouldError(v) : imgShouldError) {
                 img.onerror?.({} as Event)
               } else {
                 Object.defineProperty(img, 'naturalWidth', { value: 100, configurable: true })
@@ -183,8 +187,8 @@ describe('paintBrandedCard', () => {
   it('calls drawImage when a photo is loaded successfully', async () => {
     const { paintBrandedCard } = await import('../brandedCardPainter')
     await paintBrandedCard(makeConfig(), ['https://images.oqupa.com/photo.webp'])
-    // drawImage may be called for the photo and/or the logo
-    expect(mockCtx.drawImage).toHaveBeenCalled()
+    // One call for the photo plus one for the logo — the logo alone would be 1
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
   })
 
   it('works with multiple photos', async () => {
@@ -195,6 +199,8 @@ describe('paintBrandedCard', () => {
     ]
     const blob = await paintBrandedCard(makeConfig(), urls)
     expect(blob).toBeInstanceOf(Blob)
+    // Both photos drawn as strips, plus the logo
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(3)
   })
 
   it('works when no photos are provided (empty array)', async () => {
@@ -339,6 +345,39 @@ describe('paintBrandedCard', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalled()
   })
 
+  it('loads a non-http photo URL directly (line 122 true branch: useFallbackChain=true, url not http//__storage)', async () => {
+    // A data URL does not start with 'http' or '/__storage', so loadImage takes the early
+    // return path (direct <img> load), bypassing the fetch fallback chain.
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    const blob = await paintBrandedCard(makeConfig(), [dataUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // fetch should NOT have been called for the data URL (took the direct path)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('cdn-cgi URL: retries the fetch with the stripped direct URL after tiers 1 and 2 fail', async () => {
+    // Tier 1 fetch rejects for the cdn-cgi URL and tier 2 img errors, so loadImage falls through
+    // to tier 3 and fetches the direct R2 URL. imgShouldError also makes the blob <img> fail,
+    // so result3 is still null here — this pins the retry, not the tier-3 success return.
+    const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
+    const directUrl = 'https://images.oqupa.com/photos/abc.webp'
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('cdn-cgi')) return Promise.reject(new Error('CORS blocked'))
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['fake-image'], { type: 'image/jpeg' })),
+      })
+    })
+    imgShouldError = true
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // The cdn-cgi URL is tried first; the direct URL only afterwards
+    expect(fetchMock.mock.calls[0]![0]).toContain('cdn-cgi')
+    expect(fetchMock).toHaveBeenCalledWith(directUrl, expect.any(Object))
+  })
+
   it('resolveUrl rewrites Firebase Storage URLs in DEV mode (line 41)', async () => {
     // Stub DEV=true so resolveUrl rewrites the firebasestorage URL to /__storage
     vi.stubEnv('DEV', 'true')
@@ -352,5 +391,47 @@ describe('paintBrandedCard', () => {
       expect.any(Object),
     )
     vi.unstubAllEnvs()
+  })
+
+  it('cdn-cgi URL tier 3 success: fetchAsBlob resolves for the direct URL (result3 path)', async () => {
+    // Exercises: if (result3) return result3
+    // fetch rejects for cdn-cgi URLs (tier 1 fails), resolves for the direct URL (tier 3 succeeds).
+    // The predicate makes tier-2 img fail for cdn-cgi srcs but lets the tier-3 blob img succeed
+    // ('blob:fake-url' has no 'cdn-cgi', so imgShouldError returns false → onload fires).
+    const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('cdn-cgi')) return Promise.reject(new Error('CORS blocked'))
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['fake-image'], { type: 'image/jpeg' })),
+      })
+    })
+    imgShouldError = (src: string) => src.includes('cdn-cgi')
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // Photo + logo were drawn — the logo alone would be 1 call
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
+    // Tier 3 returned the blob img, so tier 4 never set the direct URL as an img src
+    expect(lastImgSrc).toBe('blob:fake-url')
+  })
+
+  it('cdn-cgi URL tier 4 success: loadViaImgElement resolves for the direct URL (result4 path)', async () => {
+    // Exercises: if (result4) return result4
+    // fetch rejects for all URLs (tier 1 and tier 3 both fail).
+    // The predicate makes tier-2 img fail (cdn-cgi src) and tier-3's blob img never reaches
+    // onload (fetch rejects before creating a blob img). Tier-4 loadViaImgElement(directUrl)
+    // succeeds because directUrl has no 'cdn-cgi', so imgShouldError returns false.
+    const cdnUrl = 'https://images.oqupa.com/cdn-cgi/image/width=800/https://images.oqupa.com/photos/abc.webp'
+    const directUrl = 'https://images.oqupa.com/photos/abc.webp'
+    fetchMock.mockRejectedValue(new Error('network error'))
+    imgShouldError = (src: string) => src.includes('cdn-cgi')
+    const { paintBrandedCard } = await import('../brandedCardPainter')
+    const blob = await paintBrandedCard(makeConfig(), [cdnUrl])
+    expect(blob).toBeInstanceOf(Blob)
+    // Photo + logo were drawn — the logo alone would be 1 call
+    expect(mockCtx.drawImage).toHaveBeenCalledTimes(2)
+    // The last img src was the direct URL (tier 4 used loadViaImgElement(directUrl))
+    expect(lastImgSrc).toBe(directUrl)
   })
 })

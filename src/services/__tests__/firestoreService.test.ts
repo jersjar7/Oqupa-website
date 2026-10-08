@@ -296,6 +296,34 @@ describe('firestoreService', () => {
       expect(result!.role).toBe('owner')
       expect(result!.description).toBe('')
     })
+
+    it('defaults countryCode to peru when absent from contactInfo (line 99 ?? peru branch)', async () => {
+      getDocMock.mockResolvedValue(makeDocSnap('listing-cc', {
+        ...makeListingData(),
+        contactInfo: { whatsappPhoneNumber: '+51987' }, // countryCode absent
+      }))
+      const result = await firestoreService.getListingById('listing-cc')
+      expect(result!.contactInfo?.countryCode).toBe('peru')
+    })
+
+    it('maps publishedAt, expiresAt, boostedUntil when present and ?? anytime when contactInfo lacks slot (lines 101,109,110,132 true branches)', async () => {
+      const pub = new Date('2026-09-01')
+      const exp = new Date('2026-12-01')
+      const boost = new Date('2026-10-15')
+      getDocMock.mockResolvedValue(makeDocSnap('listing-opt', {
+        ...makeListingData(),
+        publishedAt: { toDate: () => pub },
+        expiresAt: { toDate: () => exp },
+        boostedUntil: { toDate: () => boost },
+        contactInfo: { whatsappPhoneNumber: '+51987', countryCode: 'peru' },
+        // preferredContactTimeSlot absent → ?? 'anytime' fires
+      }))
+      const result = await firestoreService.getListingById('listing-opt')
+      expect(result!.publishedAt).toEqual(pub)
+      expect(result!.expiresAt).toEqual(exp)
+      expect(result!.boostedUntil).toEqual(boost)
+      expect(result!.contactInfo?.preferredContactTimeSlot).toBe('anytime')
+    })
   })
 
   // ── getPropertyById ──────────────────────────────────────────────────────
@@ -616,6 +644,39 @@ describe('firestoreService', () => {
       const result = await firestoreService.getUserRealtorApplication('uid-1')
       expect(result).toBeNull()
     })
+
+    it('defaults businessName, yearsExperience, serviceZones, and status when absent (lines 619-623 ?? branches)', async () => {
+      getDocMock.mockResolvedValue(makeDocSnap('uid-defaults', {
+        userId: 'uid-defaults',
+        fullName: 'Defaults',
+        phone: '000',
+        email: 'd@e.com',
+        motivation: 'reason',
+        submittedAt: { toDate: () => new Date('2026-09-01') },
+        // businessName, yearsExperience, serviceZones, status all absent
+      }))
+      const result = await firestoreService.getUserRealtorApplication('uid-defaults')
+      expect(result!.businessName).toBe('')
+      expect(result!.yearsExperience).toBe(0)
+      expect(result!.serviceZones).toEqual([])
+      expect(result!.status).toBe('pending')
+    })
+
+    it('maps reviewedAt when present (line 625 true branch)', async () => {
+      const reviewedDate = new Date('2026-10-01')
+      getDocMock.mockResolvedValue(makeDocSnap('uid-rev', {
+        userId: 'uid-rev',
+        fullName: 'Reviewed',
+        phone: '111',
+        email: 'r@e.com',
+        motivation: 'reason',
+        status: 'approved',
+        submittedAt: { toDate: () => new Date('2026-09-01') },
+        reviewedAt: { toDate: () => reviewedDate },
+      }))
+      const result = await firestoreService.getUserRealtorApplication('uid-rev')
+      expect(result!.reviewedAt).toEqual(reviewedDate)
+    })
   })
 
   // ── approveRealtorApplication ────────────────────────────────────────────
@@ -750,6 +811,22 @@ describe('firestoreService', () => {
         realtorBusinessName: 'JG',
       })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
     })
+
+    it('throws a generic fallback message when functions/ error has an empty message (line 37 middle && branch)', async () => {
+      // isFunctionsError=true but message is empty → condition false → generic fallback
+      callableFnMock.mockRejectedValue({
+        code: 'functions/resource-exhausted',
+        message: '',
+      })
+      await expect(firestoreService.createRealtorClaim({
+        listingId: 'listing-1',
+        realtorId: 'realtor-1',
+        listingOwnerId: 'owner-1',
+        realtorName: 'Juan',
+        realtorPhone: '+51987',
+        realtorBusinessName: 'JG',
+      })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
+    })
   })
 
   // ── getActiveListingsWithProperties ──────────────────────────────────────
@@ -833,6 +910,31 @@ describe('firestoreService', () => {
       await firestoreService.getActiveListingsWithPropertiesPaginated(30, undefined, 'venta')
       expect(whereMock).toHaveBeenCalledWith('operationType', '==', 'venta')
     })
+
+    it('excludes listings whose property doc does not exist (line 342 false branch)', async () => {
+      const rawDoc = { ...makeDocSnap('listing-1', makeListingData({ propertyId: 'prop-deleted' })), data: () => makeListingData({ propertyId: 'prop-deleted' }) }
+      getDocsMock.mockResolvedValue({ docs: [rawDoc] })
+      // Property snap does not exist
+      getDocMock.mockResolvedValue(makeDocSnap('prop-deleted', {}, false))
+      const result = await firestoreService.getActiveListingsWithPropertiesPaginated(30)
+      expect(result.items).toHaveLength(0)
+    })
+
+    it('passes cursor to startAfter when provided (line 324 true branch)', async () => {
+      getDocsMock.mockResolvedValue({ docs: [] })
+      const fakeCursor = { id: 'cursor-doc' } as unknown as import('firebase/firestore').QueryDocumentSnapshot
+      await firestoreService.getActiveListingsWithPropertiesPaginated(30, fakeCursor)
+      expect(startAfterMock).toHaveBeenCalledWith(fakeCursor)
+    })
+
+    it('maps rentalDurationType when present on property (line 154 true branch)', async () => {
+      const listingData = makeListingData({ propertyId: 'prop-rental' })
+      const rawDoc = { ...makeDocSnap('listing-rental', listingData), data: () => listingData }
+      getDocsMock.mockResolvedValue({ docs: [rawDoc] })
+      getDocMock.mockResolvedValue(makeDocSnap('prop-rental', makePropertyData({ rentalDurationType: 'long-term' })))
+      const result = await firestoreService.getActiveListingsWithPropertiesPaginated(30)
+      expect((result.items[0]!.property as Record<string, unknown>).rentalDurationType).toBe('long-term')
+    })
   })
 
   // ── getUserListingsWithProperties ────────────────────────────────────────
@@ -912,6 +1014,17 @@ describe('firestoreService', () => {
       expect(result).toHaveLength(1)
     })
 
+    it('excludes listings whose property doc does not exist (line 744 false branch)', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([{
+        id: 'listing-1',
+        data: makeListingData({ maxRealtors: 3, currentClaimsCount: 0, wantsRealtorHelp: true, propertyId: 'p-deleted' }),
+      }]))
+      // Property snap does not exist
+      getDocMock.mockResolvedValue(makeDocSnap('p-deleted', {}, false))
+      const result = await firestoreService.getAvailableLeads()
+      expect(result).toEqual([])
+    })
+
     it('when currentUserId is provided, fetches claims and excludes already-claimed listings', async () => {
       // First getDocs call: listings
       getDocsMock.mockResolvedValueOnce(makeDocsSnap([
@@ -973,6 +1086,46 @@ describe('firestoreService', () => {
       const whereCalls = whereMock.mock.calls as unknown[][]
       const statusWhere = whereCalls.find((c) => c[0] === 'status')
       expect(statusWhere).toBeUndefined()
+    })
+
+    it('maps reviewedAt when present (line 654 true branch)', async () => {
+      const reviewedDate = new Date('2026-10-01')
+      getDocsMock.mockResolvedValue(makeDocsSnap([{
+        id: 'uid-reviewed',
+        data: {
+          userId: 'uid-reviewed',
+          fullName: 'Reviewed',
+          phone: '111',
+          email: 'r@e.com',
+          motivation: 'reason',
+          status: 'approved',
+          submittedAt: { toDate: () => new Date('2026-09-01') },
+          reviewedAt: { toDate: () => reviewedDate },
+        },
+      }]))
+      const result = await firestoreService.getAllRealtorApplications()
+      expect(result[0]!.reviewedAt).toEqual(reviewedDate)
+    })
+
+    it('defaults businessName, yearsExperience, serviceZones, and status when absent (lines 648-652 ?? branches)', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([{
+        id: 'uid-missing',
+        data: {
+          userId: 'uid-missing',
+          fullName: 'Test',
+          phone: '123',
+          email: 't@e.com',
+          motivation: 'reason',
+          submittedAt: { toDate: () => new Date('2026-09-01') },
+          // businessName, yearsExperience, serviceZones, status, reviewedAt all absent
+        },
+      }]))
+      const result = await firestoreService.getAllRealtorApplications()
+      expect(result[0]!.businessName).toBe('')
+      expect(result[0]!.yearsExperience).toBe(0)
+      expect(result[0]!.serviceZones).toEqual([])
+      expect(result[0]!.status).toBe('pending')
+      expect(result[0]!.reviewedAt).toBeUndefined()
     })
   })
 
@@ -1068,6 +1221,82 @@ describe('firestoreService', () => {
       expect(result[0]!.claim.id).toBe('claim-1')
       expect(result[0]!.listing.id).toBe('listing-1')
       expect(result[0]!.property.id).toBe('prop-1')
+    })
+
+    it('excludes claims whose listing doc no longer exists (line 804 false branch)', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'claim-orphan',
+          data: {
+            listingId: 'deleted-listing',
+            realtorId: 'realtor-1',
+            listingOwnerId: 'owner-1',
+            claimedAt: null,
+            claimMonth: '2026-09',
+            realtorName: 'Juan',
+            realtorPhone: '+51987',
+            realtorBusinessName: '',
+            ownerContacted: false,
+            assignedByOwner: false,
+          },
+        },
+      ]))
+      // Listing no longer exists
+      getDocMock.mockResolvedValueOnce(makeDocSnap('deleted-listing', {}, false))
+
+      const result = await firestoreService.getClaimedLeadsWithDetails('realtor-1')
+      expect(result).toEqual([])
+    })
+
+    it('excludes claims whose property doc no longer exists (line 818 false branch)', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'claim-missing-prop',
+          data: {
+            listingId: 'listing-1',
+            realtorId: 'realtor-1',
+            listingOwnerId: 'owner-1',
+            claimedAt: null,
+            claimMonth: '2026-09',
+            realtorName: 'Juan',
+            realtorPhone: '+51987',
+            realtorBusinessName: '',
+            ownerContacted: false,
+            assignedByOwner: false,
+          },
+        },
+      ]))
+      // Listing exists but property does not
+      getDocMock.mockResolvedValueOnce(makeDocSnap('listing-1', makeListingData({ propertyId: 'deleted-prop' })))
+      getDocMock.mockResolvedValueOnce(makeDocSnap('deleted-prop', {}, false))
+
+      const result = await firestoreService.getClaimedLeadsWithDetails('realtor-1')
+      expect(result).toEqual([])
+    })
+
+    it('defaults listingOwnerId, realtorBusinessName, ownerContacted, assignedByOwner when absent (lines 920-927)', async () => {
+      getDocsMock.mockResolvedValue(makeDocsSnap([
+        {
+          id: 'claim-minimal',
+          data: {
+            listingId: 'listing-1',
+            realtorId: 'realtor-1',
+            // listingOwnerId, realtorBusinessName, ownerContacted, assignedByOwner intentionally omitted
+            claimedAt: null,
+            claimMonth: '2026-09',
+            realtorName: 'Juan',
+            realtorPhone: '+51987',
+          },
+        },
+      ]))
+      getDocMock.mockResolvedValueOnce(makeDocSnap('listing-1', makeListingData({ propertyId: 'prop-1' })))
+      getDocMock.mockResolvedValueOnce(makeDocSnap('prop-1', makePropertyData()))
+
+      const result = await firestoreService.getClaimedLeadsWithDetails('realtor-1')
+      expect(result[0]!.claim.listingOwnerId).toBe('')      // ?? ''
+      expect(result[0]!.claim.realtorBusinessName).toBe('')  // ?? ''
+      expect(result[0]!.claim.ownerContacted).toBe(false)    // ?? false
+      expect(result[0]!.claim.assignedByOwner).toBe(false)   // ?? false
     })
   })
 

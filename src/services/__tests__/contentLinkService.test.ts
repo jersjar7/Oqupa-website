@@ -304,5 +304,11 @@ describe('contentLinkService', () => {
       // toDate() returned null, so the ?? new Date() fallback fires
       expect(link.createdAt).toBeInstanceOf(Date)
     })
+
+    it('defaults createdByEmail to empty string when missing (line 47 ?? "" branch)', () => {
+      const link = getConvertedLink({ date: null, url: 'https://x.com', createdAt: null })
+      // createdByEmail omitted — String(undefined ?? '') → ''
+      expect(link.createdByEmail).toBe('')
+    })
   })
 })

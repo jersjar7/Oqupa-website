@@ -119,6 +119,7 @@ function makeUser(uid: string, email = `${uid}@test.com`) {
     uid,
     email,
     reload: vi.fn().mockResolvedValue(undefined),
+    getIdToken: vi.fn().mockResolvedValue('token'),
     providerData: [] as { providerId: string }[],
   }
 }
@@ -271,6 +272,40 @@ describe('authService', () => {
     it('calls sendPasswordResetEmail with the given email', async () => {
       await authService.requestPasswordReset('reset@test.com')
       expect(sendPasswordResetMock).toHaveBeenCalledWith(expect.anything(), 'reset@test.com')
+    })
+  })
+
+  // ── refreshSession ───────────────────────────────────────────────────────
+
+  describe('refreshSession', () => {
+    it('does nothing when there is no current user', async () => {
+      _currentUser = null
+      await expect(authService.refreshSession()).resolves.toBeUndefined()
+    })
+
+    it('calls getIdToken(true) to force-refresh the token', async () => {
+      const user = makeUser('uid-r')
+      _currentUser = user
+      await authService.refreshSession()
+      expect(user.getIdToken).toHaveBeenCalledWith(true)
+    })
+  })
+
+  // ── checkAccountExists ───────────────────────────────────────────────────
+
+  describe('checkAccountExists', () => {
+    it('calls the checkAccountExists Cloud Function with the email and returns true when it exists', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: true } })
+      const result = await authService.checkAccountExists('user@test.com')
+      expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'checkAccountExists')
+      expect(callableInvokerMock).toHaveBeenCalledWith({ email: 'user@test.com' })
+      expect(result).toBe(true)
+    })
+
+    it('returns false when the Cloud Function reports the account does not exist', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: false } })
+      const result = await authService.checkAccountExists('ghost@test.com')
+      expect(result).toBe(false)
     })
   })
 
@@ -461,6 +496,14 @@ describe('authService', () => {
       await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
       expect(analyticsLoginMock).toHaveBeenCalledWith('emailLink')
     })
+
+    it('includes name in doc when displayName is non-empty (line 299 true branch)', async () => {
+      const user = { ...makeUser('uid-9b'), displayName: 'Magic User' }
+      signInWithEmailLinkMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
+      expect(setDocMock.mock.calls[0][1].name).toBe('Magic User')
+    })
   })
 
   // ── signInWithGoogle ─────────────────────────────────────────────────────
@@ -498,6 +541,14 @@ describe('authService', () => {
       await authService.signInWithGoogle()
       expect(analyticsLoginMock).toHaveBeenCalledWith('google')
     })
+
+    it('includes name in doc when displayName is non-empty (line 364 true branch)', async () => {
+      const user = { ...makeUser('uid-10b'), displayName: 'Google User' }
+      signInWithPopupMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.signInWithGoogle()
+      expect(setDocMock.mock.calls[0][1].name).toBe('Google User')
+    })
   })
 
   // ── signInWithApple ──────────────────────────────────────────────────────
@@ -525,6 +576,14 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(true))
       await authService.signInWithApple()
       expect(analyticsLoginMock).toHaveBeenCalledWith('apple')
+    })
+
+    it('includes name in doc when displayName is non-empty (line 334 true branch)', async () => {
+      const user = { ...makeUser('uid-11b'), displayName: 'Apple User' }
+      signInWithPopupMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.signInWithApple()
+      expect(setDocMock.mock.calls[0][1].name).toBe('Apple User')
     })
   })
 
@@ -599,6 +658,16 @@ describe('authService', () => {
       updateDocMock.mockResolvedValue(undefined)
       await authService.verifyPhoneCode('v-id', '123456')
       expect(linkWithCredentialMock).toHaveBeenCalledOnce()
+    })
+
+    it('links phone credential when user has a non-phone provider (callback returns false — line 237 false branch)', async () => {
+      _currentUser = { ...makeUser('uid-phone'), providerData: [{ providerId: 'google.com' }] }
+      linkWithCredentialMock.mockResolvedValue(undefined)
+      updateDocMock.mockResolvedValue(undefined)
+      await authService.verifyPhoneCode('v-id', '123456')
+      // some() callback ran with 'google.com', returned false → linkWithCredential path
+      expect(linkWithCredentialMock).toHaveBeenCalledOnce()
+      expect(updatePhoneNumberMock).not.toHaveBeenCalled()
     })
 
     it('updates phone number when user already has phone linked', async () => {

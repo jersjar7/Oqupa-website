@@ -138,6 +138,21 @@ describe('initTikTokPixel — production mode', () => {
     // instance() returns an array with stub methods attached
     expect(Array.isArray(result)).toBe(true)
   })
+
+  it('instance() with an unknown id falls back to [] when _i[id] is undefined (line 79 || [] branch)', async () => {
+    const { initTikTokPixel: init } = await importInProductionMode()
+    const fakeScript = document.createElement('script')
+    const parentNode = { insertBefore: vi.fn() }
+    Object.defineProperty(fakeScript, 'parentNode', { value: parentNode, configurable: true })
+    vi.spyOn(document, 'getElementsByTagName').mockReturnValue(
+      [fakeScript] as unknown as HTMLCollectionOf<HTMLScriptElement>
+    )
+    init()
+    const ttq = (window as unknown as { ttq: { instance: (id: string) => unknown[] } }).ttq
+    // 'UNKNOWN_ID' was never loaded so _i['UNKNOWN_ID'] is undefined → || [] fires
+    const result = ttq.instance('UNKNOWN_ID')
+    expect(Array.isArray(result)).toBe(true)
+  })
 })
 
 describe('trackTikTok — production mode', () => {

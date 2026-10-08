@@ -395,3 +395,69 @@ Three review sessions covering 51 distinct test files written across the full co
 Coverage at campaign close: **50.00% statements** (target met).
 
 ---
+
+## e045b58 leftover additions (utils.test.ts, authService.test.ts, contactService.test.ts) — 2026-10-07
+
+**Flagged:**
+- **Incomplete assertion target (authService.test.ts, checkAccountExists):** both tests only asserted the returned boolean mirrored the mocked `data.exists`. Neither verified the callable name or the payload, so calling the wrong Cloud Function or sending `{ email: '' }` / no email would still pass.
+
+**Fixed:**
+- Strengthened the "returns true" test (renamed to "calls the checkAccountExists Cloud Function with the email and returns true when it exists") to also assert `httpsCallableMock` was called with `'checkAccountExists'` and `callableInvokerMock` with `{ email: 'user@test.com' }`.
+
+No issues in utils.test.ts (legacy plain-path branch, both `/`-prefixed and non-prefixed) or contactService.test.ts (not-found / permission-denied / aborted mappings each match a distinct source branch, no duplicates). refreshSession no-user test is not always-passing: removing the guard makes `null.getIdToken` reject.
+
+Test count: unchanged. All 122 tests in the three files pass.
+
+---
+
+## 18d2c90 batch (21 test files, 28+ new tests) — 2026-10-07
+
+Reviewed every test added in `test(coverage): improve branch coverage from 82.21% to 85.28%`.
+
+**Flagged:**
+- **Misleading name + self-contradictory comment (brandedCardPainter.test.ts):** "cdn-cgi URL where tier 3 fetch (direct URL) succeeds (line 144 true branch)". With `imgShouldError = true` the blob `<img>` inside `fetchAsBlob` also errors, so `result3` is null and the success branch is never taken. The same commit wraps that branch in `/* v8 ignore */` as untestable, which confirms it. The test only proves the direct-URL retry was attempted.
+- **Weak assertion (listingFormStore.test.ts):** the new "non-QuotaExceededError" test and the older QuotaExceededError test both only asserted `not.toThrow()`. The only thing line 108 decides is whether `console.warn` fires, so the "false branch" test could not tell the two branches apart.
+- **Weak assertion (errorBuffer.test.ts):** the stack-undefined test only checked the message was present. Removing `?? ''` would print "undefined" and the test would still pass.
+- **Weak assertion (authStore.test.ts, claimMonth default):** a `/^\d{4}-\d{2}$/` regex passes even with an off-by-one `getMonth()` bug.
+- **Incomplete assertion (authService.test.ts, verifyPhoneCode non-phone provider):** asserted the link path ran but not that the update-phone path did not.
+
+**Fixed:**
+- brandedCardPainter: renamed to "cdn-cgi URL: retries the fetch with the stripped direct URL after tiers 1 and 2 fail", rewrote the comment to match, and asserted ordering (first fetch is the cdn-cgi URL, then the exact direct URL).
+- listingFormStore: spied `console.warn`. The Quota test asserts it was called; the non-Quota test asserts it was not.
+- errorBuffer: asserts `'TypeError: stack missing'` and `not.toContain('undefined')`.
+- authStore: claimMonth compared to the exact computed `YYYY-MM`.
+- authService: added `expect(updatePhoneNumberMock).not.toHaveBeenCalled()`.
+
+No issues in dashboardHelpers, ListingsPage, useGrowthPlan, formatters, shareUtils, metaPixel, tiktokPixel, utils (TTL), boostService, contentLinkService, firestoreService, storageService, or teamTaskService additions.
+
+**Outside verifier scope, for the user:** this commit also adds `/* v8 ignore */` to 13 production source files. Several hide branches that are reachable and worth testing rather than dead: `useExploreListings` `if (isFetchingNextPage) return` (prevents duplicate fetches); and `brandedCardPainter` tier-3/tier-4 success returns (testable with a URL-aware img mock). As a result, the CLAUDE.md entry "brandedCardPainter 100% branches" is not accurate. Source files were not modified by the verifier.
+
+Test count: unchanged. Full suite: 104 files, 1842 passed, 5 skipped.
+
+---
+
+**Correction (same day):** the entry above originally listed `useBoundaryPolygons` `if (!cancelled)` (line 77) as reachable. It is not: nothing is awaited between the last `if (cancelled) return` (line 42) and line 77, so `cancelled` cannot change in between. The existing test named "line 74 cancelled branch" actually exercises line 42. The v8 ignore there is legitimate.
+
+---
+
+## 783c6b7 — v8-ignore follow-up (useExploreListings, brandedCardPainter) — 2026-10-08
+
+Each new test was checked by temporarily deleting the branch it covers and re-running it.
+
+**Scope check:** the source changes remove exactly the three requested ignores (`isFetchingNextPage` guard, tier-3 and tier-4 success returns) and nothing else.
+
+**useExploreListings.test.tsx:** no issues. Deleting `if (isFetchingNextPage) return` makes the new test fail.
+
+**Flagged (brandedCardPainter.test.ts):**
+- **Always-passing assertion:** both new tier-3/tier-4 success tests asserted `expect(mockCtx.drawImage).toHaveBeenCalled()`. `paintBrandedCard` always draws the logo with `drawImage` (source line 417), so this holds even when no photo loads. Deleting `if (result3) return result3` or `if (result4) return result4` left both tests green.
+- The tier-3 test also could not tell tier 3 from tier 4. With tier 3's return deleted, tier 4 loads the same photo, so the photo is still drawn.
+- Same flaw in two older tests: "calls drawImage when a photo is loaded successfully" (its own comment said "photo and/or the logo") and "works with multiple photos" (asserted only that a Blob came back).
+
+**Fixed:**
+- Tier 3 and tier 4: `drawImage` must be called exactly 2 times (photo + logo; the logo alone is 1). Tier 3 also asserts `lastImgSrc === 'blob:fake-url'`, proving tier 4 never ran.
+- "calls drawImage when a photo is loaded successfully" now expects exactly 2 calls; "works with multiple photos" expects exactly 3.
+- Mutation re-check: with either branch deleted, its test now fails. Source restored afterwards.
+
+Test count: unchanged. Full suite: 104 files, 1845 passed, 5 skipped.
+
+---

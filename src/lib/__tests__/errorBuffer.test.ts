@@ -167,6 +167,27 @@ describe('initErrorBuffer + getCapturedErrors', () => {
     expect(spy).toHaveBeenCalledWith('pass-through test')
   })
 
+  it('captures an Error whose stack property is undefined (covers value.stack ?? "" fallback)', async () => {
+    vi.resetModules()
+    const { initErrorBuffer, getCapturedErrors } = await import('../errorBuffer')
+    initErrorBuffer()
+
+    const err = new TypeError('stack missing')
+    // Delete stack so the `?? ''` fallback fires
+    err.stack = undefined as unknown as string
+
+    const rejectionEvent = new PromiseRejectionEvent('unhandledrejection', {
+      promise: Promise.resolve(),
+      reason: err,
+    })
+    window.dispatchEvent(rejectionEvent)
+
+    const output = getCapturedErrors()
+    expect(output).toContain('TypeError: stack missing')
+    // Without the ?? '' fallback the template literal would print "undefined"
+    expect(output).not.toContain('undefined')
+  })
+
   it('captures an object with a non-serialisable value (JSON.stringify throws)', async () => {
     vi.resetModules()
     const { initErrorBuffer, getCapturedErrors } = await import('../errorBuffer')

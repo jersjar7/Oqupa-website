@@ -140,6 +140,24 @@ describe('teamTaskService', () => {
       expect(tasks[0]!.assigneeEmail).toBeNull()
     })
 
+    it('defaults title, team, and createdByEmail when absent (lines 39-40, 48 ?? fallback branches)', () => {
+      const onChange = vi.fn()
+      teamTaskService.subscribe('dev', onChange, vi.fn())
+      fireOnChange([
+        makeSnapshotDoc('task-missing', {
+          // title, team, createdByEmail intentionally omitted
+          assigneeEmail: null,
+          createdAt: null,
+          claimedAt: null,
+          doneAt: null,
+        }),
+      ])
+      const tasks = onChange.mock.calls[0][0]
+      expect(tasks[0]!.title).toBe('')        // String(undefined ?? '') → ''
+      expect(tasks[0]!.team).toBe('dev')      // undefined ?? 'dev' → 'dev'
+      expect(tasks[0]!.createdByEmail).toBe('') // String(undefined ?? '') → ''
+    })
+
     it('falls back to new Date() for createdAt when missing', () => {
       const onChange = vi.fn()
       teamTaskService.subscribe('dev', onChange, vi.fn())

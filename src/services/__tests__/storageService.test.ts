@@ -248,6 +248,27 @@ describe('storageService', () => {
       expect(onProgress).toHaveBeenCalledWith(50)
     })
 
+    it('does not call onProgress when lengthComputable is false (line 92 false branch)', async () => {
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      generateBlurHashMock.mockResolvedValue('h')
+
+      currentXHR.send = vi.fn(function (_body: unknown) {
+        // Fire progress with lengthComputable: false — onProgress must NOT be called
+        currentXHR.upload.onprogress?.({ lengthComputable: false, loaded: 0, total: 0 })
+        setTimeout(() => currentXHR.onload?.(), 0)
+      })
+
+      const onProgress = vi.fn()
+      await storageService.uploadPropertyPhoto(
+        'prop-1',
+        makeFile(),
+        onProgress,
+        { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }
+      )
+
+      expect(onProgress).not.toHaveBeenCalled()
+    })
+
     it('rejects when XHR returns a non-2xx status', async () => {
       imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
       generateBlurHashMock.mockResolvedValue('h')

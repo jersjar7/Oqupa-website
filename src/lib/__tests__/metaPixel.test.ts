@@ -137,6 +137,44 @@ describe('initMetaPixel — production mode', () => {
     // When window.fbq already exists, the IIFE returns early; fbq stays as the existing one
     expect((window as unknown as Record<string, unknown>).fbq).toBe(existingFbq)
   })
+
+  it('calls callMethod when fbq is invoked after the script has set it (line 61 true branch)', async () => {
+    const { initMetaPixel: init } = await importInProductionMode()
+    const fakeScript = document.createElement('script')
+    const parentNode = { insertBefore: vi.fn() }
+    Object.defineProperty(fakeScript, 'parentNode', { value: parentNode, configurable: true })
+    vi.spyOn(document, 'getElementsByTagName').mockReturnValue(
+      [fakeScript] as unknown as HTMLCollectionOf<HTMLScriptElement>
+    )
+    init()
+
+    // Simulate Meta's SDK landing: it sets callMethod on fbq after script loads
+    const fbq = (window as unknown as Record<string, unknown>).fbq as Record<string, unknown> & ((...args: unknown[]) => void)
+    const callMethodSpy = vi.fn()
+    fbq.callMethod = callMethodSpy
+
+    // Calling fbq now routes through the callMethod branch (line 61 true branch)
+    fbq('track', 'TestEvent')
+    expect(callMethodSpy).toHaveBeenCalledWith('track', 'TestEvent')
+  })
+
+  it('does not overwrite _fbq when it already exists before init (line 63 false branch)', async () => {
+    const { initMetaPixel: init } = await importInProductionMode()
+    // Set _fbq (but NOT fbq) so the IIFE does not early-return at line 59
+    const existingInternalFbq = vi.fn()
+    ;(window as unknown as Record<string, unknown>)._fbq = existingInternalFbq
+
+    const fakeScript = document.createElement('script')
+    const parentNode = { insertBefore: vi.fn() }
+    Object.defineProperty(fakeScript, 'parentNode', { value: parentNode, configurable: true })
+    vi.spyOn(document, 'getElementsByTagName').mockReturnValue(
+      [fakeScript] as unknown as HTMLCollectionOf<HTMLScriptElement>
+    )
+    init()
+
+    // line 63: if (!f._fbq) f._fbq = n — false branch taken since _fbq was already set
+    expect((window as unknown as Record<string, unknown>)._fbq).toBe(existingInternalFbq)
+  })
 })
 
 describe('trackMeta — production mode', () => {

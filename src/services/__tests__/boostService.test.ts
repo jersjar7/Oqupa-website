@@ -158,6 +158,23 @@ describe('boostService', () => {
       expect(tiers[1]!.feeInSoles).toBe(10)
       expect(tiers[2]!.feeInSoles).toBe(20)
     })
+
+    it('defaults feeInCentimos, durationDays, and displayName to 0/tierKey when absent (lines 71-77 ?? branches)', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: {
+          sevenDays: {},    // all numeric/string fields omitted
+          fifteenDays: {},
+          thirtyDays: {},
+        },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toHaveLength(3)
+      expect(tiers[0]!.feeInCentimos).toBe(0)    // ?? 0
+      expect(tiers[0]!.durationDays).toBe(0)      // ?? 0
+      expect(tiers[0]!.displayName).toBe('sevenDays')   // ?? tierKey
+      expect(tiers[1]!.displayName).toBe('fifteenDays')
+      expect(tiers[2]!.displayName).toBe('thirtyDays')
+    })
   })
 
   // ── createBoostPaymentIntent ─────────────────────────────────────────────
