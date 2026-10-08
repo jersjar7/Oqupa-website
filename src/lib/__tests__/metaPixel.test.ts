@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { initMetaPixel, trackMeta, trackMetaCustom, __testing } from '../metaPixel'
 
 // ── Production-mode helper ────────────────────────────────────────────────────

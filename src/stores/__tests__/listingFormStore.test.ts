@@ -10,13 +10,6 @@ function store() {
   return useListingFormStore.getState()
 }
 
-function reset() {
-  useListingFormStore.setState(useListingFormStore.getInitialState?.() ?? {}, true)
-  sessionStorage.clear()
-  // Re-initialise to the default state by calling the store's own reset()
-  useListingFormStore.getState().reset()
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -259,7 +252,6 @@ describe('listingFormStore', () => {
     })
 
     it('survives sessionStorage throwing QuotaExceededError without throwing', () => {
-      const origSetItem = sessionStorage.setItem.bind(sessionStorage)
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         const err = new DOMException('quota exceeded', 'QuotaExceededError')

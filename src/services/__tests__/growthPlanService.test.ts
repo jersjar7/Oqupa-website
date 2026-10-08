@@ -8,11 +8,11 @@ const {
   queryMock, collectionMock, docMock, orderByMock,
 } = vi.hoisted(() => ({
   updateDocMock: vi.fn().mockResolvedValue(undefined),
-  onSnapshotMock: vi.fn(() => vi.fn()),
-  queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-  collectionMock: vi.fn(() => ({ __col: 'growthPlan' })),
-  docMock: vi.fn((_db: unknown, col: string, id: string) => ({ path: `${col}/${id}` })),
-  orderByMock: vi.fn(() => ({ __orderBy: true })),
+  onSnapshotMock: vi.fn((..._args: unknown[]) => vi.fn()),
+  queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+  collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'growthPlan' })),
+  docMock: vi.fn((...args: unknown[]) => ({ path: `${args[1]}/${args[2]}` })),
+  orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
 }))
 
 vi.mock('firebase/firestore', () => ({
@@ -98,7 +98,7 @@ describe('growthPlanService', () => {
       ])
 
       expect(onNext).toHaveBeenCalledOnce()
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days).toHaveLength(1)
       expect(days[0].date).toBe('2026-09-01')
       expect(days[0].day).toBe(1)
@@ -143,7 +143,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].completedAt).toEqual(completedDate)
     })
 
@@ -163,7 +163,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].completedAt).toBe(completedDate)
     })
 
@@ -182,7 +182,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].completedAt).toBeNull()
     })
 
@@ -210,7 +210,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].status).toBe('pending')
     })
 
@@ -231,7 +231,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].status).toBe('done')
       expect(days[1].status).toBe('skipped')
     })
@@ -257,7 +257,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].day).toBe(0)
       expect(days[0].week).toBe(0)
       expect(days[0].minutes).toBe(0)
@@ -279,7 +279,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].phase).toBe('')
       expect(days[0].theme).toBe('')
       expect(days[0].category).toBe('')
@@ -313,7 +313,7 @@ describe('growthPlanService', () => {
         }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days[0].owner).toBe('jerson')
     })
 
@@ -333,7 +333,7 @@ describe('growthPlanService', () => {
         makeSnapshotDoc('2026-09-03', { day: 3, ...baseDayData }),
       ])
 
-      const days = onNext.mock.calls[0][0]
+      const days = onNext.mock.calls[0]![0]
       expect(days).toHaveLength(3)
       expect(days[0].date).toBe('2026-09-01')
       expect(days[1].date).toBe('2026-09-02')
@@ -347,7 +347,7 @@ describe('growthPlanService', () => {
     it('sets status to "done" with serverTimestamp and email', async () => {
       await growthPlanService.setStatus('2026-09-01', 'done', 'jerson@oqupa.com')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('done')
       expect(payload.completedAt).toEqual({ _server: true })
       expect(payload.completedByEmail).toBe('jerson@oqupa.com')
@@ -355,7 +355,7 @@ describe('growthPlanService', () => {
 
     it('clears completedAt and completedByEmail when setting status to "pending"', async () => {
       await growthPlanService.setStatus('2026-09-01', 'pending', 'jerson@oqupa.com')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('pending')
       expect(payload.completedAt).toBeNull()
       expect(payload.completedByEmail).toBe('')
@@ -363,7 +363,7 @@ describe('growthPlanService', () => {
 
     it('clears completedAt and completedByEmail when setting status to "skipped"', async () => {
       await growthPlanService.setStatus('2026-09-02', 'skipped', 'jerson@oqupa.com')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.status).toBe('skipped')
       expect(payload.completedAt).toBeNull()
       expect(payload.completedByEmail).toBe('')
@@ -385,20 +385,20 @@ describe('growthPlanService', () => {
     it('calls updateDoc with the given notes', async () => {
       await growthPlanService.setNotes('2026-09-01', 'My notes here')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ notes: 'My notes here' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ notes: 'My notes here' })
     })
 
     it('truncates notes to 2000 characters', async () => {
       const longNotes = 'x'.repeat(2500)
       await growthPlanService.setNotes('2026-09-01', longNotes)
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.notes).toHaveLength(2000)
     })
 
     it('keeps notes that are exactly 2000 characters unchanged', async () => {
       const notes = 'y'.repeat(2000)
       await growthPlanService.setNotes('2026-09-01', notes)
-      expect(updateDocMock.mock.calls[0][1].notes).toHaveLength(2000)
+      expect(updateDocMock.mock.calls[0]![1].notes).toHaveLength(2000)
     })
 
     it('passes the correct doc reference for the given date', async () => {
@@ -412,7 +412,7 @@ describe('growthPlanService', () => {
 
     it('accepts empty string notes', async () => {
       await growthPlanService.setNotes('2026-09-01', '')
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ notes: '' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ notes: '' })
     })
   })
 })

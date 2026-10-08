@@ -218,7 +218,7 @@ describe('useRevealedFields', () => {
       const { result, rerender } = renderHook(
         ({ conditions, skip }: { conditions: Record<string, boolean>; skip: boolean }) =>
           useRevealedFields(conditions, skip),
-        { initialProps: { conditions: { original: false }, skip: false } }
+        { initialProps: { conditions: { original: false } as Record<string, boolean>, skip: false } }
       )
 
       expect(result.current.wasInitial('newField')).toBe(false)

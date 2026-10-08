@@ -98,7 +98,7 @@ describe('useListListings', () => {
   it('calls getListingWithProperty once per id', async () => {
     getListingWithPropertyMock.mockResolvedValue(null)
 
-    const { } = renderHook(() => useListListings(['id-1', 'id-2', 'id-3']))
+    renderHook(() => useListListings(['id-1', 'id-2', 'id-3']))
 
     await waitFor(() => expect(getListingWithPropertyMock).toHaveBeenCalledTimes(3))
 

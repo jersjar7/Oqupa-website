@@ -250,7 +250,7 @@ describe('useBoundaryPolygons', () => {
 
       await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
 
-      const [calledUrl] = fetchMock.mock.calls[0]
+      const [calledUrl] = fetchMock.mock.calls[0]!
       expect(calledUrl).toBe(url)
     })
 

@@ -38,8 +38,8 @@ const {
     setDocMock: vi.fn(),
     updateDocMock: vi.fn(),
     getDocMock: vi.fn(),
-    docMock: vi.fn((_db: unknown, _col: string, id: string) => ({ path: `users/${id}` })),
-    httpsCallableMock: vi.fn(() => callableInvokerMock),
+    docMock: vi.fn((...args: unknown[]) => ({ path: `users/${args[2]}` })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableInvokerMock),
     callableInvokerMock,
     analyticsRegistrationMock: vi.fn(),
     analyticsLoginMock: vi.fn(),
@@ -178,7 +178,7 @@ describe('authService', () => {
       createUserMock.mockResolvedValue(makeCredential(user))
       await authService.registerWithEmailAndPassword('user@test.com', 'pass123')
       expect(setDocMock).toHaveBeenCalledOnce()
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.email).toBe('uid-1@test.com')
       expect(payload.isActive).toBe(true)
       expect(payload.isPhoneVerified).toBe(false)
@@ -387,7 +387,7 @@ describe('authService', () => {
       signInMock.mockResolvedValue(makeCredential(user))
       await authService.confirmSetPassword('oob-code', 'newPass123', 'email@test.com')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.authProvider).toBe('password')
     })
 
@@ -406,7 +406,7 @@ describe('authService', () => {
     it('calls updateDoc with the new name', async () => {
       await authService.updateUserName('uid-6', 'María García')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.name).toBe('María García')
     })
   })
@@ -423,7 +423,7 @@ describe('authService', () => {
       }
       await authService.updateUserContactInfo('uid-7', contactInfo)
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.contactInfo).toEqual(contactInfo)
     })
   })
@@ -468,7 +468,7 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(false)) // new user
       await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
       expect(setDocMock).toHaveBeenCalledOnce()
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.authProvider).toBe('emailLink')
     })
 
@@ -502,7 +502,7 @@ describe('authService', () => {
       signInWithEmailLinkMock.mockResolvedValue({ user })
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
-      expect(setDocMock.mock.calls[0][1].name).toBe('Magic User')
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Magic User')
     })
   })
 
@@ -523,7 +523,7 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithGoogle()
       expect(setDocMock).toHaveBeenCalledOnce()
-      expect(setDocMock.mock.calls[0][1].authProvider).toBe('google.com')
+      expect(setDocMock.mock.calls[0]![1].authProvider).toBe('google.com')
     })
 
     it('skips Firestore creation for returning Google users', async () => {
@@ -547,7 +547,7 @@ describe('authService', () => {
       signInWithPopupMock.mockResolvedValue({ user })
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithGoogle()
-      expect(setDocMock.mock.calls[0][1].name).toBe('Google User')
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Google User')
     })
   })
 
@@ -567,7 +567,7 @@ describe('authService', () => {
       signInWithPopupMock.mockResolvedValue(makeCredential(user))
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithApple()
-      expect(setDocMock.mock.calls[0][1].authProvider).toBe('apple.com')
+      expect(setDocMock.mock.calls[0]![1].authProvider).toBe('apple.com')
     })
 
     it('fires the login analytics event with method "apple"', async () => {
@@ -583,7 +583,7 @@ describe('authService', () => {
       signInWithPopupMock.mockResolvedValue({ user })
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithApple()
-      expect(setDocMock.mock.calls[0][1].name).toBe('Apple User')
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Apple User')
     })
   })
 
@@ -617,7 +617,7 @@ describe('authService', () => {
     })
 
     it('clears any existing verifier before creating a new one', () => {
-      const first = authService.initializeRecaptcha('container-1') as { clear: ReturnType<typeof vi.fn> }
+      const first = authService.initializeRecaptcha('container-1') as unknown as { clear: ReturnType<typeof vi.fn> }
       authService.initializeRecaptcha('container-2')
       expect(first.clear).toHaveBeenCalledOnce()
       authService.cleanupRecaptcha()
@@ -639,7 +639,7 @@ describe('authService', () => {
       authService.initializeRecaptcha('container')
       // PhoneAuthProvider is a mock class; its instance has verifyPhoneNumber as a vi.fn()
       // We need to spy on the prototype to capture the verifyPhoneNumber call
-      const { PhoneAuthProvider } = await import('firebase/auth') as { PhoneAuthProvider: { new(): { verifyPhoneNumber: ReturnType<typeof vi.fn> } } }
+      const { PhoneAuthProvider } = await import('firebase/auth') as unknown as { PhoneAuthProvider: { new(): { verifyPhoneNumber: ReturnType<typeof vi.fn> } } }
       const mockInstance = new PhoneAuthProvider()
       mockInstance.verifyPhoneNumber.mockResolvedValue('verification-id-123')
       const result = await authService.sendPhoneVerificationCode('+51 987 654 321')
@@ -692,7 +692,7 @@ describe('authService', () => {
       updateDocMock.mockResolvedValue(undefined)
       await authService.verifyPhoneCode('v-id', '123456')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.isPhoneVerified).toBe(true)
     })
   })
@@ -706,7 +706,7 @@ describe('authService', () => {
     })
 
     it('clears the verifier when one exists', () => {
-      const verifier = authService.initializeRecaptcha('container') as { clear: ReturnType<typeof vi.fn> }
+      const verifier = authService.initializeRecaptcha('container') as unknown as { clear: ReturnType<typeof vi.fn> }
       authService.cleanupRecaptcha()
       expect(verifier.clear).toHaveBeenCalledOnce()
     })

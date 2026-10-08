@@ -136,8 +136,10 @@ describe('generateBlurHash', () => {
     capturedImg = { src: '' }
 
     // Mock Image constructor
-    vi.stubGlobal('Image', function MockImage(this: typeof capturedImg) {
-      capturedImg = this
+    // Returning an object from a constructor makes `new Image()` yield that object
+    vi.stubGlobal('Image', function MockImage() {
+      capturedImg = { src: '' }
+      return capturedImg
     })
 
     // Mock URL.createObjectURL

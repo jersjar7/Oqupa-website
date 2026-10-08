@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useMapCameraStorage } from '@/hooks/useMapCameraStorage'
 
@@ -206,7 +206,7 @@ describe('useMapCameraStorage', () => {
         result.current.saveCamera(-12.046374, -77.042793, 13)
       })
 
-      const written = JSON.parse(ls.setItem.mock.calls[0][1])
+      const written = JSON.parse(ls.setItem.mock.calls[0]![1])
       expect(written).toEqual({ lat: -12.046374, lng: -77.042793, zoom: 13 })
     })
 
@@ -220,7 +220,7 @@ describe('useMapCameraStorage', () => {
         result.current.saveCamera(0, 0, 1)
       })
 
-      const written = JSON.parse(ls.setItem.mock.calls[0][1])
+      const written = JSON.parse(ls.setItem.mock.calls[0]![1])
       expect(written).toEqual({ lat: 0, lng: 0, zoom: 1 })
     })
 
@@ -234,7 +234,7 @@ describe('useMapCameraStorage', () => {
         result.current.saveCamera(-90, -180, 2)
       })
 
-      const written = JSON.parse(ls.setItem.mock.calls[0][1])
+      const written = JSON.parse(ls.setItem.mock.calls[0]![1])
       expect(written).toEqual({ lat: -90, lng: -180, zoom: 2 })
     })
 
@@ -250,7 +250,7 @@ describe('useMapCameraStorage', () => {
       })
 
       expect(ls.setItem).toHaveBeenCalledTimes(2)
-      const lastCall = ls.setItem.mock.calls[1]
+      const lastCall = ls.setItem.mock.calls[1]!
       expect(JSON.parse(lastCall[1])).toEqual({ lat: 4, lng: 5, zoom: 6 })
     })
 

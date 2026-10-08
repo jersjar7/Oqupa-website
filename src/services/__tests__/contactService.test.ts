@@ -7,8 +7,8 @@ const { getFunctionsMock, httpsCallableMock, callableFnMock } = vi.hoisted(() =>
   const callableFnMock = vi.fn()
   return {
     callableFnMock,
-    httpsCallableMock: vi.fn(() => callableFnMock),
-    getFunctionsMock: vi.fn(() => ({ __functions: true })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
+    getFunctionsMock: vi.fn((..._args: unknown[]) => ({ __functions: true })),
   }
 })
 

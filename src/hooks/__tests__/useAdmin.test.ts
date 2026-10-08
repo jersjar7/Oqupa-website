@@ -73,7 +73,7 @@ describe('usePendingRealtorApplicationsCount', () => {
   it('queries with "pending" status', async () => {
     getAllRealtorApplicationsMock.mockResolvedValueOnce([])
 
-    const { } = renderHook(() => usePendingRealtorApplicationsCount(true), { wrapper })
+    renderHook(() => usePendingRealtorApplicationsCount(true), { wrapper })
 
     await waitFor(() => expect(getAllRealtorApplicationsMock).toHaveBeenCalledTimes(1))
 
