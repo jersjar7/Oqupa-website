@@ -430,8 +430,12 @@ Reviewed every test added in `test(coverage): improve branch coverage from 82.21
 
 No issues in dashboardHelpers, ListingsPage, useGrowthPlan, formatters, shareUtils, metaPixel, tiktokPixel, utils (TTL), boostService, contentLinkService, firestoreService, storageService, or teamTaskService additions.
 
-**Outside verifier scope, for the user:** this commit also adds `/* v8 ignore */` to 13 production source files. Several hide branches that are reachable and worth testing rather than dead: `useExploreListings` `if (isFetchingNextPage) return` (prevents duplicate fetches); `useBoundaryPolygons` `if (!cancelled)` (already exercised by an existing test); and `brandedCardPainter` tier-3/tier-4 success returns (testable with a URL-aware img mock). As a result, the CLAUDE.md entry "brandedCardPainter 100% branches" is not accurate. Source files were not modified by the verifier.
+**Outside verifier scope, for the user:** this commit also adds `/* v8 ignore */` to 13 production source files. Several hide branches that are reachable and worth testing rather than dead: `useExploreListings` `if (isFetchingNextPage) return` (prevents duplicate fetches); and `brandedCardPainter` tier-3/tier-4 success returns (testable with a URL-aware img mock). As a result, the CLAUDE.md entry "brandedCardPainter 100% branches" is not accurate. Source files were not modified by the verifier.
 
 Test count: unchanged. Full suite: 104 files, 1842 passed, 5 skipped.
+
+---
+
+**Correction (same day):** the entry above originally listed `useBoundaryPolygons` `if (!cancelled)` (line 77) as reachable. It is not: nothing is awaited between the last `if (cancelled) return` (line 42) and line 77, so `cancelled` cannot change in between. The existing test named "line 74 cancelled branch" actually exercises line 42. The v8 ignore there is legitimate.
 
 ---
