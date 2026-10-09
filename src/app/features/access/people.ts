@@ -58,7 +58,7 @@ export const PEOPLE: Person[] = [
 
   // Software engineering — the dev board renders one column per person, in
   // this order.
-  { name: 'Sarah',   email: 'sarahwalkerdev@gmail.com',          access: ['dev'] },
+  { name: 'Sarah',   email: 'sarahwalkerdev@gmail.com',          access: ['dev', 'metrics'] },
   { name: 'Kenny',   email: 'kennethtquintana@gmail.com',        access: ['dev'] },
   { name: 'Sam',     email: 'samuelsotointernational@gmail.com', access: ['dev', 'metrics'] },
 
