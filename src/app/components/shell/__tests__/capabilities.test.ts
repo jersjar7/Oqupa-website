@@ -79,7 +79,7 @@ describe('capabilitiesFor', () => {
   })
 
   it('does not grant isMetricsViewer to an email not on the metrics allowlist', () => {
-    const caps = capabilitiesFor(user({ email: 'sarahwalkerdev@gmail.com' }))
+    const caps = capabilitiesFor(user({ email: 'kennethtquintana@gmail.com' }))
     expect(caps.isMetricsViewer).toBe(false)
   })
 

@@ -38,9 +38,9 @@ describe('the list shown is the list enforced', () => {
   })
 
   it("does not leak one area's roster into another", () => {
-    // Sarah is dev-only; she must not appear under Números.
+    // Kenny is dev-only; he must not appear under Números.
     openPanel('metrics')
-    expect(screen.queryByText('sarahwalkerdev@gmail.com')).toBeNull()
+    expect(screen.queryByText('kennethtquintana@gmail.com')).toBeNull()
   })
 })
 
