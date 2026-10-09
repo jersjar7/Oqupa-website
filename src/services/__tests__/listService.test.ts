@@ -11,13 +11,13 @@ const {
   addDocMock: vi.fn().mockResolvedValue({ id: 'new-list-id' }),
   updateDocMock: vi.fn().mockResolvedValue(undefined),
   deleteDocMock: vi.fn().mockResolvedValue(undefined),
-  onSnapshotMock: vi.fn(() => vi.fn()),
-  queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-  collectionMock: vi.fn(() => ({ __col: 'lists' })),
-  docMock: vi.fn((_db: unknown, ...parts: string[]) => ({ path: parts.join('/') })),
-  orderByMock: vi.fn(() => ({ __orderBy: true })),
-  arrayUnionMock: vi.fn((val: unknown) => ({ __arrayUnion: val })),
-  arrayRemoveMock: vi.fn((val: unknown) => ({ __arrayRemove: val })),
+  onSnapshotMock: vi.fn((..._args: unknown[]) => vi.fn()),
+  queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+  collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'lists' })),
+  docMock: vi.fn((...args: unknown[]) => ({ path: args.slice(1).join('/') })),
+  orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
+  arrayUnionMock: vi.fn((...args: unknown[]) => ({ __arrayUnion: args[0] })),
+  arrayRemoveMock: vi.fn((...args: unknown[]) => ({ __arrayRemove: args[0] })),
 }))
 
 vi.mock('firebase/firestore', () => ({
@@ -104,7 +104,7 @@ describe('listService', () => {
       ])
 
       expect(callback).toHaveBeenCalledOnce()
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists).toHaveLength(1)
       expect(lists[0].id).toBe('list-1')
       expect(lists[0].name).toBe('Favoritos')
@@ -126,7 +126,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists[0].createdAt).toEqual(expectedDate)
     })
 
@@ -143,7 +143,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists[0].createdAt).toBeInstanceOf(Date)
     })
 
@@ -160,7 +160,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists[0].name).toBe('Lista')
     })
 
@@ -177,7 +177,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists[0].listingIds).toEqual([])
     })
 
@@ -194,7 +194,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists[0].isDefault).toBe(false)
     })
 
@@ -217,7 +217,7 @@ describe('listService', () => {
         }),
       ])
 
-      const lists = callback.mock.calls[0][0]
+      const lists = callback.mock.calls[0]![0]
       expect(lists).toHaveLength(2)
       expect(lists[0].id).toBe('list-a')
       expect(lists[1].id).toBe('list-b')
@@ -230,7 +230,7 @@ describe('listService', () => {
     it('calls addDoc with name, empty listingIds, serverTimestamp, and isDefault=false by default', async () => {
       await listService.createList('uid-123', 'Mis favoritos')
       expect(addDocMock).toHaveBeenCalledOnce()
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.name).toBe('Mis favoritos')
       expect(payload.listingIds).toEqual([])
       expect(payload.isDefault).toBe(false)
@@ -239,7 +239,7 @@ describe('listService', () => {
 
     it('creates with isDefault=true when specified', async () => {
       await listService.createList('uid-123', 'Default list', true)
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.isDefault).toBe(true)
     })
 
@@ -286,7 +286,7 @@ describe('listService', () => {
     it('calls updateDoc with the new name', async () => {
       await listService.renameList('uid-123', 'list-1', 'Nuevo nombre')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ name: 'Nuevo nombre' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ name: 'Nuevo nombre' })
     })
 
     it('builds the correct doc reference path', async () => {
@@ -308,7 +308,7 @@ describe('listService', () => {
       await listService.addListing('uid-123', 'list-1', 'listing-abc')
       expect(updateDocMock).toHaveBeenCalledOnce()
       expect(arrayUnionMock).toHaveBeenCalledWith('listing-abc')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.listingIds).toEqual({ __arrayUnion: 'listing-abc' })
     })
 
@@ -331,7 +331,7 @@ describe('listService', () => {
       await listService.removeListing('uid-123', 'list-1', 'listing-abc')
       expect(updateDocMock).toHaveBeenCalledOnce()
       expect(arrayRemoveMock).toHaveBeenCalledWith('listing-abc')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.listingIds).toEqual({ __arrayRemove: 'listing-abc' })
     })
 

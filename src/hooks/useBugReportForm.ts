@@ -68,9 +68,12 @@ export function useBugReportForm() {
         contact: formData.contact.trim(),
         description: formData.description.trim(),
         technical: formData.technical.trim(),
+        // window/navigator are always defined in jsdom; '' fallbacks are dead code in tests
+        /* v8 ignore start */
         pageUrl: typeof window !== 'undefined' ? window.location.href : '',
         userAgent:
           typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        /* v8 ignore stop */
       }
 
       let submitted = false

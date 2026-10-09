@@ -12,7 +12,9 @@ to bring overall statement coverage from its current level to 50%.
 3. Pick the next file to test using the priority order below.
 4. Read the source file carefully before writing a single test.
 5. Write a complete test suite for that file following the patterns below.
-6. Run `npm test -- <filename>` to verify all tests pass.
+6. Run `npm test -- <filename>` to verify all tests pass, then `npx tsc -b --noEmit` and
+   `npm run lint` — both must report **0 errors**. Vitest does not type-check, so a test can
+   pass while breaking the CI build (200 type errors piled up unnoticed this way before 2026-10-08).
 7. Run `npm run coverage` again to get the updated overall %.
 8. Append your progress to `agents/test-coverage-summary.md`.
 9. Return to the orchestrator: which file you tested, what the tests cover, and the new coverage %.
@@ -98,6 +100,10 @@ Cast with `as unknown as FullType` rather than satisfying every required field.
 - **Do not** write tests for `.tsx` component files (intentional architecture decision — see CLAUDE.md).
 - **Do not** write tests for files that import directly from `src/lib/firebase.ts` — they require
   the Firebase emulator and are out of scope for unit tests.
+- **Never** edit source files — only test files, `agents/test-coverage-summary.md`, and the
+  coverage table in CLAUDE.md. This includes adding `/* v8 ignore */` comments: they raise the
+  coverage number without testing anything. If a branch looks unreachable, leave it uncovered
+  and list it in your summary with the reason, so a human can decide.
 - **Do not** write trivial tests that always pass regardless of implementation.
 - Write tests that would **catch a real bug** if the implementation broke.
 

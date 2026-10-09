@@ -119,4 +119,9 @@ describe('getPriceSuffix', () => {
   it('returns empty string for any non-alquiler operationType', () => {
     expect(getPriceSuffix('cualquier-otro')).toBe('')
   })
+
+  it('falls back to "/mes" when rentalDurationType is an unknown key not in the map', () => {
+    // RENTAL_DURATION_PRICE_SUFFIX has no 'custom' key → ?? '/mes' fallback fires
+    expect(getPriceSuffix('alquiler', 'custom' as unknown as import('@/types/enums').RentalDurationType)).toBe('/mes')
+  })
 })

@@ -208,6 +208,27 @@ describe('useGrowthPlan', () => {
     expect(result.current.days).toEqual([])
   })
 
+  it('uses empty string for phase/theme when the first day in a week has undefined values (lines 70-71 ?? "" branches)', async () => {
+    const planDays = [
+      mkDay(1, 1, { phase: undefined as unknown as string, theme: undefined as unknown as string }),
+    ]
+
+    subscribeToPlanMock.mockImplementation(
+      (onData: (days: typeof planDays) => void) => {
+        onData(planDays)
+        return () => {}
+      },
+    )
+
+    const { result } = renderHook(() => useGrowthPlan())
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const week1 = result.current.weeks.find((w) => w.week === 1)!
+    expect(week1.phase).toBe('')
+    expect(week1.theme).toBe('')
+  })
+
   it('week doneCount counts only done days in that week', async () => {
     const planDays = [
       mkDay(1, 1, { status: 'done' }),

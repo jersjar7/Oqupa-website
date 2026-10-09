@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { generateShareText, shareListing, type ShareListingParams } from '../shareUtils'
 
 // ---------------------------------------------------------------------------
@@ -310,5 +310,16 @@ describe('generateShareText — label fallbacks', () => {
     }
     const text = generateShareText(params)
     expect(text).toContain('/mes') // longTerm suffix
+  })
+
+  it('falls back to "/mes" when rentalDurationType is an unknown key not in RENTAL_DURATION_PRICE_SUFFIX', () => {
+    // Exercises the `?? '/mes'` fallback at line 39
+    const params: ShareListingParams = {
+      ...baseParams,
+      operationType: 'alquiler',
+      rentalDurationType: 'custom' as unknown as ShareListingParams['rentalDurationType'],
+    }
+    const text = generateShareText(params)
+    expect(text).toContain('/mes')
   })
 })

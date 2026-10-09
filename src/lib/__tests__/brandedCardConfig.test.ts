@@ -162,7 +162,7 @@ describe('buildBrandedCardConfig', () => {
     it('includes bedrooms, bathrooms, and area', () => {
       const config = buildBrandedCardConfig(
         mkListing(),
-        mkProperty({ specs: { bedroomCount: 3, bathroomCount: 2, totalAreaInSquareMeters: 120 } }),
+        mkProperty({ specs: { bedroomCount: 3, bathroomCount: 2, totalAreaInSquareMeters: 120 } as unknown as Property['specs'] }),
         'story',
       )
       expect(config.specsText).toBe('3 hab. | 2 baños | 120 m²')
@@ -171,7 +171,7 @@ describe('buildBrandedCardConfig', () => {
     it('uses "baño" (singular) for 1 bathroom', () => {
       const config = buildBrandedCardConfig(
         mkListing(),
-        mkProperty({ specs: { bedroomCount: 1, bathroomCount: 1, totalAreaInSquareMeters: 60 } }),
+        mkProperty({ specs: { bedroomCount: 1, bathroomCount: 1, totalAreaInSquareMeters: 60 } as unknown as Property['specs'] }),
         'story',
       )
       expect(config.specsText).toContain('1 baño')
@@ -181,7 +181,7 @@ describe('buildBrandedCardConfig', () => {
     it('omits bedrooms when bedroomCount is null', () => {
       const config = buildBrandedCardConfig(
         mkListing(),
-        mkProperty({ specs: { bedroomCount: null, bathroomCount: 1, totalAreaInSquareMeters: 80 } as Property['specs'] }),
+        mkProperty({ specs: { bedroomCount: null, bathroomCount: 1, totalAreaInSquareMeters: 80 } as unknown as Property['specs'] }),
         'story',
       )
       expect(config.specsText).not.toContain('hab.')
@@ -191,7 +191,7 @@ describe('buildBrandedCardConfig', () => {
     it('omits bathrooms when bathroomCount is null', () => {
       const config = buildBrandedCardConfig(
         mkListing(),
-        mkProperty({ specs: { bedroomCount: null, bathroomCount: null, totalAreaInSquareMeters: 500 } as Property['specs'] }),
+        mkProperty({ specs: { bedroomCount: null, bathroomCount: null, totalAreaInSquareMeters: 500 } as unknown as Property['specs'] }),
         'story',
       )
       expect(config.specsText).toBe('500 m²')
@@ -200,7 +200,7 @@ describe('buildBrandedCardConfig', () => {
     it('floors decimal area', () => {
       const config = buildBrandedCardConfig(
         mkListing(),
-        mkProperty({ specs: { bedroomCount: null, bathroomCount: null, totalAreaInSquareMeters: 99.9 } as Property['specs'] }),
+        mkProperty({ specs: { bedroomCount: null, bathroomCount: null, totalAreaInSquareMeters: 99.9 } as unknown as Property['specs'] }),
         'story',
       )
       expect(config.specsText).toContain('99 m²')

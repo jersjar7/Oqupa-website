@@ -24,7 +24,7 @@ import type { MetricsSnapshot } from '../useNumbersData'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeDoc(date: string, overrides: Partial<MetricsSnapshot> = {}) {
+function makeDoc(date: string, overrides: Partial<Omit<MetricsSnapshot, 'generatedAt'>> = {}) {
   const base: Omit<MetricsSnapshot, 'generatedAt'> & { generatedAt?: { toDate: () => Date } } = {
     date,
     generatedAt: { toDate: () => new Date(`${date}T10:00:00Z`) },

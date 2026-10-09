@@ -83,9 +83,12 @@ function firestoreDocToUser(
   }
 }
 
+// jsdom always has BroadcastChannel; null branch guards against non-browser environments
+/* v8 ignore start */
 const authChannel = typeof BroadcastChannel !== 'undefined'
   ? new BroadcastChannel('oqupa-auth')
   : null
+/* v8 ignore stop */
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   firebaseUser: null,

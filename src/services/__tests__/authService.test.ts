@@ -38,8 +38,8 @@ const {
     setDocMock: vi.fn(),
     updateDocMock: vi.fn(),
     getDocMock: vi.fn(),
-    docMock: vi.fn((_db: unknown, _col: string, id: string) => ({ path: `users/${id}` })),
-    httpsCallableMock: vi.fn(() => callableInvokerMock),
+    docMock: vi.fn((...args: unknown[]) => ({ path: `users/${args[2]}` })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableInvokerMock),
     callableInvokerMock,
     analyticsRegistrationMock: vi.fn(),
     analyticsLoginMock: vi.fn(),
@@ -119,6 +119,7 @@ function makeUser(uid: string, email = `${uid}@test.com`) {
     uid,
     email,
     reload: vi.fn().mockResolvedValue(undefined),
+    getIdToken: vi.fn().mockResolvedValue('token'),
     providerData: [] as { providerId: string }[],
   }
 }
@@ -177,7 +178,7 @@ describe('authService', () => {
       createUserMock.mockResolvedValue(makeCredential(user))
       await authService.registerWithEmailAndPassword('user@test.com', 'pass123')
       expect(setDocMock).toHaveBeenCalledOnce()
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.email).toBe('uid-1@test.com')
       expect(payload.isActive).toBe(true)
       expect(payload.isPhoneVerified).toBe(false)
@@ -274,6 +275,40 @@ describe('authService', () => {
     })
   })
 
+  // ── refreshSession ───────────────────────────────────────────────────────
+
+  describe('refreshSession', () => {
+    it('does nothing when there is no current user', async () => {
+      _currentUser = null
+      await expect(authService.refreshSession()).resolves.toBeUndefined()
+    })
+
+    it('calls getIdToken(true) to force-refresh the token', async () => {
+      const user = makeUser('uid-r')
+      _currentUser = user
+      await authService.refreshSession()
+      expect(user.getIdToken).toHaveBeenCalledWith(true)
+    })
+  })
+
+  // ── checkAccountExists ───────────────────────────────────────────────────
+
+  describe('checkAccountExists', () => {
+    it('calls the checkAccountExists Cloud Function with the email and returns true when it exists', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: true } })
+      const result = await authService.checkAccountExists('user@test.com')
+      expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'checkAccountExists')
+      expect(callableInvokerMock).toHaveBeenCalledWith({ email: 'user@test.com' })
+      expect(result).toBe(true)
+    })
+
+    it('returns false when the Cloud Function reports the account does not exist', async () => {
+      callableInvokerMock.mockResolvedValue({ data: { exists: false } })
+      const result = await authService.checkAccountExists('ghost@test.com')
+      expect(result).toBe(false)
+    })
+  })
+
   // ── getSignInMethods ─────────────────────────────────────────────────────
 
   describe('getSignInMethods', () => {
@@ -352,7 +387,7 @@ describe('authService', () => {
       signInMock.mockResolvedValue(makeCredential(user))
       await authService.confirmSetPassword('oob-code', 'newPass123', 'email@test.com')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.authProvider).toBe('password')
     })
 
@@ -371,7 +406,7 @@ describe('authService', () => {
     it('calls updateDoc with the new name', async () => {
       await authService.updateUserName('uid-6', 'María García')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.name).toBe('María García')
     })
   })
@@ -388,7 +423,7 @@ describe('authService', () => {
       }
       await authService.updateUserContactInfo('uid-7', contactInfo)
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.contactInfo).toEqual(contactInfo)
     })
   })
@@ -433,7 +468,7 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(false)) // new user
       await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
       expect(setDocMock).toHaveBeenCalledOnce()
-      const payload = setDocMock.mock.calls[0][1]
+      const payload = setDocMock.mock.calls[0]![1]
       expect(payload.authProvider).toBe('emailLink')
     })
 
@@ -461,6 +496,14 @@ describe('authService', () => {
       await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
       expect(analyticsLoginMock).toHaveBeenCalledWith('emailLink')
     })
+
+    it('includes name in doc when displayName is non-empty (line 299 true branch)', async () => {
+      const user = { ...makeUser('uid-9b'), displayName: 'Magic User' }
+      signInWithEmailLinkMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Magic User')
+    })
   })
 
   // ── signInWithGoogle ─────────────────────────────────────────────────────
@@ -480,7 +523,7 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithGoogle()
       expect(setDocMock).toHaveBeenCalledOnce()
-      expect(setDocMock.mock.calls[0][1].authProvider).toBe('google.com')
+      expect(setDocMock.mock.calls[0]![1].authProvider).toBe('google.com')
     })
 
     it('skips Firestore creation for returning Google users', async () => {
@@ -497,6 +540,14 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(true))
       await authService.signInWithGoogle()
       expect(analyticsLoginMock).toHaveBeenCalledWith('google')
+    })
+
+    it('includes name in doc when displayName is non-empty (line 364 true branch)', async () => {
+      const user = { ...makeUser('uid-10b'), displayName: 'Google User' }
+      signInWithPopupMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.signInWithGoogle()
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Google User')
     })
   })
 
@@ -516,7 +567,7 @@ describe('authService', () => {
       signInWithPopupMock.mockResolvedValue(makeCredential(user))
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithApple()
-      expect(setDocMock.mock.calls[0][1].authProvider).toBe('apple.com')
+      expect(setDocMock.mock.calls[0]![1].authProvider).toBe('apple.com')
     })
 
     it('fires the login analytics event with method "apple"', async () => {
@@ -525,6 +576,14 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(true))
       await authService.signInWithApple()
       expect(analyticsLoginMock).toHaveBeenCalledWith('apple')
+    })
+
+    it('includes name in doc when displayName is non-empty (line 334 true branch)', async () => {
+      const user = { ...makeUser('uid-11b'), displayName: 'Apple User' }
+      signInWithPopupMock.mockResolvedValue({ user })
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      await authService.signInWithApple()
+      expect(setDocMock.mock.calls[0]![1].name).toBe('Apple User')
     })
   })
 
@@ -558,7 +617,7 @@ describe('authService', () => {
     })
 
     it('clears any existing verifier before creating a new one', () => {
-      const first = authService.initializeRecaptcha('container-1') as { clear: ReturnType<typeof vi.fn> }
+      const first = authService.initializeRecaptcha('container-1') as unknown as { clear: ReturnType<typeof vi.fn> }
       authService.initializeRecaptcha('container-2')
       expect(first.clear).toHaveBeenCalledOnce()
       authService.cleanupRecaptcha()
@@ -580,7 +639,7 @@ describe('authService', () => {
       authService.initializeRecaptcha('container')
       // PhoneAuthProvider is a mock class; its instance has verifyPhoneNumber as a vi.fn()
       // We need to spy on the prototype to capture the verifyPhoneNumber call
-      const { PhoneAuthProvider } = await import('firebase/auth') as { PhoneAuthProvider: { new(): { verifyPhoneNumber: ReturnType<typeof vi.fn> } } }
+      const { PhoneAuthProvider } = await import('firebase/auth') as unknown as { PhoneAuthProvider: { new(): { verifyPhoneNumber: ReturnType<typeof vi.fn> } } }
       const mockInstance = new PhoneAuthProvider()
       mockInstance.verifyPhoneNumber.mockResolvedValue('verification-id-123')
       const result = await authService.sendPhoneVerificationCode('+51 987 654 321')
@@ -599,6 +658,16 @@ describe('authService', () => {
       updateDocMock.mockResolvedValue(undefined)
       await authService.verifyPhoneCode('v-id', '123456')
       expect(linkWithCredentialMock).toHaveBeenCalledOnce()
+    })
+
+    it('links phone credential when user has a non-phone provider (callback returns false — line 237 false branch)', async () => {
+      _currentUser = { ...makeUser('uid-phone'), providerData: [{ providerId: 'google.com' }] }
+      linkWithCredentialMock.mockResolvedValue(undefined)
+      updateDocMock.mockResolvedValue(undefined)
+      await authService.verifyPhoneCode('v-id', '123456')
+      // some() callback ran with 'google.com', returned false → linkWithCredential path
+      expect(linkWithCredentialMock).toHaveBeenCalledOnce()
+      expect(updatePhoneNumberMock).not.toHaveBeenCalled()
     })
 
     it('updates phone number when user already has phone linked', async () => {
@@ -623,7 +692,7 @@ describe('authService', () => {
       updateDocMock.mockResolvedValue(undefined)
       await authService.verifyPhoneCode('v-id', '123456')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.isPhoneVerified).toBe(true)
     })
   })
@@ -637,7 +706,7 @@ describe('authService', () => {
     })
 
     it('clears the verifier when one exists', () => {
-      const verifier = authService.initializeRecaptcha('container') as { clear: ReturnType<typeof vi.fn> }
+      const verifier = authService.initializeRecaptcha('container') as unknown as { clear: ReturnType<typeof vi.fn> }
       authService.cleanupRecaptcha()
       expect(verifier.clear).toHaveBeenCalledOnce()
     })

@@ -128,7 +128,7 @@ describe('timeout paths — fake timers', () => {
 
     // Advance 5001ms past the 5000ms timeout
     await vi.advanceTimersByTimeAsync(5001)
-    expect(caughtError?.message).toBe('reCAPTCHA script load timeout')
+    expect((caughtError as Error | null)?.message).toBe('reCAPTCHA script load timeout')
   })
 
   it('rejects with "reCAPTCHA token timeout" when execute never resolves', async () => {
@@ -154,7 +154,7 @@ describe('timeout paths — fake timers', () => {
 
     // Flush microtasks (script onload), then advance past the 5000ms token timeout
     await vi.advanceTimersByTimeAsync(5001)
-    expect(caughtError?.message).toBe('reCAPTCHA token timeout')
+    expect((caughtError as Error | null)?.message).toBe('reCAPTCHA token timeout')
   })
 })
 

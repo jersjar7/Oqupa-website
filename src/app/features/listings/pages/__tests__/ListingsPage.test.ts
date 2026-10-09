@@ -125,4 +125,38 @@ describe('filterAsignadasAccepted', () => {
   it('returns empty array on empty input', () => {
     expect(filterAsignadasAccepted([])).toEqual([])
   })
+
+  it('handles undefined updatedAt when noDate is the b (second) argument in the comparator', () => {
+    // With [valid, noDate], sort calls comparator(valid, noDate) → b=noDate covers b.updatedAt undefined branch
+    const valid = mkListing('valid-b', {
+      assignmentStatus: 'accepted',
+      updatedAt: new Date('2026-04-20T12:00:00Z'),
+    })
+    const noDate = mkListing('noDate-b', {
+      assignmentStatus: 'accepted',
+      updatedAt: undefined as unknown as Date,
+    })
+    const out = filterAsignadasAccepted([entry(valid), entry(noDate)])
+    expect(out.map((e) => e.listing.id)).toEqual(['valid-b', 'noDate-b'])
+  })
+
+  it('handles undefined updatedAt by treating it as 0 in sort (line 31 ?? 0 branches)', () => {
+    // Three items so the comparator runs multiple times, exercising all four ?? branches:
+    // (b.updatedAt defined, b.updatedAt undefined, a.updatedAt defined, a.updatedAt undefined)
+    const newest = mkListing('newest', {
+      assignmentStatus: 'accepted',
+      updatedAt: new Date('2026-04-20T12:00:00Z'),
+    })
+    const older = mkListing('older', {
+      assignmentStatus: 'accepted',
+      updatedAt: new Date('2026-01-01T00:00:00Z'),
+    })
+    const noDate = mkListing('noDate', {
+      assignmentStatus: 'accepted',
+      updatedAt: undefined as unknown as Date,
+    })
+    const out = filterAsignadasAccepted([entry(noDate), entry(older), entry(newest)])
+    // newest first, older second, noDate (treated as 0) last
+    expect(out.map((e) => e.listing.id)).toEqual(['newest', 'older', 'noDate'])
+  })
 })

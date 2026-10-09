@@ -10,12 +10,12 @@ const {
   addDocMock: vi.fn().mockResolvedValue({ id: 'new-task-id' }),
   updateDocMock: vi.fn().mockResolvedValue(undefined),
   deleteDocMock: vi.fn().mockResolvedValue(undefined),
-  onSnapshotMock: vi.fn(() => vi.fn()),
-  queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-  collectionMock: vi.fn(() => ({ __col: 'teamTasks' })),
-  docMock: vi.fn((_db: unknown, col: string, id: string) => ({ path: `${col}/${id}` })),
-  whereMock: vi.fn(() => ({ __where: true })),
-  orderByMock: vi.fn(() => ({ __orderBy: true })),
+  onSnapshotMock: vi.fn((..._args: unknown[]) => vi.fn()),
+  queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+  collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'teamTasks' })),
+  docMock: vi.fn((...args: unknown[]) => ({ path: `${args[1]}/${args[2]}` })),
+  whereMock: vi.fn((..._args: unknown[]) => ({ __where: true })),
+  orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
 }))
 
 vi.mock('firebase/firestore', () => ({
@@ -105,7 +105,7 @@ describe('teamTaskService', () => {
       ])
 
       expect(onChange).toHaveBeenCalledOnce()
-      const tasks = onChange.mock.calls[0][0]
+      const tasks = onChange.mock.calls[0]![0]
       expect(tasks).toHaveLength(1)
       expect(tasks[0]!.id).toBe('task-1')
       expect(tasks[0]!.title).toBe('Fix login bug')
@@ -136,8 +136,26 @@ describe('teamTaskService', () => {
           createdByEmail: '',
         }),
       ])
-      const tasks = onChange.mock.calls[0][0]
+      const tasks = onChange.mock.calls[0]![0]
       expect(tasks[0]!.assigneeEmail).toBeNull()
+    })
+
+    it('defaults title, team, and createdByEmail when absent (lines 39-40, 48 ?? fallback branches)', () => {
+      const onChange = vi.fn()
+      teamTaskService.subscribe('dev', onChange, vi.fn())
+      fireOnChange([
+        makeSnapshotDoc('task-missing', {
+          // title, team, createdByEmail intentionally omitted
+          assigneeEmail: null,
+          createdAt: null,
+          claimedAt: null,
+          doneAt: null,
+        }),
+      ])
+      const tasks = onChange.mock.calls[0]![0]
+      expect(tasks[0]!.title).toBe('')        // String(undefined ?? '') → ''
+      expect(tasks[0]!.team).toBe('dev')      // undefined ?? 'dev' → 'dev'
+      expect(tasks[0]!.createdByEmail).toBe('') // String(undefined ?? '') → ''
     })
 
     it('falls back to new Date() for createdAt when missing', () => {
@@ -154,7 +172,7 @@ describe('teamTaskService', () => {
           createdByEmail: '',
         }),
       ])
-      const tasks = onChange.mock.calls[0][0]
+      const tasks = onChange.mock.calls[0]![0]
       expect(tasks[0]!.createdAt).toBeInstanceOf(Date)
     })
 
@@ -173,7 +191,7 @@ describe('teamTaskService', () => {
           createdByEmail: '',
         }),
       ])
-      const tasks = onChange.mock.calls[0][0]
+      const tasks = onChange.mock.calls[0]![0]
       expect(tasks[0]!.doneAt).toEqual(doneDate)
     })
   })
@@ -189,7 +207,7 @@ describe('teamTaskService', () => {
         createdByEmail: 'lead@oqupa.com',
       })
       expect(addDocMock).toHaveBeenCalledOnce()
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.title).toBe('Fix navbar bug')
       expect(payload.team).toBe('dev')
       expect(payload.assigneeEmail).toBeNull()
@@ -204,7 +222,7 @@ describe('teamTaskService', () => {
         assigneeEmail: 'dev@oqupa.com',
         createdByEmail: 'lead@oqupa.com',
       })
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.claimedAt).toEqual({ _server: true })
     })
 
@@ -215,7 +233,7 @@ describe('teamTaskService', () => {
         assigneeEmail: null,
         createdByEmail: 'lead@oqupa.com',
       })
-      const payload = addDocMock.mock.calls[0][1]
+      const payload = addDocMock.mock.calls[0]![1]
       expect(payload.claimedAt).toBeNull()
     })
   })
@@ -226,14 +244,14 @@ describe('teamTaskService', () => {
     it('sets assigneeEmail and claimedAt when assigning to someone', async () => {
       await teamTaskService.assign('task-1', 'dev@oqupa.com')
       expect(updateDocMock).toHaveBeenCalledOnce()
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.assigneeEmail).toBe('dev@oqupa.com')
       expect(payload.claimedAt).toEqual({ _server: true })
     })
 
     it('clears assigneeEmail, claimedAt, and doneAt when returning to shared list', async () => {
       await teamTaskService.assign('task-1', null)
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(payload.assigneeEmail).toBeNull()
       expect(payload.claimedAt).toBeNull()
       expect(payload.doneAt).toBeNull()
@@ -241,7 +259,7 @@ describe('teamTaskService', () => {
 
     it('does NOT include doneAt when assigning to someone (only clears on unassign)', async () => {
       await teamTaskService.assign('task-1', 'dev@oqupa.com')
-      const payload = updateDocMock.mock.calls[0][1]
+      const payload = updateDocMock.mock.calls[0]![1]
       expect(Object.keys(payload)).not.toContain('doneAt')
     })
   })
@@ -251,12 +269,12 @@ describe('teamTaskService', () => {
   describe('setDone', () => {
     it('sets doneAt to serverTimestamp when done=true', async () => {
       await teamTaskService.setDone('task-1', true)
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ doneAt: { _server: true } })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ doneAt: { _server: true } })
     })
 
     it('sets doneAt to null when done=false (reopen)', async () => {
       await teamTaskService.setDone('task-1', false)
-      expect(updateDocMock.mock.calls[0][1]).toEqual({ doneAt: null })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ doneAt: null })
     })
   })
 
@@ -265,7 +283,7 @@ describe('teamTaskService', () => {
   describe('rename', () => {
     it('calls updateDoc with the new title', async () => {
       await teamTaskService.rename('task-1', 'Updated task title')
-      expect(updateDocMock).toHaveBeenCalledWith(expect.anything(), { title: 'Updated task title' })
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ title: 'Updated task title' })
     })
   })
 

@@ -55,6 +55,22 @@ describe('setReturnUrl / consumeReturnUrl', () => {
     setReturnUrl('/second')
     expect(consumeReturnUrl()).toBe('/second')
   })
+
+  it('returns the raw string when the stored value is a legacy plain path (not JSON)', () => {
+    localStorage.setItem('oqupa_returnUrl', '/legacy/path')
+    expect(consumeReturnUrl()).toBe('/legacy/path')
+  })
+
+  it('returns null when the stored value is a legacy plain string that does not start with /', () => {
+    localStorage.setItem('oqupa_returnUrl', 'legacy-no-slash')
+    expect(consumeReturnUrl()).toBeNull()
+  })
+
+  it('returns null when the stored return URL has exceeded the 30-minute TTL', () => {
+    const expiredAt = Date.now() - 31 * 60 * 1000
+    localStorage.setItem('oqupa_returnUrl', JSON.stringify({ url: '/old-path', at: expiredAt }))
+    expect(consumeReturnUrl()).toBeNull()
+  })
 })
 
 // ---------------------------------------------------------------------------

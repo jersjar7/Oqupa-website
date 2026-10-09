@@ -102,7 +102,7 @@ describe('AnalyticsLogger', () => {
 
     it('omits content_category when district is not provided', () => {
       AnalyticsLogger.listingViewed('listing-abc')
-      const metaCall = trackMetaMock.mock.calls[0][1] as Record<string, unknown>
+      const metaCall = trackMetaMock.mock.calls[0]![1] as Record<string, unknown>
       expect(Object.keys(metaCall)).not.toContain('content_category')
     })
   })
@@ -223,7 +223,7 @@ describe('AnalyticsLogger', () => {
     it('truncates error message to 100 characters', () => {
       const longMessage = 'x'.repeat(200)
       AnalyticsLogger.errorOccurred(longMessage, 'ErrorBoundary')
-      const args = logEventMock.mock.calls[0][2] as { error_message: string }
+      const args = logEventMock.mock.calls[0]![2] as { error_message: string }
       expect(args.error_message).toHaveLength(100)
     })
 

@@ -7,7 +7,6 @@ import {
   DEFAULT_ZOOM,
   GOOGLE_MAP_ID,
   BOUNDARY_LAYERS,
-  type BoundaryLayerConfig,
 } from '../constants'
 
 describe('constants', () => {

@@ -12,7 +12,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 vi.mock('@/hooks/useGallery', () => ({
-  useGallery: vi.fn((count: number) => ({
+  useGallery: vi.fn(() => ({
     currentSlide: 0,
     next: vi.fn(),
     prev: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('@/lib/blurhash', () => ({
 }))
 
 vi.mock('@/app/components/ui', () => ({
-  AnimatedImage: ({ src, alt, className, loading }: { src: string; alt: string; className?: string; loading?: string }) => (
+  AnimatedImage: ({ src, alt, className, loading }: { src: string; alt: string; className?: string; loading?: 'eager' | 'lazy' }) => (
     <img src={src} alt={alt} className={className} loading={loading} data-testid="animated-image" />
   ),
 }))
@@ -52,13 +52,14 @@ import { useGallery } from '@/hooks/useGallery'
 beforeEach(() => {
   vi.clearAllMocks()
   // Reset useGallery to default state (slide 0)
-  vi.mocked(useGallery).mockImplementation((count: number) => ({
+  vi.mocked(useGallery).mockImplementation(() => ({
     currentSlide: 0,
     next: vi.fn(),
     prev: vi.fn(),
     goTo: vi.fn(),
     onTouchStart: vi.fn(),
     onTouchEnd: vi.fn(),
+    trackRef: { current: null },
   }))
 })
 
@@ -146,7 +147,7 @@ describe('PhotoCarousel — multiple photos', () => {
     const prevFn = vi.fn()
     vi.mocked(useGallery).mockReturnValue({
       currentSlide: 1, next: vi.fn(), prev: prevFn, goTo: vi.fn(),
-      onTouchStart: vi.fn(), onTouchEnd: vi.fn(),
+      onTouchStart: vi.fn(), onTouchEnd: vi.fn(), trackRef: { current: null },
     })
 
     render(<PhotoCarousel photoRefs={THREE_PHOTOS} />)
@@ -158,7 +159,7 @@ describe('PhotoCarousel — multiple photos', () => {
     const nextFn = vi.fn()
     vi.mocked(useGallery).mockReturnValue({
       currentSlide: 0, next: nextFn, prev: vi.fn(), goTo: vi.fn(),
-      onTouchStart: vi.fn(), onTouchEnd: vi.fn(),
+      onTouchStart: vi.fn(), onTouchEnd: vi.fn(), trackRef: { current: null },
     })
 
     render(<PhotoCarousel photoRefs={THREE_PHOTOS} />)
@@ -170,7 +171,7 @@ describe('PhotoCarousel — multiple photos', () => {
     const goToFn = vi.fn()
     vi.mocked(useGallery).mockReturnValue({
       currentSlide: 0, next: vi.fn(), prev: vi.fn(), goTo: goToFn,
-      onTouchStart: vi.fn(), onTouchEnd: vi.fn(),
+      onTouchStart: vi.fn(), onTouchEnd: vi.fn(), trackRef: { current: null },
     })
 
     render(<PhotoCarousel photoRefs={THREE_PHOTOS} />)

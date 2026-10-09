@@ -85,6 +85,32 @@ describe('the map gets the whole catalogue, not the first page', () => {
     await waitFor(() => expect(result.current.data).toHaveLength(11))
     expect(mockGet).toHaveBeenCalledTimes(1)
   })
+
+  it('does not fire a third fetchNextPage call while page 2 is loading (isFetchingNextPage guard)', async () => {
+    // Page 1 resolves immediately with a cursor; page 2 is deferred so isFetchingNextPage
+    // stays true long enough for the effect to re-run and hit the guard branch.
+    let resolvePage2!: (value: ReturnType<typeof page>) => void
+    const page2Promise = new Promise<ReturnType<typeof page>>((resolve) => {
+      resolvePage2 = resolve
+    })
+
+    mockGet
+      .mockResolvedValueOnce(page(range(1, 30), true))
+      .mockReturnValueOnce(page2Promise)
+
+    const { result } = renderHook(() => useExploreListings(), { wrapper })
+
+    // Wait until page 1 has loaded and the page-2 request is in flight
+    await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2))
+
+    // While page 2 is pending (isFetchingNextPage=true), the guard prevents a third call
+    expect(mockGet).toHaveBeenCalledTimes(2)
+
+    // Resolve page 2 — loading continues normally
+    resolvePage2(page(range(31, 47), false))
+    await waitFor(() => expect(result.current.data).toHaveLength(47))
+    expect(mockGet).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('the ceiling is surfaced, never silent', () => {

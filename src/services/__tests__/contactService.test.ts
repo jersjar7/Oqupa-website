@@ -7,8 +7,8 @@ const { getFunctionsMock, httpsCallableMock, callableFnMock } = vi.hoisted(() =>
   const callableFnMock = vi.fn()
   return {
     callableFnMock,
-    httpsCallableMock: vi.fn(() => callableFnMock),
-    getFunctionsMock: vi.fn(() => ({ __functions: true })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
+    getFunctionsMock: vi.fn((..._args: unknown[]) => ({ __functions: true })),
   }
 })
 
@@ -105,6 +105,27 @@ describe('contactService', () => {
       callableFnMock.mockRejectedValue({ code: 'functions/failed-precondition' })
       await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
         reason: 'needs-phone-verification',
+      })
+    })
+
+    it('throws ContactDenied("listing-has-no-contact") for not-found error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/not-found' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'listing-has-no-contact',
+      })
+    })
+
+    it('throws ContactDenied("needs-email-verification") for permission-denied error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/permission-denied' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'needs-email-verification',
+      })
+    })
+
+    it('throws ContactDenied("needs-phone-reverification") for aborted error', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/aborted' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'needs-phone-reverification',
       })
     })
 

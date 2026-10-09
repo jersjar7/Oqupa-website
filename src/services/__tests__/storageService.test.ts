@@ -10,13 +10,13 @@ const {
 } = vi.hoisted(() => {
   const callableFnMock = vi.fn()
   return {
-    refMock: vi.fn(() => ({ __ref: true })),
+    refMock: vi.fn((..._args: unknown[]) => ({ __ref: true })),
     uploadBytesResumableMock: vi.fn(),
     getDownloadURLMock: vi.fn(),
-    httpsCallableMock: vi.fn(() => callableFnMock),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
     callableFnMock,
     imageCompressionMock: vi.fn(),
-    generateBlurHashMock: vi.fn(() => Promise.resolve('LGF5?xYk^6#M@-5c,1J5@[or[Q6.')),
+    generateBlurHashMock: vi.fn((..._args: unknown[]) => Promise.resolve('LGF5?xYk^6#M@-5c,1J5@[or[Q6.')),
   }
 })
 
@@ -75,7 +75,7 @@ const fakeCtx = { drawImage: vi.fn() }
 const fakeCanvas = {
   width: 0,
   height: 0,
-  getContext: vi.fn(() => fakeCtx),
+  getContext: vi.fn((): typeof fakeCtx | null => fakeCtx),
   toDataURL: vi.fn(() => 'data:image/webp;base64,FAKETHUMB'),
 }
 
@@ -101,7 +101,7 @@ describe('storageService', () => {
     vi.stubGlobal('XMLHttpRequest', function MockXMLHttpRequest(this: MockXHR) {
       Object.assign(this, currentXHR)
       // Rebind send so `this` in the callback references the new instance
-      this.send = function (body: unknown) { currentXHR.send(body) }
+      this.send = (function (body: unknown) { currentXHR.send(body) }) as unknown as MockXHR['send']
       this.open = currentXHR.open
       this.setRequestHeader = currentXHR.setRequestHeader
       this.upload = currentXHR.upload
@@ -246,6 +246,27 @@ describe('storageService', () => {
       )
 
       expect(onProgress).toHaveBeenCalledWith(50)
+    })
+
+    it('does not call onProgress when lengthComputable is false (line 92 false branch)', async () => {
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      generateBlurHashMock.mockResolvedValue('h')
+
+      currentXHR.send = vi.fn(function (_body: unknown) {
+        // Fire progress with lengthComputable: false — onProgress must NOT be called
+        currentXHR.upload.onprogress?.({ lengthComputable: false, loaded: 0, total: 0 })
+        setTimeout(() => currentXHR.onload?.(), 0)
+      })
+
+      const onProgress = vi.fn()
+      await storageService.uploadPropertyPhoto(
+        'prop-1',
+        makeFile(),
+        onProgress,
+        { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }
+      )
+
+      expect(onProgress).not.toHaveBeenCalled()
     })
 
     it('rejects when XHR returns a non-2xx status', async () => {
@@ -529,7 +550,7 @@ describe('storageService', () => {
           set: (fn) => { progressXhr.onload = fn },
           configurable: true,
         })
-        this.send = function (body: unknown) { progressXhr.send(body) }
+        this.send = (function (body: unknown) { progressXhr.send(body) }) as unknown as ReturnType<typeof vi.fn>
       })
 
       const files = [makeFile('a.jpg')]

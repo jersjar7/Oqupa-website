@@ -12,14 +12,14 @@ const {
   return {
     getDocMock: vi.fn(),
     getDocsMock: vi.fn(),
-    queryMock: vi.fn((...args: unknown[]) => ({ __query: args })),
-    collectionMock: vi.fn(() => ({ __col: 'payments' })),
-    docMock: vi.fn((_db: unknown, col: string, id: string) => ({ path: `${col}/${id}` })),
-    whereMock: vi.fn(() => ({ __where: true })),
-    orderByMock: vi.fn(() => ({ __orderBy: true })),
-    limitMock: vi.fn(() => ({ __limit: true })),
-    getFunctionsMock: vi.fn(() => ({ __functions: true })),
-    httpsCallableMock: vi.fn(() => callableFnMock),
+    queryMock: vi.fn((...args: unknown[]): Record<string, unknown> => ({ __query: args })),
+    collectionMock: vi.fn((..._args: unknown[]): Record<string, unknown> => ({ __col: 'payments' })),
+    docMock: vi.fn((...args: unknown[]) => ({ path: `${args[1]}/${args[2]}` })),
+    whereMock: vi.fn((..._args: unknown[]) => ({ __where: true })),
+    orderByMock: vi.fn((..._args: unknown[]) => ({ __orderBy: true })),
+    limitMock: vi.fn((..._args: unknown[]) => ({ __limit: true })),
+    getFunctionsMock: vi.fn((..._args: unknown[]) => ({ __functions: true })),
+    httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
     callableFnMock,
   }
 })
@@ -157,6 +157,23 @@ describe('boostService', () => {
       expect(tiers[0]!.feeInSoles).toBe(5)
       expect(tiers[1]!.feeInSoles).toBe(10)
       expect(tiers[2]!.feeInSoles).toBe(20)
+    })
+
+    it('defaults feeInCentimos, durationDays, and displayName to 0/tierKey when absent (lines 71-77 ?? branches)', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: {
+          sevenDays: {},    // all numeric/string fields omitted
+          fifteenDays: {},
+          thirtyDays: {},
+        },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toHaveLength(3)
+      expect(tiers[0]!.feeInCentimos).toBe(0)    // ?? 0
+      expect(tiers[0]!.durationDays).toBe(0)      // ?? 0
+      expect(tiers[0]!.displayName).toBe('sevenDays')   // ?? tierKey
+      expect(tiers[1]!.displayName).toBe('fifteenDays')
+      expect(tiers[2]!.displayName).toBe('thirtyDays')
     })
   })
 

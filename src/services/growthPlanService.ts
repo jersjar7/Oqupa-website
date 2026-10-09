@@ -42,7 +42,10 @@ function docToDay(id: string, data: Record<string, unknown>): GrowthPlanDay {
     minutes: num(data['minutes']),
     spend: num(data['spend']),
     doneWhen: str(data['doneWhen']),
+    // str() always returns a string (value or fallback); ?? 'jerson' is a dead-code safety net
+    /* v8 ignore start */
     owner: (str(data['owner'], 'jerson') as PlanOwner) ?? 'jerson',
+    /* v8 ignore stop */
     status: (['pending', 'done', 'skipped'] as const).includes(
       rawStatus as PlanStatus,
     )
