@@ -4,7 +4,15 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
-## 2026-10-02 — Olvidé mi contraseña ya no delata cuentas; 50 suites de pruebas
+## 2026-10-11 — Olvidé mi contraseña ya no delata cuentas; pruebas al 92 %
+
+> Prepared for 2026-10-02 but held: website CI was red from 2026-09-11 until 2026-10-08, so none of this reached production until now.
+
+### New Features
+
+- **Números: web views start on 5 Aug 2026.** The views chart now says so under the chart and marks the day with a dashed line. Before it, the website's views were rejected, so totals are app-only; the jump after it is the website being counted, not growth. (Metrics plan A1a.)
+- **Números access:** Sam and Sarah granted; Kaden and Libardo removed (they keep Contenido).
+
 
 ### Bug Fixes
 
@@ -14,6 +22,8 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 ### Technical
 
 - **Dependency audit clean** (Sarah): browserslist updated to clear the high-severity audit failures.
+- **Removed the website's call to the deleted `checkAccountExists` function** — unused since Sarah's fix; the function itself was deleted on 2026-10-02.
+- **Website CI green again** (Samuel, 7–8 Oct): every type and lint error in the test files fixed; coverage measured on unit-testable files only — 92 % of statements.
 - **Test coverage to 50 % of statements** (Samuel, 9–11 Sep): complete suites for the services (auth, firestore, storage, boost, contact, lists, growth plan, content links, team tasks), the hooks, the stores, the schemas and the lib helpers — about fifty commits, each reviewed by a verifier pass that replaced always-passing assertions. No change to what visitors see.
 
 ---
