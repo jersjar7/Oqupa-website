@@ -96,7 +96,7 @@
         }
       },
       {
-        "//": "SPA fallback for every path EXCEPT /assets/. A missing /assets/ file must be a real 404: if it falls back to index.html it comes back as HTTP 200 HTML under the year-long immutable header below, Cloudflare keeps it, and a visitor running the previous release (an old tab, or a browser that kept the old index.html) gets a blank page. Old hashed files disappear on every deploy, so this risk came with every release. Caveat: the real 404 still carries the immutable header, so after a ROLLBACK (old file names come back) purge Cloudflare's cache for /assets/*.",
+        "//": "SPA fallback for every path EXCEPT /assets/. A missing /assets/ file must be a real 404: if it falls back to index.html it comes back as HTTP 200 HTML under the year-long immutable header below, Cloudflare keeps it, and a visitor running the previous release (an old tab, or a browser that kept the old index.html) gets a blank page. Old hashed files disappear on every deploy, so this risk came with every release. Verified on staging 2026-10-11: the real 404 comes back with Cache-Control: no-cache, so nothing keeps it.",
         "source": "/!(assets)",
         "destination": "/index.html"
       },
