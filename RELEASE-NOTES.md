@@ -4,6 +4,14 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-11 (2) — Publicar ya no rompe la página a quien la tiene abierta
+
+### Bug Fixes
+
+- **A release no longer leaves returning visitors on a blank page.** Every page route was cached by browsers for an hour (the no-cache rule only matched a literal `/index.html`), so after a deploy a browser could keep running the previous release and ask for code files the deploy had removed. Those requests got the homepage HTML back as HTTP 200 under the year-long "immutable" header, which Cloudflare then kept. Now: page routes are `no-cache`, a missing `/assets/` file is a real 404, and a page that still fails to load a code file reloads itself once. The function-served paths (`/property/…`, `/descargar`, the Piura city page) keep their own caching.
+
+---
+
 ## 2026-10-11 — Olvidé mi contraseña ya no delata cuentas; pruebas al 92 %
 
 > Prepared for 2026-10-02 but held: website CI was red from 2026-09-11 until 2026-10-08, so none of this reached production until now.
