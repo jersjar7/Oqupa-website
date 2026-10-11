@@ -121,7 +121,10 @@ export const storageService = {
         microCanvas.height = Math.round(img.height * scale)
         microCtx.drawImage(img, 0, 0, microCanvas.width, microCanvas.height)
         const dataUrl = microCanvas.toDataURL('image/webp', 0.6)
+        // toDataURL always returns a valid 'data:...,<base64>' string; ?? '' is a dead-code guard
+        /* v8 ignore start */
         microThumb = dataUrl.split(',')[1] ?? ''
+        /* v8 ignore stop */
       }
     } catch {
       // Non-critical — empty string means no micro-thumbnail

@@ -164,6 +164,22 @@ describe('buildSubtitle', () => {
         availableLeads: 0, leadsLoading: false,
       })).toBe('2 aplicaciones pendientes.')
     })
+
+    it('omits apps side and shows only leads when apps is zero (line 80 false branch)', () => {
+      expect(buildSubtitle({
+        isAdmin: true, isRealtor: true,
+        pendingApps: 0, pendingAppsLoading: false,
+        availableLeads: 3, leadsLoading: false,
+      })).toBe('3 oportunidades disponibles.')
+    })
+
+    it('treats undefined pendingApps/availableLeads as zero (lines 76-77 ?? 0 branches)', () => {
+      expect(buildSubtitle({
+        isAdmin: true, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: undefined, leadsLoading: false,
+      })).toBe('Todo al día. No hay acciones pendientes.')
+    })
   })
 
   describe('admin only', () => {
@@ -190,6 +206,14 @@ describe('buildSubtitle', () => {
         availableLeads: undefined, leadsLoading: false,
       })).toBe('Todo al día. No hay aplicaciones pendientes.')
     })
+
+    it('treats undefined pendingApps as zero (line 87 ?? 0 branch)', () => {
+      expect(buildSubtitle({
+        isAdmin: true, isRealtor: false,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: undefined, leadsLoading: false,
+      })).toBe('Todo al día. No hay aplicaciones pendientes.')
+    })
   })
 
   describe('realtor only', () => {
@@ -207,6 +231,40 @@ describe('buildSubtitle', () => {
         pendingApps: undefined, pendingAppsLoading: false,
         availableLeads: 0, leadsLoading: false,
       })).toBe('Sin oportunidades nuevas por ahora. Revisa el resumen de tus anuncios abajo.')
+    })
+
+    it('singular lead (line 98)', () => {
+      expect(buildSubtitle({
+        isAdmin: false, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: 1, leadsLoading: false,
+      })).toBe('1 oportunidad disponible para agentes.')
+    })
+
+    it('loading state (line 94)', () => {
+      expect(buildSubtitle({
+        isAdmin: false, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: undefined, leadsLoading: true,
+      })).toBe('Cargando oportunidades disponibles.')
+    })
+
+    it('treats undefined availableLeads as zero (line 95 ?? 0 branch)', () => {
+      expect(buildSubtitle({
+        isAdmin: false, isRealtor: true,
+        pendingApps: undefined, pendingAppsLoading: false,
+        availableLeads: undefined, leadsLoading: false,
+      })).toBe('Sin oportunidades nuevas por ahora. Revisa el resumen de tus anuncios abajo.')
+    })
+  })
+
+  describe('admin only — loading state (line 86)', () => {
+    it('shows loading message when pendingAppsLoading is true for admin-only', () => {
+      expect(buildSubtitle({
+        isAdmin: true, isRealtor: false,
+        pendingApps: undefined, pendingAppsLoading: true,
+        availableLeads: undefined, leadsLoading: false,
+      })).toBe('Cargando aplicaciones pendientes.')
     })
   })
 

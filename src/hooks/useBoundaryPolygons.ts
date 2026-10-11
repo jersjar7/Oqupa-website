@@ -71,7 +71,11 @@ export function useBoundaryPolygons(): {
         }
       }
 
+      // cancelled=true here requires cleanup to fire between loop completion and this check —
+      // a race-window that cannot be reproduced reliably in unit tests (line 42 handles it first)
+      /* v8 ignore start */
       if (!cancelled) {
+      /* v8 ignore stop */
         polygonsRef.current = allPolygons
         setIsLoaded(true)
       }

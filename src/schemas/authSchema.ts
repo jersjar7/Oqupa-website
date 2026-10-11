@@ -82,7 +82,10 @@ export const phoneSchema = z.object({
 }).refine((data) => {
   if (data.countryCode === '+51') return data.phoneNumber.length === 9
   if (data.countryCode === '+1') return data.phoneNumber.length === 10
+  // z.enum(['+51', '+1']) prevents any other value; this line is unreachable
+  /* v8 ignore start */
   return false
+  /* v8 ignore stop */
 }, {
   message: 'Ingresa un número válido para el país seleccionado',
   path: ['phoneNumber'],

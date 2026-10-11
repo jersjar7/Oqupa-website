@@ -25,8 +25,13 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(data: ForgotPasswordFormData) {
     setError(null)
+    // Always attempt the reset and show the same confirmation regardless of
+    // outcome — Firebase silently no-ops for an address with no account, so
+    // this page never confirms whether a given email has one (email
+    // enumeration protection). See docs/forgot-password-enumeration-decision.md.
+    const email = data.email.trim()
     try {
-      await authService.requestPasswordReset(data.email)
+      await authService.requestPasswordReset(email)
       setSent(true)
     } catch (err) {
       const errorInfo = getForgotPasswordAuthError(err)
@@ -62,6 +67,15 @@ export default function ForgotPasswordPage() {
           </p>
           <p className="mt-1 text-sm text-text-tertiary">
             Si no lo encuentras, revisa tu bandeja de spam.
+          </p>
+          <p className="mt-4 text-sm text-text-secondary">
+            ¿No llega? Quizá no tienes cuenta con ese correo.{' '}
+            <Link
+              to="/app/register"
+              className="font-medium text-secondary hover:text-secondary-hover"
+            >
+              Crear cuenta
+            </Link>
           </p>
           <Link
             to="/app/login"

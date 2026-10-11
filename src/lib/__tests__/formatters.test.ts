@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatShortPrice } from '../formatters'
+import { formatShortPrice, getPriceSuffix } from '../formatters'
 import { Currency } from '@/types/enums'
 
 /**
@@ -93,5 +93,35 @@ describe('the two platforms agree', () => {
 
   it.each(shared)('%d %s renders as %s on both platforms', (amount, currency, expected) => {
     expect(formatShortPrice(amount, currency)).toBe(expected)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getPriceSuffix
+// ---------------------------------------------------------------------------
+describe('getPriceSuffix', () => {
+  it('returns empty string for venta', () => {
+    expect(getPriceSuffix('venta')).toBe('')
+  })
+
+  it('returns "/mes" for alquiler longTerm', () => {
+    expect(getPriceSuffix('alquiler', 'longTerm')).toBe('/mes')
+  })
+
+  it('returns "/noche" for alquiler shortTerm', () => {
+    expect(getPriceSuffix('alquiler', 'shortTerm')).toBe('/noche')
+  })
+
+  it('defaults to "/mes" for alquiler when rentalDurationType is omitted (backward compat)', () => {
+    expect(getPriceSuffix('alquiler')).toBe('/mes')
+  })
+
+  it('returns empty string for any non-alquiler operationType', () => {
+    expect(getPriceSuffix('cualquier-otro')).toBe('')
+  })
+
+  it('falls back to "/mes" when rentalDurationType is an unknown key not in the map', () => {
+    // RENTAL_DURATION_PRICE_SUFFIX has no 'custom' key → ?? '/mes' fallback fires
+    expect(getPriceSuffix('alquiler', 'custom' as unknown as import('@/types/enums').RentalDurationType)).toBe('/mes')
   })
 })

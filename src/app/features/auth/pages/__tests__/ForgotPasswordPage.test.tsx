@@ -96,11 +96,49 @@ describe('ForgotPasswordPage', () => {
         )
       })
     })
+
+    it('trims the email before sending', async () => {
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: '  test@example.com  ' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(mockAuthService.requestPasswordReset).toHaveBeenCalledWith('test@example.com')
+      })
+    })
+
+    it('shows the same confirmation regardless of whether the account exists', async () => {
+      // No checkAccountExists call exists anymore — the page never learns,
+      // and never shows, whether a given email has an account. This is the
+      // enumeration-protection behavior from docs/forgot-password-enumeration-decision.md.
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'nobody@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/correo enviado/i)).toBeDefined()
+      })
+      expect(screen.queryByText(/no encontramos una cuenta/i)).toBeNull()
+    })
+
+    it('offers a "maybe you don\'t have an account" hint with a register link', async () => {
+      renderPage()
+      fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
+        target: { value: 'test@example.com' },
+      })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/no tienes cuenta con ese correo/i)).toBeDefined()
+      })
+      expect(screen.getByRole('link', { name: /crear cuenta/i })).toBeDefined()
+    })
   })
 
   describe('error handling', () => {
     it('shows error message on failed request', async () => {
-      mockAuthService.requestPasswordReset.mockRejectedValue(new Error('not-found'))
+      mockAuthService.requestPasswordReset.mockRejectedValue(new Error('network error'))
       renderPage()
       fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
         target: { value: 'test@example.com' },

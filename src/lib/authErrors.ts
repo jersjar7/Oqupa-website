@@ -152,8 +152,10 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
   switch (code) {
     case 'auth/too-many-requests':
       return { message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.', isRetryable: false }
-    case 'auth/user-not-found':
-      return { message: 'No existe una cuenta con ese correo.', isRetryable: true }
+    // auth/user-not-found is deliberately NOT special-cased here — doing so
+    // would tell the caller whether the address has an account, which is the
+    // enumeration leak docs/forgot-password-enumeration-decision.md fixed.
+    // It falls through to the generic default message below.
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:

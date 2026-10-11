@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { buildImageUrl, thumbnail, card, fullSize, profilePhoto, shareCard, imageUrl } from '../imageUrl'
 
 // By default, Vitest sets import.meta.env.PROD = false (dev/test mode),
@@ -226,5 +226,59 @@ describe('imageUrl', () => {
       expect(imageUrl.shareCard).toBe(shareCard)
       expect(typeof imageUrl.isLegacyUrl).toBe('function')
     })
+  })
+})
+
+// ── Production-mode tests (MODE === 'production') ────────────────────────────
+//
+// The module-level constant `isProductionDeploy` is evaluated at import time.
+// To test the production code path, we must stub the env var and reload the
+// module so the const is re-evaluated.
+
+describe('buildImageUrl — production mode (cdn-cgi paths)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.stubEnv('MODE', 'production')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('uses cdn-cgi Image Transformation URL when width is provided in production', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    const url = build('property-photos/abc/123.webp', { width: 300 })
+    expect(url).toBe('/cdn-cgi/image/w=300,f=auto,q=80/https://images.oqupa.com/property-photos/abc/123.webp')
+  })
+
+  it('uses cdn-cgi URL with custom quality in production', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    const url = build('property-photos/abc/123.webp', { width: 1200, quality: 85 })
+    expect(url).toBe('/cdn-cgi/image/w=1200,f=auto,q=85/https://images.oqupa.com/property-photos/abc/123.webp')
+  })
+
+  it('defaults quality to 80 when only width is provided', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    const url = build('photos/test.webp', { width: 400 })
+    expect(url).toContain('q=80')
+  })
+
+  it('falls back to plain URL in production when no opts provided', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    const url = build('photos/test.webp')
+    // No opts.width → no cdn-cgi transformation
+    expect(url).toBe('https://images.oqupa.com/photos/test.webp')
+  })
+
+  it('returns legacy https:// URLs unchanged even in production', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    const legacy = 'https://firebasestorage.googleapis.com/v0/b/example/o/photo.jpg'
+    expect(build(legacy, { width: 300 })).toBe(legacy)
+  })
+
+  it('returns empty string for empty ref in production', async () => {
+    const { buildImageUrl: build } = await import('../imageUrl')
+    expect(build('', { width: 300 })).toBe('')
   })
 })

@@ -100,7 +100,10 @@ export function initTikTokPixel(): void {
       if (first?.parentNode) {
         first.parentNode.insertBefore(script, first)
       } else {
-        (d.head || d.documentElement).appendChild(script)
+        // d.head is always defined in jsdom; d.documentElement fallback is for bare-document environments
+        /* v8 ignore start */
+        ;(d.head || d.documentElement).appendChild(script)
+        /* v8 ignore stop */
       }
     }
     ttq.load(PIXEL_ID)

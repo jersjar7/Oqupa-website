@@ -213,7 +213,10 @@ function bugReportDutyName(): string {
     Saturday: 'Sarah',
     Sunday: 'Jerson',
   }
+  // duty covers all 7 weekdays; || 'Jerson' is a dead-code safety guard
+  /* v8 ignore start */
   return duty[weekday] || 'Jerson'
+  /* v8 ignore stop */
 }
 
 export const firestoreService = {

@@ -140,4 +140,158 @@ describe('usePhotoQueue', () => {
     expect(submit.existingPhotoUrls[0]).toBe('c')
     expect(submit.existingPhotoBlurHashes[0]).toBe('hc')
   })
+
+  it('falls back to empty string when blurHash array is shorter than urls array', () => {
+    // existingPhotoBlurHashes has fewer entries than existingPhotoUrls
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['a', 'b', 'c'],
+        existingPhotoBlurHashes: ['ha'], // only one hash for 3 photos
+        photos: [],
+      })
+    )
+
+    const items = result.current.items
+    expect(items[0]).toMatchObject({ type: 'existing', url: 'a', blurHash: 'ha' })
+    expect(items[1]).toMatchObject({ type: 'existing', url: 'b', blurHash: '' })
+    expect(items[2]).toMatchObject({ type: 'existing', url: 'c', blurHash: '' })
+  })
+
+  it('reorder ignores out-of-bounds fromIndex', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['a', 'b'],
+        existingPhotoBlurHashes: ['ha', 'hb'],
+        photos: [],
+      })
+    )
+
+    const before = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
+    act(() => result.current.reorder(-1, 0)) // invalid fromIndex
+    const after = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
+    expect(after).toEqual(before) // no change
+  })
+
+  it('reorder ignores out-of-bounds toIndex', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['a', 'b'],
+        existingPhotoBlurHashes: ['ha', 'hb'],
+        photos: [],
+      })
+    )
+
+    const before = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
+    act(() => result.current.reorder(0, 99)) // invalid toIndex
+    const after = result.current.items.map((i) => (i.type === 'existing' ? i.url : ''))
+    expect(after).toEqual(before) // no change
+  })
+
+  it('reorder is a no-op when fromIndex === toIndex', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['a', 'b', 'c'],
+        existingPhotoBlurHashes: ['ha', 'hb', 'hc'],
+        photos: [],
+      })
+    )
+
+    const before = result.current.items
+    act(() => result.current.reorder(1, 1))
+    expect(result.current.items).toBe(before) // same reference (returned prev)
+  })
+
+  it('addFiles does nothing when already at MAX_PHOTOS cap', () => {
+    const seedFiles = Array.from({ length: 25 }, (_, i) => fakeFile(`s${i}.jpg`))
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: [],
+        existingPhotoBlurHashes: [],
+        photos: seedFiles,
+      })
+    )
+
+    act(() => {
+      result.current.addFiles([fakeFile('overflow.jpg')])
+    })
+
+    expect(result.current.items).toHaveLength(25)
+  })
+
+  it('previewUrls map contains one entry per unique new-file', () => {
+    const file1 = fakeFile('photo1.jpg')
+    const file2 = fakeFile('photo2.jpg')
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: [],
+        existingPhotoBlurHashes: [],
+        photos: [file1, file2],
+      })
+    )
+
+    expect(result.current.previewUrls.size).toBe(2)
+    expect(result.current.previewUrls.has(file1)).toBe(true)
+    expect(result.current.previewUrls.has(file2)).toBe(true)
+  })
+
+  it('previewUrls does not include entries for existing photos', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['existing-key'],
+        existingPhotoBlurHashes: ['hash'],
+        photos: [],
+      })
+    )
+
+    expect(result.current.previewUrls.size).toBe(0)
+  })
+
+  it('toSubmitData with only existing photos returns empty photos array', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: ['x', 'y'],
+        existingPhotoBlurHashes: ['hx', 'hy'],
+        photos: [],
+      })
+    )
+
+    const submit = result.current.toSubmitData()
+    expect(submit.photos).toHaveLength(0)
+    expect(submit.existingPhotoUrls).toEqual(['x', 'y'])
+    expect(submit.existingPhotoBlurHashes).toEqual(['hx', 'hy'])
+    expect(submit.photoOrder).toEqual([
+      { type: 'existing', index: 0 },
+      { type: 'existing', index: 1 },
+    ])
+  })
+
+  it('toSubmitData with only new photos returns empty existingPhotoUrls', () => {
+    const file = fakeFile('photo.jpg')
+    const { result } = renderHook(() =>
+      usePhotoQueue({
+        existingPhotoUrls: [],
+        existingPhotoBlurHashes: [],
+        photos: [file],
+      })
+    )
+
+    const submit = result.current.toSubmitData()
+    expect(submit.photos).toEqual([file])
+    expect(submit.existingPhotoUrls).toHaveLength(0)
+    expect(submit.existingPhotoBlurHashes).toHaveLength(0)
+    expect(submit.photoOrder).toEqual([{ type: 'new', index: 0 }])
+  })
+
+  it('starts with empty queue', () => {
+    const { result } = renderHook(() =>
+      usePhotoQueue({ existingPhotoUrls: [], existingPhotoBlurHashes: [], photos: [] })
+    )
+
+    expect(result.current.items).toHaveLength(0)
+    expect(result.current.previewUrls.size).toBe(0)
+    const submit = result.current.toSubmitData()
+    expect(submit.photos).toHaveLength(0)
+    expect(submit.existingPhotoUrls).toHaveLength(0)
+    expect(submit.photoOrder).toHaveLength(0)
+  })
 })

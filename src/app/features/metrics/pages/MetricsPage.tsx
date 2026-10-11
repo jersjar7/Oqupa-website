@@ -6,6 +6,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,6 +26,11 @@ const COLORS = {
 }
 
 const SPARKLINE_DAYS = 30
+
+// Website views were rejected by recordListingView until this day (App Check
+// had no web key), so every view before it is app-only. A jump after it is the
+// website finally being counted, not growth.
+const WEB_VIEWS_START = '2026-08-05'
 
 // ─── Formatting ─────────────────────────────────────────────────────────────
 
@@ -123,10 +129,12 @@ interface ChartCardProps {
   heightClass?: string
   /** Plain-language explanation of how to read this chart. */
   help?: string
+  /** A caveat that must be seen, not hidden behind the help tip. */
+  note?: string
   children: React.ReactNode
 }
 
-function ChartCard({ title, subtitle, heightClass = 'h-64', help, children }: ChartCardProps) {
+function ChartCard({ title, subtitle, heightClass = 'h-64', help, note, children }: ChartCardProps) {
   return (
     <div className="rounded-2xl border border-border bg-white p-5 shadow-light">
       <h2 className="flex items-center font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">
@@ -137,6 +145,7 @@ function ChartCard({ title, subtitle, heightClass = 'h-64', help, children }: Ch
         <p className="mt-0.5 font-sans text-xs text-text-tertiary">{subtitle}</p>
       )}
       <div className={`mt-4 w-full ${heightClass}`}>{children}</div>
+      {note && <p className="mt-3 font-sans text-xs text-text-tertiary">{note}</p>}
     </div>
   )
 }
@@ -235,6 +244,9 @@ export default function MetricsPage() {
   useSetPageMeta({ title: 'Números', subtitle, accessArea: 'metrics' })
 
   const series = useMemo(() => buildSeries(history), [history])
+  // First snapshot on or after the web-views start, in the chart's MM-DD axis.
+  // Absent once that date scrolls out of the history window.
+  const webViewsStartTick = history.find((s) => s.date >= WEB_VIEWS_START)?.date.slice(5)
 
   if (isLoading) {
     return (
@@ -357,9 +369,10 @@ export default function MetricsPage() {
       <div className="mt-3">
         <ChartCard
           title="Vistas y contactos"
-          help="Acumulado diario de vistas a listados (verde) y clicks de contacto (naranja). La distancia entre las dos líneas es la brecha entre interés y acción. Los datos empiezan el día del primer snapshot."
+          help="Acumulado diario de vistas a listados (verde) y clicks de contacto (naranja). La distancia entre las dos líneas es la brecha entre interés y acción. Los datos empiezan el día del primer snapshot. Las vistas desde la web solo se cuentan desde el 5 de agosto de 2026; antes, solo las de la app."
           subtitle="Acumulado diario desde el primer snapshot — no hay reconstrucción histórica"
           heightClass="h-72"
+          note="Las vistas desde la web se cuentan solo desde el 5 de agosto de 2026. Antes de esa fecha, el total solo incluye vistas desde la app: el salto posterior no es crecimiento."
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
@@ -373,6 +386,14 @@ export default function MetricsPage() {
               <Legend iconType="plainline" wrapperStyle={{ fontSize: 12 }} />
               <Line type="stepAfter" dataKey="totalViews" stroke={COLORS.secondary} strokeWidth={2} dot={false} name="Vistas" isAnimationActive={false} />
               <Line type="stepAfter" dataKey="totalClicks" stroke={COLORS.primary} strokeWidth={2} dot={false} name="Contactos" isAnimationActive={false} />
+              {webViewsStartTick && (
+                <ReferenceLine
+                  x={webViewsStartTick}
+                  stroke={COLORS.axis}
+                  strokeDasharray="4 4"
+                  label={{ value: 'Web desde aquí', position: 'insideTopLeft', fill: COLORS.axis, fontSize: 11 }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
