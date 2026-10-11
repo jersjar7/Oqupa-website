@@ -295,22 +295,6 @@ describe('getForgotPasswordAuthError', () => {
     expect(info.message).toMatch(/verifica tu dirección/i)
   })
 
-  it('maps functions/resource-exhausted to a rate-limit message', () => {
-    const info = getForgotPasswordAuthError({ code: 'functions/resource-exhausted' })
-    expect(info.message).toMatch(/demasiados intentos/i)
-    expect(info.isRetryable).toBe(false)
-  })
-
-  it.each(['functions/unavailable', 'functions/deadline-exceeded', 'functions/internal'])(
-    'maps %s to a server-connection message rather than "verify your email"',
-    (code) => {
-      const info = getForgotPasswordAuthError({ code })
-      expect(info.message).toMatch(/conexión con el servidor/i)
-      expect(info.message).not.toMatch(/verifica tu dirección/i)
-      expect(info.isRetryable).toBe(true)
-    }
-  )
-
   it('maps network-request-failed to a retryable connectivity message', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/network-request-failed' })
     expect(info.message).toMatch(/conexión a internet/i)

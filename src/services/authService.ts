@@ -120,22 +120,6 @@ export const authService = {
     return fetchSignInMethodsForEmail(auth, email)
   },
 
-  // Server-side "does this email have an account" check via the
-  // `checkAccountExists` Cloud Function. Unlike getSignInMethods above,
-  // this is reliable even with Email Enumeration Protection enabled on the
-  // Auth project — that setting makes fetchSignInMethodsForEmail always
-  // resolve to an empty array, client-side, regardless of whether the
-  // account exists. Only the Admin SDK (server-side) can answer this.
-  async checkAccountExists(email: string): Promise<boolean> {
-    const functions = getFunctions(undefined, 'southamerica-east1')
-    const checkAccountExists = httpsCallable<{ email: string }, { exists: boolean }>(
-      functions,
-      'checkAccountExists',
-    )
-    const result = await checkAccountExists({ email })
-    return result.data.exists
-  },
-
   async sendPasswordSetupEmail(email: string) {
     // DEV is always true in vitest; production URL branch is unreachable in tests
     /* v8 ignore start */

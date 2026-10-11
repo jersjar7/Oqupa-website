@@ -291,24 +291,6 @@ describe('authService', () => {
     })
   })
 
-  // ── checkAccountExists ───────────────────────────────────────────────────
-
-  describe('checkAccountExists', () => {
-    it('calls the checkAccountExists Cloud Function with the email and returns true when it exists', async () => {
-      callableInvokerMock.mockResolvedValue({ data: { exists: true } })
-      const result = await authService.checkAccountExists('user@test.com')
-      expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'checkAccountExists')
-      expect(callableInvokerMock).toHaveBeenCalledWith({ email: 'user@test.com' })
-      expect(result).toBe(true)
-    })
-
-    it('returns false when the Cloud Function reports the account does not exist', async () => {
-      callableInvokerMock.mockResolvedValue({ data: { exists: false } })
-      const result = await authService.checkAccountExists('ghost@test.com')
-      expect(result).toBe(false)
-    })
-  })
-
   // ── getSignInMethods ─────────────────────────────────────────────────────
 
   describe('getSignInMethods', () => {
