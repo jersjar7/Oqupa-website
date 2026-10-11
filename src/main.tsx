@@ -31,6 +31,23 @@ window.addEventListener('unhandledrejection', (event) => {
   AnalyticsLogger.errorOccurred(String(event.reason), 'unhandledrejection')
 })
 
+// After a deploy, a tab still running the previous release can ask for a code
+// file that no longer exists. Reload once to pick up the new release instead
+// of leaving a blank screen. The timestamp stops a reload loop if the file is
+// genuinely missing in the new release too.
+const RELOAD_KEY = 'oqupa:preload-reload-at'
+window.addEventListener('vite:preloadError', (event) => {
+  try {
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0)
+    if (Date.now() - last < 60_000) return
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
+  } catch {
+    return
+  }
+  event.preventDefault()
+  window.location.reload()
+})
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

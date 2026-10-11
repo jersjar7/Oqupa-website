@@ -96,11 +96,22 @@
         }
       },
       {
-        "source": "**",
+        "//": "SPA fallback for every path EXCEPT /assets/. A missing /assets/ file must be a real 404: if it falls back to index.html it comes back as HTTP 200 HTML under the year-long immutable header below, Cloudflare keeps it, and a visitor running the previous release (an old tab, or a browser that kept the old index.html) gets a blank page. Old hashed files disappear on every deploy, so this risk came with every release.",
+        "regex": "^/(?!assets/).*$",
         "destination": "/index.html"
       }
     ],
     "headers": [
+      {
+        "//": "The app's HTML must never be reused without asking the server first, or a browser keeps running the old release after a deploy and asks for files that no longer exist. The index.html rule below only matches a literal /index.html request; every route the SPA fallback serves (/, /explorar, /app/...) was getting Firebase's default max-age=3600. Excludes /assets/ (immutable) and the function-served paths, which set their own caching (/descargar's Vary header is a known landmine).",
+        "regex": "^/(?!assets/|property/|descargar|casas-en-venta-en-piura)[^.]*$",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
       {
         "source": "index.html",
         "headers": [
