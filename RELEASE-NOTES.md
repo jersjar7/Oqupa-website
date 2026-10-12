@@ -4,6 +4,14 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-11 (3) — Números en pestañas
+
+### New Features
+
+- **The Números tab is rebuilt as five tabs** — Resumen, Buscadores, Oferta, Dinero, Publicidad — each answering one question, with one glance card per tab, line charts for trends and one switch for 7 days / 30 days / 90 days / all time. Adds app installs and uninstalls, web and app users, install sources, real contacts and boost checkouts. The team's own accounts are left out of every count. Reads `dashboardSeries/current`, rebuilt nightly by the new `buildDashboardSeries` Cloud Function; if that is missing, the previous page renders unchanged.
+
+---
+
 ## 2026-10-11 (2) — Publicar ya no rompe la página a quien la tiene abierta
 
 ### Bug Fixes
