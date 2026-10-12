@@ -15,6 +15,8 @@ import {
 import { InfoTip, Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useNumbersData, type MetricsSnapshot } from '@/hooks/useNumbersData'
+import { useDashboardSeries, type DashboardSeries } from '@/hooks/useDashboardSeries'
+import NumbersDashboard from '../components/NumbersDashboard'
 
 // Brand tokens (mirrors src/index.css). Two series max on any chart: warm
 // primary for the "supply / money" side, cool secondary for the "demand" side.
@@ -232,7 +234,35 @@ function sparkOf(series: SeriesRow[], key: keyof SeriesRow): SparkPoint[] {
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
+/**
+ * The tabbed page (7 / 30 / 90 days / all time), once the nightly
+ * buildDashboardSeries job has written its first document. Until then — and on
+ * any read failure — the original single-page dashboard below stays in place,
+ * so the tab never goes blank while the new data source is rolled out.
+ */
 export default function MetricsPage() {
+  const { data, isLoading } = useDashboardSeries()
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <Spinner size="lg" />
+        <p className="text-sm text-text-secondary">Cargando métricas...</p>
+      </div>
+    )
+  }
+  return data ? <TabbedMetrics data={data} /> : <LegacyMetricsPage />
+}
+
+function TabbedMetrics({ data }: { data: DashboardSeries }) {
+  useSetPageMeta({
+    title: 'Números',
+    subtitle: `Actualizado ${data.generatedAt.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}`,
+    accessArea: 'metrics',
+  })
+  return <NumbersDashboard data={data} />
+}
+
+function LegacyMetricsPage() {
   const { latest, history, isLoading, error } = useNumbersData()
 
   const subtitle = error
