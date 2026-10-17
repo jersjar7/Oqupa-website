@@ -32,7 +32,10 @@ vi.mock('@/hooks/useProperty', () => ({ useProperty: () => mockProperty }))
 vi.mock('@/hooks/useRecordListingView', () => ({ useRecordListingView: () => ({ record: vi.fn() }) }))
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: () => {} }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => ({ firebaseUser: null, user: null }) }))
-vi.mock('@/lib/analytics', () => ({ AnalyticsLogger: { listingViewed: vi.fn(), event: vi.fn() } }))
+vi.mock('@/lib/analytics', () => ({
+  AnalyticsLogger: { listingViewed: vi.fn(), event: vi.fn() },
+  priceBandFor: () => undefined,
+}))
 vi.mock('@/services/contactService', () => ({
   contactService: { getListingContact: vi.fn() },
   ContactDenied: class extends Error {},

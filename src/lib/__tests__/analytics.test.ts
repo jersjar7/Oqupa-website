@@ -1,5 +1,5 @@
 // analytics.ts has no browser API dependencies — pure function calls
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -202,19 +202,47 @@ describe('AnalyticsLogger', () => {
     })
   })
 
+  // Matches the app: share_listing for links, share_listing_branded for image
+  // cards. share_method is website-only — the app has one way to share.
   describe('shareListing', () => {
-    it('logs share_listing to GA with listingId and method', () => {
-      AnalyticsLogger.shareListing('listing-abc', 'whatsapp')
+    it('logs share_listing with listing_id, operation_type and share_method', () => {
+      AnalyticsLogger.shareListing('listing-abc', 'venta', 'native')
+      expect(logEventMock).toHaveBeenCalledTimes(1)
       expect(logEventMock).toHaveBeenCalledWith(
         expect.anything(),
         'share_listing',
-        { listing_id: 'listing-abc', share_method: 'whatsapp' },
+        { listing_id: 'listing-abc', operation_type: 'venta', share_method: 'native' },
       )
     })
 
     it('does not call Meta or TikTok', () => {
-      AnalyticsLogger.shareListing('listing-abc', 'copy')
+      AnalyticsLogger.shareListing('listing-abc', 'alquiler', 'clipboard')
       expect(trackMetaMock).not.toHaveBeenCalled()
+      expect(trackMetaCustomMock).not.toHaveBeenCalled()
+      expect(trackTikTokMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('shareListingBranded', () => {
+    it('logs share_listing_branded with card_format and share_method', () => {
+      AnalyticsLogger.shareListingBranded('listing-abc', 'venta', 'story', 'download')
+      expect(logEventMock).toHaveBeenCalledTimes(1)
+      expect(logEventMock).toHaveBeenCalledWith(
+        expect.anything(),
+        'share_listing_branded',
+        {
+          listing_id: 'listing-abc',
+          operation_type: 'venta',
+          card_format: 'story',
+          share_method: 'download',
+        },
+      )
+    })
+
+    it('does not call Meta or TikTok', () => {
+      AnalyticsLogger.shareListingBranded('listing-abc', 'venta', 'square', 'native')
+      expect(trackMetaMock).not.toHaveBeenCalled()
+      expect(trackMetaCustomMock).not.toHaveBeenCalled()
       expect(trackTikTokMock).not.toHaveBeenCalled()
     })
   })
@@ -662,5 +690,71 @@ describe('AnalyticsLogger — A0 additions', () => {
       expectNoAdPlatformCalls()
       expect(logEventMock).not.toHaveBeenCalled()
     })
+  })
+})
+
+// ── Debug visibility (metrics plan A3) ───────────────────────────────────────
+// oqupa-staging has no GA property, so in dev the console line is the only
+// proof an event left. Same format as the app's `Analytics: <name> <params>`.
+
+describe('AnalyticsLogger — dev console line', () => {
+  let debugSpy: MockInstance<typeof console.debug>
+
+  beforeEach(() => {
+    logEventMock.mockReset()
+    setUserPropertiesMock.mockReset()
+    debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    debugSpy.mockRestore()
+    vi.unstubAllEnvs()
+  })
+
+  it('prints one line per Firebase event, with the params actually sent', () => {
+    AnalyticsLogger.contactRevealed('L1', { district: ' castilla ', priceBand: '1000-1500', priceCurrency: 'PEN' })
+    expect(debugSpy).toHaveBeenCalledTimes(1)
+    expect(debugSpy).toHaveBeenCalledWith(
+      'Analytics: contact_revealed {"listing_id":"L1","district":"Castilla","price_band":"1000-1500","price_currency":"PEN"}',
+    )
+  })
+
+  it('prints events that bypass the cleaner too (page_view, share_listing, login)', () => {
+    AnalyticsLogger.pageView('Home')
+    AnalyticsLogger.shareListing('L1', 'venta', 'native')
+    AnalyticsLogger.loginCompleted('email')
+    expect(debugSpy.mock.calls.map((c) => c[0])).toEqual([
+      'Analytics: page_view {"page_title":"Home"}',
+      'Analytics: share_listing {"listing_id":"L1","operation_type":"venta","share_method":"native"}',
+      'Analytics: login {"method":"email"}',
+    ])
+  })
+
+  it('prints {} for an event with no params', () => {
+    AnalyticsLogger.realtorApplicationSubmitted()
+    expect(debugSpy).toHaveBeenCalledWith('Analytics: realtor_application_submitted {}')
+  })
+
+  it('prints one line per user property sent', () => {
+    AnalyticsLogger.setUserProperties({ userSegment: 'buyer', isRealtor: false })
+    expect(debugSpy.mock.calls.map((c) => c[0])).toEqual([
+      'Analytics: user_segment buyer',
+      'Analytics: is_realtor false',
+    ])
+  })
+
+  it('prints nothing when no user property is sent', () => {
+    AnalyticsLogger.setUserProperties({})
+    expect(debugSpy).not.toHaveBeenCalled()
+  })
+
+  it('prints nothing outside dev, but still sends', () => {
+    vi.stubEnv('DEV', false)
+    AnalyticsLogger.pageView('Home')
+    AnalyticsLogger.realtorApplicationSubmitted()
+    AnalyticsLogger.setUserProperties({ userSegment: 'buyer' })
+    expect(debugSpy).not.toHaveBeenCalled()
+    expect(logEventMock).toHaveBeenCalledTimes(2)
+    expect(setUserPropertiesMock).toHaveBeenCalledTimes(1)
   })
 })

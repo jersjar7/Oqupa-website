@@ -18,6 +18,16 @@ export type BoostOfferPlacement = 'create' | 'edit' | 'reminder'
 /** Who tapped "contact". Sent as `contact_tapped.auth_state`. */
 export type ContactTapAuthState = 'guest' | 'unverified' | 'verified'
 
+/** Card shape on `share_listing_branded.card_format`, as in the app. */
+export type ShareCardFormat = 'story' | 'square'
+
+/**
+ * How a share left the page, sent as `share_method`. Website-only: the app
+ * has one way to share, so its events carry no method.
+ */
+export type LinkShareMethod = 'native' | 'clipboard'
+export type CardShareMethod = 'native' | 'download'
+
 /** Firebase-only extras on `listing_viewed` and `contact_revealed`. */
 export interface ListingSegmentParams {
   district?: string | null
@@ -57,13 +67,31 @@ function cleanParams(params: Record<string, ParamValue>): Record<string, string 
 }
 
 /**
+ * One console line per event or user property, dev builds only.
+ *
+ * `oqupa-staging` has no Google Analytics property, so in dev this line is the
+ * only way to see that an event left at the right moment with the right
+ * params. Same format as the app's `_printInDebug`. Production builds print
+ * nothing.
+ */
+function printInDev(line: string) {
+  if (import.meta.env.DEV) console.debug(`Analytics: ${line}`)
+}
+
+/** Every Firebase event goes through here, so every one gets its dev line. */
+function sendFirebaseEvent(name: string, params?: Record<string, string | number>) {
+  printInDev(`${name} ${JSON.stringify(params ?? {})}`)
+  if (params) logEvent(analytics, name, params)
+  else logEvent(analytics, name)
+}
+
+/**
  * Firebase-only send. Nothing that goes through here reaches Meta or TikTok;
  * the ad platforms get only the four events below that call them by hand.
  */
 function logFirebaseEvent(name: string, params: Record<string, ParamValue> = {}) {
   const cleaned = cleanParams(params)
-  if (Object.keys(cleaned).length === 0) logEvent(analytics, name)
-  else logEvent(analytics, name, cleaned)
+  sendFirebaseEvent(name, Object.keys(cleaned).length === 0 ? undefined : cleaned)
 }
 
 /**
@@ -182,7 +210,7 @@ function filterSetParams(filters: FilterSetParams): Record<string, ParamValue> {
  */
 export const AnalyticsLogger = {
   pageView: (pageName: string) =>
-    logEvent(analytics, 'page_view', { page_title: pageName }),
+    sendFirebaseEvent('page_view', { page_title: pageName }),
 
   /**
    * `district` (second argument) is Meta/TikTok's `content_category`, raw as
@@ -215,7 +243,7 @@ export const AnalyticsLogger = {
   },
 
   listingCreated: (operationType: string) => {
-    logEvent(analytics, 'listing_created', { operation_type: operationType })
+    sendFirebaseEvent('listing_created', { operation_type: operationType })
     // The conversion that actually matters. Meta has no standard event for
     // "someone listed their house", so this is a custom one — custom events can
     // still be optimised towards, and an honest name beats forcing it into
@@ -225,7 +253,7 @@ export const AnalyticsLogger = {
   },
 
   loginCompleted: (method: string) =>
-    logEvent(analytics, 'login', { method }),
+    sendFirebaseEvent('login', { method }),
 
   /**
    * `campaign` and `refListingId` say where a new account came from (the
@@ -261,14 +289,30 @@ export const AnalyticsLogger = {
     trackTikTok('Contact', { content_type: 'product', content_id: listingId })
   },
 
-  shareListing: (listingId: string, method: string) =>
-    logEvent(analytics, 'share_listing', {
+  /** A link share. Firebase-only, like `share_listing` in the app. */
+  shareListing: (listingId: string, operationType: string, method: LinkShareMethod) =>
+    logFirebaseEvent('share_listing', {
       listing_id: listingId,
+      operation_type: operationType,
+      share_method: method,
+    }),
+
+  /** A branded image card share. Firebase-only, like the app's event of the same name. */
+  shareListingBranded: (
+    listingId: string,
+    operationType: string,
+    cardFormat: ShareCardFormat,
+    method: CardShareMethod,
+  ) =>
+    logFirebaseEvent('share_listing_branded', {
+      listing_id: listingId,
+      operation_type: operationType,
+      card_format: cardFormat,
       share_method: method,
     }),
 
   errorOccurred: (errorMessage: string, componentName: string) =>
-    logEvent(analytics, 'app_error', {
+    sendFirebaseEvent('app_error', {
       error_message: errorMessage.slice(0, 100),
       component: componentName,
     }),
@@ -340,6 +384,7 @@ export const AnalyticsLogger = {
     if (Object.keys(values).length === 0) return
     for (const key of Object.keys(values)) {
       values[key] = values[key]!.slice(0, MAX_USER_PROPERTY_VALUE_LENGTH)
+      printInDev(`${key} ${values[key]}`)
     }
     setUserProperties(analytics, values)
   },
