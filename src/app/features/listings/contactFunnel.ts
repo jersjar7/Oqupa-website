@@ -60,6 +60,28 @@ export function pendingContactErrand(): ContactErrand | null {
   return hashAt >= 0 && wantsAutoContact(stored.url.slice(hashAt)) ? { at: stored.at } : null
 }
 
+/** A real tap on the contact button — never the automatic retry. */
+export function logContactTapped(listingId: string, authState: ContactTapAuthState): void {
+  try {
+    AnalyticsLogger.contactTapped(listingId, authState)
+  } catch {
+    /* analytics must never break the button */
+  }
+}
+
+/** A refusal of getListingContact: the server's raw code, `unknown` without one. */
+export function logContactRevealFailed(listingId: string, error: unknown): void {
+  try {
+    const code =
+      error && typeof error === 'object' && typeof (error as { code?: unknown }).code === 'string'
+        ? (error as { code: string }).code
+        : 'unknown'
+    AnalyticsLogger.contactRevealFailed(listingId, code)
+  } catch {
+    /* analytics must never break the button */
+  }
+}
+
 /** A gate step: logged every time, because each one is a deliberate action. */
 export function logContactGateStep(step: ContactGateStep): void {
   try {
