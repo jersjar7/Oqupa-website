@@ -14,7 +14,7 @@ import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
 import { contactGateCopy, contactReturnUrl, wantsAutoContact } from '@/app/features/listings/contactGate'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
-import { AnalyticsLogger } from '@/lib/analytics'
+import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
 import { AnimatedImage } from '@/app/components/ui'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import GalleryModal from '@/app/components/GalleryModal'
@@ -252,12 +252,31 @@ export default function PropertyPage() {
     url: `${window.location.origin}${pathname}`,
   })
 
+  // Firebase-only segment params, shared by listing_viewed and
+  // contact_revealed. The price is the listing's own (the ad's), cut to a band
+  // so the exact amount never leaves; the district, never the street.
+  const segmentParams = useMemo<ListingSegmentParams>(
+    () => ({
+      district: property?.location?.distrito,
+      propertyType: property?.propertyType,
+      priceBand: listing?.price ? priceBandFor(listing.price.amount) : undefined,
+      priceCurrency: listing?.price?.currency,
+    }),
+    [listing, property],
+  )
+
   useEffect(() => {
     if (id && listing) {
       // District only — never the street. It gives ad targeting something
       // useful without publishing where the property actually is.
-      AnalyticsLogger.listingViewed(id, property?.location?.distrito)
+      AnalyticsLogger.listingViewed(id, property?.location?.distrito, {
+        operationType: listing.operationType,
+        ...segmentParams,
+      })
     }
+    // Keyed on the listing, not on segmentParams: a new params object for the
+    // same listing must not count a second view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, listing, property?.location?.distrito])
 
   useRecordListingView(id, listing?.ownerId)
@@ -357,7 +376,7 @@ export default function PropertyPage() {
       // Someone asked for an owner's number: the strongest intent signal the
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
-      AnalyticsLogger.contactRevealed(listingIdForContact)
+      AnalyticsLogger.contactRevealed(listingIdForContact, segmentParams)
       const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`
       if (auto) {
         // Returning from the pipeline: no user gesture, so a new tab would be

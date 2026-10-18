@@ -5,6 +5,7 @@ import { buildBrandedCardConfig } from '@/lib/brandedCardConfig'
 import { paintBrandedCard } from '@/lib/brandedCardPainter'
 import { shareListing, type ShareListingParams } from '@/lib/shareUtils'
 import { shareCard } from '@/lib/imageUrl'
+import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { CardFormat } from '@/lib/cardLayout'
@@ -44,7 +45,15 @@ export default function ShareFormatModal({
       bathroomCount: property.specs.bathroomCount,
       totalAreaInSquareMeters: property.specs.totalAreaInSquareMeters,
     }
-    await shareListing(params)
+    const result = await shareListing(params)
+    // Only a share that left the page counts; 'failed' includes a cancel.
+    if (result !== 'failed') {
+      AnalyticsLogger.shareListing(
+        listing.id,
+        property.operationType,
+        result === 'shared' ? 'native' : 'clipboard',
+      )
+    }
     markDone('link')
   }
 
@@ -68,6 +77,7 @@ export default function ShareFormatModal({
             files: [file],
             title: `${config.operationLabel} — ${config.locationText}`,
           })
+          AnalyticsLogger.shareListingBranded(listing.id, property.operationType, format, 'native')
           markDone(format)
           return
         } catch (err) {
@@ -87,6 +97,7 @@ export default function ShareFormatModal({
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      AnalyticsLogger.shareListingBranded(listing.id, property.operationType, format, 'download')
       markDone(format)
     } catch {
       // Silent fail — user can retry

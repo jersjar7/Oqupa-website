@@ -8,6 +8,7 @@ import {
 } from '@/schemas/realtorApplicationSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
+import { AnalyticsLogger } from '@/lib/analytics'
 import { Button, Input, Card, Modal, Spinner } from '@/app/components/ui'
 import { CheckCircle, Clock, XCircle } from 'lucide-react'
 
@@ -93,6 +94,9 @@ export default function RealtorRegistrationPage() {
         serviceZones,
         motivation: data.motivation,
       })
+      // Right after the write: the application exists now, even if the
+      // refresh below fails.
+      AnalyticsLogger.realtorApplicationSubmitted()
 
       await refreshUser()
       setShowSuccessModal(true)
