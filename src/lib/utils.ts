@@ -29,6 +29,25 @@ export function consumeReturnUrl(): string | null {
   return raw.startsWith('/') ? raw : null
 }
 
+/**
+ * The stored return address and when it was stored, WITHOUT removing it, or
+ * null when there is none or it has expired. For code that only needs to know
+ * where the person is headed (the contact funnel events, metrics plan A10) —
+ * consuming it would cancel their errand. A legacy plain-string value has no
+ * time and returns null.
+ */
+export function peekReturnUrl(): { url: string; at: number } | null {
+  try {
+    const raw = localStorage.getItem(RETURN_URL_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { url?: string; at?: number }
+    if (typeof parsed.url !== 'string' || typeof parsed.at !== 'number') return null
+    return Date.now() - parsed.at <= RETURN_URL_TTL_MS ? { url: parsed.url, at: parsed.at } : null
+  } catch {
+    return null
+  }
+}
+
 export function getPlatform(): 'ios' | 'android' | 'desktop' {
   const ua = navigator.userAgent
   if (/iPad|iPhone|iPod/.test(ua)) return 'ios'

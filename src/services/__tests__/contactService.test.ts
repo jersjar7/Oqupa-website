@@ -171,4 +171,27 @@ describe('contactService', () => {
       }
     })
   })
+
+  // ── The raw server code travels with the refusal (metrics plan A10) ─────────
+  describe('getListingContact — raw code for analytics', () => {
+    it.each([
+      ['functions/unauthenticated', 'unauthenticated'],
+      ['functions/aborted', 'aborted'],
+      ['functions/permission-denied', 'permission-denied'],
+      ['functions/resource-exhausted', 'resource-exhausted'],
+      ['functions/not-found', 'not-found'],
+      ['functions/internal', 'internal'],
+    ])('carries %s as code %s, reason unchanged', async (raw, code) => {
+      callableFnMock.mockRejectedValue({ code: raw })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({ code })
+    })
+
+    it('uses "unknown" when the failure carries no callable code', async () => {
+      callableFnMock.mockRejectedValue(new Error('network down'))
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'unavailable',
+        code: 'unknown',
+      })
+    })
+  })
 })

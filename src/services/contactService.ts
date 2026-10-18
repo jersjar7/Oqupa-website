@@ -33,7 +33,13 @@ export type ContactDenialReason =
   | 'unavailable'
 
 export class ContactDenied extends Error {
-  constructor(public readonly reason: ContactDenialReason) {
+  constructor(
+    public readonly reason: ContactDenialReason,
+    /** The server's own code without the `functions/` prefix (e.g. `aborted`),
+     *  or `unknown` when the failure carried none. For analytics only
+     *  (`contact_reveal_failed`, metrics plan A10) — decide on `reason`. */
+    public readonly code: string = 'unknown',
+  ) {
     super(reason)
     this.name = 'ContactDenied'
   }
@@ -59,21 +65,22 @@ export const contactService = {
       return result.data
     } catch (error) {
       const code = (error as FunctionsError)?.code ?? ''
-      if (code.includes('unauthenticated')) throw new ContactDenied('needs-login')
-      if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification')
+      const raw = code ? code.replace(/^functions\//, '') : 'unknown'
+      if (code.includes('unauthenticated')) throw new ContactDenied('needs-login', raw)
+      if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification', raw)
       // The seller has no number on file. Telling the buyer to verify THEIR
       // phone was both false and a dead loop (hostile review, 2026-08-27).
-      if (code.includes('not-found')) throw new ContactDenied('listing-has-no-contact')
+      if (code.includes('not-found')) throw new ContactDenied('listing-has-no-contact', raw)
       // The server refuses with its own code when the email link is still
       // unclicked (phone-first pipeline, 2026-08-26).
-      if (code.includes('permission-denied')) throw new ContactDenied('needs-email-verification')
+      if (code.includes('permission-denied')) throw new ContactDenied('needs-email-verification', raw)
       // The server reserves this one for "no phone is actually attached to
       // this account". Seen on staging 2026-08-27 as a bare 409, because the
       // website had never been taught the code and fell through to the
       // generic message — on a page whose profile said "Teléfono verificado".
-      if (code.includes('aborted')) throw new ContactDenied('needs-phone-reverification')
-      if (code.includes('resource-exhausted')) throw new ContactDenied('rate-limited')
-      throw new ContactDenied('unavailable')
+      if (code.includes('aborted')) throw new ContactDenied('needs-phone-reverification', raw)
+      if (code.includes('resource-exhausted')) throw new ContactDenied('rate-limited', raw)
+      throw new ContactDenied('unavailable', raw)
     }
   },
 }

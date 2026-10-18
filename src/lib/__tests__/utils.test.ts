@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { formatPrice, setReturnUrl, consumeReturnUrl, getPlatform } from '../utils'
+import { formatPrice, setReturnUrl, consumeReturnUrl, peekReturnUrl, getPlatform } from '../utils'
 
 // ---------------------------------------------------------------------------
 // formatPrice — pure function, no browser API
@@ -70,6 +70,41 @@ describe('setReturnUrl / consumeReturnUrl', () => {
     const expiredAt = Date.now() - 31 * 60 * 1000
     localStorage.setItem('oqupa_returnUrl', JSON.stringify({ url: '/old-path', at: expiredAt }))
     expect(consumeReturnUrl()).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// peekReturnUrl — read-only (metrics plan A10)
+// ---------------------------------------------------------------------------
+describe('peekReturnUrl', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('returns the stored URL and when it was stored, without removing it', () => {
+    const storedAt = Date.now() - 60_000
+    vi.spyOn(Date, 'now').mockReturnValue(storedAt)
+    setReturnUrl('/property/abc#contactar')
+    vi.restoreAllMocks()
+    expect(peekReturnUrl()).toEqual({ url: '/property/abc#contactar', at: storedAt })
+    // Still there for the pipeline to consume.
+    expect(consumeReturnUrl()).toBe('/property/abc#contactar')
+  })
+
+  it('returns null when nothing was stored', () => {
+    expect(peekReturnUrl()).toBeNull()
+  })
+
+  it('returns null for an expired address and leaves it alone', () => {
+    const expiredAt = Date.now() - 31 * 60 * 1000
+    localStorage.setItem('oqupa_returnUrl', JSON.stringify({ url: '/old', at: expiredAt }))
+    expect(peekReturnUrl()).toBeNull()
+    expect(localStorage.getItem('oqupa_returnUrl')).not.toBeNull()
+  })
+
+  it('returns null for a legacy plain-string value (it has no time to key on)', () => {
+    localStorage.setItem('oqupa_returnUrl', '/legacy/path')
+    expect(peekReturnUrl()).toBeNull()
   })
 })
 
