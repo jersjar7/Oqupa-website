@@ -15,6 +15,7 @@ import {
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
+import { CONTACT_GATE_STEPS, logContactMilestone } from '@/app/features/listings/contactFunnel'
 import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
@@ -127,6 +128,8 @@ export default function AuthPipelinePage() {
         const refreshed = await refreshFirebaseUser()
         if (!cancelled && !done && refreshed?.emailVerified) {
           done = true
+          // Before refreshSession, which lets the pipeline finish and consume the errand.
+          logContactMilestone(CONTACT_GATE_STEPS.emailVerified)
           await authService.refreshSession()
           toast.success('Correo verificado')
           // the store now says verified → the effect above finishes
@@ -215,6 +218,9 @@ export default function AuthPipelinePage() {
                     const phoneWithCountry = `${data.countryCode}${data.phoneNumber}`
                     const countryName = data.countryCode === '+51' ? 'peru' : 'unitedStates'
                     const verId = await authService.sendPhoneVerificationCode(phoneWithCountry)
+                    // "Reenviar código" comes back through here; the helper
+                    // counts one send per errand, so a resend is not a second.
+                    logContactMilestone(CONTACT_GATE_STEPS.phoneCodeSent)
                     setVerificationId(verId)
                     setSmsCooldown(RESEND_SECONDS)
                     toast.success('Código enviado')
@@ -252,6 +258,9 @@ export default function AuthPipelinePage() {
                   try {
                     if (!verificationId) throw new Error('No verification ID')
                     await authService.verifyPhoneCode(verificationId, data.code)
+                    // Before refreshUser below, which may finish the pipeline
+                    // and consume the errand.
+                    logContactMilestone(CONTACT_GATE_STEPS.phoneVerified)
                     // The phone is now genuinely linked, so the override has
                     // done its job. Leaving it set would keep the phone step
                     // in the list forever and trap the person on it.

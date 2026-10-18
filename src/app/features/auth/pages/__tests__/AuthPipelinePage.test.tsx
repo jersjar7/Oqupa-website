@@ -30,7 +30,7 @@ const mockAuthService = vi.hoisted(() => ({
 }))
 vi.mock('@/services/authService', () => ({ authService: mockAuthService }))
 const mockConsumeReturnUrl = vi.hoisted(() => vi.fn(() => null as string | null))
-vi.mock('@/lib/utils', () => ({ consumeReturnUrl: mockConsumeReturnUrl }))
+vi.mock('@/lib/utils', () => ({ consumeReturnUrl: mockConsumeReturnUrl, peekReturnUrl: vi.fn(() => null) }))
 vi.mock('@/lib/authErrors', () => ({
   getPhoneAuthError: vi.fn(() => ({ message: 'Error de telefono', recoveryHint: null })),
 }))
@@ -49,6 +49,25 @@ vi.mock('@/app/components/ui', () => ({
   Button: ({ children, isLoading, disabled, ...props }: any) => (
     <button disabled={disabled} {...props}>{children}</button>
   ),
+}))
+
+
+// Metrics plan A10: the contact-funnel helpers, so these tests see which
+// milestones the page reports (the helpers themselves are tested on their own).
+const mockFunnel = vi.hoisted(() => ({
+  errand: { at: 123 },
+  pendingContactErrand: vi.fn(),
+  logContactMilestone: vi.fn(),
+}))
+vi.mock('@/app/features/listings/contactFunnel', () => ({
+  CONTACT_GATE_STEPS: {
+    signedIn: 'signed_in',
+    phoneCodeSent: 'phone_code_sent',
+    phoneVerified: 'phone_verified',
+    emailVerified: 'email_verified',
+  },
+  pendingContactErrand: mockFunnel.pendingContactErrand,
+  logContactMilestone: mockFunnel.logContactMilestone,
 }))
 
 import AuthPipelinePage from '../AuthPipelinePage'
@@ -188,5 +207,71 @@ describe('AuthPipelinePage', () => {
     const { unmount } = renderPage()
     unmount()
     expect(mockAuthService.cleanupRecaptcha).toHaveBeenCalled()
+  })
+})
+
+describe('AuthPipelinePage — contact funnel (A10)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFunnel.pendingContactErrand.mockReturnValue(mockFunnel.errand)
+    mockAuthState.firebaseUser = { uid: 'uid-123', email: 'test@example.com', emailVerified: true }
+    mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
+    mockAuthState.refreshUser.mockResolvedValue(undefined)
+    mockAuthState.refreshFirebaseUser.mockResolvedValue(mockAuthState.firebaseUser)
+    mockConsumeReturnUrl.mockReturnValue(null)
+    mockAuthService.sendPhoneVerificationCode.mockResolvedValue('ver-1')
+    mockAuthService.verifyPhoneCode.mockResolvedValue(undefined)
+    mockAuthService.updateUserContactInfo.mockResolvedValue(undefined)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  function steps() {
+    return mockFunnel.logContactMilestone.mock.calls.map((c) => c[0])
+  }
+
+  async function sendCode() {
+    renderPage()
+    fireEvent.change(screen.getByPlaceholderText(/912 345 678/), { target: { value: '912345678' } })
+    fireEvent.click(screen.getByRole('button', { name: /enviar código/i }))
+    await waitFor(() => expect(screen.getByText(/ingresa el código/i)).toBeDefined())
+  }
+
+  it('reports phone_code_sent once the first code is sent', async () => {
+    await sendCode()
+    expect(steps()).toEqual(['phone_code_sent'])
+  })
+
+  it('reports nothing when sending the code fails', async () => {
+    mockAuthService.sendPhoneVerificationCode.mockRejectedValue({ code: 'auth/too-many-requests' })
+    renderPage()
+    fireEvent.change(screen.getByPlaceholderText(/912 345 678/), { target: { value: '912345678' } })
+    fireEvent.click(screen.getByRole('button', { name: /enviar código/i }))
+    await waitFor(() => expect(mockAuthService.sendPhoneVerificationCode).toHaveBeenCalled())
+    expect(steps()).toEqual([])
+  })
+
+  it('reports phone_verified once the code is accepted', async () => {
+    await sendCode()
+    fireEvent.change(screen.getByLabelText(/código de 6 dígitos/i), { target: { value: '123456' } })
+    await waitFor(() => expect(steps()).toEqual(['phone_code_sent', 'phone_verified']))
+  })
+
+  it('reports nothing for a wrong code', async () => {
+    mockAuthService.verifyPhoneCode.mockRejectedValue({ code: 'auth/invalid-verification-code' })
+    await sendCode()
+    fireEvent.change(screen.getByLabelText(/código de 6 dígitos/i), { target: { value: '123456' } })
+    await waitFor(() => expect(mockAuthService.verifyPhoneCode).toHaveBeenCalled())
+    expect(steps()).toEqual(['phone_code_sent'])
+  })
+
+  it('reports email_verified when the poll sees the link was clicked', async () => {
+    vi.useFakeTimers()
+    mockAuthState.firebaseUser = { uid: 'u', email: 'e@x.com', emailVerified: false }
+    mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
+    mockAuthState.refreshFirebaseUser.mockResolvedValue({ uid: 'u', email: 'e@x.com', emailVerified: true })
+    mockAuthService.refreshSession.mockResolvedValue(undefined)
+    renderPage()
+    await act(async () => { await vi.advanceTimersByTimeAsync(4500) })
+    expect(steps()).toEqual(['email_verified'])
   })
 })

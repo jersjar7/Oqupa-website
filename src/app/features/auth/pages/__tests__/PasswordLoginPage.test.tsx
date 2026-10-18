@@ -28,6 +28,25 @@ vi.mock("@/app/components/ui", () => ({
   ),
 }));
 
+
+// Metrics plan A10: the contact-funnel helpers, so these tests see which
+// milestones the page reports (the helpers themselves are tested on their own).
+const mockFunnel = vi.hoisted(() => ({
+  errand: { at: 123 },
+  pendingContactErrand: vi.fn(),
+  logContactMilestone: vi.fn(),
+}));
+vi.mock("@/app/features/listings/contactFunnel", () => ({
+  CONTACT_GATE_STEPS: {
+    signedIn: "signed_in",
+    phoneCodeSent: "phone_code_sent",
+    phoneVerified: "phone_verified",
+    emailVerified: "email_verified",
+  },
+  pendingContactErrand: mockFunnel.pendingContactErrand,
+  logContactMilestone: mockFunnel.logContactMilestone,
+}));
+
 import PasswordLoginPage from "../PasswordLoginPage";
 
 function renderPage(entry = "/app/login") {
@@ -171,5 +190,48 @@ describe("PasswordLoginPage — the entry screen", () => {
       renderPage("/app/login?correo=1");
       expect(screen.getByRole("textbox", { name: /correo/i })).toBeDefined();
     });
+  });
+});
+
+describe("PasswordLoginPage — contact funnel (A10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFunnel.pendingContactErrand.mockReturnValue(mockFunnel.errand);
+  });
+
+  it("Google: reports signed_in for the errand captured before signing in", async () => {
+    mockAuthService.signInWithGoogle.mockResolvedValue({ uid: "g" });
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /continuar con google/i }));
+    await waitFor(() =>
+      expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith("signed_in", mockFunnel.errand),
+    );
+    // Captured before the sign-in, which may already have sent the person back.
+    expect(mockFunnel.pendingContactErrand.mock.invocationCallOrder[0]!).toBeLessThan(
+      mockAuthService.signInWithGoogle.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it("email: reports signed_in after a successful sign-in", async () => {
+    mockAuthService.loginWithEmailAndPassword.mockResolvedValue({ uid: "u" });
+    renderPage();
+    openEmail();
+    fillForm();
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() =>
+      expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith("signed_in", mockFunnel.errand),
+    );
+  });
+
+  it("reports nothing when signing in fails or is cancelled", async () => {
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: "auth/wrong-password" });
+    mockAuthService.signInWithGoogle.mockRejectedValue({ code: "auth/popup-closed-by-user" });
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /continuar con google/i }));
+    openEmail();
+    fillForm();
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() => expect(mockAuthService.loginWithEmailAndPassword).toHaveBeenCalled());
+    expect(mockFunnel.logContactMilestone).not.toHaveBeenCalled();
   });
 });

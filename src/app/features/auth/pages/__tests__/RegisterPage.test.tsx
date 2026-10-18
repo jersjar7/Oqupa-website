@@ -15,6 +15,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 const mockAuthService = vi.hoisted(() => ({
   registerWithEmailAndPassword: vi.fn(),
   sendEmailVerificationToCurrentUser: vi.fn(),
+  signInWithGoogle: vi.fn(),
 }))
 
 vi.mock('@/services/authService', () => ({
@@ -52,6 +53,25 @@ vi.mock('@/app/components/ui', () => ({
 }))
 
 // ── Import after mocks ──────────────────────────────────────────────────────
+
+
+// Metrics plan A10: the contact-funnel helpers, so these tests see which
+// milestones the page reports (the helpers themselves are tested on their own).
+const mockFunnel = vi.hoisted(() => ({
+  errand: { at: 123 },
+  pendingContactErrand: vi.fn(),
+  logContactMilestone: vi.fn(),
+}))
+vi.mock('@/app/features/listings/contactFunnel', () => ({
+  CONTACT_GATE_STEPS: {
+    signedIn: 'signed_in',
+    phoneCodeSent: 'phone_code_sent',
+    phoneVerified: 'phone_verified',
+    emailVerified: 'email_verified',
+  },
+  pendingContactErrand: mockFunnel.pendingContactErrand,
+  logContactMilestone: mockFunnel.logContactMilestone,
+}))
 
 import RegisterPage from '../RegisterPage'
 
@@ -238,5 +258,41 @@ describe('RegisterPage', () => {
       expect(mockNavigate).not.toHaveBeenCalled()
       expect(mockAuthService.sendEmailVerificationToCurrentUser).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe('RegisterPage — contact funnel (A10)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFunnel.pendingContactErrand.mockReturnValue(mockFunnel.errand)
+    mockAuthService.registerWithEmailAndPassword.mockResolvedValue({ uid: 'u' })
+    mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined)
+  })
+
+  it('reports signed_in once the account is created', async () => {
+    renderPage()
+    fillForm()
+    fireEvent.submit(document.querySelector('form')!)
+    await waitFor(() =>
+      expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith('signed_in', mockFunnel.errand),
+    )
+  })
+
+  it('reports signed_in after Google', async () => {
+    mockAuthService.signInWithGoogle.mockResolvedValue({ uid: 'g' })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /continuar con google/i }))
+    await waitFor(() =>
+      expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith('signed_in', mockFunnel.errand),
+    )
+  })
+
+  it('reports nothing when creating the account fails', async () => {
+    mockAuthService.registerWithEmailAndPassword.mockRejectedValue({ code: 'auth/weak-password' })
+    renderPage()
+    fillForm()
+    fireEvent.submit(document.querySelector('form')!)
+    await waitFor(() => expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalled())
+    expect(mockFunnel.logContactMilestone).not.toHaveBeenCalled()
   })
 })

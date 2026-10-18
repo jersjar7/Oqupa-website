@@ -54,10 +54,14 @@ export interface ContactErrand {
 /** The pending contact errand, read without consuming it; null when the
  *  stored return address is missing, expired, or not a contact (Publicar). */
 export function pendingContactErrand(): ContactErrand | null {
-  const stored = peekReturnUrl()
-  if (!stored) return null
-  const hashAt = stored.url.indexOf('#')
-  return hashAt >= 0 && wantsAutoContact(stored.url.slice(hashAt)) ? { at: stored.at } : null
+  try {
+    const stored = peekReturnUrl()
+    if (!stored) return null
+    const hashAt = stored.url.indexOf('#')
+    return hashAt >= 0 && wantsAutoContact(stored.url.slice(hashAt)) ? { at: stored.at } : null
+  } catch {
+    return null
+  }
 }
 
 /** A real tap on the contact button — never the automatic retry. */
