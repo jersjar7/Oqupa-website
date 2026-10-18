@@ -4,6 +4,13 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-18 — Metrics plan, week 1: richer tracking (Sam)
+
+### Technical
+
+- **Tracking foundation (plan task A0).** Every event the four-week metrics plan needs now exists in `analytics.ts`, named and shaped exactly as in the app so both report into one Google Analytics property. Plan-only events go to Firebase alone; nothing new reaches Meta or TikTok.
+- **Events carry listing context (plan task A3).** `listing_viewed` and `contact_revealed` now include district, property type, a price band (never the exact price) and currency. Sharing a listing (link or branded card) and submitting a realtor application are tracked. No user-visible change.
+
 ## 2026-10-11 (3) — Números en pestañas
 
 ### New Features
