@@ -381,8 +381,12 @@ export default function PropertyPage() {
     // A real tap only: the automatic retry after the pipeline is `returned`.
     if (!auto) logContactTapped(listingIdForContact, contactAuthState(firebaseUser, user))
     setContactLoading(true)
+    // Set once the server has handed the number over: a failure after that
+    // (the redirect) is not a refusal and must not be reported as one.
+    let revealed = false
     try {
       const contact = await contactService.getListingContact(listingIdForContact)
+      revealed = true
       // Someone asked for an owner's number: the strongest intent signal the
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
@@ -396,14 +400,19 @@ export default function PropertyPage() {
       }
       window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
-      logContactRevealFailed(listingIdForContact, error instanceof ContactDenied ? error : null)
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
-      if (
+      const opensGate =
         reason === 'needs-login' ||
         reason === 'needs-phone-verification' ||
         reason === 'needs-phone-reverification' ||
         reason === 'needs-email-verification'
-      ) {
+      // Only dead ends count as failures; a refusal that opens the account gate
+      // is gate_shown. The app pre-checks locally and never asks the server in
+      // those cases, so this keeps the two apps' numbers comparable.
+      if (!revealed && !opensGate) {
+        logContactRevealFailed(listingIdForContact, error instanceof ContactDenied ? error : null)
+      }
+      if (opensGate) {
         setPhoneNeedsReverification(reason === 'needs-phone-reverification')
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)

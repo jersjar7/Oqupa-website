@@ -279,6 +279,44 @@ describe('contact_reveal_failed', () => {
     expect(contactRevealFailedMock).toHaveBeenCalledWith(LISTING_ID, 'unknown')
   })
 
+  it.each([
+    ['needs-login', 'unauthenticated'],
+    ['needs-phone-verification', 'failed-precondition'],
+    ['needs-phone-reverification', 'aborted'],
+    ['needs-email-verification', 'permission-denied'],
+  ])('is not recorded for %s — the gate opens instead (gate_shown)', async (reason, code) => {
+    getListingContactMock.mockRejectedValue(denied(reason, code))
+    renderPage()
+    clickWhatsApp()
+    await settle()
+    expect(contactRevealFailedMock).not.toHaveBeenCalled()
+    expect(stepsLogged()).toEqual(['gate_shown'])
+  })
+
+  it.each([
+    ['listing-has-no-contact', 'not-found'],
+    ['unavailable', 'internal'],
+    ['unavailable', 'invalid-argument'],
+  ])('is recorded for the dead end %s (%s)', async (reason, code) => {
+    getListingContactMock.mockRejectedValue(denied(reason, code))
+    renderPage()
+    clickWhatsApp()
+    await settle()
+    expect(contactRevealFailedMock).toHaveBeenCalledWith(LISTING_ID, code)
+  })
+
+  it('is not recorded when the reveal succeeded and opening WhatsApp failed afterwards', async () => {
+    getListingContactMock.mockResolvedValue(CONTACT_OK)
+    vi.spyOn(window, 'open').mockImplementation(() => {
+      throw new Error('popup blocked')
+    })
+    renderPage()
+    clickWhatsApp()
+    await settle()
+    expect(contactRevealedMock).toHaveBeenCalledTimes(1)
+    expect(contactRevealFailedMock).not.toHaveBeenCalled()
+  })
+
   it('is not recorded on success', async () => {
     getListingContactMock.mockResolvedValue(CONTACT_OK)
     renderPage()
@@ -347,10 +385,18 @@ describe('back on the listing after the pipeline (#contactar)', () => {
     expect(contactTappedMock).not.toHaveBeenCalled()
   })
 
-  it('records a refusal of the automatic retry, still without a tap', async () => {
+  it('records a dead-end refusal of the automatic retry, still without a tap', async () => {
+    getListingContactMock.mockRejectedValue(denied('rate-limited', 'resource-exhausted'))
+    renderPage(`/property/${LISTING_ID}#contactar`)
+    await waitFor(() => expect(contactRevealFailedMock).toHaveBeenCalledWith(LISTING_ID, 'resource-exhausted'))
+    expect(contactTappedMock).not.toHaveBeenCalled()
+  })
+
+  it('a gate-opening refusal of the automatic retry shows the gate, not a failure', async () => {
     getListingContactMock.mockRejectedValue(denied('needs-email-verification', 'permission-denied'))
     renderPage(`/property/${LISTING_ID}#contactar`)
-    await waitFor(() => expect(contactRevealFailedMock).toHaveBeenCalledWith(LISTING_ID, 'permission-denied'))
+    await waitFor(() => expect(stepsLogged()).toEqual(['returned', 'gate_shown']))
+    expect(contactRevealFailedMock).not.toHaveBeenCalled()
     expect(contactTappedMock).not.toHaveBeenCalled()
   })
 })
