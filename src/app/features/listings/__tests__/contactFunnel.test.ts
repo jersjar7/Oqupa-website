@@ -100,6 +100,23 @@ describe('logContactMilestone', () => {
     expect(contactGateStepMock).toHaveBeenCalledTimes(1)
   })
 
+  it('counts once across tabs: the record lives in localStorage, not this tab', () => {
+    setReturnUrl('/property/abc#contactar')
+    logContactMilestone(CONTACT_GATE_STEPS.emailVerified)
+    sessionStorage.clear() // another tab has its own sessionStorage
+    logContactMilestone(CONTACT_GATE_STEPS.emailVerified)
+    expect(contactGateStepMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('prunes records of errands older than 30 minutes', () => {
+    const old = Date.now() - 31 * 60 * 1000
+    localStorage.setItem(`oqupa_contactFunnel:${old}:signed_in`, '1')
+    setReturnUrl('/property/abc#contactar')
+    logContactMilestone(CONTACT_GATE_STEPS.signedIn)
+    expect(localStorage.getItem(`oqupa_contactFunnel:${old}:signed_in`)).toBeNull()
+    expect(Object.keys(localStorage).filter((k) => k.startsWith('oqupa_contactFunnel:'))).toHaveLength(1)
+  })
+
   it('counts again for a new errand', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_000)
     setReturnUrl('/property/abc#contactar')

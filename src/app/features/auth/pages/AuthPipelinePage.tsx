@@ -15,7 +15,12 @@ import {
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
-import { CONTACT_GATE_STEPS, logContactMilestone } from '@/app/features/listings/contactFunnel'
+import {
+  CONTACT_GATE_STEPS,
+  logContactMilestone,
+  pendingContactErrand,
+  type ContactErrand,
+} from '@/app/features/listings/contactFunnel'
 import { getPhoneAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
@@ -43,6 +48,15 @@ export default function AuthPipelinePage() {
   // Held in a ref so it survives the store refreshes each step triggers.
   const [searchParams, setSearchParams] = useSearchParams()
   const forcePhoneRef = useRef(searchParams.get('reverify') === 'phone')
+
+  // The contact errand as it stood when the page opened (metrics plan A10).
+  // If the email link is opened in another tab, that tab can finish first and
+  // consume the return address before this one sees the email confirmed, so
+  // the milestones below use this capture and peek again only without one.
+  const contactErrandRef = useRef<ContactErrand | null | undefined>(undefined)
+  if (contactErrandRef.current === undefined) contactErrandRef.current = pendingContactErrand()
+  const logMilestone = (step: Parameters<typeof logContactMilestone>[0]) =>
+    logContactMilestone(step, contactErrandRef.current ?? undefined)
 
   // Read once, then strip it from the address bar. Left in place, a reload or
   // Back-then-Forward re-arms the override and demands the phone all over
@@ -129,7 +143,7 @@ export default function AuthPipelinePage() {
         if (!cancelled && !done && refreshed?.emailVerified) {
           done = true
           // Before refreshSession, which lets the pipeline finish and consume the errand.
-          logContactMilestone(CONTACT_GATE_STEPS.emailVerified)
+          logMilestone(CONTACT_GATE_STEPS.emailVerified)
           await authService.refreshSession()
           toast.success('Correo verificado')
           // the store now says verified → the effect above finishes
@@ -220,7 +234,7 @@ export default function AuthPipelinePage() {
                     const verId = await authService.sendPhoneVerificationCode(phoneWithCountry)
                     // "Reenviar código" comes back through here; the helper
                     // counts one send per errand, so a resend is not a second.
-                    logContactMilestone(CONTACT_GATE_STEPS.phoneCodeSent)
+                    logMilestone(CONTACT_GATE_STEPS.phoneCodeSent)
                     setVerificationId(verId)
                     setSmsCooldown(RESEND_SECONDS)
                     toast.success('Código enviado')
@@ -260,7 +274,7 @@ export default function AuthPipelinePage() {
                     await authService.verifyPhoneCode(verificationId, data.code)
                     // Before refreshUser below, which may finish the pipeline
                     // and consume the errand.
-                    logContactMilestone(CONTACT_GATE_STEPS.phoneVerified)
+                    logMilestone(CONTACT_GATE_STEPS.phoneVerified)
                     // The phone is now genuinely linked, so the override has
                     // done its job. Leaving it set would keep the phone step
                     // in the list forever and trap the person on it.

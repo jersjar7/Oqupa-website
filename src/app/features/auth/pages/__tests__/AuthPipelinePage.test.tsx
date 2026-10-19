@@ -264,6 +264,26 @@ describe('AuthPipelinePage — contact funnel (A10)', () => {
     expect(steps()).toEqual(['phone_code_sent'])
   })
 
+  it('uses the errand captured when the page opened, even if another tab consumed it since', async () => {
+    vi.useFakeTimers()
+    // Pending when the page opens; gone by the time the email is confirmed,
+    // because the email-link tab finished first and consumed the return URL.
+    mockFunnel.pendingContactErrand.mockReturnValueOnce(mockFunnel.errand).mockReturnValue(null)
+    mockAuthState.firebaseUser = { uid: 'u', email: 'e@x.com', emailVerified: false }
+    mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
+    mockAuthState.refreshFirebaseUser.mockResolvedValue({ uid: 'u', email: 'e@x.com', emailVerified: true })
+    mockAuthService.refreshSession.mockResolvedValue(undefined)
+    renderPage()
+    await act(async () => { await vi.advanceTimersByTimeAsync(4500) })
+    expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith('email_verified', mockFunnel.errand)
+  })
+
+  it('passes the captured errand for the phone steps too', async () => {
+    mockFunnel.pendingContactErrand.mockReturnValueOnce(mockFunnel.errand).mockReturnValue(null)
+    await sendCode()
+    expect(mockFunnel.logContactMilestone).toHaveBeenCalledWith('phone_code_sent', mockFunnel.errand)
+  })
+
   it('reports email_verified when the poll sees the link was clicked', async () => {
     vi.useFakeTimers()
     mockAuthState.firebaseUser = { uid: 'u', email: 'e@x.com', emailVerified: false }

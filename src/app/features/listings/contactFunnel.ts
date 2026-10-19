@@ -95,19 +95,37 @@ export function logContactGateStep(step: ContactGateStep): void {
   }
 }
 
+const MILESTONE_KEY_PREFIX = 'oqupa_contactFunnel:'
+// As long as the errand itself lives (lib/utils RETURN_URL_TTL_MS); a record
+// for an errand that can no longer be pending is dead weight.
+const MILESTONE_RECORD_TTL_MS = 30 * 60 * 1000
+
+/** Removes milestone records of errands that can no longer be pending. */
+function pruneMilestoneRecords(now: number): void {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i)
+    if (!key?.startsWith(MILESTONE_KEY_PREFIX)) continue
+    const at = Number(key.slice(MILESTONE_KEY_PREFIX.length).split(':')[0])
+    if (!Number.isFinite(at) || now - at > MILESTONE_RECORD_TTL_MS) localStorage.removeItem(key)
+  }
+}
+
 /**
  * A pipeline milestone: logged only while a contact errand is pending, and at
- * most once per errand (a resend, a re-render or a second tab must not count
- * the same person twice). Pass an errand captured before an await when the
- * step's success may already have sent the person back and consumed it.
+ * most once per errand — a resend, a re-render or a second tab (the email
+ * link opened elsewhere) must not count the same person twice, so the record
+ * lives in localStorage, shared by every tab. Pass an errand captured earlier
+ * when the step's success may already have sent the person back and
+ * consumed it.
  */
 export function logContactMilestone(step: ContactGateStep, errand?: ContactErrand | null): void {
   try {
     const current = errand === undefined ? pendingContactErrand() : errand
     if (!current) return
-    const key = `oqupa_contactFunnel:${current.at}:${step}`
-    if (sessionStorage.getItem(key)) return
-    sessionStorage.setItem(key, '1')
+    const key = `${MILESTONE_KEY_PREFIX}${current.at}:${step}`
+    if (localStorage.getItem(key)) return
+    pruneMilestoneRecords(Date.now())
+    localStorage.setItem(key, '1')
     AnalyticsLogger.contactGateStep(step)
   } catch {
     /* analytics must never break the pipeline */
