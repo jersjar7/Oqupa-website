@@ -136,6 +136,27 @@ describe('logContactMilestone', () => {
     expect(contactGateStepMock).toHaveBeenCalledWith('signed_in')
   })
 
+  it('ignores a captured errand once it is older than the return address can live', () => {
+    vi.useFakeTimers()
+    setReturnUrl('/property/abc#contactar')
+    const errand = pendingContactErrand() // captured when the pipeline page opened
+    vi.advanceTimersByTime(30 * 60 * 1000 + 1)
+    logContactMilestone(CONTACT_GATE_STEPS.emailVerified, errand)
+    vi.useRealTimers()
+    expect(contactGateStepMock).not.toHaveBeenCalled()
+  })
+
+  it('still uses a captured errand within its 30 minutes', () => {
+    vi.useFakeTimers()
+    setReturnUrl('/property/abc#contactar')
+    const errand = pendingContactErrand()
+    localStorage.clear() // consumed by another tab meanwhile
+    vi.advanceTimersByTime(29 * 60 * 1000)
+    logContactMilestone(CONTACT_GATE_STEPS.emailVerified, errand)
+    vi.useRealTimers()
+    expect(contactGateStepMock).toHaveBeenCalledWith('email_verified')
+  })
+
   it('never throws, even when analytics does', () => {
     contactGateStepMock.mockImplementation(() => {
       throw new Error('analytics down')

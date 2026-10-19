@@ -8,7 +8,7 @@ const RETURN_URL_KEY = 'oqupa_returnUrl'
 // A stashed return address expires: an abandoned "contact this seller" from
 // days ago must not turn a later sign-in into an automatic WhatsApp redirect
 // (hostile review, 2026-08-26).
-const RETURN_URL_TTL_MS = 30 * 60 * 1000
+export const RETURN_URL_TTL_MS = 30 * 60 * 1000
 
 export function setReturnUrl(url: string) {
   localStorage.setItem(RETURN_URL_KEY, JSON.stringify({ url, at: Date.now() }))

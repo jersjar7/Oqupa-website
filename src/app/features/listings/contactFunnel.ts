@@ -1,5 +1,5 @@
 import { AnalyticsLogger, type ContactTapAuthState } from '@/lib/analytics'
-import { peekReturnUrl } from '@/lib/utils'
+import { peekReturnUrl, RETURN_URL_TTL_MS } from '@/lib/utils'
 import { wantsAutoContact } from './contactGate'
 
 // The contact sign-up funnel (metrics plan A10): every step between a tap on
@@ -96,17 +96,15 @@ export function logContactGateStep(step: ContactGateStep): void {
 }
 
 const MILESTONE_KEY_PREFIX = 'oqupa_contactFunnel:'
-// As long as the errand itself lives (lib/utils RETURN_URL_TTL_MS); a record
-// for an errand that can no longer be pending is dead weight.
-const MILESTONE_RECORD_TTL_MS = 30 * 60 * 1000
 
-/** Removes milestone records of errands that can no longer be pending. */
+/** Removes milestone records of errands that can no longer be pending
+ *  (older than the return address can live). */
 function pruneMilestoneRecords(now: number): void {
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
     if (!key?.startsWith(MILESTONE_KEY_PREFIX)) continue
     const at = Number(key.slice(MILESTONE_KEY_PREFIX.length).split(':')[0])
-    if (!Number.isFinite(at) || now - at > MILESTONE_RECORD_TTL_MS) localStorage.removeItem(key)
+    if (!Number.isFinite(at) || now - at > RETURN_URL_TTL_MS) localStorage.removeItem(key)
   }
 }
 
@@ -121,7 +119,9 @@ function pruneMilestoneRecords(now: number): void {
 export function logContactMilestone(step: ContactGateStep, errand?: ContactErrand | null): void {
   try {
     const current = errand === undefined ? pendingContactErrand() : errand
-    if (!current) return
+    // A captured errand outlives nothing: past the return address's own life
+    // it can no longer be pending (a tab left open on the pipeline).
+    if (!current || Date.now() - current.at > RETURN_URL_TTL_MS) return
     const key = `${MILESTONE_KEY_PREFIX}${current.at}:${step}`
     if (localStorage.getItem(key)) return
     pruneMilestoneRecords(Date.now())
