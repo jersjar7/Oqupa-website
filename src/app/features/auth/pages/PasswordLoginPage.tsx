@@ -8,6 +8,7 @@ import { authService } from '@/services/authService'
 import { getLoginAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { emailEntryOutcome } from '../pipelineOrder'
+import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
 
 // One door for everyone (docs/new-user-navigation-path.md, step 6): Google is
 // the obvious action; "Continuar con correo" reveals email + password on the
@@ -37,8 +38,12 @@ export default function PasswordLoginPage() {
   async function onGoogle() {
     setError(null)
     setGoogleBusy(true)
+    // Captured first: once signed in, the guard may send the person back and
+    // consume the errand before this function resumes.
+    const errand = pendingContactErrand()
     try {
       await authService.signInWithGoogle()
+      logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
     } catch (err) {
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
@@ -52,8 +57,10 @@ export default function PasswordLoginPage() {
   async function onSubmit(data: LoginFormData) {
     setError(null)
     setOfferWaysForward(false)
+    const errand = pendingContactErrand()
     try {
       await authService.loginWithEmailAndPassword(data.email, data.password)
+      logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
     } catch (err) {
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined
       const outcome = emailEntryOutcome(code)

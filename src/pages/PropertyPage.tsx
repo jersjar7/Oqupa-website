@@ -12,6 +12,13 @@ import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
 import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
 import { contactGateCopy, contactReturnUrl, wantsAutoContact } from '@/app/features/listings/contactGate'
+import {
+  CONTACT_GATE_STEPS,
+  contactAuthState,
+  logContactGateStep,
+  logContactRevealFailed,
+  logContactTapped,
+} from '@/app/features/listings/contactFunnel'
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
@@ -289,6 +296,7 @@ export default function PropertyPage() {
     if (!wantsAutoContact(hash)) return
     if (!firebaseUser?.emailVerified || !user?.isPhoneVerified) return
     autoContactDone.current = true
+    logContactGateStep(CONTACT_GATE_STEPS.returned)
     navigate(pathname, { replace: true })
     void handleWhatsAppClick(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -370,9 +378,15 @@ export default function PropertyPage() {
   // component — it cannot live here, below the early returns.
   async function handleWhatsAppClick(auto = false) {
     if (contactLoading) return
+    // A real tap only: the automatic retry after the pipeline is `returned`.
+    if (!auto) logContactTapped(listingIdForContact, contactAuthState(firebaseUser, user))
     setContactLoading(true)
+    // Set once the server has handed the number over: a failure after that
+    // (the redirect) is not a refusal and must not be reported as one.
+    let revealed = false
     try {
       const contact = await contactService.getListingContact(listingIdForContact)
+      revealed = true
       // Someone asked for an owner's number: the strongest intent signal the
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
@@ -387,14 +401,21 @@ export default function PropertyPage() {
       window.open(waUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
-      if (
+      const opensGate =
         reason === 'needs-login' ||
         reason === 'needs-phone-verification' ||
         reason === 'needs-phone-reverification' ||
         reason === 'needs-email-verification'
-      ) {
+      // Only dead ends count as failures; a refusal that opens the account gate
+      // is gate_shown. The app pre-checks locally and never asks the server in
+      // those cases, so this keeps the two apps' numbers comparable.
+      if (!revealed && !opensGate) {
+        logContactRevealFailed(listingIdForContact, error instanceof ContactDenied ? error : null)
+      }
+      if (opensGate) {
         setPhoneNeedsReverification(reason === 'needs-phone-reverification')
         setShowAuthModal(true)
+        logContactGateStep(CONTACT_GATE_STEPS.gateShown)
       } else if (reason === 'listing-has-no-contact') {
         toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
@@ -664,7 +685,10 @@ export default function PropertyPage() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
             onClick={(e) => {
-              if (e.target === e.currentTarget) setShowAuthModal(false)
+              if (e.target === e.currentTarget) {
+                logContactGateStep(CONTACT_GATE_STEPS.gateDismissed)
+                setShowAuthModal(false)
+              }
             }}
           >
             <motion.div
@@ -683,6 +707,9 @@ export default function PropertyPage() {
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={() => {
+                    logContactGateStep(
+                      firebaseUser ? CONTACT_GATE_STEPS.gateVerify : CONTACT_GATE_STEPS.gateCreateAccount,
+                    )
                     setShowAuthModal(false)
                     setReturnUrl(contactReturnUrl(window.location.pathname))
                     navigate(gate.primary.to)
@@ -694,6 +721,7 @@ export default function PropertyPage() {
                 {gate.secondary && (
                   <button
                     onClick={() => {
+                      logContactGateStep(CONTACT_GATE_STEPS.gateHaveAccount)
                       setShowAuthModal(false)
                       setReturnUrl(contactReturnUrl(window.location.pathname))
                       navigate(gate.secondary!.to)
@@ -704,7 +732,10 @@ export default function PropertyPage() {
                   </button>
                 )}
                 <button
-                  onClick={() => setShowAuthModal(false)}
+                  onClick={() => {
+                    logContactGateStep(CONTACT_GATE_STEPS.gateDismissed)
+                    setShowAuthModal(false)
+                  }}
                   className="flex w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
                 >
                   Ahora no

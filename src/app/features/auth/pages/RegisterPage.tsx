@@ -8,6 +8,7 @@ import { authService } from '@/services/authService'
 import { getRegisterAuthError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
+import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -29,8 +30,10 @@ export default function RegisterPage() {
 
   async function onSubmit(data: RegisterFormData) {
     setError(null)
+    const errand = pendingContactErrand()
     try {
       await authService.registerWithEmailAndPassword(data.email, data.password)
+      logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
       // Email verification is non-negotiable: kick off the action link before
       // the user leaves this page so the inbox is already waiting when they
       // hit the verify-email step.
@@ -63,8 +66,10 @@ export default function RegisterPage() {
           type="button"
           onClick={async () => {
             setError(null)
+            const errand = pendingContactErrand()
             try {
               await authService.signInWithGoogle()
+              logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
             } catch (err) {
               const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
               if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
