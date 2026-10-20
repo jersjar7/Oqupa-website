@@ -338,7 +338,7 @@ function Oferta({ data, range }: TabProps) {
 
 function Cierres({ data, range }: TabProps) {
   const closed = data.closed ?? { sold: 0, rented: 0 }
-  const { answered, viaOqupa, channels, comments } = summarizeCloses(data.closeSurveys, range, data.today)
+  const { answered, viaOqupa, channels, comments, commentsHidden } = summarizeCloses(data.closeSurveys, data.closeCounts, range, data.today)
   const yes = viaOqupa.find(([label]) => label === 'Sí')?.[1] ?? 0
   const words = RANGES.find((r) => r.key === range)?.words ?? ''
   return (
@@ -378,6 +378,11 @@ function Cierres({ data, range }: TabProps) {
               </li>
             ))}
           </ul>
+        )}
+        {commentsHidden > 0 && (
+          <p className="mt-3 font-serif text-xs font-light italic text-text-secondary">
+            {commentsHidden} comentario{commentsHidden !== 1 ? 's' : ''} más no cabe{commentsHidden !== 1 ? 'n' : ''} en esta página. Pídeselos a Claude.
+          </p>
         )}
       </Section>
     </>

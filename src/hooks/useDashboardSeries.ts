@@ -21,7 +21,12 @@ export interface CloseSurveyRow {
   viaOqupa: 'yes' | 'no' | 'skip' | null
   channel: string | null
   feedback: string | null
+  /** The comment existed but did not fit the page's size budget. */
+  feedbackOmitted?: boolean
 }
+
+/** Close-survey totals per Lima day, from every answer (not the capped rows). */
+export type CloseCounts = Record<string, { yes: number; no: number; skip: number; channels: Record<string, number> }>
 
 /** dashboardSeries/current, rebuilt nightly by the buildDashboardSeries Cloud Function. */
 export interface DashboardSeries {
@@ -52,6 +57,8 @@ export interface DashboardSeries {
   closed?: { sold: number; rented: number }
   /** "¿Lo vendiste gracias a Oqupa?" answers, newest first, team excluded. */
   closeSurveys?: CloseSurveyRow[]
+  /** Absent on documents built before 2026-10-20 evening. */
+  closeCounts?: CloseCounts
   metaReported: { installs?: number; spendUSD?: number } | null
   since: { snapshots: string | null; contactLog: string | null; analytics: string | null }
 }
