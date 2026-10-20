@@ -84,7 +84,9 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
     [queryClient, user?.id, listing.id],
   )
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
-  const canToggle = listing.status === 'active' || listing.status === 'deactivated'
+  const isClosed = listing.status === 'sold' || listing.status === 'rented'
+  // Sold / rented listings can be published again, as in the app.
+  const canToggle = listing.status === 'active' || listing.status === 'deactivated' || isClosed
   // Same rule and wording as the app: only an active listing, and only the
   // action that matches how it is offered.
   const isRental = property.operationType === 'alquiler'
@@ -226,7 +228,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               ) : (
                 <>
                   <Power className="h-4 w-4" />
-                  Activar
+                  {isClosed ? 'Volver a publicar' : 'Activar'}
                 </>
               )}
             </Button>

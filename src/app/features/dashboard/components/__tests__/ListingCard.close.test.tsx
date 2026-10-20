@@ -7,10 +7,10 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
  * now only the app could; the close survey opens right after.
  */
 
-const { markClosedMutate } = vi.hoisted(() => ({ markClosedMutate: vi.fn() }))
+const { markClosedMutate, toggleMutate } = vi.hoisted(() => ({ markClosedMutate: vi.fn(), toggleMutate: vi.fn() }))
 
 vi.mock('@/hooks/useListings', () => ({
-  useToggleListingStatus: () => ({ mutate: vi.fn(), isPending: false }),
+  useToggleListingStatus: () => ({ mutate: toggleMutate, isPending: false }),
   useDeleteListing: () => ({ mutate: vi.fn(), isPending: false }),
   useMarkListingClosed: () => ({ mutate: markClosedMutate, isPending: false }),
 }))
@@ -94,5 +94,13 @@ describe('ListingCard — Vendido / Alquilado', () => {
   it.each(['deactivated', 'sold', 'rented'])('a %s listing offers no Vendido/Alquilado action, like the app', (status) => {
     setup(status, 'venta')
     expect(screen.queryByRole('button', { name: /Marcar como/ })).toBeNull()
+  })
+
+  // The Alquilado confirmation promises the listing can be published again;
+  // the website had no way to do it (hostile review 2026-10-20).
+  it.each(['sold', 'rented'])('a %s listing can be published again from the website', (status) => {
+    setup(status, 'alquiler')
+    fireEvent.click(screen.getByRole('button', { name: /Volver a publicar/ }))
+    expect(toggleMutate).toHaveBeenCalledWith({ listingId: 'L1', currentStatus: status })
   })
 })

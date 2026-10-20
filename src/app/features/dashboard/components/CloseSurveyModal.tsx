@@ -21,8 +21,9 @@ type Step = 'question' | 'where' | 'feedback'
 
 /**
  * Asked after a listing is marked Vendido / Alquilado. Nothing is sent until
- * the first question is answered; after that, closing any way sends what was
- * answered — only the comment is meant to be skippable.
+ * the first question is answered; after that, closing any way — or the page
+ * going away — sends what was answered, a typed comment included. Only Omitir
+ * drops the comment.
  */
 export default function CloseSurveyModal({
   isOpen,
@@ -48,12 +49,23 @@ export default function CloseSurveyModal({
     }
   }, [isOpen])
 
+  // Read at send time, so a send from the unmount cleanup sees the latest answers.
+  const latest = useRef({ viaOqupa, channel, feedback, listingId, onSubmit })
+  latest.current = { viaOqupa, channel, feedback, listingId, onSubmit }
+
   const send = (withFeedback: boolean) => {
-    if (sent.current || !viaOqupa) return
+    const now = latest.current
+    if (sent.current || !now.viaOqupa) return
     sent.current = true
-    const trimmed = withFeedback ? feedback.trim() : ''
-    onSubmit({ listingId, viaOqupa, channel, feedback: trimmed || null }).catch(() => {})
+    const trimmed = withFeedback ? now.feedback.trim() : ''
+    now.onSubmit({ listingId: now.listingId, viaOqupa: now.viaOqupa, channel: now.channel, feedback: trimmed || null }).catch(() => {})
   }
+
+  // The page went away mid-survey (browser Back, the list reloading): keep
+  // what was answered, as closing does.
+  const sendRef = useRef(send)
+  sendRef.current = send
+  useEffect(() => () => sendRef.current(true), [])
 
   const finish = (withFeedback: boolean) => {
     send(withFeedback)
@@ -81,7 +93,7 @@ export default function CloseSurveyModal({
   )
 
   return (
-    <Modal isOpen={isOpen} onClose={() => finish(false)}>
+    <Modal isOpen={isOpen} onClose={() => finish(true)}>
       {step === 'question' && (
         <div className="space-y-2">
           {title(isRental ? '¿Lo rentaste gracias a Oqupa?' : '¿Lo vendiste gracias a Oqupa?')}

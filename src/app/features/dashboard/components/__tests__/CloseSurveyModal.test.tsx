@@ -130,6 +130,36 @@ describe('CloseSurveyModal', () => {
     expect(sent).toEqual([{ listingId: 'L1', viaOqupa: 'no', channel: null, feedback: null }])
   })
 
+  it('closing with a comment typed keeps the comment too', () => {
+    render(<Harness />)
+    click('Sí')
+    fireEvent.change(screen.getByPlaceholderText('Tu opinión nos ayuda a mejorar (opcional)'), { target: { value: 'Me escribieron rápido' } })
+    click('Cerrar')
+    expect(sent[0]!.feedback).toBe('Me escribieron rápido')
+  })
+
+  it('Omitir drops a typed comment — that is what it means', () => {
+    render(<Harness />)
+    click('Sí')
+    fireEvent.change(screen.getByPlaceholderText('Tu opinión nos ayuda a mejorar (opcional)'), { target: { value: 'borrador' } })
+    click('Omitir')
+    expect(sent[0]!.feedback).toBeNull()
+  })
+
+  it('leaving the page mid-survey still keeps the answer (browser Back, list reload)', () => {
+    const { unmount } = render(<Harness />)
+    click('No')
+    click('Agente inmobiliario')
+    unmount()
+    expect(sent).toEqual([{ listingId: 'L1', viaOqupa: 'no', channel: 'agent', feedback: null }])
+  })
+
+  it('leaving before answering still sends nothing', () => {
+    const { unmount } = render(<Harness />)
+    unmount()
+    expect(sent).toEqual([])
+  })
+
   it('a failed send never shows an error or blocks closing', async () => {
     render(<Harness onSubmit={async () => { throw new Error('offline') }} />)
     click('Sí')

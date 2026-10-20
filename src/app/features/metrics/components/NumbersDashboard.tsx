@@ -345,8 +345,8 @@ function Cierres({ data, range }: TabProps) {
     <>
       <Glance
         items={[
-          { label: 'Vendidos hoy', value: num(closed.sold), detail: 'marcados por su dueño' },
-          { label: 'Alquilados hoy', value: num(closed.rented), detail: 'marcados por su dueño' },
+          { label: 'Vendidos ahora', value: num(closed.sold), detail: 'al cierre de anoche' },
+          { label: 'Alquilados ahora', value: num(closed.rented), detail: 'al cierre de anoche' },
           { label: 'Respuestas', value: num(answered), detail: words },
           {
             label: 'Gracias a Oqupa',
