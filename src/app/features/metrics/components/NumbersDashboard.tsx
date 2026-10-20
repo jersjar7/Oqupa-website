@@ -12,6 +12,7 @@ import {
   type SeriesKind,
   type Stat,
 } from '../lib/series'
+import { summarizeCloses } from '../lib/closes'
 
 // Same brand pair as the rest of the page: warm for supply and money, cool for
 // demand. The dashboard has no dark mode, like the rest of the site.
@@ -20,12 +21,13 @@ const DEMAND = '#3A6A55'
 const GRID = '#EFE8DF'
 const AXIS = '#8E8E93'
 
-type TabKey = 'resumen' | 'buscadores' | 'oferta' | 'dinero' | 'publicidad'
+type TabKey = 'resumen' | 'buscadores' | 'oferta' | 'cierres' | 'dinero' | 'publicidad'
 
 const TABS: Array<{ key: TabKey; label: string; question: string }> = [
   { key: 'resumen', label: 'Resumen', question: '¿Cómo va Oqupa?' },
   { key: 'buscadores', label: 'Buscadores', question: '¿Llegan personas buscando, y escriben?' },
   { key: 'oferta', label: 'Oferta', question: '¿Qué se publica, dónde, y recibe contactos?' },
+  { key: 'cierres', label: 'Cierres', question: '¿Se vende y se alquila gracias a Oqupa?' },
   { key: 'dinero', label: 'Dinero', question: '¿Alguien paga por un boost?' },
   { key: 'publicidad', label: 'Publicidad', question: '¿Lo que gastamos en anuncios trae gente?' },
 ]
@@ -334,6 +336,54 @@ function Oferta({ data, range }: TabProps) {
   )
 }
 
+function Cierres({ data, range }: TabProps) {
+  const closed = data.closed ?? { sold: 0, rented: 0 }
+  const { answered, viaOqupa, channels, comments } = summarizeCloses(data.closeSurveys, range, data.today)
+  const yes = viaOqupa.find(([label]) => label === 'Sí')?.[1] ?? 0
+  const words = RANGES.find((r) => r.key === range)?.words ?? ''
+  return (
+    <>
+      <Glance
+        items={[
+          { label: 'Vendidos hoy', value: num(closed.sold), detail: 'marcados por su dueño' },
+          { label: 'Alquilados hoy', value: num(closed.rented), detail: 'marcados por su dueño' },
+          { label: 'Respuestas', value: num(answered), detail: words },
+          {
+            label: 'Gracias a Oqupa',
+            value: num(yes),
+            detail: answered ? `${Math.round((yes / answered) * 100)} % de las respuestas` : undefined,
+          },
+        ]}
+        footnote="Se pregunta justo después de marcar Vendido o Alquilado, en la app y en la web. Un listado que vuelve a publicarse deja de contar como vendido o alquilado; su respuesta se queda."
+      />
+      <Charts>
+        <Section title="¿Gracias a Oqupa?" note={words}>
+          <Ranked rows={viaOqupa} color={SUPPLY} />
+        </Section>
+        <Section title="Dónde, si no fue Oqupa" note={words}>
+          <Ranked rows={channels} />
+        </Section>
+      </Charts>
+      <Section title="Comentarios" note={`Lo que nos dijeron, ${words}. Texto libre: puede incluir datos personales — no lo compartas fuera del equipo.`}>
+        {comments.length === 0 ? (
+          <p className="font-sans text-sm text-text-secondary">Nada en este periodo.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {comments.map((c, i) => (
+              <li key={i} className="rounded-xl border border-border bg-white p-4">
+                <p className="font-serif text-xs font-light italic text-text-secondary">
+                  {c.day} · {c.outcome} · {c.answer}
+                </p>
+                <p className="mt-1 whitespace-pre-line font-sans text-sm text-text-primary">{c.text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+    </>
+  )
+}
+
 function Dinero({ data, range }: TabProps) {
   const { series: s, today } = data
   const revenue = rangeStat(s.revenuePEN, 'sum', range, today)
@@ -417,6 +467,7 @@ const PANELS: Record<TabKey, (props: TabProps) => ReactNode> = {
   resumen: Resumen,
   buscadores: Buscadores,
   oferta: Oferta,
+  cierres: Cierres,
   dinero: Dinero,
   publicidad: Publicidad,
 }

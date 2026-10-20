@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
+import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
 import type { PhotoOverlayTone } from '@/app/components/ui/PhotoOverlayBadge'
-import { useToggleListingStatus, useDeleteListing } from '@/hooks/useListings'
+import { useToggleListingStatus, useDeleteListing, useMarkListingClosed } from '@/hooks/useListings'
+import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import { useAuthStore } from '@/stores/authStore'
@@ -48,6 +49,9 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const { user } = useAuthStore()
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const markClosed = useMarkListingClosed()
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showCloseSurvey, setShowCloseSurvey] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -81,6 +85,10 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   )
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const canToggle = listing.status === 'active' || listing.status === 'deactivated'
+  // Same rule and wording as the app: only an active listing, and only the
+  // action that matches how it is offered.
+  const isRental = property.operationType === 'alquiler'
+  const canClose = listing.status === 'active'
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
@@ -223,6 +231,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               )}
             </Button>
           )}
+          {canClose && (
+            <Button variant="text" onClick={() => setShowCloseConfirm(true)}>
+              <CheckCircle2 className="h-4 w-4" />
+              {isRental ? 'Marcar como alquilado' : 'Marcar como vendido'}
+            </Button>
+          )}
           {listing.status === 'deactivated' && (
             <Button
               variant="text"
@@ -264,6 +278,49 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             </div>
           </div>
         )}
+
+        {/* Vendido / Alquilado confirmation — the app's words */}
+        {showCloseConfirm && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">
+              {isRental ? 'Marcar como Alquilado' : 'Marcar como Vendido'}
+            </p>
+            <p className="mt-1 text-sm text-text-secondary">
+              {isRental
+                ? '¿Ya encontraste inquilino? La publicación se ocultará y podrás volver a publicarla cuando el contrato termine.'
+                : '¿Ya vendiste la propiedad? La publicación se cerrará.'}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                isLoading={markClosed.isPending}
+                onClick={() =>
+                  markClosed.mutate(
+                    { listingId: listing.id, status: isRental ? 'rented' : 'sold' },
+                    {
+                      onSuccess: () => {
+                        setShowCloseConfirm(false)
+                        setShowCloseSurvey(true)
+                      },
+                    }
+                  )
+                }
+              >
+                {isRental ? 'Sí, alquilado' : 'Sí, vendido'}
+              </Button>
+              <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <CloseSurveyModal
+          isOpen={showCloseSurvey}
+          listingId={listing.id}
+          isRental={isRental}
+          onClose={() => setShowCloseSurvey(false)}
+        />
 
         {/* Share format modal */}
         <ShareFormatModal

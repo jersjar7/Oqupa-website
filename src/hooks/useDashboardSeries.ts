@@ -14,6 +14,15 @@ export interface SeriesListing {
   viewed: boolean
 }
 
+/** One close-survey answer, without who gave it or for which listing. */
+export interface CloseSurveyRow {
+  day: string | null
+  outcome: 'sold' | 'rented' | null
+  viaOqupa: 'yes' | 'no' | 'skip' | null
+  channel: string | null
+  feedback: string | null
+}
+
 /** dashboardSeries/current, rebuilt nightly by the buildDashboardSeries Cloud Function. */
 export interface DashboardSeries {
   today: string
@@ -39,6 +48,10 @@ export interface DashboardSeries {
     installsBySource: Record<string, Record<string, number>>
   } | null
   listings: SeriesListing[]
+  /** Listings marked sold / rented right now, team excluded. Absent on documents built before 2026-10-20. */
+  closed?: { sold: number; rented: number }
+  /** "¿Lo vendiste gracias a Oqupa?" answers, newest first, team excluded. */
+  closeSurveys?: CloseSurveyRow[]
   metaReported: { installs?: number; spendUSD?: number } | null
   since: { snapshots: string | null; contactLog: string | null; analytics: string | null }
 }

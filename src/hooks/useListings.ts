@@ -51,6 +51,29 @@ export function useToggleListingStatus() {
   })
 }
 
+/**
+ * Marks a listing Vendido or Alquilado — the website's copy of the app's
+ * owner action. The close survey opens from the caller's onSuccess.
+ */
+export function useMarkListingClosed() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ listingId, status }: { listingId: string; status: 'sold' | 'rented' }) => {
+      await firestoreService.updateListingStatus(listingId, status)
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success(
+        variables.status === 'rented' ? 'Propiedad marcada como alquilada' : 'Propiedad marcada como vendida'
+      )
+    },
+    onError: () => {
+      toast.error('Error al cambiar el estado de la publicacion')
+    },
+  })
+}
+
 export function useDeleteListing() {
   const queryClient = useQueryClient()
 
