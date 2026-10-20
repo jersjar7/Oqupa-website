@@ -52,6 +52,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const markClosed = useMarkListingClosed()
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showCloseSurvey, setShowCloseSurvey] = useState(false)
+  const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -214,10 +215,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               variant="text"
               isLoading={toggleStatus.isPending}
               onClick={() =>
-                toggleStatus.mutate({
-                  listingId: listing.id,
-                  currentStatus: listing.status,
-                })
+                isClosed
+                  ? setShowRepublishConfirm(true)
+                  : toggleStatus.mutate({
+                      listingId: listing.id,
+                      currentStatus: listing.status,
+                    })
               }
             >
               {listing.status === 'active' ? (
@@ -311,6 +314,33 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                 {isRental ? 'Sí, alquilado' : 'Sí, vendido'}
               </Button>
               <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Re-publish a sold / rented listing — the app's confirmation */}
+        {showRepublishConfirm && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">Re-publicar propiedad</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              ¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                isLoading={toggleStatus.isPending}
+                onClick={() =>
+                  toggleStatus.mutate(
+                    { listingId: listing.id, currentStatus: listing.status },
+                    { onSuccess: () => setShowRepublishConfirm(false) }
+                  )
+                }
+              >
+                Sí, re-publicar
+              </Button>
+              <Button variant="text" onClick={() => setShowRepublishConfirm(false)}>
                 Cancelar
               </Button>
             </div>

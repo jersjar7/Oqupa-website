@@ -52,7 +52,10 @@ function setup(status: string, operationType: 'venta' | 'alquiler') {
 }
 
 describe('ListingCard — Vendido / Alquilado', () => {
-  beforeEach(() => markClosedMutate.mockReset())
+  beforeEach(() => {
+    markClosedMutate.mockReset()
+    toggleMutate.mockReset()
+  })
 
   it('a listing for sale can be marked sold, after confirming, and then asks the survey', () => {
     setup('active', 'venta')
@@ -101,6 +104,13 @@ describe('ListingCard — Vendido / Alquilado', () => {
   it.each(['sold', 'rented'])('a %s listing can be published again from the website', (status) => {
     setup(status, 'alquiler')
     fireEvent.click(screen.getByRole('button', { name: /Volver a publicar/ }))
-    expect(toggleMutate).toHaveBeenCalledWith({ listingId: 'L1', currentStatus: status })
+    // Asks first, with the app's words — one click used to put it live.
+    expect(toggleMutate).not.toHaveBeenCalled()
+    expect(screen.getByText('¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, re-publicar' }))
+    expect(toggleMutate).toHaveBeenCalledWith(
+      { listingId: 'L1', currentStatus: status },
+      expect.anything(),
+    )
   })
 })
