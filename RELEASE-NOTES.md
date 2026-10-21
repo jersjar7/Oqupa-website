@@ -4,6 +4,18 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-20 — Vendido / Alquilado on the website, the close survey, and the contact sign-up funnel
+
+### New Features
+
+- **Owners can mark a listing Vendido or Alquilado from the website** (Mis propiedades), with the same confirmation as the app, and put it back up later with "Volver a publicar" (asks first).
+- **The close survey** (wording approved by Jerson 2026-10-20): ¿Lo vendiste/rentaste gracias a Oqupa? Sí · No · Prefiero no responder → if No, where → an optional comment. An answer is kept even if the owner closes the window after the first question. Saved by the `submitCloseSurvey` Cloud Function, live on production since earlier the same night.
+- **Números → Cierres tab**: listings sold and rented now, answers, the share "gracias a Oqupa", where the others closed, and the comments. Fills in after the nightly rebuild.
+
+### Technical
+
+- **Contact sign-up funnel (plan task A10).** `contact_tapped`, `contact_gate_step` (gate shown, door chosen, signed in, code sent, phone verified, email verified, returned) and `contact_reveal_failed` for dead ends, named exactly as in the app. Firebase only; nothing reaches Meta or TikTok. Walked on staging in a private window 2026-10-20 (contact granted, counted, App Check present); events confirmed in GA after this release.
+
 ## 2026-10-18 — Metrics plan, week 1: richer tracking (Sam)
 
 ### Technical
