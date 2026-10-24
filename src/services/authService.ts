@@ -21,6 +21,8 @@ import {
   signInWithPopup,
   browserPopupRedirectResolver,
   updatePhoneNumber,
+  getAdditionalUserInfo,
+  type UserCredential,
 } from 'firebase/auth'
 import {
   doc,
@@ -32,6 +34,36 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
+import { signupAttribution, type SignupDoor } from '@/lib/attribution'
+
+/**
+ * Creates a new account's user document. If the security rules refuse it, the
+ * one part a visitor can influence — the signupAttribution block, built from
+ * URL campaign labels — is dropped and the write tried once more: a crafted
+ * link must never cost someone their account (A12b hostile review). Any other
+ * failure propagates unchanged.
+ */
+async function createUserDocument(uid: string, data: Record<string, unknown>) {
+  try {
+    await setDoc(doc(db, 'users', uid), data)
+  } catch (error) {
+    const code = (error as { code?: unknown } | null)?.code
+    if (code !== 'permission-denied' || !('signupAttribution' in data)) throw error
+    const { signupAttribution: _dropped, ...rest } = data
+    await setDoc(doc(db, 'users', uid), rest)
+  }
+}
+
+/**
+ * The attribution block, only for a sign-in Firebase reports as brand new. A
+ * missing profile on an older account (an app user's first web sign-in) is
+ * not a sign-up and must not be counted as one (A12b review round 2).
+ */
+function newAccountAttribution(credential: UserCredential, door: SignupDoor) {
+  return getAdditionalUserInfo(credential)?.isNewUser
+    ? { signupAttribution: signupAttribution(door) }
+    : {}
+}
 
 // Store for phone verification flow
 let recaptchaVerifier: RecaptchaVerifier | null = null
@@ -49,7 +81,8 @@ export const authService = {
     const now = new Date()
     const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-    await setDoc(doc(db, 'users', user.uid), {
+    const attribution = signupAttribution('email')
+    await createUserDocument(user.uid, {
       email: user.email,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -60,9 +93,14 @@ export const authService = {
       claimsThisMonth: 0,
       claimMonth,
       authProvider: 'password',
+      // Where this account came from — write-once in the rules (A12b).
+      signupAttribution: attribution,
     })
 
-    AnalyticsLogger.registrationCompleted()
+    AnalyticsLogger.registrationCompleted({
+      campaign: attribution.lastCampaign ?? attribution.firstCampaign ?? null,
+      refListingId: attribution.refListingId ?? null,
+    })
     return user
   },
 
@@ -282,7 +320,7 @@ export const authService = {
       const now = new Date()
       const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await createUserDocument(user.uid, {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
@@ -296,6 +334,8 @@ export const authService = {
         claimsThisMonth: 0,
         claimMonth,
         authProvider: 'emailLink',
+        // Where this account came from — write-once in the rules (A12b).
+        ...newAccountAttribution(credential, 'email'),
       })
     }
 
@@ -317,7 +357,7 @@ export const authService = {
       const now = new Date()
       const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await createUserDocument(user.uid, {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
@@ -331,6 +371,8 @@ export const authService = {
         claimsThisMonth: 0,
         claimMonth,
         authProvider: 'apple.com',
+        // Where this account came from — write-once in the rules (A12b).
+        ...newAccountAttribution(credential, 'apple'),
       })
     }
     AnalyticsLogger.loginCompleted('apple')
@@ -347,7 +389,7 @@ export const authService = {
       const now = new Date()
       const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await createUserDocument(user.uid, {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
@@ -361,6 +403,8 @@ export const authService = {
         claimsThisMonth: 0,
         claimMonth,
         authProvider: 'google.com',
+        // Where this account came from — write-once in the rules (A12b).
+        ...newAccountAttribution(credential, 'google'),
       })
     }
     AnalyticsLogger.loginCompleted('google')

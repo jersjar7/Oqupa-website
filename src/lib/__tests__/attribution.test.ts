@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { attributionForListing, captureAttribution, __testing } from '../attribution'
+import { attributionForListing, captureAttribution, signupAttribution, __testing } from '../attribution'
+import { setReturnUrl } from '../utils'
 
 /**
  * Attribution decides whether a published listing can be traced to an ad. Every
@@ -240,5 +241,88 @@ describe('attribution', () => {
     // Call inferSource directly with a referrer from the same host
     const result = __testing.inferSource('https://oqupa.com/explorar')
     expect(result).toBeNull()
+  })
+})
+
+// A12b — where a new ACCOUNT came from. Saved once, in the write that creates
+// the user document; the security rules refuse any key outside this set and
+// any value over 200 characters, so these tests pin the shape the rules accept.
+describe('signupAttribution', () => {
+  const RULE_KEYS = [
+    'firstSource', 'firstMedium', 'firstCampaign', 'firstAt', 'firstWasPaidClick',
+    'lastSource', 'lastMedium', 'lastCampaign', 'lastAt', 'lastWasPaidClick',
+    'refListingId', 'platform', 'door',
+  ]
+
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('carries the campaign, the platform and the door', () => {
+    visit('https://oqupa.com/?utm_source=facebook&utm_campaign=piura-flyer&fbclid=abc')
+    expect(signupAttribution('google')).toMatchObject({
+      firstSource: 'facebook',
+      firstCampaign: 'piura-flyer',
+      firstWasPaidClick: 'true',
+      platform: 'web',
+      door: 'google',
+    })
+  })
+
+  it('still says which door and platform when nothing is known about the source', () => {
+    expect(signupAttribution('email')).toEqual({ platform: 'web', door: 'email' })
+  })
+
+  it('names the listing the person was trying to contact', () => {
+    visit('https://oqupa.com/?utm_source=whatsapp')
+    setReturnUrl('/property/abc123#contactar')
+    expect(signupAttribution('email').refListingId).toBe('abc123')
+  })
+
+  it('falls back to the shared listing link they arrived on', () => {
+    visit('https://oqupa.com/property/shared999?utm_source=share&utm_medium=app')
+    expect(signupAttribution('apple')).toMatchObject({
+      refListingId: 'shared999',
+      lastSource: 'share',
+      lastMedium: 'app',
+    })
+  })
+
+  it('does not name a listing when sign-up began from Publicar', () => {
+    setReturnUrl('/app/listings/new')
+    expect(signupAttribution('email').refListingId).toBeUndefined()
+  })
+
+  it('only uses keys the security rules accept, each short enough', () => {
+    visit(
+      `https://oqupa.com/property/l1?utm_source=${'s'.repeat(150)}&utm_campaign=c&utm_content=x&utm_term=y&fbclid=z`,
+      `https://${'a'.repeat(250)}.example.com/`,
+    )
+    const record = signupAttribution('google')
+    for (const [key, value] of Object.entries(record)) {
+      expect(RULE_KEYS).toContain(key)
+      expect(typeof value).toBe('string')
+      expect(value.length).toBeLessThanOrEqual(200)
+    }
+  })
+
+  it('never stores the click identifier', () => {
+    visit('https://oqupa.com/?fbclid=THIS_IDENTIFIES_A_PERSON')
+    expect(JSON.stringify(signupAttribution('email'))).not.toContain('THIS_IDENTIFIES_A_PERSON')
+  })
+
+  // A12b review round 2: the rules refuse the WHOLE create over one bad field,
+  // so a mangled listing link must drop only the listing, not everything.
+  it('drops a listing id the rules would refuse, and keeps the rest', () => {
+    visit('https://oqupa.com/?utm_source=whatsapp')
+    setReturnUrl('/property/abc123).#contactar')
+    const record = signupAttribution('email')
+    expect(record.refListingId).toBeUndefined()
+    expect(record.firstSource).toBe('whatsapp')
+  })
+
+  it('survives a corrupted record in browser storage', () => {
+    window.localStorage.setItem(__testing.STORAGE_KEY, JSON.stringify({ first: { at: new Date().toISOString(), source: 5 } }))
+    expect(signupAttribution('google')).toEqual({ platform: 'web', door: 'google' })
   })
 })

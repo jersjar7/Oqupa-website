@@ -9,7 +9,7 @@ const {
   fetchSignInMethodsMock, verifyPasswordResetCodeMock, confirmPasswordResetMock,
   applyActionCodeMock, checkActionCodeMock, signInWithCredentialMock,
   linkWithCredentialMock, updatePasswordMock, signInWithPopupMock,
-  unlinkMock, updatePhoneNumberMock,
+  unlinkMock, updatePhoneNumberMock, getAdditionalUserInfoMock,
   setDocMock, updateDocMock, getDocMock, docMock,
   httpsCallableMock, callableInvokerMock,
   analyticsRegistrationMock, analyticsLoginMock,
@@ -35,6 +35,7 @@ const {
     signInWithPopupMock: vi.fn(),
     unlinkMock: vi.fn(),
     updatePhoneNumberMock: vi.fn(),
+    getAdditionalUserInfoMock: vi.fn(),
     setDocMock: vi.fn(),
     updateDocMock: vi.fn(),
     getDocMock: vi.fn(),
@@ -72,6 +73,7 @@ vi.mock('firebase/auth', () => ({
   browserPopupRedirectResolver: {},
   unlink: (...args: unknown[]) => unlinkMock(...args),
   updatePhoneNumber: (...args: unknown[]) => updatePhoneNumberMock(...args),
+  getAdditionalUserInfo: (...args: unknown[]) => getAdditionalUserInfoMock(...args),
   RecaptchaVerifier: class {
     clear = vi.fn()
   },
@@ -105,7 +107,7 @@ vi.mock('@/lib/firebase', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   AnalyticsLogger: {
-    registrationCompleted: () => analyticsRegistrationMock(),
+    registrationCompleted: (...args: unknown[]) => analyticsRegistrationMock(...args),
     loginCompleted: (...args: unknown[]) => analyticsLoginMock(...args),
   },
 }))
@@ -155,6 +157,7 @@ describe('authService', () => {
     signInWithPopupMock.mockReset()
     unlinkMock.mockReset().mockResolvedValue(undefined)
     updatePhoneNumberMock.mockReset().mockResolvedValue(undefined)
+    getAdditionalUserInfoMock.mockReset().mockReturnValue({ isNewUser: true })
     setDocMock.mockReset().mockResolvedValue(undefined)
     updateDocMock.mockReset().mockResolvedValue(undefined)
     getDocMock.mockReset()
@@ -183,6 +186,49 @@ describe('authService', () => {
       expect(payload.isActive).toBe(true)
       expect(payload.isPhoneVerified).toBe(false)
       expect(payload.authProvider).toBe('password')
+    })
+
+    it('saves where the new account came from, with its door (A12b)', async () => {
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      await authService.registerWithEmailAndPassword('user@test.com', 'pass123')
+      const payload = setDocMock.mock.calls[0]![1]
+      expect(payload.signupAttribution).toMatchObject({ platform: 'web', door: 'email' })
+    })
+
+    it('puts the campaign and listing slots on the sign-up event (A12b)', async () => {
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      await authService.registerWithEmailAndPassword('user@test.com', 'pass123')
+      expect(analyticsRegistrationMock).toHaveBeenCalledWith(
+        expect.objectContaining({ campaign: null, refListingId: null }),
+      )
+    })
+
+    it('still creates the account if the attribution is refused (A12b review)', async () => {
+      // A crafted campaign link must never cost someone their sign-up: on the
+      // website a failed first write leaves a sign-in with no profile, which
+      // nothing recreates for an email account.
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      setDocMock
+        .mockRejectedValueOnce(Object.assign(new Error('denied'), { code: 'permission-denied' }))
+        .mockResolvedValueOnce(undefined)
+      await authService.registerWithEmailAndPassword('user@test.com', 'pass123')
+      expect(setDocMock).toHaveBeenCalledTimes(2)
+      const retry = setDocMock.mock.calls[1]![1]
+      expect(retry.signupAttribution).toBeUndefined()
+      expect(retry.authProvider).toBe('password')
+    })
+
+    it('does not retry a failure that has nothing to do with the attribution', async () => {
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      setDocMock.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'unavailable' }))
+      await expect(
+        authService.registerWithEmailAndPassword('user@test.com', 'pass123'),
+      ).rejects.toThrow('offline')
+      expect(setDocMock).toHaveBeenCalledOnce()
     })
 
     it('fires the registration analytics event', async () => {
@@ -452,6 +498,19 @@ describe('authService', () => {
       expect(setDocMock).toHaveBeenCalledOnce()
       const payload = setDocMock.mock.calls[0]![1]
       expect(payload.authProvider).toBe('emailLink')
+      expect(payload.signupAttribution).toMatchObject({ platform: 'web', door: 'email' })
+    })
+
+    it('a missing doc for an OLD account gets no attribution (A12b review)', async () => {
+      // Only a brand-new sign-in is a sign-up; a long-standing account whose
+      // profile is missing would otherwise be counted as today's web sign-up.
+      const user = makeUser('uid-9')
+      signInWithEmailLinkMock.mockResolvedValue(makeCredential(user))
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      getAdditionalUserInfoMock.mockReturnValue({ isNewUser: false })
+      await authService.completeMagicLinkSignIn('user@test.com', 'https://magic-link')
+      expect(setDocMock).toHaveBeenCalledOnce()
+      expect(setDocMock.mock.calls[0]![1].signupAttribution).toBeUndefined()
     })
 
     it('skips Firestore doc creation for existing users', async () => {
@@ -506,6 +565,16 @@ describe('authService', () => {
       await authService.signInWithGoogle()
       expect(setDocMock).toHaveBeenCalledOnce()
       expect(setDocMock.mock.calls[0]![1].authProvider).toBe('google.com')
+      expect(setDocMock.mock.calls[0]![1].signupAttribution).toMatchObject({ door: 'google' })
+    })
+
+    it('an app account signing in on the web for the first time gets no attribution', async () => {
+      const user = makeUser('uid-10')
+      signInWithPopupMock.mockResolvedValue(makeCredential(user))
+      getDocMock.mockResolvedValue(makeFirestoreDoc(false))
+      getAdditionalUserInfoMock.mockReturnValue({ isNewUser: false })
+      await authService.signInWithGoogle()
+      expect(setDocMock.mock.calls[0]![1].signupAttribution).toBeUndefined()
     })
 
     it('skips Firestore creation for returning Google users', async () => {
@@ -550,6 +619,7 @@ describe('authService', () => {
       getDocMock.mockResolvedValue(makeFirestoreDoc(false))
       await authService.signInWithApple()
       expect(setDocMock.mock.calls[0]![1].authProvider).toBe('apple.com')
+      expect(setDocMock.mock.calls[0]![1].signupAttribution).toMatchObject({ door: 'apple' })
     })
 
     it('fires the login analytics event with method "apple"', async () => {

@@ -39,6 +39,13 @@ describe('generateShareText', () => {
     expect(text).toContain('https://oqupa.com/property/listing-abc-123')
   })
 
+  it('tags the link so a shared listing shows up as its own source (A12b)', () => {
+    const text = generateShareText(baseParams)
+    expect(text).toContain(
+      'https://oqupa.com/property/listing-abc-123?utm_source=share&utm_medium=web',
+    )
+  })
+
   it('includes "Ver en Oqupa:" CTA line', () => {
     const text = generateShareText(baseParams)
     expect(text).toContain('Ver en Oqupa:')
