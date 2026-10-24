@@ -31,7 +31,9 @@ const mockAuthService = vi.hoisted(() => ({
 vi.mock('@/services/authService', () => ({ authService: mockAuthService }))
 const mockConsumeReturnUrl = vi.hoisted(() => vi.fn(() => null as string | null))
 vi.mock('@/lib/utils', () => ({ consumeReturnUrl: mockConsumeReturnUrl, peekReturnUrl: vi.fn(() => null) }))
-vi.mock('@/lib/authErrors', () => ({
+// The real module first, so messages added later need no stand-in here.
+vi.mock('@/lib/authErrors', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/authErrors')>()),
   getPhoneAuthError: vi.fn(() => ({ message: 'Error de telefono', recoveryHint: null })),
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
