@@ -356,6 +356,10 @@ export const authService = {
     if (auth.currentUser) {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), {
         isPhoneVerified: true,
+        // The app creates email accounts inactive until this step and treats
+        // inactive as unable to publish or contact; finishing here must turn
+        // it on too (app hostile review 2026-10-24, finding 1).
+        isActive: true,
         updatedAt: serverTimestamp(),
       })
     }

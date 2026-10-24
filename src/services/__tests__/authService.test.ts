@@ -857,6 +857,19 @@ describe('authService', () => {
       expect(callableInvokerMock).not.toHaveBeenCalled()
     })
 
+    // App hostile review 2026-10-24, finding 1: the app creates email accounts
+    // inactive until the phone is verified and its own phone step turns them
+    // active; this step never did, so an app account finished here stayed
+    // inactive — and the app treats inactive as unable to publish or contact.
+    it('marks the account active along with the verified phone, as the app does', async () => {
+      _currentUser = { ...makeUser('uid-phone'), providerData: [] }
+      linkWithCredentialMock.mockResolvedValue(undefined)
+      updateDocMock.mockClear()
+      updateDocMock.mockResolvedValue(undefined)
+      await authService.verifyPhoneCode('v-id', '123456')
+      expect(updateDocMock.mock.calls[0]![1]).toMatchObject({ isPhoneVerified: true, isActive: true })
+    })
+
     it('updates Firestore with isPhoneVerified=true when there is a current user', async () => {
       _currentUser = { ...makeUser('uid-phone'), providerData: [] }
       linkWithCredentialMock.mockResolvedValue(undefined)
