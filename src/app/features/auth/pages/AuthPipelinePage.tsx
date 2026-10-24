@@ -21,6 +21,7 @@ import {
   pendingContactErrand,
   type ContactErrand,
 } from '@/app/features/listings/contactFunnel'
+import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { getPhoneAuthError, getProfileSaveError, getEmailResendError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
@@ -337,6 +338,26 @@ export default function AuthPipelinePage() {
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* The way out of a half-finished account (approved 2026-10-24). On a
+            phone the header hides "Salir", so without this the only exit was
+            clearing the browser. The errand is kept for the next account. */}
+        <p className="mt-10 text-center text-xs text-text-tertiary">
+          ¿No es tu cuenta?{' '}
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await switchAccount({ logout: () => authService.logout(), navigate })
+              } catch {
+                toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
+              }
+            }}
+            className="underline underline-offset-2 hover:text-text-secondary"
+          >
+            Usar otra cuenta
+          </button>
+        </p>
 
         <div id="recaptcha-container" />
       </div>

@@ -27,10 +27,11 @@ const mockAuthService = vi.hoisted(() => ({
   cleanupRecaptcha: vi.fn(),
   sendEmailVerificationToCurrentUser: vi.fn(),
   refreshSession: vi.fn(),
+  logout: vi.fn(),
 }))
 vi.mock('@/services/authService', () => ({ authService: mockAuthService }))
 const mockConsumeReturnUrl = vi.hoisted(() => vi.fn(() => null as string | null))
-vi.mock('@/lib/utils', () => ({ consumeReturnUrl: mockConsumeReturnUrl, peekReturnUrl: vi.fn(() => null) }))
+vi.mock('@/lib/utils', () => ({ consumeReturnUrl: mockConsumeReturnUrl, peekReturnUrl: vi.fn(() => null), setReturnUrl: vi.fn() }))
 // The real module first, so messages added later need no stand-in here.
 vi.mock('@/lib/authErrors', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/authErrors')>()),
@@ -106,6 +107,22 @@ describe('AuthPipelinePage', () => {
       mockConsumeReturnUrl.mockReturnValue('/property/abc#contactar')
       renderPage()
       await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/property/abc#contactar', { replace: true }))
+    })
+  })
+
+  // "Usar otra cuenta" (approved 2026-10-24): the only way out of a
+  // half-finished account on a phone, where the header hides "Salir".
+  describe('a way out to another account', () => {
+    it('is offered on every step', () => {
+      renderPage()
+      expect(screen.getByRole('button', { name: /usar otra cuenta/i })).toBeDefined()
+    })
+    it('signs out, then opens the sign-in door', async () => {
+      mockAuthService.logout.mockResolvedValue(undefined)
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /usar otra cuenta/i }))
+      await waitFor(() => expect(mockAuthService.logout).toHaveBeenCalledOnce())
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/app/login', { replace: true }))
     })
   })
 
