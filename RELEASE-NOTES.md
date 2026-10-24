@@ -4,6 +4,16 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-24 — Where each new account came from (metrics plan A12b)
+
+### New Features
+
+- **Every new account remembers how it arrived.** At sign-up (email, Google or Apple) the website saves a small private note on the account: the campaign or source (Facebook, the flyer, WhatsApp…), whether a paid ad click was involved (never the click id itself), the listing they were on, and which sign-in method. Written once, in the same step that creates the account; production's security rules (live earlier today) refuse any later change. Only brand-new sign-ins get it; a crafted link can never block a sign-up.
+- **Shared listing links are tagged** (`?utm_source=share&utm_medium=web`), so "someone shared a listing with me" counts as its own source. Old links keep working.
+- **The email sign-up event carries the campaign and listing** (Firebase only; nothing new goes to Meta or TikTok).
+
+Hostile-reviewed twice; Google door verified on Jerson's iPhone on staging. Approved by Jerson 2026-10-24.
+
 ## 2026-10-24 — "Usar otra cuenta": a way out of an unfinished account
 
 ### New Features

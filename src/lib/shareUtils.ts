@@ -67,7 +67,9 @@ export function generateShareText(params: ShareListingParams): string {
   // Blank line + CTA
   lines.push('')
   lines.push('Ver en Oqupa:')
-  lines.push(`https://oqupa.com/property/${params.listingId}`)
+  // Tagged so a visit from a shared listing is recorded as its own source
+  // (metrics plan A12b). The page ignores the tag; old untagged links still work.
+  lines.push(`https://oqupa.com/property/${params.listingId}?utm_source=share&utm_medium=web`)
 
   return lines.join('\n')
 }

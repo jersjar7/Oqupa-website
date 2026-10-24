@@ -29,6 +29,8 @@
  * acts. Recording only the last would credit the ad with nothing.
  */
 
+import { peekReturnUrl } from '@/lib/utils'
+
 const STORAGE_KEY = 'oqupa_attribution_v1'
 
 /**
@@ -216,6 +218,54 @@ export function attributionForListing(): Record<string, string> | null {
   /* v8 ignore start */
   return Object.keys(record).length > 0 ? record : null
   /* v8 ignore stop */
+}
+
+/** The sign-in method a new account used. */
+export type SignupDoor = 'email' | 'google' | 'apple'
+
+/** The listing-id shape the security rules accept. */
+const LISTING_ID = /^[A-Za-z0-9_-]{1,64}$/
+
+/** The listing id in a `/property/{id}` path, or null. */
+function listingIdFromPath(path: string | null | undefined): string | null {
+  const match = /^\/property\/([^/?#]+)/.exec(path ?? '')
+  return match?.[1] ?? null
+}
+
+/**
+ * Where a new ACCOUNT came from (metrics plan A12b), saved once in the write
+ * that creates the user document. Same flattened fields as the listing record
+ * above, plus the listing the person was on and which door they used.
+ *
+ * The security rules accept exactly these keys, as text of at most 200
+ * characters, and refuse any later change — so the record is what it was at
+ * sign-up, forever. No identifiers: the click id is reduced to "true".
+ */
+export function signupAttribution(door: SignupDoor): Record<string, string> {
+  const record: Record<string, string> = {}
+  // Building the record must never stop a sign-up: corrupted browser storage
+  // yields just the platform and door (A12b review round 2).
+  try {
+    for (const [key, value] of Object.entries(attributionForListing() ?? {})) {
+      if (typeof value === 'string') record[key] = value.slice(0, 200)
+    }
+    // The errand that opened sign-up (a contact tap) names the listing best; a
+    // shared listing link they arrived on is the fallback.
+    const stored = read()
+    const refListingId =
+      listingIdFromPath(peekReturnUrl()?.url) ??
+      listingIdFromPath(stored?.last?.landingPath) ??
+      listingIdFromPath(stored?.first?.landingPath)
+    // The rules refuse the whole create over a malformed id, so one that does
+    // not look like a listing id is dropped on its own.
+    if (refListingId && LISTING_ID.test(refListingId)) record.refListingId = refListingId
+  } catch {
+    for (const key of Object.keys(record)) delete record[key]
+  }
+
+  record.platform = 'web'
+  record.door = door
+  return record
 }
 
 /** Exposed for tests. */
