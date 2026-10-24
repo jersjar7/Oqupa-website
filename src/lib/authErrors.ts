@@ -42,6 +42,12 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     message: 'Este número ya está asociado a otra cuenta. Usa un número diferente.',
     isRetryable: false,
   },
+  // What the web SDK actually throws when the number belongs to another
+  // account (Identity Toolkit returns a temporaryProof instead of linking).
+  'auth/account-exists-with-different-credential': {
+    message: 'Este número ya está asociado a otra cuenta. Usa un número diferente.',
+    isRetryable: false,
+  },
   'auth/provider-already-linked': {
     message: 'Ya tienes un número vinculado a esta cuenta.',
     isRetryable: false,

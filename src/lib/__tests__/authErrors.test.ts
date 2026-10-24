@@ -173,6 +173,16 @@ describe('getPhoneAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
+  // The web SDK does NOT use credential-already-in-use for a phone held by
+  // another account: Identity Toolkit answers with a temporaryProof and the SDK
+  // throws account-exists-with-different-credential. Unmapped, the person saw
+  // only "Error al verificar" (found on staging 2026-10-24).
+  it('maps the web SDK in-use phone code to the same duplicate message', () => {
+    const info = getPhoneAuthError({ code: 'auth/account-exists-with-different-credential' })
+    expect(info.message).toMatch(/número ya está asociado/i)
+    expect(info.isRetryable).toBe(false)
+  })
+
   it('maps provider-already-linked to a non-retryable already-linked message', () => {
     const info = getPhoneAuthError({ code: 'auth/provider-already-linked' })
     expect(info.message).toMatch(/número vinculado/i)
