@@ -29,6 +29,8 @@ import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow
 import AppStoreBadges from '@/components/AppStoreBadges'
 import SaveButton from '@/components/lists/SaveButton'
 import { toast } from 'sonner'
+import { authService } from '@/services/authService'
+import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { contactService, ContactDenied } from '@/services/contactService'
 
 function PropertyGallery({ images }: { images: string[] }) {
@@ -413,7 +415,13 @@ export default function PropertyPage() {
         logContactRevealFailed(listingIdForContact, error instanceof ContactDenied ? error : null)
       }
       if (opensGate) {
-        setPhoneNeedsReverification(reason === 'needs-phone-reverification')
+        // "Otra vez" only when our own record says the number WAS verified.
+        // The server gives the same answer to anyone with no phone attached,
+        // and a brand-new person was being told to verify "again" a number
+        // they never verified (staging, 2026-10-24).
+        setPhoneNeedsReverification(
+          reason === 'needs-phone-reverification' && user?.isPhoneVerified === true,
+        )
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
       } else if (reason === 'listing-has-no-contact') {
@@ -740,6 +748,24 @@ export default function PropertyPage() {
                 >
                   Ahora no
                 </button>
+                {firebaseUser && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await switchAccount({
+                          logout: () => authService.logout(),
+                          navigate,
+                          returnTo: contactReturnUrl(window.location.pathname),
+                        })
+                      } catch {
+                        toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
+                      }
+                    }}
+                    className="mx-auto text-xs text-text-tertiary underline underline-offset-2 hover:text-text-secondary"
+                  >
+                    Usar otra cuenta
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>
