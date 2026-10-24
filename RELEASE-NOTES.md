@@ -4,6 +4,22 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-24 — Email sign-up fix (website half)
+
+### New Features
+
+- **Google first on "Crea tu cuenta".** The email form now sits behind "Continuar con correo", like the sign-in screen and the app.
+- **"¿No es tu correo? Cámbialo"** on the email step: a mistyped address can be corrected and the confirmation link goes to the new one. Confirming it ends the old session, so the sign-in screen opens with the new email filled in and "Tu correo cambió…".
+- **A phone number stuck on an abandoned sign-up moves to the person who verifies it**, through the server function live since 21 Oct. A finished account's number is never taken.
+
+### Bug Fixes
+
+- Finishing the phone step on the website now marks the account active, as the app does; app accounts finished here were being treated by the app as unable to publish or contact.
+- The profile's own email copy follows a confirmed email change.
+- The "undo" link Firebase sends to the old address after a change is explained, never applied (it may be a stranger's inbox).
+
+Hostile-reviewed twice (website and app); walked through in a browser against staging. Approved by Jerson 2026-10-24. Plan: docs/email-signup-fix-plan.md.
+
 ## 2026-10-24 — Where each new account came from (metrics plan A12b)
 
 ### New Features
