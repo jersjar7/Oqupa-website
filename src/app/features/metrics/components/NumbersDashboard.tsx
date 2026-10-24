@@ -13,6 +13,7 @@ import {
   type Stat,
 } from '../lib/series'
 import { summarizeCloses } from '../lib/closes'
+import { contactsThisWeek, costPerContactThisWeek, durationWords, percent, weekWindow } from '../lib/headline'
 
 // Same brand pair as the rest of the page: warm for supply and money, cool for
 // demand. The dashboard has no dark mode, like the rest of the site.
@@ -468,6 +469,95 @@ function Publicidad({ data, range }: TabProps) {
   )
 }
 
+// ─── Headline (A1b) ─────────────────────────────────────────────────────────
+
+/**
+ * The numbers to see first, whatever tab or range is chosen: always the last
+ * 7 complete days (14 or 28 where a week is too few to say anything).
+ */
+function Headline({ data }: { data: DashboardSeries }) {
+  const h = data.headline
+  if (!h) return null
+  const { series: s, today } = data
+  const week = weekWindow(today)
+  const contacts = contactsThisWeek(s.contactsReal, today, data.since.contactLog)
+  const cost = costPerContactThisWeek(s.spendUSD, s.contactsReal, today)
+  const { liquidity: liq, timeToFirstContact: first, seekers, summary } = h
+  const attach = summary?.attachRate
+  const lift = summary?.lift?.vsSimilar.lift ?? null
+  const claim = summary?.realtorClaimLimit
+
+  const items: GlanceItem[] = [
+    {
+      label: 'Contactos reales',
+      value: num(contacts.week),
+      detail:
+        contacts.average === null ? (
+          'sin 4 semanas previas para comparar'
+        ) : (
+          <>
+            <span className={`font-bold ${contacts.week >= contacts.average ? 'text-secondary' : 'text-error'}`}>
+              {contacts.week >= contacts.average ? '↑' : '↓'}
+            </span>{' '}
+            vs {num(contacts.average, 1)} por semana antes
+          </>
+        ),
+    },
+    {
+      label: 'Listados contactados',
+      value: percent(liq.contacted, liq.activeListings),
+      detail: `${num(liq.contacted)} de ${num(liq.activeListings)} activos, en 14 días`,
+    },
+    {
+      label: 'Hasta el primer contacto',
+      value: durationWords(first.medianHours),
+      detail: first.listings
+        ? `mediana desde que se publica · ${num(first.listings)} ${first.listings === 1 ? 'listado' : 'listados'} en 28 días`
+        : 'ningún primer contacto en 28 días',
+    },
+    {
+      label: 'Buscadores activos',
+      value: num(seekers.active),
+      detail: `${num(seekers.buyer)} buscan comprar · ${num(seekers.renter)} alquilar`,
+    },
+    {
+      label: 'Publicados con boost',
+      value: attach ? percent(attach.boosted, attach.newListings) : '—',
+      detail: attach
+        ? lift === null
+          ? `${num(attach.boosted)} de ${num(attach.newListings)} en 28 días · efecto: aún nada que medir`
+          : `${num(attach.boosted)} de ${num(attach.newListings)} en 28 días · ${lift >= 0 ? '+' : '−'}${num(Math.abs(lift), 1)} contactos/día vs similares`
+        : 'llega con el resumen diario',
+    },
+    {
+      label: 'Agentes al límite',
+      value: claim ? num(claim.realtorsAtLimit) : '—',
+      detail: claim ? `usaron los ${claim.limit} reclamos del mes` : 'llega con el resumen diario',
+    },
+    {
+      label: 'Costo por contacto',
+      value: cost.perContact === null ? '—' : `$${num(cost.perContact, 2)}`,
+      detail: (
+        <>
+          ${num(cost.spend, 2)} en Meta ÷ {num(cost.contacts)} contactos <Source estimated />
+        </>
+      ),
+    },
+  ]
+
+  return (
+    <section aria-labelledby="numeros-headline" className="mb-8">
+      <h2 id="numeros-headline" className="mb-1 font-serif text-[28px] font-normal text-text-primary">
+        Esta semana
+      </h2>
+      <p className="mb-4 font-sans text-xs text-text-tertiary">
+        Del {shortDay(week.from)} al {shortDay(week.to)}. Sin las cuentas del equipo.
+      </p>
+      <Glance items={items} />
+    </section>
+  )
+}
+
 const PANELS: Record<TabKey, (props: TabProps) => ReactNode> = {
   resumen: Resumen,
   buscadores: Buscadores,
@@ -496,6 +586,7 @@ export default function NumbersDashboard({ data }: { data: DashboardSeries }) {
 
   return (
     <div className="mx-auto max-w-6xl">
+      <Headline data={data} />
       <div className="sticky top-0 z-10 -mx-1 mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-1">
         <div role="tablist" aria-label="Secciones de Números" className="flex overflow-x-auto">
           {TABS.map((t) => (

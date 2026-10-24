@@ -105,6 +105,7 @@ All user-facing text is in Spanish. Variable names and code comments are in Engl
 | `config` | Platform configuration (pricing, feature flags) | Public read |
 | `payments` | Boost payment records | Owner read only |
 | `publicMetrics` | Daily aggregate snapshots for the internal `/app/numbers` dashboard | Read = email allowlist; write = server only |
+| `dashboardSeries` | One doc (`current`) feeding the tabbed `/app/numbers` page, rebuilt nightly | Read = metrics allowlist; write = server only |
 | `teamTasks` | Tasks on the internal dev board at `/app/equipo` | Read + write = email allowlist (roster) |
 | `contentLinks` | Where each piece of marketing content lives, on `/app/contenido` | Read + write = marketing access list |
 | `growthPlan` | Progress on the six-week growth plan, one doc per day (`YYYY-MM-DD`) | Read + write = marketing access list; `notes` capped at 2000 chars |
@@ -118,7 +119,9 @@ The team metrics dashboard is a gated tab inside the authenticated dashboard she
   2. `firestore.rules` → `match /publicMetrics/{date}` — the read allowlist (so the data itself is protected, not just the UI).
   Both lists are lowercased and compared case-insensitively. If they drift, a user either sees an empty/error dashboard (UI allows, rules deny) or a hidden-but-readable collection (rules allow, UI hides). After editing `firestore.rules`, redeploy it manually (it is **not** auto-deployed by CI) to **both** projects.
 - `MetricsPage` is `React.lazy()`-loaded so `recharts` stays in its own chunk — non-viewers never download it.
-- Source data: `publicMetrics/{YYYY-MM-DD}` written daily (03:30 Lima) by the `snapshotPlatformMetrics` Cloud Function (Admin SDK, bypasses rules). Aggregates only — no PII.
+- **Six tabs** (`components/NumbersDashboard.tsx`): Resumen, Buscadores, Oferta, **Cierres** (sold/rented and the close-survey answers, added 2026-10-21), Dinero, Publicidad. Every chart switches 7 / 30 / 90 días / Todo. Cards only for the one glance number per tab; trends are line charts.
+- Source data: `dashboardSeries/current`, rebuilt in full nightly (03:45 Lima) by the `buildDashboardSeries` Cloud Function — team accounts excluded, days counted in **Lima** time, Google Analytics figures included (staging has no GA property, so those charts say "Sin datos" there). If that doc is missing or unreadable the page falls back to the original single-page dashboard, built from the `publicMetrics/{YYYY-MM-DD}` snapshots written by `snapshotPlatformMetrics` (03:30 Lima). Aggregates only — no PII. `dashboardSeries` is readable by the same allowlist and written by no client.
+- Plan-task status for the metrics work: `docs/metrics-plan-progress.md` in the platform repo.
 
 ### Marketing content page (`/app/contenido`)
 
@@ -329,4 +332,4 @@ Overall coverage last measured: **92.17% statements / 85.33% branches** (1850 te
 
 ## Related Projects
 
-- **Flutter app:** `/Users/jerson/developer/oqupa/` — iOS/Android app for the same Firebase project. Has its own Cloud Functions in `functions/` using nodemailer for realtor application emails.
+- **Flutter app:** `../oqupa/` (sibling repo inside Oqupa-Platform) — iOS/Android app for the same Firebase project. Has its own Cloud Functions in `functions/` using nodemailer for realtor application emails.
