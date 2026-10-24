@@ -758,7 +758,7 @@ export default function PropertyPage() {
                         await switchAccount({
                           logout: () => authService.logout(),
                           navigate,
-                          returnTo: contactReturnUrl(window.location.pathname),
+                          returnTo: contactReturnUrl(pathname),
                         })
                       } catch {
                         toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
