@@ -41,6 +41,7 @@ vi.mock('@/services/contactService', () => ({
   ContactDenied: class extends Error {},
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('@/services/authService', () => ({ authService: { logout: vi.fn() } }))
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
 vi.mock('@/app/features/boost/components/BoostPurchaseFlow', () => ({ default: () => null }))
 vi.mock('@/components/ShareFormatModal', () => ({ default: () => null }))
