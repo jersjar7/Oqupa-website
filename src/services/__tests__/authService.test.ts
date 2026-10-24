@@ -821,8 +821,8 @@ describe('authService', () => {
       const user = { ...makeUser('uid-new'), providerData: [] }
       _currentUser = user
       linkWithCredentialMock.mockRejectedValueOnce({
-        code: 'auth/credential-already-in-use',
-        customData: { temporaryProof: 'tp-9', phoneNumber: '+16505552222' },
+        code: 'auth/account-exists-with-different-credential',
+        customData: { phoneNumber: '+16505552222', _tokenResponse: { temporaryProof: 'tp-9', phoneNumber: '+16505552222' } },
       })
       callableInvokerMock.mockResolvedValueOnce({ data: { success: true } })
       updateDocMock.mockResolvedValue(undefined)

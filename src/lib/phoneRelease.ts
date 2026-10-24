@@ -25,12 +25,20 @@ function codeOf(err: unknown): string | undefined {
   return typeof code === 'string' ? code : undefined
 }
 
-/** The proof Firebase attaches to a phone collision, or null. */
+/**
+ * The proof Firebase attaches to a phone collision, or null. The web SDK
+ * (firebase/auth 11, read from its source 2026-10-24) throws
+ * auth/account-exists-with-different-credential and keeps the proof in
+ * customData._tokenResponse — the same place PhoneAuthProvider.credentialFromError
+ * reads. A flat customData is accepted too, for any other wrapper.
+ */
 export function phoneProofFromError(err: unknown): PhoneProof | null {
   if (!err || typeof err !== 'object') return null
   if (!COLLISION_CODES.has(codeOf(err) ?? '')) return null
-  const data = (err as { customData?: Record<string, unknown> }).customData ?? {}
-  const { temporaryProof, phoneNumber } = data
+  const custom = (err as { customData?: Record<string, unknown> }).customData ?? {}
+  const response = (custom._tokenResponse ?? {}) as Record<string, unknown>
+  const temporaryProof = response.temporaryProof ?? custom.temporaryProof
+  const phoneNumber = response.phoneNumber ?? custom.phoneNumber
   if (typeof temporaryProof !== 'string' || !temporaryProof) return null
   if (typeof phoneNumber !== 'string' || !phoneNumber) return null
   return { temporaryProof, phoneNumber }

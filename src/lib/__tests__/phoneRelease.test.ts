@@ -19,7 +19,15 @@ function deps(overrides: Partial<Parameters<typeof releaseCollidedPhone>[1]> = {
 }
 
 describe('phoneProofFromError', () => {
-  it('reads the proof Firebase returns on a phone collision', () => {
+  it('reads the proof where the web SDK really puts it', () => {
+    // linkWithPhoneNumber → _makeTaggedError(NEED_CONFIRMATION, response)
+    const real = {
+      code: 'auth/account-exists-with-different-credential',
+      customData: { appName: '[DEFAULT]', phoneNumber: '+16505552222', _tokenResponse: { temporaryProof: 'tp-real', phoneNumber: '+16505552222' } },
+    }
+    expect(phoneProofFromError(real)).toEqual({ temporaryProof: 'tp-real', phoneNumber: '+16505552222' })
+  })
+  it('also accepts a flat proof', () => {
     expect(phoneProofFromError(collision())).toEqual({ temporaryProof: 'tp-1', phoneNumber: '+16505552222' })
   })
   it('also for account-exists-with-different-credential', () => {
