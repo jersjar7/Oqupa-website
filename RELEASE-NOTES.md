@@ -4,6 +4,16 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-23 — Números opens on "Esta semana"
+
+### New Features
+
+- **Headline tiles (metrics plan A1b).** Above the tabs, seven numbers for the last 7 complete days whatever tab or range is chosen: real contacts vs the 4-week average, share of active listings contacted in 14 days, median time to first contact, active seekers (buyers / renters), boost attach rate and lift, realtors at the monthly claim limit, and cost per contact (estimated). Fed by the nightly `buildDashboardSeries` rebuild; hidden until it carries the new numbers. Reviewed by Jerson on staging 2026-10-23.
+
+### Technical
+
+- **Dependency fix:** undici and zod advisories published 2026-10-23 made the CI gate refuse every build; lockfile updated (zod 4.6.7, undici 7.30.1).
+
 ## 2026-10-20 — Vendido / Alquilado on the website, the close survey, and the contact sign-up funnel
 
 ### New Features
