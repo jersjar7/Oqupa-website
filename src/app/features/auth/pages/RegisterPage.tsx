@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { registerSchema, type RegisterFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
-import { getRegisterAuthError } from '@/lib/authErrors'
+import { getRegisterAuthError, getSocialSignInError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
@@ -71,10 +71,8 @@ export default function RegisterPage() {
               await authService.signInWithGoogle()
               logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
             } catch (err) {
-              const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
-              if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-                toast.error('No pudimos entrar con Google. Intenta de nuevo.')
-              }
+              const info = getSocialSignInError(err)
+              if (info) toast.error(info.message)
             }
           }}
           className="mt-8 flex h-12 w-full items-center justify-center rounded-full bg-primary font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"

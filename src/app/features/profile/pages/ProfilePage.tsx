@@ -7,7 +7,7 @@ import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
 import { phoneSchema, verificationCodeSchema, type PhoneFormData, type VerificationCodeFormData } from '@/schemas/authSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
-import { getPhoneAuthError } from '@/lib/authErrors'
+import { getPhoneAuthError, getProfileSaveError, getAccountDeleteError } from '@/lib/authErrors'
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Shield, Clock, XCircle, Phone } from 'lucide-react'
@@ -86,9 +86,10 @@ export default function ProfilePage() {
       await refreshUser()
       setSuccess('Perfil actualizado')
       toast.success('Perfil actualizado')
-    } catch {
-      setError('Error al actualizar el perfil')
-      toast.error('Error al actualizar el perfil')
+    } catch (err) {
+      const { message } = getProfileSaveError(err)
+      setError(message)
+      toast.error(message)
     }
   }
 
@@ -183,9 +184,10 @@ export default function ProfilePage() {
       await authService.deleteAccount()
       toast.success('Cuenta eliminada')
       navigate('/app/login')
-    } catch {
-      setDeleteError('Error al eliminar la cuenta. Intenta de nuevo.')
-      toast.error('Error al eliminar la cuenta. Intenta de nuevo.')
+    } catch (err) {
+      const { message } = getAccountDeleteError(err)
+      setDeleteError(message)
+      toast.error(message)
       setIsDeleting(false)
     }
   }

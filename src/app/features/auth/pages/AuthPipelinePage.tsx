@@ -21,7 +21,7 @@ import {
   pendingContactErrand,
   type ContactErrand,
 } from '@/app/features/listings/contactFunnel'
-import { getPhoneAuthError } from '@/lib/authErrors'
+import { getPhoneAuthError, getProfileSaveError, getEmailResendError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
 
@@ -207,9 +207,10 @@ export default function AuthPipelinePage() {
                     if (!firebaseUser) throw new Error('Not authenticated')
                     await authService.updateUserName(firebaseUser.uid, data.name)
                     await refreshUser() // → effect moves to the next step
-                  } catch {
-                    setError('Error al guardar el nombre')
-                    toast.error('Error al guardar el nombre')
+                  } catch (err) {
+                    const { message } = getProfileSaveError(err)
+                    setError(message)
+                    toast.error(message)
                   } finally {
                     setIsSubmitting(false)
                   }
@@ -326,8 +327,8 @@ export default function AuthPipelinePage() {
                   try {
                     await authService.sendEmailVerificationToCurrentUser()
                     toast.success('Te enviamos un nuevo enlace')
-                  } catch {
-                    toast.error('No pudimos reenviar el correo. Intenta de nuevo.')
+                  } catch (err) {
+                    toast.error(getEmailResendError(err).message)
                   } finally {
                     setIsSubmitting(false)
                   }
