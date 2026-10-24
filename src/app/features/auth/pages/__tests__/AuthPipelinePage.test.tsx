@@ -28,6 +28,7 @@ const mockAuthService = vi.hoisted(() => ({
   sendEmailVerificationToCurrentUser: vi.fn(),
   refreshSession: vi.fn(),
   logout: vi.fn(),
+  requestEmailChange: vi.fn(),
 }))
 vi.mock('@/services/authService', () => ({ authService: mockAuthService }))
 const mockConsumeReturnUrl = vi.hoisted(() => vi.fn(() => null as string | null))
@@ -219,6 +220,83 @@ describe('AuthPipelinePage', () => {
       renderPage()
       fireEvent.click(screen.getByRole('button', { name: /reenviar correo/i }))
       await waitFor(() => expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled())
+    })
+  })
+
+  // "¿No es tu correo? Cámbialo" — email sign-up fix, step 2.
+  describe('changing a mistyped email', () => {
+    beforeEach(() => {
+      localStorage.clear()
+      mockAuthState.firebaseUser = { uid: 'u', email: 'tipo@x.com', emailVerified: false }
+      mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
+    })
+    const open = () => {
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /cámbialo/i }))
+    }
+    const type = (label: RegExp, value: string) =>
+      fireEvent.change(screen.getByLabelText(label), { target: { value } })
+
+    it('the email step offers it', () => {
+      renderPage()
+      expect(screen.getByText(/¿no es tu correo\?/i)).toBeDefined()
+      expect(screen.getByRole('button', { name: /cámbialo/i })).toBeDefined()
+    })
+
+    it('sends the link to the corrected address and says where it went', async () => {
+      mockAuthService.requestEmailChange.mockResolvedValue(undefined)
+      open()
+      type(/tu correo correcto/i, 'bien@x.com')
+      fireEvent.click(screen.getByRole('button', { name: /enviar enlace/i }))
+      await waitFor(() => expect(mockAuthService.requestEmailChange).toHaveBeenCalledWith('bien@x.com', undefined))
+      await waitFor(() => expect(screen.getByText(/te enviamos un enlace a bien@x\.com/i)).toBeDefined())
+      expect(JSON.parse(localStorage.getItem('oqupa_email_change_v1')!).email).toBe('bien@x.com')
+    })
+
+    it('refuses the same address before asking Firebase', () => {
+      open()
+      type(/tu correo correcto/i, 'TIPO@x.com')
+      fireEvent.click(screen.getByRole('button', { name: /enviar enlace/i }))
+      expect(screen.getByText('Ese ya es el correo de tu cuenta.')).toBeDefined()
+      expect(mockAuthService.requestEmailChange).not.toHaveBeenCalled()
+    })
+
+    it('asks for the password when Firebase wants a recent sign-in, then retries with it', async () => {
+      mockAuthService.requestEmailChange
+        .mockRejectedValueOnce({ code: 'auth/requires-recent-login' })
+        .mockResolvedValueOnce(undefined)
+      open()
+      type(/tu correo correcto/i, 'bien@x.com')
+      fireEvent.click(screen.getByRole('button', { name: /enviar enlace/i }))
+      await waitFor(() => expect(screen.getByText(/confirma tu contraseña/i)).toBeDefined())
+      type(/tu contraseña/i, 'secreta1')
+      fireEvent.click(screen.getByRole('button', { name: /enviar enlace/i }))
+      await waitFor(() => expect(mockAuthService.requestEmailChange).toHaveBeenLastCalledWith('bien@x.com', 'secreta1'))
+    })
+
+    it('Cancelar closes the form and keeps waiting for the original link', () => {
+      open()
+      fireEvent.click(screen.getByRole('button', { name: /cancelar/i }))
+      expect(screen.queryByLabelText(/tu correo correcto/i)).toBeNull()
+      expect(screen.getByText(/esperando el clic/i)).toBeDefined()
+    })
+
+    it('when the change signs the session out, the sign-in opens with the new email', async () => {
+      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      mockAuthState.firebaseUser = null
+      renderPage()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(
+        '/app/login?correo=1&cambio=1&email=bien%40x.com', { replace: true },
+      ))
+    })
+
+    it('"Usar otra cuenta" forgets a pending change', async () => {
+      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      mockAuthService.logout.mockResolvedValue(undefined)
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: /usar otra cuenta/i }))
+      await waitFor(() => expect(mockAuthService.logout).toHaveBeenCalled())
+      expect(localStorage.getItem('oqupa_email_change_v1')).toBeNull()
     })
   })
 

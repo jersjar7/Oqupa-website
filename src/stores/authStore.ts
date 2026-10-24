@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth'
-import { doc, getDoc, type Timestamp } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, serverTimestamp, type Timestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import type { User } from '@/types/user'
+import { profileEmailToSync } from '@/lib/emailChange'
 import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
 
 interface AuthState {
@@ -110,10 +111,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           try {
             const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
             if (userDoc.exists()) {
-              const user = firestoreDocToUser(
+              let user = firestoreDocToUser(
                 firebaseUser.uid,
                 userDoc.data() as Record<string, unknown>
               )
+              // The sign-in email changed ("Cámbialo"): the profile's copy,
+              // where receipts and notices go, follows it. Never blocks.
+              const newEmail = profileEmailToSync({
+                authEmail: firebaseUser.email,
+                emailVerified: Boolean(firebaseUser.emailVerified),
+                profileEmail: user.email,
+              })
+              if (newEmail) {
+                user = { ...user, email: newEmail }
+                updateDoc(doc(db, 'users', firebaseUser.uid), {
+                  email: newEmail,
+                  updatedAt: serverTimestamp(),
+                }).catch(() => {})
+              }
               set({ user, isLoading: false, isInitialized: true })
             } else {
               // Firebase Auth user exists but no Firestore doc yet

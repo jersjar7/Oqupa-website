@@ -79,12 +79,20 @@ import RegisterPage from '../RegisterPage'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function renderPage() {
+// Google first, email behind "Continuar con correo" (email sign-up fix, step
+// 1). Most tests here are about the form, so they open it first.
+function renderClosed(entry = '/app/register') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[entry]}>
       <RegisterPage />
     </MemoryRouter>
   )
+}
+
+function renderPage() {
+  const r = renderClosed()
+  fireEvent.click(screen.getByRole('button', { name: /continuar con correo/i }))
+  return r
 }
 
 function fillForm({
@@ -296,5 +304,22 @@ describe('RegisterPage — contact funnel (A10)', () => {
     fireEvent.submit(document.querySelector('form')!)
     await waitFor(() => expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalled())
     expect(mockFunnel.logContactMilestone).not.toHaveBeenCalled()
+  })
+})
+
+describe('RegisterPage — Google first (email sign-up fix, step 1)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('shows Google and a "Continuar con correo" button, with the email form closed', () => {
+    renderClosed()
+    expect(screen.getByRole('button', { name: /continuar con google/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /continuar con correo/i })).toBeDefined()
+    expect(screen.queryByRole('textbox', { name: /correo/i })).toBeNull()
+  })
+
+  it('opens the form, already filled, when the person arrives with their email', () => {
+    renderClosed('/app/register?email=a%40b.co')
+    expect((screen.getByRole('textbox', { name: /correo/i }) as HTMLInputElement).value).toBe('a@b.co')
+    expect(screen.queryByRole('button', { name: /continuar con correo/i })).toBeNull()
   })
 })
