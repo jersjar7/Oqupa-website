@@ -9,7 +9,7 @@ const {
   fetchSignInMethodsMock, verifyPasswordResetCodeMock, confirmPasswordResetMock,
   applyActionCodeMock, checkActionCodeMock, signInWithCredentialMock,
   linkWithCredentialMock, updatePasswordMock, signInWithPopupMock,
-  unlinkMock, updatePhoneNumberMock, getAdditionalUserInfoMock,
+  unlinkMock, updatePhoneNumberMock, getAdditionalUserInfoMock, googleCustomParamsMock,
   setDocMock, updateDocMock, getDocMock, docMock,
   httpsCallableMock, callableInvokerMock,
   analyticsRegistrationMock, analyticsLoginMock,
@@ -36,6 +36,7 @@ const {
     unlinkMock: vi.fn(),
     updatePhoneNumberMock: vi.fn(),
     getAdditionalUserInfoMock: vi.fn(),
+    googleCustomParamsMock: vi.fn(),
     setDocMock: vi.fn(),
     updateDocMock: vi.fn(),
     getDocMock: vi.fn(),
@@ -68,7 +69,7 @@ vi.mock('firebase/auth', () => ({
   linkWithCredential: (...args: unknown[]) => linkWithCredentialMock(...args),
   updatePassword: (...args: unknown[]) => updatePasswordMock(...args),
   OAuthProvider: class { addScope = vi.fn() },
-  GoogleAuthProvider: class {},
+  GoogleAuthProvider: class { setCustomParameters = googleCustomParamsMock },
   signInWithPopup: (...args: unknown[]) => signInWithPopupMock(...args),
   browserPopupRedirectResolver: {},
   unlink: (...args: unknown[]) => unlinkMock(...args),
@@ -566,6 +567,16 @@ describe('authService', () => {
       expect(setDocMock).toHaveBeenCalledOnce()
       expect(setDocMock.mock.calls[0]![1].authProvider).toBe('google.com')
       expect(setDocMock.mock.calls[0]![1].signupAttribution).toMatchObject({ door: 'google' })
+    })
+
+    // Hostile review 2026-10-24: signing out of Oqupa does not sign the
+    // browser out of Google, so without the chooser "Usar otra cuenta" ->
+    // Google returned the person to the very account they were leaving.
+    it('always shows Google\'s account chooser', async () => {
+      signInWithPopupMock.mockResolvedValue(makeCredential(makeUser('uid-10')))
+      getDocMock.mockResolvedValue(makeFirestoreDoc(true))
+      await authService.signInWithGoogle()
+      expect(googleCustomParamsMock).toHaveBeenCalledWith({ prompt: 'select_account' })
     })
 
     it('an app account signing in on the web for the first time gets no attribution', async () => {

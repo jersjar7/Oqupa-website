@@ -1,4 +1,4 @@
-import { setReturnUrl } from '@/lib/utils'
+import { consumeReturnUrl, setReturnUrl } from '@/lib/utils'
 
 /**
  * "Usar otra cuenta": leave the account that is signed in — usually one
@@ -10,9 +10,12 @@ import { setReturnUrl } from '@/lib/utils'
  * offered no exit. Nothing is deleted here; an account that is never finished
  * is removed by the 30-day cleanup.
  *
- * The errand survives because the return address lives in localStorage and
- * signing out does not touch it; `returnTo` stores it first when the exit is
- * taken from the contact window itself.
+ * From the contact window (`returnTo` given) the person is looking at the
+ * listing, so it is stored afresh — timer restarted — for the next account.
+ * Anywhere else, any pending errand is forgotten: the person switching may be
+ * someone else on the same phone, and inheriting it would open WhatsApp to a
+ * seller they never chose and stamp that listing on their new account's
+ * sign-up record (hostile review 2026-10-24).
  */
 export async function switchAccount({
   logout,
@@ -24,6 +27,7 @@ export async function switchAccount({
   returnTo?: string
 }): Promise<void> {
   if (returnTo) setReturnUrl(returnTo)
+  else consumeReturnUrl()
   // Sign out first: the sign-in door sends a signed-in person straight back.
   await logout()
   navigate('/app/login', { replace: true })

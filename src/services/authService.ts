@@ -381,6 +381,10 @@ export const authService = {
 
   async signInWithGoogle() {
     const provider = new GoogleAuthProvider()
+    // Always let the person pick: signing out of Oqupa leaves the browser
+    // signed in to Google, and without the chooser "Usar otra cuenta" would
+    // return them to the account they were leaving (review 2026-10-24).
+    provider.setCustomParameters({ prompt: 'select_account' })
     const credential = await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     const user = credential.user
 
