@@ -482,6 +482,7 @@ export const authService = {
     const functions = getFunctions(undefined, 'southamerica-east1')
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
+    clearPendingEmailChange()
     await signOut(auth)
   },
 

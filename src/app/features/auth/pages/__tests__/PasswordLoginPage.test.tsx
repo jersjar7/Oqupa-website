@@ -243,7 +243,7 @@ describe("PasswordLoginPage — contact funnel (A10)", () => {
 describe("PasswordLoginPage — after an email change", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("opens the email form with the new address filled in and says why", () => {
@@ -253,9 +253,9 @@ describe("PasswordLoginPage — after an email change", () => {
   });
 
   it("forgets the pending change once it has been offered", () => {
-    localStorage.setItem("oqupa_email_change_v1", JSON.stringify({ email: "bien@x.com", at: Date.now() }));
+    sessionStorage.setItem("oqupa_email_change_v1", JSON.stringify({ email: "bien@x.com", at: Date.now() }));
     renderPage("/app/login?correo=1&cambio=1&email=bien%40x.com");
-    expect(localStorage.getItem("oqupa_email_change_v1")).toBeNull();
+    expect(sessionStorage.getItem("oqupa_email_change_v1")).toBeNull();
   });
 
   it("a plain ?email= prefills without the message", () => {

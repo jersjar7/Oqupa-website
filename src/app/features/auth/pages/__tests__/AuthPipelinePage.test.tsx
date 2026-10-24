@@ -226,7 +226,7 @@ describe('AuthPipelinePage', () => {
   // "¿No es tu correo? Cámbialo" — email sign-up fix, step 2.
   describe('changing a mistyped email', () => {
     beforeEach(() => {
-      localStorage.clear()
+      sessionStorage.clear()
       mockAuthState.firebaseUser = { uid: 'u', email: 'tipo@x.com', emailVerified: false }
       mockAuthState.user = { name: 'Juan', isPhoneVerified: true }
     })
@@ -250,7 +250,7 @@ describe('AuthPipelinePage', () => {
       fireEvent.click(screen.getByRole('button', { name: /enviar enlace/i }))
       await waitFor(() => expect(mockAuthService.requestEmailChange).toHaveBeenCalledWith('bien@x.com', undefined))
       await waitFor(() => expect(screen.getByText(/te enviamos un enlace a bien@x\.com/i)).toBeDefined())
-      expect(JSON.parse(localStorage.getItem('oqupa_email_change_v1')!).email).toBe('bien@x.com')
+      expect(JSON.parse(sessionStorage.getItem('oqupa_email_change_v1')!).email).toBe('bien@x.com')
     })
 
     it('refuses the same address before asking Firebase', () => {
@@ -282,7 +282,7 @@ describe('AuthPipelinePage', () => {
     })
 
     it('when the change signs the session out, the sign-in opens with the new email', async () => {
-      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
       mockAuthState.firebaseUser = null
       renderPage()
       await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(
@@ -291,12 +291,12 @@ describe('AuthPipelinePage', () => {
     })
 
     it('"Usar otra cuenta" forgets a pending change', async () => {
-      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
       mockAuthService.logout.mockResolvedValue(undefined)
       renderPage()
       fireEvent.click(screen.getByRole('button', { name: /usar otra cuenta/i }))
       await waitFor(() => expect(mockAuthService.logout).toHaveBeenCalled())
-      expect(localStorage.getItem('oqupa_email_change_v1')).toBeNull()
+      expect(sessionStorage.getItem('oqupa_email_change_v1')).toBeNull()
     })
   })
 

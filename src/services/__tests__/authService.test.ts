@@ -720,10 +720,20 @@ describe('authService', () => {
 
   describe('logout', () => {
     it('forgets a change of email waiting for its link', async () => {
-      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
       signOutMock.mockResolvedValueOnce(undefined)
       await authService.logout()
-      expect(localStorage.getItem('oqupa_email_change_v1')).toBeNull()
+      expect(sessionStorage.getItem('oqupa_email_change_v1')).toBeNull()
+    })
+  })
+
+  describe('deleteAccount', () => {
+    it('forgets a change of email waiting for its link', async () => {
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      callableInvokerMock.mockResolvedValueOnce({ data: {} })
+      signOutMock.mockResolvedValueOnce(undefined)
+      await authService.deleteAccount()
+      expect(sessionStorage.getItem('oqupa_email_change_v1')).toBeNull()
     })
   })
 

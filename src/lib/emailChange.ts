@@ -51,9 +51,12 @@ const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
 type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
+// Per tab, not per browser: the only reader is the tab that asked for the
+// change, and a shared browser must never show the next person this address
+// (app/website re-review 2026-10-24).
 function defaultStorage(): KeyValueStorage | null {
   try {
-    return typeof localStorage === 'undefined' ? null : localStorage
+    return typeof sessionStorage === 'undefined' ? null : sessionStorage
   } catch {
     return null
   }

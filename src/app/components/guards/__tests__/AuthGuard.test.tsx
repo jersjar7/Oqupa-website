@@ -109,14 +109,14 @@ describe('AuthGuard — after an email change', () => {
     )
   }
   beforeEach(() => {
-    localStorage.clear()
+    sessionStorage.clear()
     mockAuthState.firebaseUser = null
     mockAuthState.isLoading = false
     mockAuthState.isInitialized = true
   })
 
   it('the pipeline sends the person to sign in with the new email and the note', () => {
-    localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+    sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
     renderAt('/app/verify')
     expect(screen.getByTestId('where').textContent).toBe('/app/login?correo=1&cambio=1&email=bien%40x.com')
   })
@@ -127,7 +127,7 @@ describe('AuthGuard — after an email change', () => {
   })
 
   it('other protected pages are unaffected by a pending change', () => {
-    localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+    sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
     renderAt('/app/dashboard')
     expect(screen.getByTestId('where').textContent).toBe('/app/login')
   })
