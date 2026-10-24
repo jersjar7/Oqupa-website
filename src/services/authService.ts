@@ -39,6 +39,7 @@ import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
+import { clearPendingEmailChange } from '@/lib/emailChange'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -115,6 +116,9 @@ export const authService = {
   },
 
   async logout() {
+    // A change of email waiting for its link belongs to this session only
+    // (hostile review 2026-10-24, finding 5).
+    clearPendingEmailChange()
     await signOut(auth)
   },
 
@@ -187,13 +191,6 @@ export const authService = {
       }
     }
     return { newEmail, previousEmail }
-  },
-
-  // The undo link Firebase sends to the OLD address after a change.
-  async applyRecoverEmailCode(oobCode: string): Promise<{ restoredEmail: string }> {
-    const info = await checkActionCode(auth, oobCode)
-    await applyActionCode(auth, oobCode)
-    return { restoredEmail: info.data.email ?? '' }
   },
 
   async requestPasswordReset(email: string) {

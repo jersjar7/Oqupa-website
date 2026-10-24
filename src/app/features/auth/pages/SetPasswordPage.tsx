@@ -16,7 +16,7 @@ type VerificationState =
   | { kind: 'ready'; email: string }                    // password setup form
   | { kind: 'emailVerified'; email: string }            // verifyEmail success
   | { kind: 'emailChanged'; email: string }             // verifyAndChangeEmail success
-  | { kind: 'emailRestored'; email: string }            // recoverEmail success
+  | { kind: 'emailRestored'; email: string }            // recoverEmail: explained, never applied
   | { kind: 'invalid'; message: string }
   | { kind: 'done' }
 
@@ -28,7 +28,8 @@ type VerificationState =
  *   - mode=verifyEmail              — apply the email-verification code
  *   - mode=verifyAndChangeEmail     — "Cámbialo": switch to the new email and
  *                                     confirm it (ends the old session)
- *   - mode=recoverEmail             — the undo link sent to the old address
+ *   - mode=recoverEmail             — the undo link sent to the old address;
+ *                                     explained, never applied (see below)
  *
  * The email-verification branch is what Flutter's
  * `firebaseUser.sendEmailVerification()` triggers. The Firebase Console
@@ -74,8 +75,12 @@ export default function SetPasswordPage() {
           return
         }
         if (mode === 'recoverEmail') {
-          const { restoredEmail } = await authService.applyRecoverEmailCode(oobCode)
-          if (!cancelled) setState({ kind: 'emailRestored', email: restoredEmail })
+          // Deliberately NOT applied. Firebase sends this undo link to the OLD
+          // address after "Cámbialo" — which is the mistyped one, possibly a
+          // stranger's inbox. Applying it would hand them back a finished
+          // account (hostile review 2026-10-24, finding 1). A person whose
+          // email really was changed without asking writes to us instead.
+          if (!cancelled) setState({ kind: 'emailRestored', email: '' })
           return
         }
         if (mode === 'verifyEmail') {
@@ -188,18 +193,8 @@ export default function SetPasswordPage() {
     return (
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm text-center">
-          <h1 className="font-serif text-[28px] font-normal text-text-primary">Correo restaurado</h1>
-          <p className="mt-2 text-base text-text-secondary">
-            Restauramos tu correo{' '}
-            <span className="font-medium text-text-primary">{state.email}</span>. Si no pediste el
-            cambio, crea una contraseña nueva desde &ldquo;¿Olvidaste tu contraseña?&rdquo;.
-          </p>
-          <Link
-            to="/app/forgot-password"
-            className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
+          <h1 className="font-serif text-[28px] font-normal text-text-primary">¿No pediste este cambio?</h1>
+          <p className="mt-2 text-base text-text-secondary">{EMAIL_CHANGE_COPY.recoverHelp}</p>
         </div>
       </div>
     )

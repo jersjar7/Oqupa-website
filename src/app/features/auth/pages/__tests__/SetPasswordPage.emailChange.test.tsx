@@ -69,10 +69,13 @@ describe('SetPasswordPage — a changed email', () => {
     await waitFor(() => expect(screen.getByText('Este enlace ya no sirve. Pide uno nuevo desde Oqupa.')).toBeDefined())
   })
 
-  it('the undo link sent to the old address restores it', async () => {
-    mockAuthService.applyRecoverEmailCode.mockResolvedValue({ restoredEmail: 'tipo@x.com' })
+  // Hostile review 2026-10-24, finding 1: the undo link goes to the OLD,
+  // mistyped address — possibly a stranger's. It must never be applied here.
+  it('the undo link sent to the old address is explained, never applied', async () => {
     renderPage('?mode=recoverEmail&oobCode=r1')
-    await waitFor(() => expect(screen.getByText(/restauramos tu correo/i)).toBeDefined())
-    expect(mockAuthService.applyRecoverEmailCode).toHaveBeenCalledWith('r1')
+    await waitFor(() => expect(screen.getByText(/no pediste este cambio/i)).toBeDefined())
+    expect(screen.getByText(/admin@oqupa\.com/)).toBeDefined()
+    expect(mockAuthService.applyRecoverEmailCode).not.toHaveBeenCalled()
+    expect(screen.queryByRole('link', { name: /olvidaste tu contraseña/i })).toBeNull()
   })
 })

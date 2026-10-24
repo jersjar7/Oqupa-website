@@ -718,12 +718,12 @@ describe('authService', () => {
     })
   })
 
-  describe('applyRecoverEmailCode', () => {
-    it('restores the old address and reports it', async () => {
-      checkActionCodeMock.mockResolvedValueOnce({ data: { email: 'tipo@x.com', previousEmail: 'bien@x.com' } })
-      applyActionCodeMock.mockResolvedValueOnce(undefined)
-      await expect(authService.applyRecoverEmailCode('r1')).resolves.toEqual({ restoredEmail: 'tipo@x.com' })
-      expect(applyActionCodeMock).toHaveBeenCalledWith(expect.anything(), 'r1')
+  describe('logout', () => {
+    it('forgets a change of email waiting for its link', async () => {
+      localStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      signOutMock.mockResolvedValueOnce(undefined)
+      await authService.logout()
+      expect(localStorage.getItem('oqupa_email_change_v1')).toBeNull()
     })
   })
 

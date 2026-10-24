@@ -38,6 +38,8 @@ export const EMAIL_CHANGE_COPY = {
   linkExpired: 'Este enlace ya no sirve. Pide uno nuevo desde Oqupa.',
   linkFailed: 'No pudimos cambiar tu correo. Intenta de nuevo desde Oqupa.',
   failed: 'No pudimos cambiar tu correo. Intenta de nuevo.',
+  recoverHelp:
+    'Si alguien cambió el correo de tu cuenta de Oqupa sin tu permiso, escríbenos a admin@oqupa.com desde este correo y lo revisamos. Si el cambio lo hiciste tú, no tienes que hacer nada.',
 } as const
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
