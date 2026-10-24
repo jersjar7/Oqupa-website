@@ -13,6 +13,28 @@ function extractFirebaseErrorCode(error: unknown): string {
   return match ? match[0] : ''
 }
 
+// Shared sentences, so the same failure reads the same on every screen.
+const CONNECTION = 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.'
+const TOO_MANY = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.'
+const DISABLED = 'Esta cuenta ha sido desactivada. Escríbenos a admin@oqupa.com si crees que es un error.'
+const SESSION = 'Tu sesión expiró. Vuelve a iniciar sesión e intenta de nuevo.'
+const COOKIES = 'Tu navegador está bloqueando las cookies o el almacenamiento que necesitamos para iniciar sesión.'
+const COOKIES_HINT = 'Permite las cookies para oqupa.com o sal del modo privado estricto, y vuelve a intentarlo. También funciona en Chrome o Safari.'
+const OURS = 'Hubo un problema de nuestro lado. Intenta de nuevo en un momento.'
+const NOT_AVAILABLE = 'Esta forma de entrar no está disponible en este momento. Escríbenos a admin@oqupa.com.'
+const WRONG_ADDRESS = 'Abre Oqupa desde su dirección oficial, oqupa.com, e intenta de nuevo.'
+const PROFILE_REFUSED = 'No pudimos guardar tu perfil. Cierra sesión, vuelve a entrar e intenta de nuevo.'
+
+/**
+ * The generic sentence for a failure we have no message for yet, with the
+ * code in brackets: the person still reads Spanish, and a screenshot is
+ * enough for us to know what failed (Jerson, 2026-10-24: "the error text does
+ * not tell me what the error was").
+ */
+function withCode(message: string, code: string): string {
+  return code ? `${message} (${code})` : message
+}
+
 const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
   'auth/invalid-phone-number': {
     message: 'Número de teléfono inválido. Verifica que esté en formato correcto.',
@@ -42,6 +64,12 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     message: 'Este número ya está asociado a otra cuenta. Usa un número diferente.',
     isRetryable: false,
   },
+  // What the web SDK actually throws when the number belongs to another
+  // account (Identity Toolkit returns a temporaryProof instead of linking).
+  'auth/account-exists-with-different-credential': {
+    message: 'Este número ya está asociado a otra cuenta. Usa un número diferente.',
+    isRetryable: false,
+  },
   'auth/provider-already-linked': {
     message: 'Ya tienes un número vinculado a esta cuenta.',
     isRetryable: false,
@@ -64,12 +92,52 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.',
     isRetryable: true,
   },
+  'auth/missing-phone-number': {
+    message: 'Ingresa tu número de celular para recibir el código.',
+    isRetryable: true,
+  },
+  'auth/invalid-verification-id': {
+    message: 'Este código ya no sirve. Pide un código nuevo con "Reenviar".',
+    isRetryable: true,
+  },
+  'auth/missing-verification-id': {
+    message: 'Este código ya no sirve. Pide un código nuevo con "Reenviar".',
+    isRetryable: true,
+  },
+  'auth/missing-verification-code': {
+    message: 'Ingresa los 6 dígitos que te enviamos por SMS.',
+    isRetryable: true,
+  },
+  'auth/user-disabled': { message: DISABLED, isRetryable: false },
+  'auth/user-token-expired': { message: SESSION, isRetryable: false },
+  'auth/invalid-user-token': { message: SESSION, isRetryable: false },
+  'auth/operation-not-allowed': {
+    message: 'La verificación por SMS no está disponible en este momento. Escríbenos a admin@oqupa.com.',
+    isRetryable: false,
+  },
+  'auth/unauthorized-domain': { message: WRONG_ADDRESS, isRetryable: false },
+  'auth/invalid-app-credential': {
+    message: 'La verificación de seguridad de Google no se completó. Recarga la página e intenta de nuevo.',
+    isRetryable: true,
+  },
+  'auth/web-storage-unsupported': { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false },
+  'auth/timeout': {
+    message: 'La verificación tardó demasiado. Intenta de nuevo.',
+    isRetryable: true,
+  },
+  'auth/internal-error': { message: OURS, isRetryable: true },
+  // Firestore codes: the number was linked but saving the profile failed.
+  'permission-denied': {
+    message: 'Tu número quedó verificado, pero no pudimos guardar tu perfil. Recarga la página para continuar.',
+    isRetryable: true,
+  },
+  unavailable: { message: CONNECTION, isRetryable: true },
 }
 
 export function getPhoneAuthError(error: unknown): AuthErrorInfo {
   const code = extractFirebaseErrorCode(error)
   return PHONE_ERROR_MAP[code] ?? {
-    message: 'Error al verificar. Intenta de nuevo.',
+    message: withCode('Error al verificar. Intenta de nuevo.', code),
     isRetryable: true,
   }
 }
@@ -87,8 +155,20 @@ export function getLoginAuthError(error: unknown): AuthErrorInfo {
       return { message: 'Esta cuenta ha sido desactivada.', isRetryable: false }
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
+    case 'auth/invalid-email':
+      return { message: 'Ingresa un correo válido.', isRetryable: true }
+    case 'auth/missing-password':
+      return { message: 'Ingresa tu contraseña.', isRetryable: true }
+    case 'auth/account-exists-with-different-credential':
+      return { message: 'Esta cuenta se creó con Google. Usa "Continuar con Google".', isRetryable: false }
+    case 'auth/web-storage-unsupported':
+      return { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false }
+    case 'auth/operation-not-allowed':
+      return { message: NOT_AVAILABLE, isRetryable: false }
+    case 'auth/internal-error':
+      return { message: OURS, isRetryable: true }
     default:
-      return { message: 'Error al iniciar sesión. Intenta de nuevo.', isRetryable: true }
+      return { message: withCode('Error al iniciar sesión. Intenta de nuevo.', code), isRetryable: true }
   }
 }
 
@@ -122,8 +202,18 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
         message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.',
         isRetryable: true,
       }
+    case 'auth/missing-password':
+      return { message: 'Crea una contraseña de al menos 6 caracteres.', isRetryable: true }
+    case 'auth/web-storage-unsupported':
+      return { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false }
+    case 'auth/internal-error':
+      return { message: OURS, isRetryable: true }
+    case 'permission-denied':
+      return { message: PROFILE_REFUSED, isRetryable: true }
+    case 'unavailable':
+      return { message: CONNECTION, isRetryable: true }
     default:
-      return { message: 'No pudimos crear tu cuenta. Intenta de nuevo.', isRetryable: true }
+      return { message: withCode('No pudimos crear tu cuenta. Intenta de nuevo.', code), isRetryable: true }
   }
 }
 
@@ -143,7 +233,7 @@ export function getMagicLinkAuthError(error: unknown): AuthErrorInfo {
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
-      return { message: 'Error al enviar el enlace. Verifica tu correo.', isRetryable: true }
+      return { message: withCode('Error al enviar el enlace. Verifica tu correo.', code), isRetryable: true }
   }
 }
 
@@ -160,5 +250,107 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
       return { message: 'Error al enviar el correo. Verifica tu dirección.', isRetryable: true }
+  }
+}
+
+/**
+ * Google or Apple sign-in. Returns null when the person simply closed the
+ * window — that is a choice, not an error, and shows nothing.
+ */
+export function getSocialSignInError(error: unknown): AuthErrorInfo | null {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+    case 'auth/user-cancelled':
+      return null
+    case 'auth/popup-blocked':
+      return {
+        message: 'Tu navegador bloqueó la ventana para entrar. Permite las ventanas emergentes para oqupa.com e intenta de nuevo.',
+        isRetryable: true,
+      }
+    case 'auth/account-exists-with-different-credential':
+      return {
+        message: 'Ese correo ya tiene una cuenta con contraseña. Entra con tu correo y contraseña.',
+        isRetryable: false,
+      }
+    case 'auth/user-disabled':
+      return { message: DISABLED, isRetryable: false }
+    case 'auth/network-request-failed':
+    case 'unavailable':
+      return { message: CONNECTION, isRetryable: true }
+    case 'auth/too-many-requests':
+      return { message: TOO_MANY, isRetryable: false }
+    case 'auth/web-storage-unsupported':
+      return { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false }
+    case 'auth/operation-not-allowed':
+      return { message: NOT_AVAILABLE, isRetryable: false }
+    case 'auth/unauthorized-domain':
+      return { message: WRONG_ADDRESS, isRetryable: false }
+    case 'auth/internal-error':
+      return { message: OURS, isRetryable: true }
+    case 'permission-denied':
+      return { message: PROFILE_REFUSED, isRetryable: true }
+    default:
+      return { message: withCode('No pudimos entrar. Intenta de nuevo.', code), isRetryable: true }
+  }
+}
+
+/** Saving a step of the profile (the name) to the database. */
+export function getProfileSaveError(error: unknown): AuthErrorInfo {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'unavailable':
+    case 'deadline-exceeded':
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    case 'permission-denied':
+    case 'unauthenticated':
+      return { message: 'No pudimos guardar tus datos. Vuelve a iniciar sesión e intenta de nuevo.', isRetryable: false }
+    default:
+      return { message: withCode('No pudimos guardar tus datos. Intenta de nuevo.', code), isRetryable: true }
+  }
+}
+
+/** Resending the email-confirmation link. */
+export function getEmailResendError(error: unknown): AuthErrorInfo {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/too-many-requests':
+      return {
+        message: 'Ya te enviamos varios enlaces. Revisa tu bandeja de entrada y la carpeta de spam, y espera unos minutos antes de pedir otro.',
+        isRetryable: false,
+      }
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    case 'auth/user-token-expired':
+    case 'auth/invalid-user-token':
+      return { message: SESSION, isRetryable: false }
+    case 'auth/user-disabled':
+      return { message: DISABLED, isRetryable: false }
+    default:
+      return { message: withCode('No pudimos reenviar el correo. Intenta de nuevo.', code), isRetryable: true }
+  }
+}
+
+/** The delete-account request (the deleteUserAccount function). */
+export function getAccountDeleteError(error: unknown): AuthErrorInfo {
+  const code = error && typeof error === 'object' && 'code' in error
+    ? String((error as { code: unknown }).code)
+    : ''
+  switch (code) {
+    case 'functions/unauthenticated':
+      return { message: SESSION, isRetryable: false }
+    case 'functions/unavailable':
+    case 'functions/deadline-exceeded':
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    case 'functions/internal':
+      return {
+        message: 'No pudimos eliminar tu cuenta y no se borró nada. Intenta de nuevo en un momento.',
+        isRetryable: true,
+      }
+    default:
+      return { message: withCode('Error al eliminar la cuenta. Intenta de nuevo.', code), isRetryable: true }
   }
 }

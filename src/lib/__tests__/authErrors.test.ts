@@ -5,6 +5,10 @@ import {
   getPhoneAuthError,
   getMagicLinkAuthError,
   getForgotPasswordAuthError,
+  getSocialSignInError,
+  getProfileSaveError,
+  getEmailResendError,
+  getAccountDeleteError,
 } from '../authErrors'
 
 // ---------------------------------------------------------------------------
@@ -173,6 +177,16 @@ describe('getPhoneAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
+  // The web SDK does NOT use credential-already-in-use for a phone held by
+  // another account: Identity Toolkit answers with a temporaryProof and the SDK
+  // throws account-exists-with-different-credential. Unmapped, the person saw
+  // only "Error al verificar" (found on staging 2026-10-24).
+  it('maps the web SDK in-use phone code to the same duplicate message', () => {
+    const info = getPhoneAuthError({ code: 'auth/account-exists-with-different-credential' })
+    expect(info.message).toMatch(/número ya está asociado/i)
+    expect(info.isRetryable).toBe(false)
+  })
+
   it('maps provider-already-linked to a non-retryable already-linked message', () => {
     const info = getPhoneAuthError({ code: 'auth/provider-already-linked' })
     expect(info.message).toMatch(/número vinculado/i)
@@ -311,5 +325,124 @@ describe('getForgotPasswordAuthError', () => {
     const info = getForgotPasswordAuthError(undefined)
     expect(info.message).toMatch(/error al enviar el correo/i)
     expect(info.isRetryable).toBe(true)
+  })
+})
+
+// ── Every edge case gets a Spanish sentence (Jerson, 2026-10-24) ─────────────
+// "The error text does not tell me what the error was". Each known failure has
+// its own message; anything still unknown shows its code in brackets so a
+// screenshot is enough to diagnose it.
+describe('phone: every known failure has its own message', () => {
+  const cases: Array<[string, RegExp]> = [
+    ['auth/missing-phone-number', /ingresa tu número/i],
+    ['auth/invalid-verification-id', /pide un código nuevo/i],
+    ['auth/missing-verification-id', /pide un código nuevo/i],
+    ['auth/missing-verification-code', /ingresa los 6 dígitos/i],
+    ['auth/user-disabled', /desactivada/i],
+    ['auth/user-token-expired', /sesión/i],
+    ['auth/invalid-user-token', /sesión/i],
+    ['auth/operation-not-allowed', /no está disponible/i],
+    ['auth/unauthorized-domain', /dirección oficial/i],
+    ['auth/invalid-app-credential', /seguridad de google/i],
+    ['auth/web-storage-unsupported', /cookies/i],
+    ['auth/timeout', /tardó demasiado/i],
+    ['auth/internal-error', /problema de nuestro lado/i],
+    ['permission-denied', /no pudimos guardar/i],
+    ['unavailable', /conexión/i],
+  ]
+  it.each(cases)('%s', (code, pattern) => {
+    expect(getPhoneAuthError({ code }).message).toMatch(pattern)
+  })
+
+  it('an unknown failure shows its code', () => {
+    expect(getPhoneAuthError({ code: 'auth/brand-new' }).message).toContain('(auth/brand-new)')
+  })
+})
+
+describe('login and register: more known failures', () => {
+  it('login: an invalid email', () => {
+    expect(getLoginAuthError({ code: 'auth/invalid-email' }).message).toMatch(/correo válido/i)
+  })
+  it('login: Google-only account', () => {
+    expect(getLoginAuthError({ code: 'auth/account-exists-with-different-credential' }).message)
+      .toMatch(/google/i)
+  })
+  it('login: unknown failure shows its code', () => {
+    expect(getLoginAuthError({ code: 'auth/brand-new' }).message).toContain('(auth/brand-new)')
+  })
+  it('register: profile refused', () => {
+    expect(getRegisterAuthError({ code: 'permission-denied' }).message).toMatch(/no pudimos guardar/i)
+  })
+  it('register: unknown failure shows its code', () => {
+    expect(getRegisterAuthError({ code: 'auth/brand-new' }).message).toContain('(auth/brand-new)')
+  })
+  it('magic link: unknown failure shows its code', () => {
+    expect(getMagicLinkAuthError({ code: 'auth/brand-new' }).message).toContain('(auth/brand-new)')
+  })
+  it('forgot password NEVER shows a code (it would reveal whether the account exists)', () => {
+    expect(getForgotPasswordAuthError({ code: 'auth/user-not-found' }).message)
+      .not.toContain('user-not-found')
+  })
+})
+
+describe('Google sign-in', () => {
+  it('closing the window is not an error', () => {
+    expect(getSocialSignInError({ code: 'auth/popup-closed-by-user' })).toBeNull()
+    expect(getSocialSignInError({ code: 'auth/cancelled-popup-request' })).toBeNull()
+    expect(getSocialSignInError({ code: 'auth/user-cancelled' })).toBeNull()
+  })
+  const cases: Array<[string, RegExp]> = [
+    ['auth/popup-blocked', /ventanas emergentes/i],
+    ['auth/account-exists-with-different-credential', /contraseña/i],
+    ['auth/user-disabled', /desactivada/i],
+    ['auth/network-request-failed', /conexión/i],
+    ['auth/too-many-requests', /demasiados intentos/i],
+    ['auth/web-storage-unsupported', /cookies/i],
+    ['auth/operation-not-allowed', /no está disponible/i],
+    ['auth/unauthorized-domain', /dirección oficial/i],
+    ['auth/internal-error', /problema de nuestro lado/i],
+    ['permission-denied', /no pudimos guardar/i],
+  ]
+  it.each(cases)('%s', (code, pattern) => {
+    expect(getSocialSignInError({ code })!.message).toMatch(pattern)
+  })
+  it('an unknown failure shows its code', () => {
+    expect(getSocialSignInError({ code: 'auth/brand-new' })!.message).toContain('(auth/brand-new)')
+  })
+})
+
+describe('saving a profile step and resending the email', () => {
+  it('profile save: offline', () => {
+    expect(getProfileSaveError({ code: 'unavailable' }).message).toMatch(/conexión/i)
+  })
+  it('profile save: refused', () => {
+    expect(getProfileSaveError({ code: 'permission-denied' }).message).toMatch(/vuelve a iniciar sesión/i)
+  })
+  it('profile save: unknown shows its code', () => {
+    expect(getProfileSaveError({ code: 'aborted' }).message).toContain('(aborted)')
+  })
+  it('email resend: too many', () => {
+    expect(getEmailResendError({ code: 'auth/too-many-requests' }).message).toMatch(/revisa tu bandeja/i)
+  })
+  it('email resend: offline', () => {
+    expect(getEmailResendError({ code: 'auth/network-request-failed' }).message).toMatch(/conexión/i)
+  })
+  it('email resend: unknown shows its code', () => {
+    expect(getEmailResendError({ code: 'auth/brand-new' }).message).toContain('(auth/brand-new)')
+  })
+})
+
+describe('deleting an account', () => {
+  it('signed out', () => {
+    expect(getAccountDeleteError({ code: 'functions/unauthenticated' }).message).toMatch(/sesión/i)
+  })
+  it('offline', () => {
+    expect(getAccountDeleteError({ code: 'functions/unavailable' }).message).toMatch(/conexión/i)
+  })
+  it('server failure says nothing was deleted', () => {
+    expect(getAccountDeleteError({ code: 'functions/internal' }).message).toMatch(/no se borró nada/i)
+  })
+  it('unknown shows its code', () => {
+    expect(getAccountDeleteError({ code: 'functions/aborted' }).message).toContain('(functions/aborted)')
   })
 })

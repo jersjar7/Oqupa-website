@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { loginSchema, type LoginFormData } from '@/schemas/authSchema'
 import { authService } from '@/services/authService'
-import { getLoginAuthError } from '@/lib/authErrors'
+import { getLoginAuthError, getSocialSignInError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { emailEntryOutcome } from '../pipelineOrder'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
@@ -45,10 +45,8 @@ export default function PasswordLoginPage() {
       await authService.signInWithGoogle()
       logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
     } catch (err) {
-      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
-      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        toast.error('No pudimos entrar con Google. Intenta de nuevo.')
-      }
+      const info = getSocialSignInError(err)
+      if (info) toast.error(info.message)
     } finally {
       setGoogleBusy(false)
     }

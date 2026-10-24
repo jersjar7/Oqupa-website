@@ -4,6 +4,18 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-24 — Clear Spanish error messages on every sign-in step
+
+### Bug Fixes
+
+- **A phone number already used by another account now says so.** The website said only "Error al verificar. Intenta de nuevo." — Firebase's web SDK reports that case under a different name than the one we handled. Now: "Este número ya está asociado a otra cuenta. Usa un número diferente." Found by Jerson on staging 2026-10-24.
+
+### UX Improvements
+
+- **Every known failure has its own sentence** on phone verification, Google sign-in, name save, email resend, profile save and account deletion (popup blocked, cookies blocked, offline, too many attempts, disabled account, expired session, and more). Anything still unknown shows its error code in brackets, so a screenshot is enough to diagnose it. The forgot-password screen never shows a code (it would reveal whether an email has an account).
+
+Released alone — "Usar otra cuenta" and A12b sign-up attribution stay on staging for their own releases. Approved by Jerson 2026-10-24.
+
 ## 2026-10-23 — Números opens on "Esta semana"
 
 ### New Features
