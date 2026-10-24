@@ -25,7 +25,9 @@ vi.mock('@/services/authService', () => ({
 const mockToast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: mockToast }))
 
-vi.mock('@/lib/authErrors', () => ({
+// The real module first, so messages added later need no stand-in here.
+vi.mock('@/lib/authErrors', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/authErrors')>()),
   getRegisterAuthError: vi.fn((err: unknown) => {
     const code = err && typeof err === 'object' && 'code' in err
       ? (err as { code: string }).code

@@ -12,7 +12,9 @@ const mockAuthService = vi.hoisted(() => ({
   getSignInMethods: vi.fn(),
 }));
 vi.mock("@/services/authService", () => ({ authService: mockAuthService }));
-vi.mock("@/lib/authErrors", () => ({
+// The real module first, so messages added later need no stand-in here.
+vi.mock("@/lib/authErrors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/authErrors")>()),
   getLoginAuthError: vi.fn(() => ({ message: "Credenciales incorrectas" })),
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
