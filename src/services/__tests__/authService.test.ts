@@ -14,6 +14,7 @@ const {
   httpsCallableMock, callableInvokerMock,
   analyticsRegistrationMock, analyticsLoginMock,
   currentUserMock,
+  verifyBeforeUpdateEmailMock, reauthenticateMock, emailCredentialMock,
 } = vi.hoisted(() => {
   const callableInvokerMock = vi.fn()
   return {
@@ -45,6 +46,9 @@ const {
     callableInvokerMock,
     analyticsRegistrationMock: vi.fn(),
     analyticsLoginMock: vi.fn(),
+    verifyBeforeUpdateEmailMock: vi.fn(),
+    reauthenticateMock: vi.fn(),
+    emailCredentialMock: vi.fn((email: string, password: string) => ({ email, password, type: 'email-credential' })),
     currentUserMock: null as { uid: string; email?: string; reload: () => Promise<void>; providerData: Array<{ providerId: string }>; } | null,
   }
 })
@@ -75,6 +79,9 @@ vi.mock('firebase/auth', () => ({
   unlink: (...args: unknown[]) => unlinkMock(...args),
   updatePhoneNumber: (...args: unknown[]) => updatePhoneNumberMock(...args),
   getAdditionalUserInfo: (...args: unknown[]) => getAdditionalUserInfoMock(...args),
+  verifyBeforeUpdateEmail: (...args: unknown[]) => verifyBeforeUpdateEmailMock(...args),
+  reauthenticateWithCredential: (...args: unknown[]) => reauthenticateMock(...args),
+  EmailAuthProvider: { credential: (...args: [string, string]) => emailCredentialMock(...args) },
   RecaptchaVerifier: class {
     clear = vi.fn()
   },
@@ -660,6 +667,76 @@ describe('authService', () => {
     })
   })
 
+  // ── Cámbialo (email sign-up fix, step 2) ─────────────────────────────────
+
+  describe('requestEmailChange', () => {
+    it('sends the confirmation link to the new address', async () => {
+      const user = makeUser('uid-chg', 'old@x.com')
+      _currentUser = user
+      verifyBeforeUpdateEmailMock.mockResolvedValueOnce(undefined)
+      await authService.requestEmailChange(' new@x.com ')
+      expect(verifyBeforeUpdateEmailMock).toHaveBeenCalledWith(user, 'new@x.com', expect.objectContaining({ url: expect.stringContaining('/app/login') }))
+      expect(reauthenticateMock).not.toHaveBeenCalled()
+    })
+
+    it('with a password, confirms it first (Firebase wants a recent sign-in)', async () => {
+      const user = makeUser('uid-chg', 'old@x.com')
+      _currentUser = user
+      reauthenticateMock.mockResolvedValueOnce(undefined)
+      verifyBeforeUpdateEmailMock.mockResolvedValueOnce(undefined)
+      await authService.requestEmailChange('new@x.com', 'pw-123456')
+      expect(emailCredentialMock).toHaveBeenCalledWith('old@x.com', 'pw-123456')
+      expect(reauthenticateMock).toHaveBeenCalledOnce()
+      expect(reauthenticateMock.mock.invocationCallOrder[0]!).toBeLessThan(verifyBeforeUpdateEmailMock.mock.invocationCallOrder[verifyBeforeUpdateEmailMock.mock.invocationCallOrder.length - 1]!)
+    })
+
+    it('refuses without a signed-in user', async () => {
+      _currentUser = null
+      await expect(authService.requestEmailChange('new@x.com')).rejects.toThrow()
+    })
+  })
+
+  describe('applyEmailChangeCode', () => {
+    it('reads both addresses, applies the change, and ends a stale session in this browser', async () => {
+      const user = makeUser('uid-chg', 'old@x.com')
+      _currentUser = user
+      checkActionCodeMock.mockResolvedValueOnce({ data: { email: 'new@x.com', previousEmail: 'old@x.com' } })
+      applyActionCodeMock.mockResolvedValueOnce(undefined)
+      signOutMock.mockResolvedValueOnce(undefined)
+      await expect(authService.applyEmailChangeCode('oob')).resolves.toEqual({ newEmail: 'new@x.com', previousEmail: 'old@x.com' })
+      expect(applyActionCodeMock).toHaveBeenCalledWith(expect.anything(), 'oob')
+      expect(signOutMock).toHaveBeenCalled()
+    })
+
+    it('leaves another account signed in on this browser alone', async () => {
+      _currentUser = makeUser('uid-other', 'someone@x.com')
+      signOutMock.mockClear()
+      checkActionCodeMock.mockResolvedValueOnce({ data: { email: 'new@x.com', previousEmail: 'old@x.com' } })
+      applyActionCodeMock.mockResolvedValueOnce(undefined)
+      await authService.applyEmailChangeCode('oob')
+      expect(signOutMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('logout', () => {
+    it('forgets a change of email waiting for its link', async () => {
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      signOutMock.mockResolvedValueOnce(undefined)
+      await authService.logout()
+      expect(sessionStorage.getItem('oqupa_email_change_v1')).toBeNull()
+    })
+  })
+
+  describe('deleteAccount', () => {
+    it('forgets a change of email waiting for its link', async () => {
+      sessionStorage.setItem('oqupa_email_change_v1', JSON.stringify({ email: 'bien@x.com', at: Date.now() }))
+      callableInvokerMock.mockResolvedValueOnce({ data: {} })
+      signOutMock.mockResolvedValueOnce(undefined)
+      await authService.deleteAccount()
+      expect(sessionStorage.getItem('oqupa_email_change_v1')).toBeNull()
+    })
+  })
+
   // ── cleanupRecaptcha ─────────────────────────────────────────────────────
 
   describe('cleanupRecaptcha', () => {
@@ -747,6 +824,60 @@ describe('authService', () => {
       // No current user after sign-in either (mock returns undefined, not a user)
       await authService.verifyPhoneCode('v-id', '123456')
       expect(signInWithCredentialMock).toHaveBeenCalledOnce()
+    })
+
+    // Email sign-up fix, step 4: a number held by an abandoned email sign-up.
+    it('on a phone collision, asks the server to move the number and carries on', async () => {
+      const user = { ...makeUser('uid-new'), providerData: [] }
+      _currentUser = user
+      linkWithCredentialMock.mockRejectedValueOnce({
+        code: 'auth/account-exists-with-different-credential',
+        customData: { phoneNumber: '+16505552222', _tokenResponse: { temporaryProof: 'tp-9', phoneNumber: '+16505552222' } },
+      })
+      callableInvokerMock.mockResolvedValueOnce({ data: { success: true } })
+      updateDocMock.mockResolvedValue(undefined)
+      await authService.verifyPhoneCode('v-id', '123456')
+      expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'releasePhoneFromUnfinishedAccount')
+      expect(callableInvokerMock).toHaveBeenCalledWith({ temporaryProof: 'tp-9', phoneNumber: '+16505552222' })
+      expect(user.getIdToken).toHaveBeenCalledWith(true)
+    })
+
+    it('a collision the server refuses still reads as "number already in use"', async () => {
+      _currentUser = { ...makeUser('uid-new'), providerData: [] }
+      linkWithCredentialMock.mockRejectedValueOnce({
+        code: 'auth/credential-already-in-use',
+        customData: { temporaryProof: 'tp-9', phoneNumber: '+16505552222' },
+      })
+      callableInvokerMock.mockRejectedValueOnce({
+        code: 'functions/failed-precondition',
+        details: { reason: 'held-by-active-account' },
+      })
+      await expect(authService.verifyPhoneCode('v-id', '123456')).rejects.toMatchObject({
+        code: 'auth/credential-already-in-use',
+      })
+    })
+
+    it('a wrong code is not mistaken for a collision', async () => {
+      _currentUser = { ...makeUser('uid-new'), providerData: [] }
+      callableInvokerMock.mockClear()
+      linkWithCredentialMock.mockRejectedValueOnce({ code: 'auth/invalid-verification-code' })
+      await expect(authService.verifyPhoneCode('v-id', '000000')).rejects.toMatchObject({
+        code: 'auth/invalid-verification-code',
+      })
+      expect(callableInvokerMock).not.toHaveBeenCalled()
+    })
+
+    // App hostile review 2026-10-24, finding 1: the app creates email accounts
+    // inactive until the phone is verified and its own phone step turns them
+    // active; this step never did, so an app account finished here stayed
+    // inactive — and the app treats inactive as unable to publish or contact.
+    it('marks the account active along with the verified phone, as the app does', async () => {
+      _currentUser = { ...makeUser('uid-phone'), providerData: [] }
+      linkWithCredentialMock.mockResolvedValue(undefined)
+      updateDocMock.mockClear()
+      updateDocMock.mockResolvedValue(undefined)
+      await authService.verifyPhoneCode('v-id', '123456')
+      expect(updateDocMock.mock.calls[0]![1]).toMatchObject({ isPhoneVerified: true, isActive: true })
     })
 
     it('updates Firestore with isPhoneVerified=true when there is a current user', async () => {

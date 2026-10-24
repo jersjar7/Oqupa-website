@@ -25,6 +25,8 @@ vi.mock('firebase/auth', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn((_db: unknown, _collection: string, id: string) => ({ path: `users/${id}` })),
   getDoc: vi.fn(),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  serverTimestamp: vi.fn(() => ({ _isServerTimestamp: true })),
 }))
 
 vi.mock('@/lib/firebase', () => ({
@@ -59,7 +61,7 @@ vi.stubGlobal('BroadcastChannel', MockBroadcastChannel)
 
 // Dynamic import so mocks are in place first
 const { useAuthStore } = await import('../authStore')
-const { getDoc } = await import('firebase/firestore')
+const { getDoc, updateDoc } = await import('firebase/firestore')
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -214,6 +216,45 @@ describe('authStore', () => {
       expect(state.user?.name).toBe('Test User')
       expect(state.isLoading).toBe(false)
       expect(state.isInitialized).toBe(true)
+    })
+
+    // Email sign-up fix ("Cámbialo"): the sign-in email changed, the profile's
+    // copy — where receipts and notices are sent — must follow it.
+    it('updates the profile email when the confirmed sign-in email differs', async () => {
+      ;(updateDoc as Mock).mockClear()
+      const fbUser = { uid: 'uid-chg', email: 'new@x.com', emailVerified: true }
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'old@x.com', name: 'A' }))
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged(fbUser)
+      expect(updateDoc).toHaveBeenCalledOnce()
+      expect((updateDoc as Mock).mock.calls[0]![1]).toMatchObject({ email: 'new@x.com' })
+      expect(useAuthStore.getState().user?.email).toBe('new@x.com')
+    })
+
+    it('leaves the profile alone when the emails match or the new one is unconfirmed', async () => {
+      ;(updateDoc as Mock).mockClear()
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'same@x.com', name: 'A' }))
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged({ uid: 'u1', email: 'same@x.com', emailVerified: true })
+      useAuthStore.getState().reset()
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'old@x.com', name: 'A' }))
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged({ uid: 'u2', email: 'new@x.com', emailVerified: false })
+      expect(updateDoc).not.toHaveBeenCalled()
+    })
+
+    it('a failed profile email update never blocks the sign-in', async () => {
+      ;(updateDoc as Mock).mockClear()
+      ;(updateDoc as Mock).mockRejectedValueOnce(new Error('offline'))
+      ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'old@x.com', name: 'A' }))
+      useAuthStore.getState().initialize()
+      await resolveAuthStateReady()
+      await fireAuthStateChanged({ uid: 'uid-chg', email: 'new@x.com', emailVerified: true })
+      expect(useAuthStore.getState().user?.id).toBe('uid-chg')
+      expect(useAuthStore.getState().isLoading).toBe(false)
     })
 
     it('handles missing Firestore doc (mid-registration)', async () => {

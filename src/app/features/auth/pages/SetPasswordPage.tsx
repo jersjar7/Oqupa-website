@@ -6,13 +6,17 @@ import { setPasswordSchema, type SetPasswordFormData } from '@/schemas/authSchem
 import { authService } from '@/services/authService'
 import { Button, Input } from '@/app/components/ui'
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
+import { EMAIL_CHANGE_COPY, loginUrlAfterEmailChange } from '@/lib/emailChange'
+import { getEmailChangeLinkError } from '@/lib/authErrors'
 
-type ActionMode = 'resetPassword' | 'verifyEmail' | 'unknown'
+type ActionMode = 'resetPassword' | 'verifyEmail' | 'verifyAndChangeEmail' | 'recoverEmail' | 'unknown'
 
 type VerificationState =
   | { kind: 'verifying' }
   | { kind: 'ready'; email: string }                    // password setup form
   | { kind: 'emailVerified'; email: string }            // verifyEmail success
+  | { kind: 'emailChanged'; email: string }             // verifyAndChangeEmail success
+  | { kind: 'emailRestored'; email: string }            // recoverEmail: explained, never applied
   | { kind: 'invalid'; message: string }
   | { kind: 'done' }
 
@@ -22,6 +26,10 @@ type VerificationState =
  *
  *   - mode=resetPassword (or unset) — set/reset the user's password
  *   - mode=verifyEmail              — apply the email-verification code
+ *   - mode=verifyAndChangeEmail     — "Cámbialo": switch to the new email and
+ *                                     confirm it (ends the old session)
+ *   - mode=recoverEmail             — the undo link sent to the old address;
+ *                                     explained, never applied (see below)
  *
  * The email-verification branch is what Flutter's
  * `firebaseUser.sendEmailVerification()` triggers. The Firebase Console
@@ -61,6 +69,20 @@ export default function SetPasswordPage() {
       }
 
       try {
+        if (mode === 'verifyAndChangeEmail') {
+          const { newEmail } = await authService.applyEmailChangeCode(oobCode)
+          if (!cancelled) setState({ kind: 'emailChanged', email: newEmail })
+          return
+        }
+        if (mode === 'recoverEmail') {
+          // Deliberately NOT applied. Firebase sends this undo link to the OLD
+          // address after "Cámbialo" — which is the mistyped one, possibly a
+          // stranger's inbox. Applying it would hand them back a finished
+          // account (hostile review 2026-10-24, finding 1). A person whose
+          // email really was changed without asking writes to us instead.
+          if (!cancelled) setState({ kind: 'emailRestored', email: '' })
+          return
+        }
         if (mode === 'verifyEmail') {
           // Email verification flow: read email + apply code
           const email = await authService.checkEmailVerificationCode(oobCode)
@@ -71,12 +93,14 @@ export default function SetPasswordPage() {
           const email = await authService.verifySetPasswordCode(oobCode)
           if (!cancelled) setState({ kind: 'ready', email })
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setState({
             kind: 'invalid',
             message:
-              mode === 'verifyEmail'
+              mode === 'verifyAndChangeEmail' || mode === 'recoverEmail'
+                ? getEmailChangeLinkError(err)
+                : mode === 'verifyEmail'
                 ? 'Este enlace de verificación expiró o ya fue usado. Solicita uno nuevo desde la app.'
                 : 'Este enlace expiró o ya fue usado. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".',
           })
@@ -115,7 +139,7 @@ export default function SetPasswordPage() {
     return (
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <p className="text-base text-text-secondary">
-          {mode === 'verifyEmail' ? 'Verificando tu correo...' : 'Verificando enlace...'}
+          {mode === 'resetPassword' || mode === 'unknown' ? 'Verificando enlace...' : 'Verificando tu correo...'}
         </p>
       </div>
     )
@@ -129,7 +153,15 @@ export default function SetPasswordPage() {
             Enlace inválido
           </h1>
           <p className="mt-2 text-base text-text-secondary">{state.message}</p>
-          {mode !== 'verifyEmail' && (
+          {mode === 'verifyAndChangeEmail' && (
+            <Link
+              to="/app/login?correo=1"
+              className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
+            >
+              Entrar
+            </Link>
+          )}
+          {(mode === 'resetPassword' || mode === 'unknown') && (
             <Link
               to="/app/forgot-password"
               className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
@@ -137,6 +169,40 @@ export default function SetPasswordPage() {
               Solicitar un nuevo enlace
             </Link>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  if (state.kind === 'emailChanged') {
+    return (
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="font-serif text-[28px] font-normal text-text-primary">
+            {EMAIL_CHANGE_COPY.linkDoneTitle}
+          </h1>
+          <p className="mt-2 text-base text-text-secondary">{EMAIL_CHANGE_COPY.linkDone(state.email)}</p>
+          <Button
+            type="button"
+            onClick={() => navigate(loginUrlAfterEmailChange(state.email), { replace: true })}
+            className="mt-6 w-full"
+          >
+            Entrar
+          </Button>
+          <p className="mt-4 text-sm text-text-tertiary">
+            Si empezaste en la app de Oqupa en tu teléfono, vuelve a la app y entra ahí.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (state.kind === 'emailRestored') {
+    return (
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="font-serif text-[28px] font-normal text-text-primary">¿No pediste este cambio?</h1>
+          <p className="mt-2 text-base text-text-secondary">{EMAIL_CHANGE_COPY.recoverHelp}</p>
         </div>
       </div>
     )
