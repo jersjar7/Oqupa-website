@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-24 — "Usar otra cuenta": a way out of an unfinished account
+
+### New Features
+
+- **"Usar otra cuenta"** — on a phone there was no way to sign out of a half-finished account: the header hides "Salir", and the sign-up steps had no exit. Now a small link on the contact window (signed-in only) and at the bottom of every sign-up step signs out and opens the sign-in screen. From the contact window the listing is kept, so the next account lands back on it and WhatsApp opens; from the sign-up steps any pending contact is forgotten, so another person on the same phone never inherits it. Nothing is deleted. Approved and device-tested by Jerson on staging 2026-10-24.
+- **Google always shows its account chooser**, otherwise switching led straight back into the same Google account.
+
+### Bug Fixes
+
+- **"Verifica tu número otra vez" only when the profile really said verified.** Brand-new people were told to verify "again" a number they never verified; they now read "Solo esta vez".
+
+Released alone — A12b sign-up attribution stays on staging for its own release.
+
 ## 2026-10-24 — Clear Spanish error messages on every sign-in step
 
 ### Bug Fixes
