@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,6 +8,7 @@ import { authService } from '@/services/authService'
 import { getLoginAuthError, getSocialSignInError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import { emailEntryOutcome } from '../pipelineOrder'
+import { EMAIL_CHANGE_COPY, clearPendingEmailChange, readEmailChangeArrival } from '@/lib/emailChange'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
 
 // One door for everyone (docs/new-user-navigation-path.md, step 6): Google is
@@ -24,6 +25,12 @@ export default function PasswordLoginPage() {
   const [showEmail, setShowEmail] = useState(
     () => new URLSearchParams(location.search).get('correo') === '1',
   )
+  // ?email= prefills the form; ?cambio=1 means the person just confirmed a new
+  // email, which ended their session ("Cámbialo", email sign-up fix).
+  const [arrival] = useState(() => readEmailChangeArrival(location.search))
+  useEffect(() => {
+    if (arrival.changed) clearPendingEmailChange()
+  }, [arrival.changed])
   const [error, setError] = useState<string | null>(null)
   const [offerWaysForward, setOfferWaysForward] = useState(false)
   const [googleBusy, setGoogleBusy] = useState(false)
@@ -32,7 +39,10 @@ export default function PasswordLoginPage() {
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: arrival.email },
+  })
   const typedEmail = watch('email', '')
 
   async function onGoogle() {
@@ -101,6 +111,12 @@ export default function PasswordLoginPage() {
             </button>
           )}
         </div>
+
+        {arrival.changed && (
+          <p className="mt-4 rounded-xl bg-background-secondary/60 p-3 text-center text-sm text-text-secondary">
+            {EMAIL_CHANGE_COPY.changedSignIn}
+          </p>
+        )}
 
         {showEmail && (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">

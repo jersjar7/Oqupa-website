@@ -22,6 +22,9 @@ import {
   browserPopupRedirectResolver,
   updatePhoneNumber,
   getAdditionalUserInfo,
+  verifyBeforeUpdateEmail,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   type UserCredential,
 } from 'firebase/auth'
 import {
@@ -35,6 +38,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
+import { releaseCollidedPhone } from '@/lib/phoneRelease'
+import { clearPendingEmailChange } from '@/lib/emailChange'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -111,6 +116,9 @@ export const authService = {
   },
 
   async logout() {
+    // A change of email waiting for its link belongs to this session only
+    // (hostile review 2026-10-24, finding 5).
+    clearPendingEmailChange()
     await signOut(auth)
   },
 
@@ -146,6 +154,43 @@ export const authService = {
     if (!user) return null
     await user.reload()
     return auth.currentUser
+  },
+
+  // "¿No es tu correo? Cámbialo" (email sign-up fix, step 2). The link goes to
+  // the NEW address; opening it switches and confirms the email and signs this
+  // session out (measured on staging 2026-10-24). Firebase may want a recent
+  // sign-in first — then the caller asks for the password and passes it here.
+  async requestEmailChange(newEmail: string, password?: string) {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    if (password) {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', password))
+    }
+    /* v8 ignore start */
+    const url = import.meta.env.DEV
+      ? 'http://localhost:5173/app/login?correo=1'
+      : `${window.location.origin}/app/login?correo=1`
+    /* v8 ignore stop */
+    await verifyBeforeUpdateEmail(user, newEmail.trim(), { url, handleCodeInApp: false })
+  },
+
+  // The link page's half. An account still signed in on this browser under the
+  // old address has just been revoked by the change; signing it out here keeps
+  // this tab from acting on a dead session.
+  async applyEmailChangeCode(oobCode: string): Promise<{ newEmail: string; previousEmail: string }> {
+    const info = await checkActionCode(auth, oobCode)
+    const newEmail = info.data.email ?? ''
+    const previousEmail = info.data.previousEmail ?? ''
+    await applyActionCode(auth, oobCode)
+    const current = auth.currentUser?.email?.toLowerCase()
+    if (current && (current === previousEmail.toLowerCase() || current === newEmail.toLowerCase())) {
+      try {
+        await signOut(auth)
+      } catch {
+        // The session is already dead; nothing more to do.
+      }
+    }
+    return { newEmail, previousEmail }
   },
 
   async requestPasswordReset(email: string) {
@@ -264,12 +309,26 @@ export const authService = {
       const hasPhone = currentUser.providerData.some(
         (p) => p.providerId === 'phone'
       )
-      if (hasPhone) {
-        // Phone already linked — update to new number (atomic, no unlink needed)
-        await updatePhoneNumber(currentUser, credential)
-      } else {
-        // First time linking phone to this account
-        await linkWithCredential(currentUser, credential)
+      try {
+        if (hasPhone) {
+          // Phone already linked — update to new number (atomic, no unlink needed)
+          await updatePhoneNumber(currentUser, credential)
+        } else {
+          // First time linking phone to this account
+          await linkWithCredential(currentUser, credential)
+        }
+      } catch (err) {
+        // The number sits on another account. If that account is an abandoned
+        // email sign-up, the server moves it here; otherwise this throws the
+        // usual "already in use". docs/email-signup-fix-plan.md, step 4.
+        await releaseCollidedPhone(err, {
+          callRelease: (proof) =>
+            httpsCallable(getFunctions(undefined, 'southamerica-east1'), 'releasePhoneFromUnfinishedAccount')(proof),
+          refreshSession: async () => {
+            await currentUser.getIdToken(true)
+            await currentUser.reload()
+          },
+        })
       }
     } else {
       // Sign in with phone (standalone)
@@ -297,6 +356,10 @@ export const authService = {
     if (auth.currentUser) {
       await updateDoc(doc(db, 'users', auth.currentUser.uid), {
         isPhoneVerified: true,
+        // The app creates email accounts inactive until this step and treats
+        // inactive as unable to publish or contact; finishing here must turn
+        // it on too (app hostile review 2026-10-24, finding 1).
+        isActive: true,
         updatedAt: serverTimestamp(),
       })
     }
@@ -419,6 +482,7 @@ export const authService = {
     const functions = getFunctions(undefined, 'southamerica-east1')
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
+    clearPendingEmailChange()
     await signOut(auth)
   },
 

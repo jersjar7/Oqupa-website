@@ -237,3 +237,30 @@ describe("PasswordLoginPage — contact funnel (A10)", () => {
     expect(mockFunnel.logContactMilestone).not.toHaveBeenCalled();
   });
 });
+
+// Email sign-up fix ("Cámbialo"): confirming a new email ends the session, so
+// the person lands here and signs in with the new address and the same password.
+describe("PasswordLoginPage — after an email change", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+  });
+
+  it("opens the email form with the new address filled in and says why", () => {
+    renderPage("/app/login?correo=1&cambio=1&email=bien%40x.com");
+    expect((screen.getByRole("textbox", { name: /correo/i }) as HTMLInputElement).value).toBe("bien@x.com");
+    expect(screen.getByText("Tu correo cambió. Entra con tu nuevo correo y tu contraseña.")).toBeDefined();
+  });
+
+  it("forgets the pending change once it has been offered", () => {
+    sessionStorage.setItem("oqupa_email_change_v1", JSON.stringify({ email: "bien@x.com", at: Date.now() }));
+    renderPage("/app/login?correo=1&cambio=1&email=bien%40x.com");
+    expect(sessionStorage.getItem("oqupa_email_change_v1")).toBeNull();
+  });
+
+  it("a plain ?email= prefills without the message", () => {
+    renderPage("/app/login?correo=1&email=a%40b.co");
+    expect((screen.getByRole("textbox", { name: /correo/i }) as HTMLInputElement).value).toBe("a@b.co");
+    expect(screen.queryByText(/tu correo cambió/i)).toBeNull();
+  });
+});

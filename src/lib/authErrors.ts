@@ -1,3 +1,5 @@
+import { EMAIL_CHANGE_COPY } from './emailChange'
+
 export interface AuthErrorInfo {
   message: string
   recoveryHint?: string
@@ -352,5 +354,49 @@ export function getAccountDeleteError(error: unknown): AuthErrorInfo {
       }
     default:
       return { message: withCode('Error al eliminar la cuenta. Intenta de nuevo.', code), isRetryable: true }
+  }
+}
+
+/** "Cámbialo" on the email step (email sign-up fix, step 2). */
+export function getEmailChangeError(error: unknown): AuthErrorInfo & { needsPassword?: boolean } {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/requires-recent-login':
+    case 'auth/user-token-expired':
+      return { message: EMAIL_CHANGE_COPY.needsPassword, isRetryable: true, needsPassword: true }
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return { message: EMAIL_CHANGE_COPY.wrongPassword, isRetryable: true, needsPassword: true }
+    case 'auth/invalid-email':
+    case 'auth/invalid-new-email':
+    case 'auth/missing-new-email':
+      return { message: EMAIL_CHANGE_COPY.invalidEmail, isRetryable: true }
+    case 'auth/email-already-in-use':
+      return { message: EMAIL_CHANGE_COPY.taken, isRetryable: false }
+    case 'auth/too-many-requests':
+      return { message: TOO_MANY, isRetryable: false }
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    case 'auth/user-disabled':
+      return { message: DISABLED, isRetryable: false }
+    default:
+      return { message: withCode(EMAIL_CHANGE_COPY.failed, code), isRetryable: true }
+  }
+}
+
+/** The confirmation link for a changed email, opened on the link page. */
+export function getEmailChangeLinkError(error: unknown): string {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return EMAIL_CHANGE_COPY.taken
+    case 'auth/invalid-action-code':
+    case 'auth/expired-action-code':
+      return EMAIL_CHANGE_COPY.linkExpired
+    case 'auth/network-request-failed':
+      return CONNECTION
+    default:
+      return withCode(EMAIL_CHANGE_COPY.linkFailed, code)
   }
 }

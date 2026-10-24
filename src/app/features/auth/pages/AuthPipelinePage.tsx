@@ -22,7 +22,15 @@ import {
   type ContactErrand,
 } from '@/app/features/listings/contactFunnel'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
-import { getPhoneAuthError, getProfileSaveError, getEmailResendError } from '@/lib/authErrors'
+import { getPhoneAuthError, getProfileSaveError, getEmailResendError, getEmailChangeError } from '@/lib/authErrors'
+import {
+  EMAIL_CHANGE_COPY,
+  validateNewEmail,
+  rememberPendingEmailChange,
+  pendingEmailChange,
+  clearPendingEmailChange,
+  loginUrlAfterEmailChange,
+} from '@/lib/emailChange'
 import { Button, Input } from '@/app/components/ui'
 import { pipelineStepsFor, type PipelineStep } from '../pipelineOrder'
 
@@ -93,6 +101,7 @@ export default function AuthPipelinePage() {
   const pendingPhoneRef = useRef<{ phoneNumber: string; countryName: string } | null>(null)
 
   const finish = useCallback(() => {
+    clearPendingEmailChange()
     navigate(consumeReturnUrl() ?? '/app', { replace: true })
   }, [navigate])
 
@@ -121,7 +130,12 @@ export default function AuthPipelinePage() {
   }, [smsCooldown])
 
   useEffect(() => {
-    if (!firebaseUser) navigate('/app/login')
+    if (firebaseUser) return
+    // Confirming a changed email ends the session everywhere (measured on
+    // staging 2026-10-24). Send the person to sign in with the new address.
+    const changedTo = pendingEmailChange()
+    if (changedTo) navigate(loginUrlAfterEmailChange(changedTo), { replace: true })
+    else navigate('/app/login')
   }, [firebaseUser, navigate])
 
   useEffect(() => {
@@ -322,6 +336,10 @@ export default function AuthPipelinePage() {
             {step === 'verify-email' && (
               <EmailVerifyStep
                 email={firebaseUser?.email ?? null}
+                onRequestChange={async (newEmail, password) => {
+                  await authService.requestEmailChange(newEmail, password)
+                  rememberPendingEmailChange(newEmail)
+                }}
                 isSubmitting={isSubmitting}
                 onResend={async () => {
                   setIsSubmitting(true)
@@ -348,6 +366,8 @@ export default function AuthPipelinePage() {
             type="button"
             onClick={async () => {
               try {
+                // Another account is not waiting for this one's new email.
+                clearPendingEmailChange()
                 await switchAccount({ logout: () => authService.logout(), navigate })
               } catch {
                 toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
@@ -568,34 +588,134 @@ function EmailVerifyStep({
   email,
   isSubmitting,
   onResend,
+  onRequestChange,
 }: {
   email: string | null
   isSubmitting: boolean
   onResend: () => void
+  onRequestChange: (newEmail: string, password?: string) => Promise<void>
 }) {
+  // "¿No es tu correo? Cámbialo" (email sign-up fix, step 2): a typo no longer
+  // means waiting for a link nobody will read, or abandoning the account.
+  const [changing, setChanging] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [needsPassword, setNeedsPassword] = useState(false)
+  const [changeError, setChangeError] = useState<string | null>(null)
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+
+  async function sendChange(e: React.FormEvent) {
+    e.preventDefault()
+    if (sending) return
+    const invalid = validateNewEmail(email, newEmail)
+    if (invalid) {
+      setChangeError(invalid)
+      return
+    }
+    if (needsPassword && !password) {
+      setChangeError(EMAIL_CHANGE_COPY.needsPassword)
+      return
+    }
+    setChangeError(null)
+    setSending(true)
+    try {
+      const target = newEmail.trim()
+      await onRequestChange(target, needsPassword ? password : undefined)
+      setSentTo(target)
+      setChanging(false)
+      setPassword('')
+    } catch (err) {
+      const info = getEmailChangeError(err)
+      if (info.needsPassword) setNeedsPassword(true)
+      setChangeError(info.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <>
       <h1 className="text-center font-serif text-[28px] font-normal text-text-primary">
         Revisa tu correo
       </h1>
-      <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviamos un enlace
-        {email ? (
-          <>
-            {' '}a <span className="font-medium text-text-primary">{email}</span>
-          </>
-        ) : null}
-        . Ábrelo y vuelve aquí — lo detectamos solos.
-      </p>
-      <div className="mt-8 flex items-center justify-center gap-2 text-sm text-text-secondary">
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-secondary" />
-        Esperando el clic en el enlace…
-      </div>
-      <div className="mt-6 text-center">
-        <Button type="button" onClick={onResend} variant="text" disabled={isSubmitting}>
-          Reenviar correo
-        </Button>
-      </div>
+      {sentTo ? (
+        <p className="mt-2 text-center text-base text-text-secondary">{EMAIL_CHANGE_COPY.sent(sentTo)}</p>
+      ) : (
+        <p className="mt-2 text-center text-base text-text-secondary">
+          Te enviamos un enlace
+          {email ? (
+            <>
+              {' '}a <span className="font-medium text-text-primary">{email}</span>
+            </>
+          ) : null}
+          . Ábrelo y vuelve aquí — lo detectamos solos.
+        </p>
+      )}
+
+      {changing ? (
+        <form onSubmit={sendChange} className="mt-6 space-y-3" noValidate>
+          <Input
+            label={EMAIL_CHANGE_COPY.fieldLabel}
+            type="email"
+            autoComplete="email"
+            autoFocus
+            placeholder="tu@correo.com"
+            value={newEmail}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmail(e.target.value)}
+          />
+          {needsPassword && (
+            <Input
+              label={EMAIL_CHANGE_COPY.passwordLabel}
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+            />
+          )}
+          {changeError && <p className="text-sm text-error">{changeError}</p>}
+          <Button type="submit" isLoading={sending} className="w-full">
+            {EMAIL_CHANGE_COPY.send}
+          </Button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setChanging(false)
+                setChangeError(null)
+              }}
+              className="text-sm text-text-secondary underline underline-offset-2"
+            >
+              {EMAIL_CHANGE_COPY.cancel}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-text-secondary">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-secondary" />
+            Esperando el clic en el enlace…
+          </div>
+          <div className="mt-6 text-center">
+            <Button type="button" onClick={onResend} variant="text" disabled={isSubmitting}>
+              Reenviar correo
+            </Button>
+          </div>
+          <p className="mt-4 text-center text-sm text-text-secondary">
+            {EMAIL_CHANGE_COPY.linkLead}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setChanging(true)
+                setChangeError(null)
+              }}
+              className="font-medium text-secondary underline underline-offset-2 hover:text-secondary-hover"
+            >
+              {EMAIL_CHANGE_COPY.link}
+            </button>
+          </p>
+        </>
+      )}
       <p className="mt-6 text-center text-xs text-text-tertiary">
         Puede tardar un par de minutos. Revisa también la carpeta de spam.
       </p>

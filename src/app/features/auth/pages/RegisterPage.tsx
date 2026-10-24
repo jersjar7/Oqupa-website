@@ -14,6 +14,10 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
+  // Google first, email one tap away — the same screen as sign-in and the
+  // app's (email sign-up fix, step 1). Someone who already typed their email
+  // on the sign-in screen gets the form open.
+  const [showEmail, setShowEmail] = useState(() => Boolean(new URLSearchParams(location.search).get('email')))
 
   const {
     register,
@@ -79,44 +83,54 @@ export default function RegisterPage() {
         >
           Continuar con Google
         </button>
-        <p className="mt-6 text-center text-sm text-text-tertiary">o con tu correo</p>
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-          <Input
-            label="Correo electrónico"
-            type="email"
-            autoComplete="email"
-            placeholder="tu@correo.com"
-            error={errors.email?.message}
-            {...register('email')}
-          />
+        {!showEmail && (
+          <button
+            type="button"
+            onClick={() => setShowEmail(true)}
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-secondary font-sans text-base font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
+          >
+            Continuar con correo
+          </button>
+        )}
+        {showEmail && (
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            <Input
+              label="Correo electrónico"
+              type="email"
+              autoComplete="email"
+              placeholder="tu@correo.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
 
-          <Input
-            label="Contraseña"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Mínimo 8 caracteres"
-            error={errors.password?.message}
-            revealToggle
-            {...register('password')}
-          />
-          <PasswordRequirements password={passwordValue} />
+            <Input
+              label="Contraseña"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+              error={errors.password?.message}
+              revealToggle
+              {...register('password')}
+            />
+            <PasswordRequirements password={passwordValue} />
 
-          <Input
-            label="Confirma la contraseña"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Repite la contraseña"
-            error={errors.confirmPassword?.message}
-            revealToggle
-            {...register('confirmPassword')}
-          />
+            <Input
+              label="Confirma la contraseña"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Repite la contraseña"
+              error={errors.confirmPassword?.message}
+              revealToggle
+              {...register('confirmPassword')}
+            />
 
-          {error && <p className="text-sm text-error">{error}</p>}
+            {error && <p className="text-sm text-error">{error}</p>}
 
-          <Button type="submit" isLoading={isSubmitting} className="w-full">
-            Crear cuenta
-          </Button>
-        </form>
+            <Button type="submit" isLoading={isSubmitting} className="w-full">
+              Crear cuenta
+            </Button>
+          </form>
+        )}
 
         <p className="mt-6 text-center text-xs text-text-tertiary">
           Al crear una cuenta aceptas nuestros{' '}
