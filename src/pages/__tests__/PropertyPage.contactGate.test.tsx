@@ -78,7 +78,7 @@ vi.mock('@/app/components/GalleryModal', () => ({ default: () => null }))
 vi.mock('@/components/AppStoreBadges', () => ({ default: () => null }))
 
 import PropertyPage from '../PropertyPage'
-import { ContactDenied } from '@/services/contactService'
+import { ContactDenied, type ContactDenialReason } from '@/services/contactService'
 import { peekReturnUrl } from '@/lib/utils'
 
 const LISTING = {
@@ -104,7 +104,7 @@ function renderPage() {
   )
 }
 
-async function openGateWith(reason: string) {
+async function openGateWith(reason: ContactDenialReason) {
   getListingContactMock.mockRejectedValue(new ContactDenied(reason))
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
