@@ -35,7 +35,10 @@ export const EMAIL_CHANGE_COPY = {
   changedSignIn: 'Tu correo cambió. Entra con tu nuevo correo y tu contraseña.',
   linkDoneTitle: 'Correo actualizado',
   linkDone: (email: string) => `Tu correo ahora es ${email}. Entra a Oqupa con él y tu misma contraseña.`,
-  linkExpired: 'Este enlace ya no sirve. Pide uno nuevo desde Oqupa.',
+  // A used link reads the same as an expired one — and the likeliest reason
+  // it is used is that this person already opened it (a reload, a second tap).
+  linkExpired:
+    'Este enlace ya se usó o venció. Si ya confirmaste tu nuevo correo, entra con él; si no, pide uno nuevo desde Oqupa.',
   linkFailed: 'No pudimos cambiar tu correo. Intenta de nuevo desde Oqupa.',
   failed: 'No pudimos cambiar tu correo. Intenta de nuevo.',
   recoverHelp:

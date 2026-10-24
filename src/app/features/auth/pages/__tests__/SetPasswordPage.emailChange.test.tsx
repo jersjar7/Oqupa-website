@@ -66,7 +66,8 @@ describe('SetPasswordPage — a changed email', () => {
   it('a used or expired link asks for a new one from Oqupa', async () => {
     mockAuthService.applyEmailChangeCode.mockRejectedValue({ code: 'auth/invalid-action-code' })
     renderPage('?mode=verifyAndChangeEmail&oobCode=c1')
-    await waitFor(() => expect(screen.getByText('Este enlace ya no sirve. Pide uno nuevo desde Oqupa.')).toBeDefined())
+    await waitFor(() => expect(screen.getByText(/ya se usó o venció\. si ya confirmaste tu nuevo correo, entra con él/i)).toBeDefined())
+    expect(screen.getByRole('link', { name: /entrar/i }).getAttribute('href')).toBe('/app/login?correo=1')
   })
 
   // Hostile review 2026-10-24, finding 1: the undo link goes to the OLD,

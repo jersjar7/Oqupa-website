@@ -153,6 +153,14 @@ export default function SetPasswordPage() {
             Enlace inválido
           </h1>
           <p className="mt-2 text-base text-text-secondary">{state.message}</p>
+          {mode === 'verifyAndChangeEmail' && (
+            <Link
+              to="/app/login?correo=1"
+              className="mt-6 inline-block text-base font-medium text-secondary hover:text-secondary-hover"
+            >
+              Entrar
+            </Link>
+          )}
           {(mode === 'resetPassword' || mode === 'unknown') && (
             <Link
               to="/app/forgot-password"
