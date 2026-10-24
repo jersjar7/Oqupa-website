@@ -751,6 +751,9 @@ export default function PropertyPage() {
                 {firebaseUser && (
                   <button
                     onClick={async () => {
+                      // Counted as a way out of the gate, so gate_shown still
+                      // reconciles with its exits (review 2026-10-24).
+                      logContactGateStep(CONTACT_GATE_STEPS.gateDismissed)
                       try {
                         await switchAccount({
                           logout: () => authService.logout(),

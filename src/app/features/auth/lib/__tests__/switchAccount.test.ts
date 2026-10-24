@@ -17,10 +17,14 @@ describe('switchAccount', () => {
     expect(navigate).toHaveBeenCalledWith('/app/login', { replace: true })
   })
 
-  it('keeps the pending errand, so the other account lands back on the listing', async () => {
+  // Hostile review 2026-10-24, finding 1: from the sign-up steps page the
+  // person switching may be someone else on the same phone. Keeping the
+  // errand would open WhatsApp to a seller they never chose, and stamp that
+  // listing on their new account's sign-up record forever.
+  it('without a listing in view, forgets any pending errand', async () => {
     setReturnUrl('/property/abc#contactar')
     await switchAccount({ logout: vi.fn().mockResolvedValue(undefined), navigate: vi.fn() })
-    expect(peekReturnUrl()?.url).toBe('/property/abc#contactar')
+    expect(peekReturnUrl()).toBeNull()
   })
 
   it('from the contact window, stores the listing as the errand first', async () => {
