@@ -2,7 +2,7 @@ import { useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CardContent } from './PreviewCardContent'
+import CompactListingCard from './CompactListingCard'
 import type { ListingWithProperty } from '@/types/explore'
 import { cardSide } from '@/lib/map/mapView'
 
@@ -101,7 +101,7 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
               </div>
             </>
           )}
-          <CardContent item={item} />
+          <CompactListingCard item={item} className="w-[340px]" />
           {pos.side === 'above' && (
             <>
               <div className="flex justify-center">

@@ -11,14 +11,16 @@ import { useIsDesktop } from '@/hooks/useMediaQuery'
 const ExploreMap = lazy(() => import('@/components/explore/ExploreMap'))
 import ExploreFilters from '@/components/explore/ExploreFilters'
 import MapListView from '@/components/explore/list/MapListView'
-import ListToggleButton from '@/components/explore/list/ListToggleButton'
+import PhoneMapBar from '@/components/explore/PhoneMapBar'
+import MapFilterBar from '@/components/explore/MapFilterBar'
+import { activeFilterCount } from '@/lib/map/filterCount'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
 import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
 import type { Bounds } from '@/lib/map/mapPoint'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { thumbnail } from '@/lib/imageUrl'
 import { getExploreEmptyMessage } from '@/lib/exploreEmptyState'
-import { SlidersHorizontal, X, MapPin } from 'lucide-react'
+import { X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -168,21 +170,15 @@ export default function ExplorePage() {
 
   return (
     <div className="fixed inset-0 top-[72px] flex flex-col">
-      {/* Desktop filter bar */}
-      <div className="hidden border-b border-border bg-cream px-5 py-3 md:block">
-        <ExploreFilters
-          filters={filters}
-          setFilters={setFilters}
-          resultCount={visible.length}
-          total={total}
-          layout="horizontal"
-        />
-      </div>
-
       {/* Main content */}
       <div className="relative flex flex-1 overflow-hidden">
         {/* Map */}
         <div className="relative flex-1 md:flex-[3]">
+          {/* Computer: the filters float on the map rather than taking a row
+              above it (UX review 2026-10-25). */}
+          <div className="absolute left-4 top-4 z-20 hidden md:block">
+            <MapFilterBar filters={filters} setFilters={setFilters} />
+          </div>
           <AnimatePresence>
             {isLoading && (
               <motion.div
@@ -246,19 +242,6 @@ export default function ExplorePage() {
             </div>
           )}
 
-          {/* Mobile filter button */}
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-text-primary shadow-medium md:hidden"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros
-            {visible.length < total && (
-              <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-white">
-                {visible.length}
-              </span>
-            )}
-          </button>
         </div>
 
         {/* Desktop property cards panel */}
@@ -335,17 +318,21 @@ export default function ExplorePage() {
       {!isDesktop && !isLoading && (
         <div
           className="fixed left-1/2 z-40 -translate-x-1/2 transition-[bottom] duration-[250ms] ease-out md:hidden"
-          style={{ bottom: !listOpen && sheetHeight > 0 ? sheetHeight + 12 : 84 }}
+          style={{ bottom: !listOpen && sheetHeight > 0 ? sheetHeight + 12 : 24 }}
         >
-          <ListToggleButton
+          {/* One bar: the list and the filters side by side (UX review
+              2026-10-25; they were two stacked buttons). */}
+          <PhoneMapBar
             mode={listOpen ? 'list' : 'map'}
             count={visible.length}
             isVenta={isVenta}
-            onClick={() => {
+            activeFilters={activeFilterCount(filters)}
+            onToggleList={() => {
               handleDismiss()
               setSpotItems(null)
               setListOpen((open) => !open)
             }}
+            onOpenFilters={() => setDrawerOpen(true)}
           />
         </div>
       )}

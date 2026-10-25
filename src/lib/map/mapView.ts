@@ -1,9 +1,9 @@
 // Where the map puts things around a chosen listing (UX review, 2026-10-25).
 // Pure, so the rules are tested without a map.
 
-/** The listing card that opens on the map on a computer: photo, price, type
- *  and details — about 300 px tall (measured on staging at 1440 × 900). */
-export const PREVIEW_CARD_HEIGHT = 300
+/** The listing card that opens on the map on a computer: the slim card,
+ *  a 96-px photo with 8 px around it (UX review 2026-10-25; it was 300). */
+export const PREVIEW_CARD_HEIGHT = 115
 const CARD_GAP = 20
 
 /** Open the card above the pin, unless the pin is too close to the top of the

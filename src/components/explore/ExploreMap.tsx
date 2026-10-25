@@ -20,7 +20,7 @@ import { cardSide, panToReveal } from '@/lib/map/mapView'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement, createRaisedAnchorElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
-import { CardContent } from './PreviewCardContent'
+import CompactListingCard from './CompactListingCard'
 import HoverPreviewCard from './HoverPreviewCard'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -102,7 +102,11 @@ function MapboxExploreMap({
       zoom: start.zoom,
       attributionControl: true,
     })
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right')
+    // + / − only on a computer: on a phone, pinching does it (UX review
+    // 2026-10-25).
+    if (window.matchMedia?.('(min-width: 768px)').matches) {
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right')
+    }
     mapRef.current = map
 
     const reportBounds = () => {
@@ -331,7 +335,7 @@ function MapboxExploreMap({
               }
             }}
           >
-            <CardContent item={selectedItem} />
+            <CompactListingCard item={selectedItem} className="w-[340px]" />
           </div>,
           previewEl,
         )}

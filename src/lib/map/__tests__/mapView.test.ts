@@ -14,7 +14,7 @@ describe('cardSide', () => {
     expect(cardSide({ pinTop: 600, mapTop: 130 })).toBe('above')
   })
   it('below the pin when the card would be cut off at the top of the map', () => {
-    expect(cardSide({ pinTop: 300, mapTop: 130 })).toBe('below')
+    expect(cardSide({ pinTop: 150, mapTop: 130 })).toBe('below')
     expect(cardSide({ pinTop: 130 + PREVIEW_CARD_HEIGHT + 10, mapTop: 130 })).toBe('below')
   })
   it('exactly enough room: above', () => {
