@@ -5,16 +5,18 @@
 import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { OPERATION_TYPE_LABELS, isAlquilerOnlyType, type PropertyType } from '@/types/enums'
-import { activeFilterCount } from '@/lib/map/filterCount'
+import { activeFilterCount, filtersDoneLabel } from '@/lib/map/filterCount'
 import ExploreFilters from './ExploreFilters'
 import type { MapFilters } from '@/types/explore'
 
 interface MapFilterBarProps {
   filters: MapFilters
   setFilters: React.Dispatch<React.SetStateAction<MapFilters>>
+  /** How many listings the filters leave on the map, for the closing button. */
+  count?: number
 }
 
-export default function MapFilterBar({ filters, setFilters }: MapFilterBarProps) {
+export default function MapFilterBar({ filters, setFilters, count }: MapFilterBarProps) {
   const [open, setOpen] = useState(false)
   const active = activeFilterCount(filters)
   return (
@@ -59,7 +61,7 @@ export default function MapFilterBar({ filters, setFilters }: MapFilterBarProps)
             onClick={() => setOpen(false)}
             className="mt-5 w-full rounded-full bg-primary py-2.5 font-sans text-sm font-bold uppercase tracking-[1px] text-white hover:bg-primary-hover"
           >
-            Listo
+            {count == null ? 'Listo' : filtersDoneLabel(count, filters.operationType !== 'alquiler')}
           </button>
         </div>
       )}

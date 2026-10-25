@@ -13,7 +13,7 @@ import ExploreFilters from '@/components/explore/ExploreFilters'
 import MapListView from '@/components/explore/list/MapListView'
 import PhoneMapBar from '@/components/explore/PhoneMapBar'
 import MapFilterBar from '@/components/explore/MapFilterBar'
-import { activeFilterCount } from '@/lib/map/filterCount'
+import { activeFilterCount, filtersDoneLabel } from '@/lib/map/filterCount'
 import { MAP_FILTERS_Z } from '@/lib/map/mapView'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
 import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
@@ -170,7 +170,7 @@ export default function ExplorePage() {
   )
 
   return (
-    <div className="fixed inset-0 top-[72px] flex flex-col">
+    <div className="fixed inset-0 top-16 sm:top-[72px] flex flex-col">
       {/* Main content */}
       <div className="relative flex flex-1 overflow-hidden">
         {/* Map */}
@@ -178,7 +178,7 @@ export default function ExplorePage() {
           {/* Computer: the filters float on the map rather than taking a row
               above it (UX review 2026-10-25). */}
           <div className="absolute left-4 top-4 hidden md:block" style={{ zIndex: MAP_FILTERS_Z }}>
-            <MapFilterBar filters={filters} setFilters={setFilters} />
+            <MapFilterBar filters={filters} setFilters={setFilters} count={visible.length} />
           </div>
           <AnimatePresence>
             {isLoading && (
@@ -302,7 +302,7 @@ export default function ExplorePage() {
       {/* Phone: the list of what the map shows, over the map (the map stays
           mounted, so VER MAPA returns to exactly the same view). */}
       {!isDesktop && listOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-[72px] z-20 overflow-y-auto bg-cream px-4 pb-40 pt-4">
+        <div className="fixed inset-x-0 bottom-0 top-16 sm:top-[72px] z-20 overflow-y-auto bg-cream px-4 pb-40 pt-4">
           <MapListView
             items={spotItems ?? visible}
             isVenta={isVenta}
@@ -369,7 +369,17 @@ export default function ExplorePage() {
               resultCount={visible.length}
               total={total}
               layout="vertical"
+              showCount={false}
             />
+            {/* One button to finish, with what the filters leave (it was a
+                line of text with nothing to tap). */}
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="mt-6 w-full rounded-full bg-primary py-3 font-sans text-sm font-bold uppercase tracking-[1px] text-white hover:bg-primary-hover"
+            >
+              {filtersDoneLabel(visible.length, isVenta)}
+            </button>
           </div>
         </>
       )}

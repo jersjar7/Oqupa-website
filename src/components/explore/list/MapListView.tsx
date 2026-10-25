@@ -1,6 +1,7 @@
 // The list of what the map shows (map plan steps 3–4, ADR-031). The header is
 // the count and the sort button — nothing else (Jerson: no filler text).
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { emptyListOtherOperation, emptyListTitle, LIST_SORTS, listHeader, sortListingsForList, type ListSort } from '@/lib/map/listLogic'
 import { penPerUsdForThisVisit, penPerUsdRightNow } from '@/lib/map/exchangeRates'
 import ListingListCard from './ListingListCard'
@@ -85,8 +86,10 @@ export default function MapListView({
         </div>
       )}
 
-      {sheetOpen && (
-        <>
+      {/* At the top level of the page, so the phone's VER MAPA | Filtros bar
+          cannot cover its last choice (2026-10-25). */}
+      {sheetOpen && createPortal(
+        <div>
           <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSheetOpen(false)} />
           <div role="dialog" aria-label="Ordenar" className="fixed inset-x-0 bottom-0 z-[61] mx-auto max-w-md rounded-t-2xl bg-white px-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-5 md:bottom-auto md:top-1/3 md:rounded-2xl">
             <p className="mb-2 text-lg font-bold text-text-primary">Ordenar</p>
@@ -107,7 +110,8 @@ export default function MapListView({
               ))}
             </div>
           </div>
-        </>
+        </div>,
+        document.body,
       )}
     </div>
   )

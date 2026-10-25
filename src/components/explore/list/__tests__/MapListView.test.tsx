@@ -165,3 +165,16 @@ describe('MapListView — pointing at a card', () => {
     expect(onCardHover).toHaveBeenLastCalledWith(null)
   })
 })
+
+// Seen 2026-10-25 at phone size: the VER MAPA | Filtros bar covered the last
+// choice of the sort sheet. The sheet now opens at the top level of the page,
+// above that bar.
+describe('MapListView — sort sheet', () => {
+  it('opens at the top level of the page, not inside the list', () => {
+    const { container } = renderList({ items: [mapListing({ id: 'a' })] })
+    fireEvent.click(screen.getByRole('button', { name: /recomendados/i }))
+    const sheet = screen.getByRole('dialog', { name: 'Ordenar' })
+    expect(container.contains(sheet)).toBe(false)
+    expect(sheet.parentElement?.parentElement).toBe(document.body)
+  })
+})

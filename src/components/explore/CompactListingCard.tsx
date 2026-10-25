@@ -63,7 +63,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
         <span className="truncate text-xs leading-snug text-text-tertiary">{listingLocationLine(item)}</span>
       </div>
       <ChevronRight data-role="more-arrow" aria-hidden="true" className="mt-6 h-6 w-6 shrink-0 text-text-tertiary" strokeWidth={2.25} />
-      <SaveButton listingId={listing.id} className="absolute right-2 top-2 z-10" />
+      <SaveButton listingId={listing.id} variant="plain" className="absolute right-1.5 top-1.5 z-10" />
     </div>
   )
 }
