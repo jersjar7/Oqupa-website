@@ -1,10 +1,9 @@
 import { useLayoutEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import CompactListingCard from './CompactListingCard'
 import type { ListingWithProperty } from '@/types/explore'
-import { cardSide } from '@/lib/map/mapView'
+import { cardSide, MAP_CARD_Z } from '@/lib/map/mapView'
 
 interface HoverPreviewCardProps {
   item: ListingWithProperty | null
@@ -14,7 +13,7 @@ interface HoverPreviewCardProps {
 /**
  * Hover preview card rendered outside the Google Maps overlay system.
  *
- * Uses position:fixed via a React portal to document.body so it never
+ * Uses position:fixed (kept inside the explore page, below the filters) so it never
  * competes with AdvancedMarker overlays for mouse events. The card is
  * positioned using getBoundingClientRect() from the marker DOM element
  * (found via data-marker-id attribute) and repositions on window resize.
@@ -57,7 +56,9 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
     return () => window.removeEventListener('resize', updatePos)
   }, [markerId])
 
-  return createPortal(
+  // Rendered in place, not moved to the end of the page: there it sat above
+  // everything, the filters included (2026-10-25).
+  return (
     <AnimatePresence>
       {item && pos && (
         <motion.div
@@ -76,7 +77,7 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
             x: '-50%',
             y: pos.side === 'above' ? '-100%' : '0%',
             transformOrigin: pos.side === 'above' ? 'bottom center' : 'top center',
-            zIndex: 9999,
+            zIndex: MAP_CARD_Z,
           }}
           role="button"
           tabIndex={0}
@@ -112,7 +113,6 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
           )}
         </motion.div>
       )}
-    </AnimatePresence>,
-    document.body,
+    </AnimatePresence>
   )
 }

@@ -31,3 +31,9 @@ export function panToReveal({ pointY, mapHeight, coveredBottom, margin = 24 }: {
   if (pointY >= margin && pointY <= visibleBottom - margin) return 0
   return pointY - visibleBottom / 2
 }
+
+/** Layering on the explore page (Jerson, 2026-10-25: "Filters should appear
+ *  above any card"): every card on the map — hover or open — sits below the
+ *  filter bar and its panel. Pins use 2–4. */
+export const MAP_CARD_Z = 10
+export const MAP_FILTERS_Z = 20

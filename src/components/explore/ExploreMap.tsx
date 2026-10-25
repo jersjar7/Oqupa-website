@@ -16,7 +16,7 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
 import { showsDots } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
-import { cardSide, panToReveal } from '@/lib/map/mapView'
+import { cardSide, panToReveal, MAP_CARD_Z } from '@/lib/map/mapView'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement, createRaisedAnchorElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
@@ -285,8 +285,8 @@ function MapboxExploreMap({
     if (side === 'above') el.style.paddingBottom = '56px'
     else el.style.paddingTop = '12px'
     const marker = new mapboxgl.Marker({ element: el, anchor: side === 'above' ? 'bottom' : 'top' }).setLngLat([lng, lat]).addTo(map)
-    // Above every pin, including one lit up from the list (z-index 3).
-    marker.getElement().style.zIndex = '5'
+    // Above every pin (one lit up from the list is 3), below the filters.
+    marker.getElement().style.zIndex = String(MAP_CARD_Z)
     setPreviewEl(el)
     return () => {
       marker.remove()

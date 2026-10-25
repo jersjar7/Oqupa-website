@@ -14,6 +14,7 @@ import MapListView from '@/components/explore/list/MapListView'
 import PhoneMapBar from '@/components/explore/PhoneMapBar'
 import MapFilterBar from '@/components/explore/MapFilterBar'
 import { activeFilterCount } from '@/lib/map/filterCount'
+import { MAP_FILTERS_Z } from '@/lib/map/mapView'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
 import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
 import type { Bounds } from '@/lib/map/mapPoint'
@@ -176,7 +177,7 @@ export default function ExplorePage() {
         <div className="relative flex-1 md:flex-[3]">
           {/* Computer: the filters float on the map rather than taking a row
               above it (UX review 2026-10-25). */}
-          <div className="absolute left-4 top-4 z-20 hidden md:block">
+          <div className="absolute left-4 top-4 hidden md:block" style={{ zIndex: MAP_FILTERS_Z }}>
             <MapFilterBar filters={filters} setFilters={setFilters} />
           </div>
           <AnimatePresence>

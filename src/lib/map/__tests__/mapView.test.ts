@@ -7,7 +7,7 @@
 //   hidden, and only enough to show it — Jerson does not want the map moving
 //   when nobody asked (ADR-033).
 import { describe, it, expect } from 'vitest'
-import { cardSide, panToReveal, PREVIEW_CARD_HEIGHT } from '../mapView'
+import { cardSide, panToReveal, PREVIEW_CARD_HEIGHT, MAP_CARD_Z, MAP_FILTERS_Z } from '../mapView'
 
 describe('cardSide', () => {
   it('above the pin when there is room', () => {
@@ -39,5 +39,13 @@ describe('panToReveal', () => {
   })
   it('above the top of the map: brought down into view', () => {
     expect(panToReveal({ ...map, pointY: -40 })).toBe(-40 - 190)
+  })
+})
+
+// Jerson, 2026-10-25: "Filters should appear above any card." Every card on
+// the map (hover or open) is layered below the filter bar and its panel.
+describe('layering', () => {
+  it('cards on the map sit below the filters', () => {
+    expect(MAP_CARD_Z).toBeLessThan(MAP_FILTERS_Z)
   })
 })
