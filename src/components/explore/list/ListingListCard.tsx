@@ -1,6 +1,8 @@
 // One listing in the list (map plan steps 3–4, ADR-031): a large photo with its
-// photo count, the same drawing and type word as the map pin, the price large,
-// the details that matter for this type, and where it is.
+// photo count, then the price large beside the same drawing and type word as
+// the map pin, the details that matter for this type, and where it is. The
+// words are kept to three tight lines so the photo gets the height (Jerson,
+// 2026-10-24); the card stays about as tall as before.
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatedImage } from '@/app/components/ui'
@@ -38,7 +40,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
     >
       <Link to={`/property/${listing.id}`} className="block">
         <div
-          className="relative aspect-[16/10] w-full overflow-hidden bg-background-secondary"
+          className="relative aspect-[11/8] w-full overflow-hidden bg-background-secondary"
           style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
         >
           {photoRef && (
@@ -55,14 +57,17 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-1 p-3.5">
-          <span className="flex items-center gap-1.5 text-xs font-bold tracking-wide" style={{ color }}>
-            <span dangerouslySetInnerHTML={{ __html: drawingSvg(label.kind, 18, color).replace(/fill="#fff"/g, `fill="${color}"`).replace(/fill="currentColor"/g, 'fill="#fff"') }} />
-            <span>{pinKindWord(label.kind)}</span>
-          </span>
-          <span className="text-xl font-bold text-text-primary">{label.priceLine}</span>
-          {details && <span className="text-sm text-text-secondary">{details}</span>}
-          <span className="text-[13px] text-text-tertiary">{listingLocationLine(item)}</span>
+        <div className="flex flex-col px-3.5 pb-3 pt-2">
+          <div className="flex items-center gap-2">
+            {/* Short of room, the type word gives way, never the price. */}
+            <span className="shrink-0 whitespace-nowrap text-xl font-bold leading-snug text-text-primary">{label.priceLine}</span>
+            <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5 text-[13px] font-bold tracking-wide" style={{ color }}>
+              <span className="shrink-0" dangerouslySetInnerHTML={{ __html: drawingSvg(label.kind, 18, color).replace(/fill="#fff"/g, `fill="${color}"`).replace(/fill="currentColor"/g, 'fill="#fff"') }} />
+              <span className="truncate">{pinKindWord(label.kind)}</span>
+            </span>
+          </div>
+          {details && <span className="truncate text-sm leading-snug text-text-secondary">{details}</span>}
+          <span className="truncate text-[13px] leading-snug text-text-tertiary">{listingLocationLine(item)}</span>
         </div>
       </Link>
       <SaveButton listingId={listing.id} className="absolute right-3 top-3 z-10" />
