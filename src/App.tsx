@@ -47,6 +47,8 @@ import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
 import ListsPage from '@/app/features/lists/pages/ListsPage'
 import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
 import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
+import SaveNudge from '@/components/lists/SaveNudge'
+import GuardadosPage from '@/pages/GuardadosPage'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -55,6 +57,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ListStoreInitializer />
+      <SaveNudge />
       {import.meta.env.DEV && (
         <div style={{
           position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
@@ -74,6 +77,7 @@ export default function App() {
           <Route path="/reportar" element={<BugReportPage />} />
           <Route path="/property/:id" element={<PropertyPage />} />
           <Route path="/explorar" element={<ExplorePage />} />
+          <Route path="/guardados" element={<GuardadosPage />} />
           {/* Legacy public /numbers URL — moved into the gated dashboard tab
               at /app/numbers. Redirect old bookmarks through AuthGuard +
               MetricsGuard so only allowlisted teammates can reach it. */}

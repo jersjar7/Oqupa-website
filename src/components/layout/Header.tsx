@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import GuardadosLink from './GuardadosLink'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, LogOut } from 'lucide-react'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
@@ -245,6 +246,7 @@ export default function Header({
                   </a>
                 )
               )}
+              <GuardadosLink />
               <PublishCta />
               <AuthBlock />
             </nav>
@@ -258,6 +260,7 @@ export default function Header({
                   sign-in pill returns at sm. Sign-in stays one tap away — the
                   register page and the WhatsApp gate both say
                   "¿Ya tienes cuenta?". Hostile review 2026-08-26. */}
+              <GuardadosLink />
               <PublishCta className="whitespace-nowrap" />
               <div className="hidden sm:flex">
                 <AuthBlock />

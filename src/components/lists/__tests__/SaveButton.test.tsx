@@ -90,3 +90,26 @@ describe('popoverTop', () => {
     expect(popoverTop({ anchorTop: 100, anchorBottom: 132, popoverHeight: 760, viewportHeight: vh })).toBeGreaterThanOrEqual(8)
   })
 })
+
+// "Guardados sin cuenta" (Jerson, 2026-10-25): a visitor's heart saves in this
+// browser instead of sending them to the login page.
+import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
+describe('SaveButton for a visitor', () => {
+  it('saves on the device and stays on the page; a second tap un-saves', () => {
+    localStorage.clear()
+    useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
+    state.firebaseUser = null
+    state.lists = []
+    render(
+      <MemoryRouter initialEntries={['/explorar']}>
+        <SaveButton listingId="L9" variant="plain" />
+      </MemoryRouter>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    expect(useDeviceSavesStore.getState().ids).toEqual(['L9'])
+    const full = screen.getByRole('button', { name: /quitar de guardados/i })
+    expect(full.querySelector('svg')!.getAttribute('class')).toMatch(/fill-red-500/)
+    fireEvent.click(full)
+    expect(useDeviceSavesStore.getState().ids).toEqual([])
+  })
+})

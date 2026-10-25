@@ -65,6 +65,13 @@ export const listService = {
     await updateDoc(listDocRef(uid, listId), { name })
   },
 
+  /** Several listings at once (a visitor's device saves, on sign-in). A
+   *  listing already in the list is kept once. */
+  async addListings(uid: string, listId: string, listingIds: string[]): Promise<void> {
+    if (listingIds.length === 0) return
+    await updateDoc(listDocRef(uid, listId), { listingIds: arrayUnion(...listingIds) })
+  },
+
   async addListing(uid: string, listId: string, listingId: string): Promise<void> {
     await updateDoc(listDocRef(uid, listId), { listingIds: arrayUnion(listingId) })
   },

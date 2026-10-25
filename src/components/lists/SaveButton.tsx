@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 import { Heart, Plus, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useListStore, isSavedInAnyList } from '@/stores/listStore'
+import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
 import { listService } from '@/services/listService'
-import { setReturnUrl } from '@/lib/utils'
 import { Spinner } from '@/app/components/ui'
 import type { UserList } from '@/types/userList'
 
@@ -36,22 +35,24 @@ export function popoverTop({ anchorTop, anchorBottom, popoverHeight, viewportHei
 }
 
 export default function SaveButton({ listingId, className = '', variant = 'card' }: SaveButtonProps) {
-  const navigate = useNavigate()
   const firebaseUser = useAuthStore((s) => s.firebaseUser)
+  const deviceIds = useDeviceSavesStore((s) => s.ids)
+  const toggleDeviceSave = useDeviceSavesStore((s) => s.toggle)
   const lists = useListStore((s) => s.lists)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const saved = isSavedInAnyList(lists, listingId)
+  // A visitor's saves live in this browser (Guardados sin cuenta, 2026-10-25).
+  const saved = firebaseUser ? isSavedInAnyList(lists, listingId) : deviceIds.includes(listingId)
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
 
+    // A visitor: the heart saves and un-saves in this browser, no login.
     if (!firebaseUser) {
-      setReturnUrl(window.location.pathname)
-      navigate('/app/login')
+      toggleDeviceSave(listingId)
       return
     }
 
@@ -94,7 +95,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         ref={buttonRef}
         onClick={handleClick}
         disabled={busy}
-        aria-label={saved ? 'Administrar listas' : 'Guardar propiedad'}
+        aria-label={saved ? (firebaseUser ? 'Administrar listas' : 'Quitar de Guardados') : 'Guardar propiedad'}
         className={
           variant === 'page'
             ? `inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide transition-colors hover:bg-black/5 ${
