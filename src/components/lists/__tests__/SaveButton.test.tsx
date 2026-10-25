@@ -17,10 +17,10 @@ import { listService } from '@/services/listService'
 import type { UserList } from '@/types/userList'
 
 vi.mock('@/services/listService', () => ({
-  listService: { addListing: vi.fn(async () => {}), removeListing: vi.fn(async () => {}), createList: vi.fn(async () => 'new') },
+  listService: { addListing: vi.fn(async () => {}), removeListing: vi.fn(async () => {}), createList: vi.fn(async () => 'new'), ensureDefaultList: vi.fn(async () => 'guardados') },
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[] }))
+const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[], loadedUid: 'u1' as string | null }))
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: (sel: (s: typeof state) => unknown) => sel(state),
 }))
@@ -126,5 +126,45 @@ describe('SaveButton for an account still being set up', () => {
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
     expect(useDeviceSavesStore.getState().ids).toEqual(['L7'])
     expect(listService.addListing).not.toHaveBeenCalled()
+  })
+})
+
+
+// Re-review, 2026-10-25.
+describe('SaveButton — edges from the re-review', () => {
+  it('an account still being set up: a listing already in its lists shows saved, and opens the menu', () => {
+    useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
+    state.firebaseUser = { uid: 'u1', emailVerified: true }
+    state.user = { name: 'Ana', isPhoneVerified: false }
+    state.lists = [list('d', 'Guardados', ['L1'], true)]
+    render(<MemoryRouter><SaveButton listingId="L1" variant="plain" /></MemoryRouter>)
+    const heart = screen.getByRole('button', { name: /administrar listas/i })
+    fireEvent.click(heart)
+    expect(screen.getByText(/guardar en/i)).toBeDefined()
+    expect(useDeviceSavesStore.getState().ids).toEqual([])
+  })
+  it("someone with an account never uses up the visitor's card", () => {
+    localStorage.clear()
+    useDeviceSavesStore.setState({ ids: ['x', 'y'], nudgeOpen: false })
+    localStorage.setItem('oqupa_guardados', JSON.stringify(['x', 'y']))
+    state.firebaseUser = { uid: 'u1', emailVerified: false }
+    state.user = { name: 'Ana', isPhoneVerified: false }
+    state.lists = []
+    render(<MemoryRouter><SaveButton listingId="L3" variant="plain" /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    expect(useDeviceSavesStore.getState().ids).toEqual(['x', 'y', 'L3'])
+    expect(useDeviceSavesStore.getState().nudgeOpen).toBe(false)
+    expect(localStorage.getItem('oqupa_guardados_aviso')).toBeNull()
+  })
+  it('a ready account whose lists have not arrived yet: the heart waits (no second Guardados)', async () => {
+    state.firebaseUser = { uid: 'u1', emailVerified: true }
+    state.user = { name: 'Ana', isPhoneVerified: true }
+    state.lists = []
+    state.loadedUid = null
+    render(<MemoryRouter><SaveButton listingId="L4" variant="plain" /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(listService.addListing).not.toHaveBeenCalled()
+    state.loadedUid = 'u1'
   })
 })

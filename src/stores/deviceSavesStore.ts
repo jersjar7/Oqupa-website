@@ -59,7 +59,9 @@ interface DeviceSavesState {
   ids: string[]
   /** The card after the third save is on screen. */
   nudgeOpen: boolean
-  toggle: (listingId: string) => void
+  /** `canNudge: false` for someone with an account (even mid set-up): the
+   *  card is for visitors, and must not be used up while hidden. */
+  toggle: (listingId: string, opts?: { canNudge?: boolean }) => void
   /** Remove the ids that moved to the account. */
   clear: (ids: string[]) => void
   closeNudge: () => void
@@ -69,7 +71,7 @@ export const useDeviceSavesStore = create<DeviceSavesState>((set, get) => ({
   ids: readDeviceSaves(),
   nudgeOpen: false,
 
-  toggle: (listingId) => {
+  toggle: (listingId, opts) => {
     // Build on what this browser holds now, not this tab's copy: another tab
     // may have saved since (hostile review 2026-10-25).
     const ids = readStored() ?? get().ids
@@ -81,7 +83,7 @@ export const useDeviceSavesStore = create<DeviceSavesState>((set, get) => ({
     }
     const next = [...ids, listingId]
     write(next)
-    const openNudge = next.length === NUDGE_AT && !nudgeAlreadyShown()
+    const openNudge = (opts?.canNudge ?? true) && next.length === NUDGE_AT && !nudgeAlreadyShown()
     if (openNudge) markNudgeShown()
     set({ ids: next, nudgeOpen: openNudge || get().nudgeOpen })
   },

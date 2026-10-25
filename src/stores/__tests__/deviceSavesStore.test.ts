@@ -64,4 +64,11 @@ describe('device saves', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: DEVICE_SAVES_KEY }))
     expect(s().ids).toEqual(['z'])
   })
+  // Re-review: the card was used up while hidden from someone with an account.
+  it('a save that may not show the card does not use it up', () => {
+    s().toggle('a'); s().toggle('b')
+    s().toggle('c', { canNudge: false })
+    expect(s().nudgeOpen).toBe(false)
+    expect(localStorage.getItem(NUDGE_SHOWN_KEY)).toBeNull()
+  })
 })

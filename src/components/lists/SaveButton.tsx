@@ -44,22 +44,36 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
   const deviceIds = useDeviceSavesStore((s) => s.ids)
   const toggleDeviceSave = useDeviceSavesStore((s) => s.toggle)
   const lists = useListStore((s) => s.lists)
+  const listsArrived = useListStore((s) => !!authUser && s.loadedUid === authUser.uid)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   // A visitor's saves live in this browser (Guardados sin cuenta, 2026-10-25).
-  const saved = firebaseUser ? isSavedInAnyList(lists, listingId) : deviceIds.includes(listingId)
+  // Someone mid set-up may also have account lists from before: a listing in
+  // them shows saved too, and its heart opens the menu (re-review).
+  const inAccount = !!authUser && isSavedInAnyList(lists, listingId)
+  const inDevice = deviceIds.includes(listingId)
+  const saved = firebaseUser ? isSavedInAnyList(lists, listingId) : inDevice || inAccount
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
 
-    // A visitor: the heart saves and un-saves in this browser, no login.
+    // A visitor (or an account mid set-up): the heart saves and un-saves in
+    // this browser. The card after the third save is for visitors only.
     if (!firebaseUser) {
-      toggleDeviceSave(listingId)
+      if (inAccount && !inDevice) {
+        setOpen((v) => !v)
+        return
+      }
+      toggleDeviceSave(listingId, { canNudge: !authUser })
       return
     }
+
+    // The account's lists have not arrived yet: wait, or "no lists" would
+    // make a second Guardados (re-review).
+    if (!listsArrived) return
 
     // An empty heart saves at once, to the default list; a full one opens
     // the menu to change lists or un-save (2026-10-25: an empty heart used to
@@ -100,7 +114,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         ref={buttonRef}
         onClick={handleClick}
         disabled={busy}
-        aria-label={saved ? (firebaseUser ? 'Administrar listas' : 'Quitar de Guardados') : 'Guardar propiedad'}
+        aria-label={saved ? (firebaseUser || (inAccount && !inDevice) ? 'Administrar listas' : 'Quitar de Guardados') : 'Guardar propiedad'}
         className={
           variant === 'page'
             ? `inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide transition-colors hover:bg-black/5 ${
@@ -134,10 +148,10 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         )}
       </button>
 
-      {open && firebaseUser && (
+      {open && authUser && (
         <ListPopover
           listingId={listingId}
-          uid={firebaseUser.uid}
+          uid={authUser.uid}
           lists={lists}
           anchorRef={buttonRef}
           onClose={() => setOpen(false)}

@@ -13,7 +13,7 @@ vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
 const loaded = vi.hoisted(() => ({ ids: [] as string[] }))
 vi.mock('@/hooks/useListListings', async () => {
   const { mapListing } = await import('@/lib/map/__tests__/mapListingFixture')
-  return { useListListings: (ids: string[]) => { loaded.ids = ids; const live = ids.filter((id) => !id.startsWith('gone')); return { items: live.map((id) => mapListing({ id, amount: 98000, currency: 'USD' })), isLoading: false, missingIds: ids.filter((id) => id.startsWith('gone')) } } }
+  return { useListListings: (ids: string[]) => { loaded.ids = ids; const live = ids.filter((id) => !id.startsWith('gone') && !id.startsWith('fail')); return { items: live.map((id) => mapListing({ id, amount: 98000, currency: 'USD' })), isLoading: false, missingIds: ids.filter((id) => id.startsWith('gone')), failedIds: ids.filter((id) => id.startsWith('fail')) } } }
 })
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: () => {} }))
 
@@ -53,5 +53,14 @@ describe('GuardadosPage', () => {
     useDeviceSavesStore.setState({ ids: ['a', 'gone1'], nudgeOpen: false })
     renderPage()
     expect(useDeviceSavesStore.getState().ids).toEqual(['a'])
+  })
+  // Re-review: offline, the page said "Aún no tienes guardados" while the
+  // saves were still there.
+  it('saves that could not load are not called empty', () => {
+    useDeviceSavesStore.setState({ ids: ['fail1', 'fail2'], nudgeOpen: false })
+    renderPage()
+    expect(screen.queryByText(/aún no tienes guardados/i)).toBeNull()
+    expect(screen.getByText(/no se pudieron cargar/i)).toBeDefined()
+    expect(useDeviceSavesStore.getState().ids).toEqual(['fail1', 'fail2'])
   })
 })

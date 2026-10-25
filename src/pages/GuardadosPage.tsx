@@ -13,7 +13,8 @@ export default function GuardadosPage() {
   const firebaseUser = useAuthStore((s) => isAccountReady(s.firebaseUser, s.user))
   const ids = useDeviceSavesStore((s) => s.ids)
   const clear = useDeviceSavesStore((s) => s.clear)
-  const { items, isLoading, missingIds } = useListListings(firebaseUser ? [] : ids)
+  const { items, isLoading, missingIds, failedIds } = useListListings(firebaseUser ? [] : ids)
+  const couldNotLoad = !isLoading && items.length === 0 && (failedIds?.length ?? 0) > 0
   // A saved listing that no longer exists leaves the saves, so the page is
   // never blank with no way out (hostile review 2026-10-25).
   const missingKey = (missingIds ?? []).join(',')
@@ -28,7 +29,10 @@ export default function GuardadosPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
       <h1 className="font-serif text-[28px] font-normal text-text-primary">Guardados</h1>
-      {ids.length === 0 || (!isLoading && items.length === 0) ? (
+      {couldNotLoad ? (
+        // Offline or an error: the saves are still here (re-review).
+        <p className="mt-10 text-center text-base text-text-secondary">No se pudieron cargar tus guardados.</p>
+      ) : ids.length === 0 || (!isLoading && items.length === 0) ? (
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
           <p className="text-base text-text-secondary">Aún no tienes guardados.</p>
           <Link to="/explorar" className="rounded-full bg-primary px-6 py-3 font-sans text-sm font-bold uppercase tracking-[1px] text-white hover:bg-primary-hover">
