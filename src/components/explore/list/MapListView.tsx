@@ -1,7 +1,8 @@
 // The list of what the map shows (map plan steps 3–4, ADR-031). The header is
 // the count and the sort button — nothing else (Jerson: no filler text).
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { emptyListOtherOperation, emptyListTitle, EMPTY_LIST_ZOOM_OUT_HINT, LIST_SORTS, listHeader, sortListingsForList, type ListSort } from '@/lib/map/listLogic'
+import { penPerUsdForThisVisit, penPerUsdRightNow } from '@/lib/map/exchangeRates'
 import ListingListCard from './ListingListCard'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -23,7 +24,20 @@ export default function MapListView({
 }: MapListViewProps) {
   const [sort, setSort] = useState<ListSort>('recomendados')
   const [sheetOpen, setSheetOpen] = useState(false)
-  const sorted = useMemo(() => sortListingsForList(items, sort, sessionSeed), [items, sort, sessionSeed])
+  // Soles per dollar for the price sorts: the saved/default rate at once, the
+  // live one as soon as this visit's single fetch answers (ADR-031 item 19).
+  const [penPerUsd, setPenPerUsd] = useState(penPerUsdRightNow)
+  useEffect(() => {
+    let alive = true
+    penPerUsdForThisVisit().then((r) => alive && setPenPerUsd(r))
+    return () => {
+      alive = false
+    }
+  }, [])
+  const sorted = useMemo(
+    () => sortListingsForList(items, sort, sessionSeed, penPerUsd),
+    [items, sort, sessionSeed, penPerUsd],
+  )
   const sortLabel = LIST_SORTS.find((s) => s.id === sort)!.label
   const offer = emptyListOtherOperation(otherOperationCount, !isVenta)
 

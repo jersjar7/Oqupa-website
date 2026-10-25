@@ -1,17 +1,27 @@
-// The DOM for the website's map markers — map plan steps 2 and 4 (ADR-031).
-// Same words, drawings and colours as the app's pins: a drawing of the type,
-// the type in words, the full price. Plain DOM (not React) because Mapbox owns
-// the marker elements; every marker is a real <button> so it is reachable by
-// keyboard and named for screen readers.
+// The DOM for the website's map markers — style A (ADR-031 items 15–18), the
+// same as the app's MapMarkerPainter: a white pill with a small coloured circle
+// holding the type drawing, the type word in small grey letters and the price in
+// bold, with a point at the bottom. Far out, a small coloured dot per listing.
+// Boosted listings: a bigger pill with the first photo in a 48-px gold-edged
+// circle. Plain DOM (not React) because Mapbox owns the marker elements; every
+// marker is a real <button>, reachable by keyboard and named for screen readers.
 import { pinLabelFor, type PinKind } from '@/lib/map/pinLabel'
-import { districtCountLine } from '@/lib/map/districtGroups'
+import { buildImageUrl } from '@/lib/imageUrl'
 import type { ListingWithProperty } from '@/types/explore'
 
 export const PIN_COLORS = {
   venta: '#005B8D',
   alquiler: '#B34E00',
-  selected: '#0F172A',
+  selected: '#111827',
+  word: '#6B7280',
+  gold: '#F59E0B',
+  amberWord: '#B45309',
 } as const
+
+/** Same sizes as the app (MapMarkerPainter). */
+export const PIN_CIRCLE_PX = 24
+export const BOOSTED_PHOTO_PX = 48
+export const DOT_PX = 19
 
 /** One simple drawing per type, white on the pin's colour (inline SVG). */
 const DRAWINGS: Record<PinKind, string> = {
@@ -36,88 +46,169 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: Partial<CSSStyle
 
 const FONT = 'Montserrat, Gotham, system-ui, sans-serif'
 
-function pointer(color: string): HTMLDivElement {
+function pointer(color: string, size = 7): HTMLDivElement {
   return el('div', {
     width: '0', height: '0', margin: '0 auto',
-    borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: `9px solid ${color}`,
+    borderLeft: `${size}px solid transparent`, borderRight: `${size}px solid transparent`, borderTop: `${size + 1}px solid ${color}`,
+    filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.12))',
   })
 }
 
+const modeColor = (item: ListingWithProperty) =>
+  item.property.operationType === 'alquiler' ? PIN_COLORS.alquiler : PIN_COLORS.venta
+
+function circle(size: number, color: string, kind: PinKind): HTMLSpanElement {
+  const c = el('span', {
+    width: `${size}px`, height: `${size}px`, borderRadius: '50%', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', flex: 'none', overflow: 'hidden', position: 'relative',
+  })
+  c.dataset.role = 'circle'
+  c.style.backgroundColor = color
+  c.innerHTML = drawingSvg(kind, Math.round(size * 0.58), color)
+  return c
+}
+
+function pill(css: Partial<CSSStyleDeclaration>, background: string): HTMLButtonElement {
+  const b = el('button', {
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 11px 4px 4px', borderRadius: '999px',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.18)', fontFamily: FONT, cursor: 'pointer', transformOrigin: 'bottom center',
+    ...css,
+  })
+  b.type = 'button'
+  b.dataset.role = 'pill'
+  b.style.backgroundColor = background
+  return b
+}
+
+function words(typeText: string, priceText: string, o: { wordColor: string; priceColor: string; priceSize: number }) {
+  const w = el('span', { display: 'flex', flexDirection: 'column', lineHeight: '1.08', textAlign: 'left' })
+  const type = el('span', { fontSize: '10.5px', fontWeight: '700', letterSpacing: '0.4px', whiteSpace: 'nowrap', color: o.wordColor })
+  type.textContent = typeText
+  const price = el('span', { fontSize: `${o.priceSize}px`, fontWeight: '700', whiteSpace: 'nowrap', color: o.priceColor })
+  price.textContent = priceText
+  w.append(type, price)
+  return w
+}
+
+/** A normal listing's pin (style A). */
 export function createPinElement(item: ListingWithProperty, state: { selected: boolean }): HTMLDivElement {
   const label = pinLabelFor(item)
-  const isVenta = item.property.operationType !== 'alquiler'
-  const color = state.selected ? PIN_COLORS.selected : isVenta ? PIN_COLORS.venta : PIN_COLORS.alquiler
+  const color = modeColor(item)
   const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' })
   root.dataset.kind = label.kind
   root.dataset.listingId = item.listing.id
   root.dataset.selected = state.selected ? '1' : ''
-
-  const button = el('button', {
-    display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 10px', borderRadius: '12px',
-    border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.22)', color: '#fff', fontFamily: FONT,
-    cursor: 'pointer', transform: state.selected ? 'scale(1.15)' : '', transformOrigin: 'bottom center',
-  })
-  button.type = 'button'
-  button.dataset.role = 'pill'
-  button.style.backgroundColor = color
+  const bg = state.selected ? PIN_COLORS.selected : '#FFFFFF'
+  const button = pill(
+    { border: '1px solid rgba(0,0,0,0.06)', transform: state.selected ? 'scale(1.15)' : '' },
+    bg,
+  )
   button.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}`)
-  button.innerHTML = drawingSvg(label.kind, 20, color)
-  const words = el('span', { display: 'flex', flexDirection: 'column', lineHeight: '1.1', textAlign: 'left' })
-  const type = el('span', { fontSize: '10.5px', fontWeight: '700', letterSpacing: '0.4px', whiteSpace: 'nowrap' })
-  type.textContent = item.listing.isBoosted ? `✦ ${label.typeLine}` : label.typeLine
-  const price = el('span', { fontSize: '14.5px', fontWeight: '700', whiteSpace: 'nowrap' })
-  price.textContent = label.priceLine
-  words.append(type, price)
-  button.append(words)
-  root.append(button, pointer(color))
+  button.append(
+    circle(PIN_CIRCLE_PX, color, label.kind),
+    words(item.listing.isBoosted ? `✦ ${label.typeLine}` : label.typeLine, label.priceLine, {
+      wordColor: state.selected ? '#E5E7EB' : PIN_COLORS.word,
+      priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
+      priceSize: 14.5,
+    }),
+  )
+  root.append(button, pointer(bg))
   return root
 }
 
+/** The first photo of a listing at map-pin size (96 px, like the app). */
+export function boostedPhotoUrl(item: ListingWithProperty): string | null {
+  const m = item.property.media
+  const ref = m.photoKeys?.length ? m.photoKeys[0] : m.propertyPhotoUrls?.[0]
+  return ref ? buildImageUrl(ref, { width: 96, quality: 70 }) : null
+}
+
+/** A boosted listing's pin: bigger, with its first photo, at every zoom. Shows
+ *  the drawing until the photo has loaded (and if it never does). */
+export function createBoostedPinElement(item: ListingWithProperty, state: { selected: boolean }): HTMLDivElement {
+  const label = pinLabelFor(item)
+  const color = modeColor(item)
+  const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' })
+  root.dataset.kind = label.kind
+  root.dataset.listingId = item.listing.id
+  root.dataset.selected = state.selected ? '1' : ''
+  root.dataset.boosted = '1'
+  const bg = state.selected ? PIN_COLORS.selected : '#FFFFFF'
+  const button = pill(
+    { padding: '5px 14px 5px 5px', gap: '8px', borderWidth: '2px', borderStyle: 'solid', boxShadow: '0 4px 12px rgba(245,158,11,0.45)' },
+    bg,
+  )
+  button.style.borderColor = PIN_COLORS.gold
+  button.setAttribute('aria-label', `Destacado: ${label.typeLine}, ${label.priceLine}`)
+  const c = circle(BOOSTED_PHOTO_PX, color, label.kind)
+  c.style.boxShadow = `0 0 0 2px ${PIN_COLORS.gold}`
+  const url = boostedPhotoUrl(item)
+  if (url) {
+    const img = el('img', { width: '100%', height: '100%', objectFit: 'cover', display: 'none', position: 'absolute', inset: '0' })
+    img.alt = ''
+    img.decoding = 'async'
+    img.addEventListener('load', () => {
+      img.style.display = 'block'
+      c.querySelector('svg')?.remove()
+    })
+    img.setAttribute('src', url)
+    c.append(img)
+  }
+  button.append(
+    c,
+    words(`✦ ${label.typeLine}`, label.priceLine, {
+      wordColor: state.selected ? PIN_COLORS.gold : PIN_COLORS.amberWord,
+      priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
+      priceSize: 16,
+    }),
+  )
+  root.append(button, pointer(PIN_COLORS.gold, 8))
+  return root
+}
+
+/** Far out: one small dot per listing, its type drawing inside. */
+export function createDotElement(item: ListingWithProperty, onTap: () => void): HTMLDivElement {
+  const label = pinLabelFor(item)
+  const root = el('div', { display: 'flex' })
+  root.dataset.listingId = item.listing.id
+  const dot = el('button', {
+    width: `${DOT_PX}px`, height: `${DOT_PX}px`, borderRadius: '50%', padding: '0',
+    border: '1.5px solid #FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+  })
+  dot.type = 'button'
+  dot.style.backgroundColor = modeColor(item)
+  dot.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}. Acercar`)
+  dot.innerHTML = drawingSvg(label.kind, 11, modeColor(item))
+  dot.addEventListener('click', (e) => {
+    e.stopPropagation()
+    onTap()
+  })
+  root.append(dot)
+  return root
+}
+
+/** Pins that would overlap: "N aquí", style A. */
 export function createGroupElement(count: number, isVenta: boolean, onTap: () => void): HTMLDivElement {
-  const border = isVenta ? PIN_COLORS.venta : PIN_COLORS.alquiler
+  const color = isVenta ? PIN_COLORS.venta : PIN_COLORS.alquiler
   const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center' })
-  const button = el('button', {
-    display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '12px',
-    background: '#fff', border: `2px solid ${border}`, boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-    color: '#1F2937', fontFamily: FONT, cursor: 'pointer',
-  })
-  button.type = 'button'
+  const button = pill({ border: '1px solid rgba(0,0,0,0.06)' }, '#FFFFFF')
   button.setAttribute('aria-label', `${count} propiedades aquí, toca para ver`)
-  button.innerHTML = `<svg width="26" height="18" viewBox="0 0 26 20" aria-hidden="true"><path d="M1 10 L7 4 L13 10 V19 H1 Z" fill="${border}"/><rect x="14" y="5" width="10" height="14" fill="${border}" opacity="0.7"/></svg>`
-  const words = el('span', { display: 'flex', flexDirection: 'column', lineHeight: '1.1', textAlign: 'left' })
-  const n = el('span', { fontSize: '14.5px', fontWeight: '700', whiteSpace: 'nowrap' })
-  n.textContent = `${count} aquí`
-  const hint = el('span', { fontSize: '11px', color: '#4B5563', whiteSpace: 'nowrap' })
-  hint.textContent = 'Toca para ver'
-  words.append(n, hint)
-  button.append(words)
+  const badge = el('span', {
+    width: `${PIN_CIRCLE_PX}px`, height: `${PIN_CIRCLE_PX}px`, borderRadius: '50%', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', flex: 'none', backgroundColor: PIN_COLORS.selected,
+  })
+  badge.innerHTML = `<svg width="15" height="12" viewBox="0 0 26 20" aria-hidden="true"><path d="M1 10 L7 4 L13 10 V19 H1 Z" fill="#fff"/><rect x="14" y="5" width="10" height="14" fill="${color === PIN_COLORS.venta ? '#9CC3DB' : '#F2B98C'}"/></svg>`
+  button.append(badge, words(`${count} aquí`, 'Toca para ver', { wordColor: PIN_COLORS.selected, priceColor: PIN_COLORS.word, priceSize: 11 }))
+  // "N aquí" reads first and larger, like the app.
+  const w = button.lastElementChild as HTMLElement
+  ;(w.firstElementChild as HTMLElement).style.fontSize = '14.5px'
+  ;(w.firstElementChild as HTMLElement).style.letterSpacing = '0'
+  ;(w.lastElementChild as HTMLElement).style.fontWeight = '500'
   button.addEventListener('click', (e) => {
     e.stopPropagation()
     onTap()
   })
-  root.append(button, pointer(border))
-  return root
-}
-
-export function createDistrictCardElement(name: string, count: number, isVenta: boolean, onTap: () => void): HTMLDivElement {
-  const border = isVenta ? PIN_COLORS.venta : PIN_COLORS.alquiler
-  const root = el('div')
-  const button = el('button', {
-    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '9px 14px', borderRadius: '14px',
-    background: '#fff', border: `2px solid ${border}`, boxShadow: '0 3px 10px rgba(0,0,0,0.18)',
-    color: '#1F2937', fontFamily: FONT, cursor: 'pointer', textAlign: 'left',
-  })
-  button.type = 'button'
-  const title = el('span', { fontSize: '17px', fontWeight: '700', whiteSpace: 'nowrap' })
-  title.textContent = name
-  const line = el('span', { fontSize: '13px', marginTop: '2px', whiteSpace: 'nowrap' })
-  line.textContent = districtCountLine(count, isVenta)
-  button.setAttribute('aria-label', `${name}, ${line.textContent}`)
-  button.append(title, line)
-  button.addEventListener('click', (e) => {
-    e.stopPropagation()
-    onTap()
-  })
-  root.append(button)
+  root.append(button, pointer('#FFFFFF'))
   return root
 }

@@ -3,13 +3,21 @@
 // the sort button on one line and nothing else above the cards; Jerson's sort
 // words; the empty state that helps. Mirrors the app's map_list_view_test.dart.
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import MapListView from '../MapListView'
 import ListToggleButton from '../ListToggleButton'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
+// The visit's exchange rate (ADR-031 item 19): no network in tests. Starts at the
+// fixed default; the "live" answer is set per test.
+const rate = vi.hoisted(() => ({ live: 3.75 }))
+vi.mock('@/lib/map/exchangeRates', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/map/exchangeRates')>()),
+  penPerUsdRightNow: () => 3.75,
+  penPerUsdForThisVisit: () => Promise.resolve(rate.live),
+}))
 
 function renderList(props: Partial<React.ComponentProps<typeof MapListView>> = {}) {
   return render(
@@ -85,6 +93,24 @@ describe('MapListView', () => {
     expect(screen.queryByRole('dialog', { name: 'Ordenar' })).toBeNull()
     expect(screen.getAllByTestId('listing-list-card')[0]!.textContent).toContain('US$ 300 mil')
     expect(screen.getByRole('button', { name: /de más a menos/ })).toBeDefined()
+  })
+
+  // ADR-031 item 19: price sorts compare soles and dollars at the live rate.
+  // At the old fixed 3.75, US$ 100 (= S/. 375) sorted above S/. 360; at the real
+  // 3.44 (2026-10-24) it is S/. 344 and comes first.
+  it('price sorts use the live exchange rate once it arrives', async () => {
+    rate.live = 3.44
+    renderList({
+      items: [
+        mapListing({ id: 'soles', amount: 360, currency: 'PEN', operation: 'alquiler' }),
+        mapListing({ id: 'dolares', amount: 100, currency: 'USD', operation: 'alquiler' }),
+      ],
+      isVenta: false,
+    })
+    fireEvent.click(screen.getByRole('button', { name: /recomendados/i }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Ordenar' })).getByRole('button', { name: /de menos a más/ }))
+    await waitFor(() => expect(screen.getAllByTestId('listing-list-card')[0]!.textContent).toContain('US$'))
+    rate.live = 3.75
   })
 
   it('the empty state helps: zoom out, and the other operation when it has some here', () => {

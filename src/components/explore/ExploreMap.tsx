@@ -1,7 +1,9 @@
 // The explore map — Mapbox, the same map the app uses (map plan step 4,
-// ADR-031; the app moved in July, ADR-012). Listings speak in words: one card
-// per district when zoomed out, and closer in a pin per listing with a drawing
-// of its type, the type in words and its price, or a word group ("5 aquí").
+// ADR-031; the app moved in July, ADR-012). Style A (ADR-031 items 15–18): far
+// out a small dot per listing with its type drawing; closer in a white pin per
+// listing with the drawing, the type in words and the price, or a word group
+// ("5 aquí") where pins would overlap. Boosted listings are always their bigger
+// photo pin.
 //
 // What to draw is decided by MapMarkerIndex (pure, tested); this component only
 // owns the Mapbox map, its DOM markers and the camera.
@@ -12,11 +14,9 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
-import { DistrictResolver } from '@/lib/map/districtResolver'
-import { spreadPx } from '@/lib/map/districtGroups'
-import { zoomToFit } from '@/lib/map/zoomPolicy'
+import { DOT_TAP_ZOOM } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
-import { createPinElement, createGroupElement, createDistrictCardElement } from './mapbox/pinElements'
+import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import { CardContent } from './PreviewCardContent'
@@ -59,29 +59,13 @@ function MapboxExploreMap({
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const liveRef = useRef<Map<string, LiveMarker>>(new Map())
   const [mapReady, setMapReady] = useState(false)
-  const [resolver, setResolver] = useState<DistrictResolver | null>(null)
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
 
   // Latest callbacks/values for listeners registered once.
   const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta })
   latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta }
 
-  useEffect(() => {
-    let cancelled = false
-    DistrictResolver.load()
-      .then((r) => !cancelled && setResolver(r))
-      .catch(() => {
-        // Without outlines, districts fall back to the cleaned stored names.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const index = useMemo(
-    () => new MapMarkerIndex(items, resolver ? (lat, lng) => resolver.districtAt(lat, lng) : undefined),
-    [items, resolver],
-  )
+  const index = useMemo(() => new MapMarkerIndex(items), [items])
   const indexRef = useRef(index)
   indexRef.current = index
 
@@ -165,24 +149,23 @@ function MapboxExploreMap({
   function reconcile(map: mapboxgl.Map, wanted: MapMarker[]) {
     const live = liveRef.current
     const keep = new Set<string>()
-    const districtEls: { live: LiveMarker; m: Extract<MapMarker, { kind: 'district' }> }[] = []
     for (const m of wanted) {
       const key = keyOf(m, latest.current.selectedId, latest.current.isVenta)
       keep.add(key)
       let entry = live.get(key)
       if (!entry) {
         const el = elementFor(map, m)
-        const at = m.kind === 'district' ? m.group.centroid : positionOf(m)
-        const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'district' ? 'center' : 'bottom' })
-          .setLngLat([at.lng, at.lat])
+        const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'dot' ? 'center' : 'bottom' })
+          .setLngLat([m.lng, m.lat])
           .addTo(map)
+        // Boosted pins sit above everything else; the selected one above them.
+        if (m.kind === 'pin' && m.item.listing.isBoosted) el.style.zIndex = '2'
+        if (m.kind === 'pin' && m.item.listing.id === latest.current.selectedId) el.style.zIndex = '3'
         entry = { key, marker, el }
         live.set(key, entry)
-      } else if (m.kind !== 'district') {
-        const at = positionOf(m)
-        entry.marker.setLngLat([at.lng, at.lat])
+      } else {
+        entry.marker.setLngLat([m.lng, m.lat])
       }
-      if (m.kind === 'district') districtEls.push({ live: entry, m })
     }
     for (const [key, entry] of live) {
       if (!keep.has(key)) {
@@ -190,26 +173,15 @@ function MapboxExploreMap({
         live.delete(key)
       }
     }
-    // District cards never overlap: spread them on screen, biggest first.
-    if (districtEls.length > 1) {
-      const anchors = districtEls.map(({ m }) => map.project([m.group.centroid.lng, m.group.centroid.lat]))
-      const sizes = districtEls.map(({ live: l }) => ({ w: l.el.offsetWidth || 150, h: l.el.offsetHeight || 54 }))
-      const placed = spreadPx(anchors.map((a) => ({ x: a.x, y: a.y })), sizes)
-      placed.forEach((p, i) => {
-        const ll = map.unproject([p.x, p.y])
-        districtEls[i]!.live.marker.setLngLat(ll)
-      })
-    } else if (districtEls.length === 1) {
-      const { m, live: l } = districtEls[0]!
-      l.marker.setLngLat([m.group.centroid.lng, m.group.centroid.lat])
-    }
   }
 
   function elementFor(map: mapboxgl.Map, m: MapMarker): HTMLElement {
-    const isVentaNow = latest.current.isVenta
     if (m.kind === 'pin') {
       const id = m.item.listing.id
-      const el = createPinElement(m.item, { selected: id === latest.current.selectedId })
+      const selected = id === latest.current.selectedId
+      const el = m.item.listing.isBoosted
+        ? createBoostedPinElement(m.item, { selected })
+        : createPinElement(m.item, { selected })
       el.dataset.markerId = id
       el.addEventListener('click', (e) => {
         e.stopPropagation()
@@ -219,20 +191,14 @@ function MapboxExploreMap({
       el.addEventListener('mouseleave', () => latest.current.onHover(null))
       return el
     }
-    if (m.kind === 'group') {
-      return createGroupElement(m.count, isVentaNow, () =>
-        map.easeTo({ center: [m.lng, m.lat], zoom: Math.min(m.expansionZoom, 18) }),
-      )
+    if (m.kind === 'dot') {
+      // Out here a finger covers several dots, so a tap zooms in rather than
+      // opening one listing (same as the app).
+      return createDotElement(m.item, () => map.easeTo({ center: [m.lng, m.lat], zoom: DOT_TAP_ZOOM }))
     }
-    const { group } = m
-    return createDistrictCardElement(group.name, group.count, isVentaNow, () => {
-      const canvas = map.getCanvas()
-      const z = zoomToFit(group.bounds, canvas.clientWidth || 390, canvas.clientHeight || 700)
-      map.easeTo({
-        center: [(group.bounds.west + group.bounds.east) / 2, (group.bounds.south + group.bounds.north) / 2],
-        zoom: z,
-      })
-    })
+    return createGroupElement(m.count, latest.current.isVenta, () =>
+      map.easeTo({ center: [m.lng, m.lat], zoom: Math.min(m.expansionZoom, 19) }),
+    )
   }
 
   // --- the selected listing: privacy circle + (computer) pinned preview -------
@@ -302,10 +268,6 @@ function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean): strin
     const l = m.item.listing
     return `pin:${l.id}:${l.id === selectedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
   }
-  if (m.kind === 'group') return `group:${m.id}:${m.count}:${mode}`
-  return `district:${m.group.name}:${m.group.count}:${mode}`
-}
-
-function positionOf(m: Exclude<MapMarker, { kind: 'district' }>) {
-  return { lat: m.lat, lng: m.lng }
+  if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${mode}`
+  return `group:${m.id}:${m.count}:${mode}`
 }

@@ -13,6 +13,7 @@ import ExploreFilters from '@/components/explore/ExploreFilters'
 import MapListView from '@/components/explore/list/MapListView'
 import ListToggleButton from '@/components/explore/list/ListToggleButton'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
+import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
 import type { Bounds } from '@/lib/map/mapPoint'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { thumbnail } from '@/lib/imageUrl'
@@ -121,6 +122,12 @@ export default function ExplorePage() {
   }, [filtered, selectedId])
 
   // Reset toast dismissal when results appear, so it shows again on next empty view
+  // The visit's exchange rate, fetched once in the background as the page opens
+  // so the list's price sorts already have it (ADR-031 item 19).
+  useEffect(() => {
+    void penPerUsdForThisVisit()
+  }, [])
+
   useEffect(() => {
     if (visible.length > 0) setToastDismissed(false)
   }, [visible.length])

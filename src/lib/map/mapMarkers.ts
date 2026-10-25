@@ -1,23 +1,29 @@
-// What the website's map draws at each zoom — map plan steps 2 and 4 (ADR-031).
-// Mirrors the app's marker pipeline (MapboxMarkerPipelineController +
-// ListingClusterIndex): only two views — one card per district when zoomed out
-// (below DISTRICT_CARDS_BELOW_ZOOM), listing pins and word groups closer in.
-// Boosted listings are held out of grouping (always their own pin); the
-// selected listing always shows on its own.
+// What the website's map draws at each zoom — ADR-031 items 16–18. Mirrors the
+// app's marker pipeline (MapboxMarkerPipelineController + ListingClusterIndex):
+// far out (below DOTS_BELOW_ZOOM) one small dot per listing; closer in style-A
+// pins, with "N aquí" groups where pins would overlap. Boosted listings are held
+// out of everything (always their own photo pin, at every zoom); the selected
+// listing always shows on its own.
 import Supercluster from 'supercluster'
-import { groupByDistrict, type DistrictGroup, type DistrictLookup } from './districtGroups'
-import { showsDistrictCards } from './zoomPolicy'
+import { showsDots } from './zoomPolicy'
 import { mapPointOf, type Bounds } from './mapPoint'
 import type { ListingWithProperty } from '@/types/explore'
 
-/** Same as the app (ListingClusterIndex, tuned 2026-08-23). */
-export const CLUSTER_RADIUS_PX = 20
-export const CLUSTER_MAX_ZOOM = 15
+/** The widest and tallest a style-A pin gets (app: MapMarkerPainter
+ *  pinMaxWidthPx / pinMaxHeightPx, measured on the simulator). */
+export const PIN_MAX_WIDTH_PX = 176
+export const PIN_MAX_HEIGHT_PX = 52
+
+/** Same as the app (ListingClusterIndex, ADR-031 item 17): the radius is the
+ *  pin's diagonal, so two un-grouped pins can never touch; grouping stops at 18
+ *  (about one block), so a group can always be opened. */
+export const CLUSTER_RADIUS_PX = 184
+export const CLUSTER_MAX_ZOOM = 18
 
 export type MapMarker =
   | { kind: 'pin'; item: ListingWithProperty; lat: number; lng: number }
   | { kind: 'group'; id: number; count: number; lat: number; lng: number; expansionZoom: number }
-  | { kind: 'district'; group: DistrictGroup }
+  | { kind: 'dot'; item: ListingWithProperty; lat: number; lng: number }
 
 interface PointProps { index: number }
 
@@ -26,7 +32,7 @@ export class MapMarkerIndex {
   private readonly boosted: ListingWithProperty[]
   private readonly cluster: Supercluster<PointProps> | null
 
-  constructor(private readonly items: ListingWithProperty[], private readonly districtAt?: DistrictLookup) {
+  constructor(items: ListingWithProperty[]) {
     this.boosted = items.filter((i) => i.listing.isBoosted)
     this.regular = items.filter((i) => !i.listing.isBoosted)
     this.cluster = this.regular.length
@@ -39,15 +45,21 @@ export class MapMarkerIndex {
       : null
   }
 
-  private districtGroups: DistrictGroup[] | null = null
-
   markersFor(bounds: Bounds, zoom: number, selectedId: string | null): MapMarker[] {
-    if (showsDistrictCards(zoom)) {
-      this.districtGroups ??= groupByDistrict(this.items, this.districtAt)
-      return this.districtGroups.map((group) => ({ kind: 'district', group }))
-    }
     const inView = (lat: number, lng: number) =>
       lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
+    if (showsDots(zoom)) {
+      const out: MapMarker[] = []
+      for (const item of this.regular) {
+        const p = mapPointOf(item)
+        if (inView(p.lat, p.lng)) out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
+      }
+      for (const item of this.boosted) {
+        const p = mapPointOf(item)
+        if (inView(p.lat, p.lng)) out.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
+      }
+      return out
+    }
     const out: MapMarker[] = []
     if (this.cluster) {
       const z = Math.floor(zoom)
