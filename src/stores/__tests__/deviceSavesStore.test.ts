@@ -52,4 +52,16 @@ describe('device saves', () => {
       Storage.prototype.setItem = orig
     }
   })
+  // Hostile review: saving in two tabs overwrote the other tab's saves.
+  it('a save made in another tab is kept', () => {
+    s().toggle('a')
+    localStorage.setItem(DEVICE_SAVES_KEY, JSON.stringify(['a', 'x'])) // the other tab
+    s().toggle('b')
+    expect(readDeviceSaves()).toEqual(['a', 'x', 'b'])
+  })
+  it('the hearts follow saves made in another tab', () => {
+    localStorage.setItem(DEVICE_SAVES_KEY, JSON.stringify(['z']))
+    window.dispatchEvent(new StorageEvent('storage', { key: DEVICE_SAVES_KEY }))
+    expect(s().ids).toEqual(['z'])
+  })
 })

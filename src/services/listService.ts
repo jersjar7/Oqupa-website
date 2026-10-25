@@ -3,6 +3,7 @@ import {
   doc,
   addDoc,
   updateDoc,
+  runTransaction,
   deleteDoc,
   query,
   orderBy,
@@ -15,6 +16,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { UserList } from '@/types/userList'
+
+const DEFAULT_LIST_ID = 'guardados'
 
 function listsCol(uid: string) {
   return collection(db, 'users', uid, 'lists')
@@ -63,6 +66,20 @@ export const listService = {
 
   async renameList(uid: string, listId: string, name: string): Promise<void> {
     await updateDoc(listDocRef(uid, listId), { name })
+  },
+
+  /** The default "Guardados" list, made only if missing. A fixed id, so two
+   *  tabs signing in at once end up with one list, not two (hostile review
+   *  2026-10-25). Returns its id. */
+  async ensureDefaultList(uid: string): Promise<string> {
+    const ref = listDocRef(uid, DEFAULT_LIST_ID)
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref)
+      if (!snap.exists()) {
+        tx.set(ref, { name: 'Guardados', listingIds: [], isDefault: true, createdAt: serverTimestamp() })
+      }
+    })
+    return DEFAULT_LIST_ID
   },
 
   /** Several listings at once (a visitor's device saves, on sign-in). A

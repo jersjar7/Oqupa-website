@@ -6,13 +6,13 @@ import { mergeDeviceSaves } from '../mergeDeviceSaves'
 import type { UserList } from '@/types/userList'
 
 const list = (id: string, isDefault: boolean, listingIds: string[] = []): UserList => ({ id, name: id, listingIds, isDefault, createdAt: new Date() })
-const svc = () => ({ createList: vi.fn(async () => 'new'), addListings: vi.fn(async () => {}) })
+const svc = () => ({ ensureDefaultList: vi.fn(async () => 'guardados'), addListings: vi.fn(async () => {}) })
 
 describe('mergeDeviceSaves', () => {
   it('nothing on the device: nothing happens', async () => {
     const s = svc(); const clear = vi.fn()
     await mergeDeviceSaves({ uid: 'u', lists: [], deviceIds: [], service: s, clear })
-    expect(s.createList).not.toHaveBeenCalled()
+    expect(s.ensureDefaultList).not.toHaveBeenCalled()
     expect(clear).not.toHaveBeenCalled()
   })
   it('into the default list, in one write, then off the device', async () => {
@@ -21,11 +21,13 @@ describe('mergeDeviceSaves', () => {
     expect(s.addListings).toHaveBeenCalledWith('u', 'g', ['a', 'b'])
     expect(clear).toHaveBeenCalledWith(['a', 'b'])
   })
-  it('no list yet: creates "Guardados" as the default', async () => {
+  // Two open tabs sign in at once; each would create its own "Guardados"
+  // (hostile review). The default list has a fixed id, made only if missing.
+  it('no list yet: the one default "Guardados", made only if missing', async () => {
     const s = svc(); const clear = vi.fn()
     await mergeDeviceSaves({ uid: 'u', lists: [], deviceIds: ['a'], service: s, clear })
-    expect(s.createList).toHaveBeenCalledWith('u', 'Guardados', true)
-    expect(s.addListings).toHaveBeenCalledWith('u', 'new', ['a'])
+    expect(s.ensureDefaultList).toHaveBeenCalledWith('u')
+    expect(s.addListings).toHaveBeenCalledWith('u', 'guardados', ['a'])
   })
   it('a failed write keeps them on the device', async () => {
     const s = { ...svc(), addListings: vi.fn(async () => { throw new Error('offline') }) }

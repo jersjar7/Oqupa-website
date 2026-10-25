@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom'
 import { Heart } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
+import { isAccountReady } from '@/lib/accountReady'
 
 export default function GuardadosLink() {
-  const firebaseUser = useAuthStore((s) => s.firebaseUser)
+  const firebaseUser = useAuthStore((s) => isAccountReady(s.firebaseUser, s.user))
   const count = useDeviceSavesStore((s) => s.ids.length)
   if (!firebaseUser && count === 0) return null
   return (

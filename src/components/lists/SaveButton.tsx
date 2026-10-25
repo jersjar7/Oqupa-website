@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useListStore, isSavedInAnyList } from '@/stores/listStore'
 import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
+import { isAccountReady } from '@/lib/accountReady'
 import { listService } from '@/services/listService'
 import { Spinner } from '@/app/components/ui'
 import type { UserList } from '@/types/userList'
@@ -35,7 +36,11 @@ export function popoverTop({ anchorTop, anchorBottom, popoverHeight, viewportHei
 }
 
 export default function SaveButton({ listingId, className = '', variant = 'card' }: SaveButtonProps) {
-  const firebaseUser = useAuthStore((s) => s.firebaseUser)
+  const authUser = useAuthStore((s) => s.firebaseUser)
+  // Until the account is fully set up, hearts save in the browser; the saves
+  // move in when it is ready (hostile review 2026-10-25).
+  const ready = useAuthStore((s) => isAccountReady(s.firebaseUser, s.user))
+  const firebaseUser = ready ? authUser : null
   const deviceIds = useDeviceSavesStore((s) => s.ids)
   const toggleDeviceSave = useDeviceSavesStore((s) => s.toggle)
   const lists = useListStore((s) => s.lists)
@@ -75,7 +80,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
     if (lists.length === 0) {
       setBusy(true)
       try {
-        const listId = await listService.createList(firebaseUser.uid, 'Guardados', true)
+        const listId = await listService.ensureDefaultList(firebaseUser.uid)
         await listService.addListing(firebaseUser.uid, listId, listingId)
         toast.success('Guardado')
       } catch {

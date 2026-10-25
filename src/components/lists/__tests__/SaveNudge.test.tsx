@@ -8,7 +8,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import SaveNudge from '../SaveNudge'
 import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
 
-const auth = vi.hoisted(() => ({ firebaseUser: null as unknown }))
+const auth = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: (sel: (s: typeof auth) => unknown) => sel(auth) }))
 
 function renderAt(path = '/explorar') {
@@ -56,7 +56,8 @@ describe('SaveNudge', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
   it('never for someone signed in', () => {
-    auth.firebaseUser = { uid: 'u' }
+    auth.firebaseUser = { uid: 'u', emailVerified: true }
+    auth.user = { name: 'Ana', isPhoneVerified: true }
     renderAt()
     expect(screen.queryByRole('dialog')).toBeNull()
   })

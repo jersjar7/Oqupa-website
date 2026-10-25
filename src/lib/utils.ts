@@ -11,7 +11,12 @@ const RETURN_URL_KEY = 'oqupa_returnUrl'
 export const RETURN_URL_TTL_MS = 30 * 60 * 1000
 
 export function setReturnUrl(url: string) {
-  localStorage.setItem(RETURN_URL_KEY, JSON.stringify({ url, at: Date.now() }))
+  try {
+    localStorage.setItem(RETURN_URL_KEY, JSON.stringify({ url, at: Date.now() }))
+  } catch {
+    // Storage blocked: the button still navigates; only the way back is lost
+    // (hostile review 2026-10-25: CREAR CUENTA did nothing).
+  }
 }
 
 export function consumeReturnUrl(): string | null {

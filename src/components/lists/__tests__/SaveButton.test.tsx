@@ -20,7 +20,7 @@ vi.mock('@/services/listService', () => ({
   listService: { addListing: vi.fn(async () => {}), removeListing: vi.fn(async () => {}), createList: vi.fn(async () => 'new') },
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-const state = vi.hoisted(() => ({ firebaseUser: null as unknown, lists: [] as unknown[] }))
+const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[] }))
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: (sel: (s: typeof state) => unknown) => sel(state),
 }))
@@ -33,7 +33,8 @@ const list = (id: string, name: string, listingIds: string[], isDefault = false)
   ({ id, name, listingIds, isDefault, createdAt: new Date() })
 
 function setup(lists: UserList[], onCardClick = vi.fn()) {
-  state.firebaseUser = { uid: 'u1' }
+  state.firebaseUser = { uid: 'u1', emailVerified: true }
+  state.user = { name: 'Ana', isPhoneVerified: true }
   state.lists = lists
   render(
     <MemoryRouter>
@@ -111,5 +112,19 @@ describe('SaveButton for a visitor', () => {
     expect(full.querySelector('svg')!.getAttribute('class')).toMatch(/fill-red-500/)
     fireEvent.click(full)
     expect(useDeviceSavesStore.getState().ids).toEqual([])
+  })
+})
+
+describe('SaveButton for an account still being set up', () => {
+  it('keeps saving in the browser until the account is ready', () => {
+    localStorage.clear()
+    useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
+    state.firebaseUser = { uid: 'u1', emailVerified: false }
+    state.user = { name: 'Ana', isPhoneVerified: false }
+    state.lists = []
+    render(<MemoryRouter><SaveButton listingId="L7" variant="plain" /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    expect(useDeviceSavesStore.getState().ids).toEqual(['L7'])
+    expect(listService.addListing).not.toHaveBeenCalled()
   })
 })

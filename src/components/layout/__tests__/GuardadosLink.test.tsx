@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 import GuardadosLink from '../GuardadosLink'
 import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
 
-const auth = vi.hoisted(() => ({ firebaseUser: null as unknown }))
+const auth = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: (sel: (s: typeof auth) => unknown) => sel(auth) }))
 
 const renderLink = () => render(<MemoryRouter><GuardadosLink /></MemoryRouter>)
@@ -25,7 +25,8 @@ describe('GuardadosLink', () => {
     expect(screen.getByRole('link', { name: 'Guardados' }).getAttribute('href')).toBe('/guardados')
   })
   it('someone signed in: the heart, to the account’s Guardados', () => {
-    auth.firebaseUser = { uid: 'u' }
+    auth.firebaseUser = { uid: 'u', emailVerified: true }
+    auth.user = { name: 'Ana', isPhoneVerified: true }
     renderLink()
     expect(screen.getByRole('link', { name: 'Guardados' }).getAttribute('href')).toBe('/app/lists')
   })
