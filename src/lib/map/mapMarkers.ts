@@ -40,15 +40,29 @@ export class MapMarkerIndex {
     this.spots = [...byPoint.values()]
   }
 
-  markersFor(bounds: Bounds, zoom: number, selectedId: string | null, raisedId: string | null = null): MapMarker[] {
+  /** `emphasizedId`: a listing pointed at in the list beside the map — far
+   *  out it shows as its pin, like the selected one, so it can be found. */
+  markersFor(
+    bounds: Bounds,
+    zoom: number,
+    selectedId: string | null,
+    raisedId: string | null = null,
+    emphasizedId: string | null = null,
+  ): MapMarker[] {
     const inView = (lat: number, lng: number) =>
       lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
     if (showsDots(zoom)) {
       const out: MapMarker[] = []
       // Boosted listings are dots too, the same size; the dot draws their gold edge.
+      // The selected listing, and one pointed at in the list, show as their
+      // pins even far out (as in the app), drawn after the dots.
+      const shownAsPin = new Set([selectedId, emphasizedId].filter((id): id is string => !!id))
+      const pins: MapMarker[] = []
       for (const item of [...this.regular, ...this.boosted]) {
         const p = mapPointOf(item)
-        if (inView(p.lat, p.lng)) out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
+        if (!inView(p.lat, p.lng)) continue
+        if (shownAsPin.has(item.listing.id)) pins.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
+        else out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
       }
       // A raised listing's dot becomes the small black dot at its line's foot.
       const at = out.findIndex((m) => m.kind === 'dot' && m.item.listing.id === raisedId)
@@ -57,7 +71,7 @@ export class MapMarkerIndex {
         out[at] = { kind: 'anchor', item: raised.item, lat: raised.lat, lng: raised.lng }
         out.push({ kind: 'raised', item: raised.item, lat: raised.lat, lng: raised.lng })
       }
-      return out
+      return [...out, ...pins]
     }
     const out: MapMarker[] = []
     for (const spot of this.spots) {

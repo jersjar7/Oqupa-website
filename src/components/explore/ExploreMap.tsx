@@ -16,6 +16,7 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
 import { showsDots } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
+import { cardSide, panToReveal } from '@/lib/map/mapView'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement, createRaisedAnchorElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
@@ -39,6 +40,13 @@ export interface ExploreMapProps {
   /** A shared "N aquí" pin (listings at the identical point) was clicked:
    *  list exactly those. */
   onOpenSpot?: (items: ListingWithProperty[]) => void
+  /** A listing pointed at in the list beside the map (computer): its pin
+   *  takes the selected look and comes to the front, so it can be found. */
+  emphasizedId?: string | null
+  /** Phone: how much of the bottom of the screen the listing card and the
+   *  VER LISTA button cover (px), so a chosen listing hidden there is brought
+   *  into view. 0 when nothing covers it. */
+  coveredBottom?: number
 }
 
 interface LiveMarker { key: string; marker: mapboxgl.Marker; el: HTMLElement }
@@ -56,6 +64,7 @@ export default function ExploreMap(props: ExploreMapProps) {
 
 function MapboxExploreMap({
   items, selectedId, hoveredId, onSelect, onHover, onBoundsChanged, initialCenter, showPreviewCard, isVenta, onOpenSpot,
+  emphasizedId = null, coveredBottom = 0,
 }: ExploreMapProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -67,8 +76,8 @@ function MapboxExploreMap({
   const [raisedId, setRaisedId] = useState<string | null>(null)
 
   // Latest callbacks/values for listeners registered once.
-  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId })
-  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId }
+  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId, emphasizedId })
+  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId, emphasizedId }
 
   const index = useMemo(() => new MapMarkerIndex(items), [items])
   const indexRef = useRef(index)
@@ -164,6 +173,7 @@ function MapboxExploreMap({
         map.getZoom(),
         latest.current.selectedId,
         latest.current.raisedId,
+        latest.current.emphasizedId,
       )
       reconcile(map, wanted)
     }
@@ -177,13 +187,13 @@ function MapboxExploreMap({
       if (frame) cancelAnimationFrame(frame)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady, index, selectedId, isVenta, raisedId])
+  }, [mapReady, index, selectedId, isVenta, raisedId, emphasizedId])
 
   function reconcile(map: mapboxgl.Map, wanted: MapMarker[]) {
     const live = liveRef.current
     const keep = new Set<string>()
     for (const m of wanted) {
-      const key = keyOf(m, latest.current.selectedId, latest.current.isVenta)
+      const key = keyOf(m, latest.current.selectedId, latest.current.isVenta, latest.current.emphasizedId)
       keep.add(key)
       let entry = live.get(key)
       if (!entry) {
@@ -194,7 +204,7 @@ function MapboxExploreMap({
         // Boosted markers sit above everything else; the selected one above them.
         if (m.kind !== 'group' && m.item.listing.isBoosted) el.style.zIndex = '2'
         if (m.kind === 'raised' || m.kind === 'anchor') el.style.zIndex = '4'
-        if (m.kind === 'pin' && m.item.listing.id === latest.current.selectedId) el.style.zIndex = '3'
+        if (m.kind === 'pin' && (m.item.listing.id === latest.current.selectedId || m.item.listing.id === latest.current.emphasizedId)) el.style.zIndex = '3'
         entry = { key, marker, el }
         live.set(key, entry)
       } else {
@@ -212,7 +222,7 @@ function MapboxExploreMap({
   function elementFor(m: MapMarker): HTMLElement {
     if (m.kind === 'pin') {
       const id = m.item.listing.id
-      const selected = id === latest.current.selectedId
+      const selected = id === latest.current.selectedId || id === latest.current.emphasizedId
       const el = m.item.listing.isBoosted
         ? createBoostedPinElement(m.item, { selected })
         : createPinElement(m.item, { selected })
@@ -261,16 +271,39 @@ function MapboxExploreMap({
       return
     }
     const el = document.createElement('div')
-    el.style.paddingBottom = '56px'
     const lat = selectedItem.listing.displayLatitude ?? selectedItem.property.location.latitude
     const lng = selectedItem.listing.displayLongitude ?? selectedItem.property.location.longitude
-    const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(map)
+    // Above the pin, or below it when the pin is too close to the top of the
+    // map for the card to fit (it was cut off there — UX review 2026-10-25).
+    const box = map.getContainer().getBoundingClientRect()
+    const pinTop = box.top + map.project([lng, lat]).y - 45
+    const side = cardSide({ pinTop, mapTop: box.top })
+    if (side === 'above') el.style.paddingBottom = '56px'
+    else el.style.paddingTop = '12px'
+    const marker = new mapboxgl.Marker({ element: el, anchor: side === 'above' ? 'bottom' : 'top' }).setLngLat([lng, lat]).addTo(map)
+    // Above every pin, including one lit up from the list (z-index 3).
+    marker.getElement().style.zIndex = '5'
     setPreviewEl(el)
     return () => {
       marker.remove()
       setPreviewEl(null)
     }
   }, [mapReady, showPreviewCard, selectedItem])
+
+  // Phone: a listing just chosen can sit under the card at the bottom (or the
+  // VER LISTA button above it). Bring it into view — only when it is hidden,
+  // and without changing the zoom (UX review 2026-10-25; ADR-033).
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady || showPreviewCard || !selectedItem || coveredBottom <= 0) return
+    const lat = selectedItem.listing.displayLatitude ?? selectedItem.property.location.latitude
+    const lng = selectedItem.listing.displayLongitude ?? selectedItem.property.location.longitude
+    const box = map.getContainer().getBoundingClientRect()
+    const coveredInMap = Math.max(0, box.bottom - (window.innerHeight - coveredBottom))
+    // The middle of the pin, which sits above its point.
+    const dy = panToReveal({ pointY: map.project([lng, lat]).y - 22, mapHeight: box.height, coveredBottom: coveredInMap })
+    if (dy !== 0) map.panBy([0, dy], { duration: 300 })
+  }, [mapReady, showPreviewCard, selectedItem, coveredBottom])
 
   const hoveredItem = useMemo(
     () => (selectedId || !hoveredId ? null : items.find((i) => i.listing.id === hoveredId) ?? null),
@@ -307,11 +340,11 @@ function MapboxExploreMap({
   )
 }
 
-function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean): string {
+function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean, emphasizedId: string | null = null): string {
   const mode = isVenta ? 'v' : 'a'
   if (m.kind === 'pin') {
     const l = m.item.listing
-    return `pin:${l.id}:${l.id === selectedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
+    return `pin:${l.id}:${l.id === selectedId || l.id === emphasizedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
   }
   if (m.kind === 'raised') return `raised:${m.item.listing.id}:${mode}`
   if (m.kind === 'anchor') return `anchor:${m.item.listing.id}`

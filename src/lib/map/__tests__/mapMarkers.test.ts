@@ -125,4 +125,28 @@ describe('MapMarkerIndex', () => {
       expect(new MapMarkerIndex(items()).markersFor(metro, 12, null, 'zzz').map((m) => m.kind)).toEqual(['dot', 'dot'])
     })
   })
+
+  // UX review 2026-10-25: far out, the opened listing stayed a dot and hid
+  // among the others (the app shows it as its pin). And a listing hovered in
+  // the list beside the map must be findable on the map.
+  describe('far out, the listing you are looking at shows as its pin', () => {
+    const items = () => [mapListing({ id: 'a', lat: -5.19, lng: -80.63 }), mapListing({ id: 'b', lat: -5.15, lng: -80.70 })]
+
+    it('the selected listing is its pin, drawn last, not a dot', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, 'a')
+      expect(out.map((m) => m.kind)).toEqual(['dot', 'pin'])
+      expect(out[1]!.kind === 'pin' && out[1]!.item.listing.id).toBe('a')
+    })
+
+    it('a listing hovered in the list is its pin too', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, null, null, 'b')
+      expect(out.map((m) => m.kind)).toEqual(['dot', 'pin'])
+      expect(out[1]!.kind === 'pin' && out[1]!.item.listing.id).toBe('b')
+    })
+
+    it('outside the visible area it draws nothing', () => {
+      const far = { south: -4.0, west: -79.0, north: -3.9, east: -78.9 }
+      expect(new MapMarkerIndex(items()).markersFor(far, 12, 'a')).toEqual([])
+    })
+  })
 })

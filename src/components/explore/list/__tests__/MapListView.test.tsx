@@ -151,3 +151,17 @@ describe('ListToggleButton', () => {
     expect(screen.getByRole('button', { name: 'VER LISTA · 3 en alquiler' })).toBeDefined()
   })
 })
+
+describe('MapListView — pointing at a card', () => {
+  // UX review 2026-10-25: pointing at a card beside the map must show which
+  // pin it is, so the list reports the card under the pointer.
+  it('pointing at a card reports it; leaving reports nothing', () => {
+    const onCardHover = vi.fn()
+    renderList({ items: [mapListing({ id: 'a' }), mapListing({ id: 'b' })], onCardHover })
+    const card = document.querySelector('[data-listing-id="b"]')!
+    fireEvent.mouseEnter(card)
+    expect(onCardHover).toHaveBeenLastCalledWith('b')
+    fireEvent.mouseLeave(card)
+    expect(onCardHover).toHaveBeenLastCalledWith(null)
+  })
+})

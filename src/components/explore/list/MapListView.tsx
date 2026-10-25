@@ -16,12 +16,15 @@ interface MapListViewProps {
   otherOperationCount: number
   onSwitchOperation: () => void
   highlightedId?: string | null
+  /** The card under the pointer (computer), so the map can show which pin it
+   *  is; null when the pointer leaves. */
+  onCardHover?: (id: string | null) => void
   /** 'grid' for the computer-size side panel. */
   layout?: 'column' | 'grid'
 }
 
 export default function MapListView({
-  items, isVenta, sessionSeed, otherOperationCount, onSwitchOperation, highlightedId, layout = 'column',
+  items, isVenta, sessionSeed, otherOperationCount, onSwitchOperation, highlightedId, onCardHover, layout = 'column',
 }: MapListViewProps) {
   const [sort, setSort] = useState<ListSort>('recomendados')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -70,7 +73,12 @@ export default function MapListView({
       ) : (
         <div className={layout === 'grid' ? 'grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3' : 'flex flex-col gap-3'}>
           {sorted.map((item) => (
-            <div key={item.listing.id} data-listing-id={item.listing.id}>
+            <div
+              key={item.listing.id}
+              data-listing-id={item.listing.id}
+              onMouseEnter={onCardHover ? () => onCardHover(item.listing.id) : undefined}
+              onMouseLeave={onCardHover ? () => onCardHover(null) : undefined}
+            >
               <ListingListCard item={item} isHighlighted={highlightedId === item.listing.id} />
             </div>
           ))}

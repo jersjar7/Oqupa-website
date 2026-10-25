@@ -89,6 +89,8 @@ export default function ExplorePage() {
   // Opened from a shared "N aquí" pin (listings at the identical point,
   // ADR-032): the list shows exactly those until the map moves or VER MAPA.
   const [spotItems, setSpotItems] = useState<ListingWithProperty[] | null>(null)
+  // The card pointed at in the list beside the map (computer), shown on the map.
+  const [listHoverId, setListHoverId] = useState<string | null>(null)
   const openSpot = useCallback((items: ListingWithProperty[]) => {
     setSpotItems(items)
     setListOpen(true)
@@ -223,6 +225,8 @@ export default function ExplorePage() {
             showPreviewCard={isDesktop}
             isVenta={isVenta}
             onOpenSpot={openSpot}
+            emphasizedId={isDesktop ? listHoverId : null}
+            coveredBottom={!isDesktop && !listOpen && sheetHeight > 0 ? sheetHeight + 72 : 0}
           />
           </Suspense>
 
@@ -287,6 +291,7 @@ export default function ExplorePage() {
               otherOperationCount={otherOperationCount}
               onSwitchOperation={switchOperation}
               highlightedId={hoveredId ?? selectedId}
+              onCardHover={setListHoverId}
               layout="grid"
             />
           )}
