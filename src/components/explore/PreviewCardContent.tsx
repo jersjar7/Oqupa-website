@@ -1,76 +1,11 @@
-import { useNavigate } from 'react-router-dom'
-import { AdvancedMarker } from '@vis.gl/react-google-maps'
-import { motion, AnimatePresence } from 'framer-motion'
+// The preview card shown over a pin on the computer-size explore map (hover,
+// or pinned when a listing is selected). Moved out of the old Google
+// MapPreviewCard (map plan step 4: the website's map is Mapbox now).
 import PhotoCarousel from './PhotoCarousel'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
-
-interface MapPreviewCardProps {
-  item: ListingWithProperty | null
-}
-
-export default function MapPreviewCard({ item }: MapPreviewCardProps) {
-  const navigate = useNavigate()
-
-  return (
-    <AnimatePresence>
-      {item && (
-        <AdvancedMarker
-          key={item.listing.id}
-          position={{
-            lat: item.listing.displayLatitude ?? item.property.location.latitude,
-            lng: item.listing.displayLongitude ?? item.property.location.longitude,
-          }}
-          zIndex={9999}
-        >
-          {/*
-            AdvancedMarker anchors the bottom-center of its content at the
-            lat/lng position. The bottom padding creates an invisible spacer
-            so the visible card clears the price bubble beneath (~35px tall).
-          */}
-          <div style={{ paddingBottom: 45 }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-              role="button"
-              tabIndex={0}
-              aria-label="Ver detalles de la propiedad"
-              onClick={(e) => {
-                e.stopPropagation()
-                navigate(`/property/${item.listing.id}`)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  navigate(`/property/${item.listing.id}`)
-                }
-              }}
-            >
-              <CardContent item={item} />
-
-              {/* Triangle pointer */}
-              <div className="flex justify-center">
-                <div
-                  className="h-0 w-0"
-                  style={{
-                    borderLeft: '8px solid transparent',
-                    borderRight: '8px solid transparent',
-                    borderTop: '8px solid white',
-                  }}
-                />
-              </div>
-            </motion.div>
-          </div>
-        </AdvancedMarker>
-      )}
-    </AnimatePresence>
-  )
-}
 
 export function CardContent({ item }: { item: ListingWithProperty }) {
   const { listing, property } = item

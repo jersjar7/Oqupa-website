@@ -1,0 +1,90 @@
+// The list of what the map shows (map plan steps 3–4, ADR-031). The header is
+// the count and the sort button — nothing else (Jerson: no filler text).
+import { useMemo, useState } from 'react'
+import { emptyListOtherOperation, emptyListTitle, EMPTY_LIST_ZOOM_OUT_HINT, LIST_SORTS, listHeader, sortListingsForList, type ListSort } from '@/lib/map/listLogic'
+import ListingListCard from './ListingListCard'
+import type { ListingWithProperty } from '@/types/explore'
+
+interface MapListViewProps {
+  items: ListingWithProperty[]
+  isVenta: boolean
+  /** Chosen once per visit (ExplorePage): stable order within a visit, fair
+   *  turns at the top for equally boosted listings across visits. */
+  sessionSeed: number
+  otherOperationCount: number
+  onSwitchOperation: () => void
+  highlightedId?: string | null
+  /** 'grid' for the computer-size side panel. */
+  layout?: 'column' | 'grid'
+}
+
+export default function MapListView({
+  items, isVenta, sessionSeed, otherOperationCount, onSwitchOperation, highlightedId, layout = 'column',
+}: MapListViewProps) {
+  const [sort, setSort] = useState<ListSort>('recomendados')
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const sorted = useMemo(() => sortListingsForList(items, sort, sessionSeed), [items, sort, sessionSeed])
+  const sortLabel = LIST_SORTS.find((s) => s.id === sort)!.label
+  const offer = emptyListOtherOperation(otherOperationCount, !isVenta)
+
+  return (
+    <div>
+      <div data-testid="map-list-header" className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold text-text-primary">{listHeader(items.length, isVenta)}</h2>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border-[1.5px] border-secondary bg-white px-3 text-[13px] font-bold text-secondary"
+        >
+          {sortLabel}
+          <svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 L5 5 L9 1" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <h3 className="font-serif text-2xl text-text-primary">{emptyListTitle(isVenta)}</h3>
+          <p className="text-[15px] leading-relaxed text-text-secondary">{EMPTY_LIST_ZOOM_OUT_HINT}</p>
+          {offer && (
+            <button type="button" onClick={onSwitchOperation} className="text-[15px] font-medium text-secondary underline underline-offset-2">
+              {offer}
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className={layout === 'grid' ? 'grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3' : 'flex flex-col gap-3'}>
+          {sorted.map((item) => (
+            <div key={item.listing.id} data-listing-id={item.listing.id}>
+              <ListingListCard item={item} isHighlighted={highlightedId === item.listing.id} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {sheetOpen && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSheetOpen(false)} />
+          <div role="dialog" aria-label="Ordenar" className="fixed inset-x-0 bottom-0 z-[61] mx-auto max-w-md rounded-t-2xl bg-white px-4 pb-8 pt-5 md:bottom-auto md:top-1/3 md:rounded-2xl">
+            <p className="mb-2 text-lg font-bold text-text-primary">Ordenar</p>
+            <div className="flex flex-col gap-1">
+              {LIST_SORTS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setSort(s.id)
+                    setSheetOpen(false)
+                  }}
+                  className={`flex h-14 items-center justify-between rounded-xl px-3.5 text-left text-[17px] text-text-primary ${s.id === sort ? 'bg-[#EEF4F1]' : ''}`}
+                >
+                  <span>{s.label}</span>
+                  {s.id === sort && <span className="font-bold text-secondary">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

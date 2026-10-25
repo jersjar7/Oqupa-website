@@ -2,7 +2,7 @@ import { useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CardContent } from './MapPreviewCard'
+import { CardContent } from './PreviewCardContent'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface HoverPreviewCardProps {

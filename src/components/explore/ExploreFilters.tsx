@@ -45,13 +45,12 @@ export default function ExploreFilters({
     <div className={isVertical ? 'space-y-5' : 'flex flex-wrap items-center gap-3'}>
       {/* Operation type */}
       <div className="flex gap-1.5">
-        {[
-          { value: null, label: 'Todos' },
-          ...Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => ({
-            value: value as 'venta' | 'alquiler',
-            label,
-          })),
-        ].map((opt) => (
+        {/* Venta / Alquiler only — no "Todos": the map shows one or the
+            other, like the app (map plan step 4, Jerson 2026-10-24). */}
+        {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => ({
+          value: value as 'venta' | 'alquiler',
+          label,
+        })).map((opt) => (
           <button
             key={opt.label}
             onClick={() =>

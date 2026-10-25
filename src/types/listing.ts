@@ -58,6 +58,9 @@ export interface Listing {
   ownerIsVerified?: boolean
   ownerMemberSinceYear?: number
 
+  /** Which app created the listing (map plan step 1). Absent on older listings. */
+  createdFrom?: 'ios' | 'android' | 'web'
+
   // Location privacy fields
   showExactLocation: boolean
   displayLatitude?: number

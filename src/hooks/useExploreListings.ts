@@ -26,7 +26,10 @@ const EXPLORE_PAGE_SIZE = 30
  */
 const MAX_AUTO_PAGES = 10
 
-export function useExploreListings(operationType?: OperationType | null) {
+export function useExploreListings(
+  operationType?: OperationType | null,
+  options: { enabled?: boolean } = {},
+) {
   // Normalize null to undefined for the query key and service call
   const opType = operationType ?? undefined
 
@@ -47,6 +50,9 @@ export function useExploreListings(operationType?: OperationType | null) {
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.lastDoc : undefined,
+    // The explore list's empty state asks how many of the OTHER operation are
+    // in view, and only then (map plan step 4).
+    enabled: options.enabled ?? true,
   })
 
   // Pulled out as primitives (plus react-query's stable `fetchNextPage`) so the
@@ -71,11 +77,12 @@ export function useExploreListings(operationType?: OperationType | null) {
   // page exists, never while one is already in flight, and never past
   // MAX_AUTO_PAGES.
   useEffect(() => {
+    if (options.enabled === false) return
     if (!hasNextPage) return
     if (isFetchingNextPage) return
     if (pageCount >= MAX_AUTO_PAGES) return
     fetchNextPage()
-  }, [hasNextPage, isFetchingNextPage, pageCount, fetchNextPage])
+  }, [hasNextPage, isFetchingNextPage, pageCount, fetchNextPage, options.enabled])
 
   // Flatten all pages into a single array for consumers
   const data = useMemo(
