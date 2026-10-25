@@ -49,12 +49,13 @@ export default function MobileListingSheet({ item, onClose, onHeightChange }: Mo
   return (
     <AnimatePresence>
       {item && (
+        // Kept above the browser's bottom bar and the iPhone's home line.
         <motion.div
           ref={containerRef}
           key={`sheet-${item.listing.id}`}
           role="dialog"
           aria-label="Detalle de la propiedad"
-          className="fixed inset-x-0 bottom-0 z-30 px-3 pb-3 outline-none"
+          className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] outline-none"
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}

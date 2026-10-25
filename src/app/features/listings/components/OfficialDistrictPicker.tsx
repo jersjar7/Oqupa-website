@@ -24,7 +24,7 @@ export default function OfficialDistrictPicker({ onPick, onClose }: OfficialDist
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
-      <div role="dialog" aria-label="Elige el distrito" className="fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[80vh] max-w-md flex-col rounded-t-2xl bg-white p-4 md:bottom-auto md:top-24 md:rounded-2xl">
+      <div role="dialog" aria-label="Elige el distrito" className="fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[80vh] max-w-md flex-col rounded-t-2xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] md:pb-4 md:bottom-auto md:top-24 md:rounded-2xl">
         <label className="mb-1 text-sm font-medium uppercase text-text-primary" htmlFor="district-search">
           Busca tu distrito
         </label>

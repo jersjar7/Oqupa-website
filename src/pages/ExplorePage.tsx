@@ -319,7 +319,9 @@ export default function ExplorePage() {
       {!isDesktop && !isLoading && (
         <div
           className="fixed left-1/2 z-40 -translate-x-1/2 transition-[bottom] duration-[250ms] ease-out md:hidden"
-          style={{ bottom: !listOpen && sheetHeight > 0 ? sheetHeight + 12 : 24 }}
+          // Above the card when one is open (its height includes the safe
+          // area); otherwise above the browser's bar and the home line.
+          style={{ bottom: !listOpen && sheetHeight > 0 ? sheetHeight + 12 : 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
         >
           {/* One bar: the list and the filters side by side (UX review
               2026-10-25; they were two stacked buttons). */}
@@ -350,7 +352,7 @@ export default function ExplorePage() {
             className="fixed inset-0 z-40 bg-black/50 md:hidden"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-large md:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-cream p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-large md:hidden">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-text-primary">Filtros</h2>
               <button

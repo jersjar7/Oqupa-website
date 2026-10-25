@@ -17,7 +17,8 @@ export default function BottomTabs({ caps }: { caps: Capabilities }) {
     <nav
       aria-label="Navegación móvil"
       className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-white grid z-40"
-      style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
+      // The tabs sit above the iPhone's home line; the bar's white runs under it.
+      style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {items.map((item) => {
         const active = isActive(item.to)

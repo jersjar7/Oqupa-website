@@ -88,7 +88,7 @@ export default function MapListView({
       {sheetOpen && (
         <>
           <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSheetOpen(false)} />
-          <div role="dialog" aria-label="Ordenar" className="fixed inset-x-0 bottom-0 z-[61] mx-auto max-w-md rounded-t-2xl bg-white px-4 pb-8 pt-5 md:bottom-auto md:top-1/3 md:rounded-2xl">
+          <div role="dialog" aria-label="Ordenar" className="fixed inset-x-0 bottom-0 z-[61] mx-auto max-w-md rounded-t-2xl bg-white px-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-5 md:bottom-auto md:top-1/3 md:rounded-2xl">
             <p className="mb-2 text-lg font-bold text-text-primary">Ordenar</p>
             <div className="flex flex-col gap-1">
               {LIST_SORTS.map((s) => (
