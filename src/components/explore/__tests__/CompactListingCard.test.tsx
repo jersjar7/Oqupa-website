@@ -34,4 +34,13 @@ describe('CompactListingCard', () => {
     render(<CompactListingCard item={mapListing({ boosted: true, photos: 1 })} />)
     expect(screen.getByText(/destacado/i)).toBeDefined()
   })
+
+  // Jerson, 2026-10-25: older people may think the card is all there is. A
+  // wordless arrow says "there is more" — "I believe well designed UI/UX does
+  // not need text explaining it."
+  it('a small arrow on the right says there is more — and no words do', () => {
+    render(<CompactListingCard item={mapListing({ amount: 98000, currency: 'USD' })} />)
+    expect(document.querySelector('[data-role="more-arrow"]')).not.toBeNull()
+    expect(document.body.textContent).not.toMatch(/ver más|toca|click|detalles/i)
+  })
 })

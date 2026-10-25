@@ -4,8 +4,11 @@
 // of the map) and the computer (on the map, over the pin). It is only a
 // picture of the listing — whoever shows it decides what a tap does (the whole
 // card opens the listing in both places). Prices are written exactly as on
-// the pins and in the list ("US$ 98 mil", "S/. 1,200 al mes").
+// the pins and in the list ("US$ 98 mil", "S/. 1,200 al mes"). A small arrow
+// on the right says there is more to see, without words (Jerson, 2026-10-25:
+// "well designed UI/UX does not need text explaining it").
 import { useMemo } from 'react'
+import { ChevronRight } from 'lucide-react'
 import { blurHashToDataUrl } from '@/lib/blurhash'
 import { thumbnail } from '@/lib/imageUrl'
 import { pinLabelFor, pinKindWord } from '@/lib/map/pinLabel'
@@ -31,7 +34,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
   return (
     <div
       data-testid="compact-listing-card"
-      className={`relative flex items-center gap-3 rounded-2xl bg-white p-2 pr-3 shadow-large ${
+      className={`relative flex items-center gap-3 rounded-2xl bg-white p-2 pr-2 shadow-large ${
         listing.isBoosted ? 'border-2 border-amber-500' : ''
       } ${className}`}
     >
@@ -59,6 +62,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
         {details && <span className="truncate text-[13px] leading-snug text-text-secondary">{details}</span>}
         <span className="truncate text-xs leading-snug text-text-tertiary">{listingLocationLine(item)}</span>
       </div>
+      <ChevronRight data-role="more-arrow" aria-hidden="true" className="mt-6 h-6 w-6 shrink-0 text-text-tertiary" strokeWidth={2.25} />
       <SaveButton listingId={listing.id} className="absolute right-2 top-2 z-10" />
     </div>
   )

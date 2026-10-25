@@ -102,7 +102,7 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
               </div>
             </>
           )}
-          <CompactListingCard item={item} className="w-[340px]" />
+          <CompactListingCard item={item} className="w-[370px]" />
           {pos.side === 'above' && (
             <>
               <div className="flex justify-center">

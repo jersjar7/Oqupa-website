@@ -335,7 +335,7 @@ function MapboxExploreMap({
               }
             }}
           >
-            <CompactListingCard item={selectedItem} className="w-[340px]" />
+            <CompactListingCard item={selectedItem} className="w-[370px]" />
           </div>,
           previewEl,
         )}
