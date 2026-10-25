@@ -79,9 +79,9 @@ describe('buildBrandedCardConfig', () => {
   })
 
   describe('propertyType', () => {
-    it('uses the short label for departamento → "Apto."', () => {
+    it('uses the short label for departamento → "Depto."', () => {
       const config = buildBrandedCardConfig(mkListing(), mkProperty({ propertyType: 'departamento' }), 'story')
-      expect(config.propertyType).toBe('Apto.')
+      expect(config.propertyType).toBe('Depto.')
     })
 
     it('uses the short label for casa → "Casa"', () => {
