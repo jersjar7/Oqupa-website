@@ -4,6 +4,12 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-24 — Data credit in Términos
+
+### Technical
+
+- **Términos, section 17 "Créditos de datos"**: credits the Instituto Geográfico Nacional (IGN) of Peru, via OCHA HDX, for the district outlines the app now uses to place each listing in its district. Required by the data's CC BY-IGO 3.0 licence. The app's "Términos" link opens this page. Text only. Approved by Jerson 2026-10-24.
+
 ## 2026-10-24 — Email sign-up fix (website half)
 
 ### New Features
