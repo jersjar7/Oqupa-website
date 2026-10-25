@@ -350,6 +350,18 @@ export default function TermsPage() {
             <strong>Oqupa LLC</strong>
           </p>
         </section>
+
+        {/* 17 — required by the CC BY-IGO 3.0 licence of the district
+            outlines the app uses to place each listing in its district
+            (map plan step 1, ADR-031). The app's "Términos" opens this page. */}
+        <section>
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
+            17. Créditos de datos
+          </h2>
+          <p className="mt-3 text-gray-600 leading-relaxed">
+            Límites distritales: Instituto Geográfico Nacional (IGN), Perú, vía OCHA HDX.
+          </p>
+        </section>
       </div>
     </div>
   )
