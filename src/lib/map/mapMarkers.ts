@@ -22,7 +22,7 @@ export const CLUSTER_MAX_ZOOM = 18
 
 export type MapMarker =
   | { kind: 'pin'; item: ListingWithProperty; lat: number; lng: number }
-  | { kind: 'group'; id: number; count: number; lat: number; lng: number; expansionZoom: number }
+  | { kind: 'group'; id: number; count: number; lat: number; lng: number; expansionZoom: number; members: { lat: number; lng: number }[] }
   | { kind: 'dot'; item: ListingWithProperty; lat: number; lng: number }
 
 interface PointProps { index: number }
@@ -85,6 +85,7 @@ export class MapMarkerIndex {
             out.push({
               kind: 'group', id: props.cluster_id!, count, lat, lng,
               expansionZoom: this.cluster.getClusterExpansionZoom(props.cluster_id!),
+              members: leaves.filter((i) => i !== selected).map(mapPointOf),
             })
           }
         } else {

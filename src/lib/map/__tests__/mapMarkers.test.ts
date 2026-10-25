@@ -51,6 +51,12 @@ describe('MapMarkerIndex', () => {
     }
   })
 
+  it('a group knows where each of its listings is, so a click can show them all', () => {
+    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 13, null)
+    const g = out[0]!
+    expect(g.kind === 'group' && g.members).toHaveLength(3)
+  })
+
   it('close in: listings far apart are each their own pin', () => {
     const out = new MapMarkerIndex([
       mapListing({ id: 'a', lat: -5.19, lng: -80.63 }),

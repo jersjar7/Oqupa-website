@@ -14,7 +14,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
-import { DOT_TAP_ZOOM } from '@/lib/map/zoomPolicy'
+import { DOT_TAP_ZOOM, framingForGroup } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
@@ -40,6 +40,10 @@ export interface ExploreMapProps {
 
 interface LiveMarker { key: string; marker: mapboxgl.Marker; el: HTMLElement }
 
+/** On a phone, VER LISTA (84 px up, ~48 tall) and Filtros sit over the map's
+ *  bottom; a group's listings must land above them. */
+const GROUP_BOTTOM_CLEARANCE_PHONE = 84 + 48 + 8
+
 export default function ExploreMap(props: ExploreMapProps) {
   if (!TOKEN) {
     return (
@@ -62,8 +66,8 @@ function MapboxExploreMap({
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
 
   // Latest callbacks/values for listeners registered once.
-  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta })
-  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta }
+  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard })
+  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard }
 
   const index = useMemo(() => new MapMarkerIndex(items), [items])
   const indexRef = useRef(index)
@@ -101,7 +105,15 @@ function MapboxExploreMap({
       const c = map.getCenter()
       saveMapboxCamera(c.lat, c.lng, map.getZoom())
     }
+    // The map keeps the size its box had when it started. Seen 2026-10-24 on
+    // staging at 1440×900: the box grew to 769 px after start-up and the map
+    // stayed 300 px tall, the rest blank, until the window was resized. Fit
+    // it again once loaded and whenever the box changes.
+    const container = containerRef.current
+    const refit = new ResizeObserver(() => map.resize())
+    refit.observe(container)
     map.on('load', () => {
+      map.resize()
       addDepartamentoBorder(map)
       setMapReady(true)
       reportBounds()
@@ -110,6 +122,7 @@ function MapboxExploreMap({
     map.on('click', () => latest.current.onSelect(null))
 
     return () => {
+      refit.disconnect()
       for (const live of liveRef.current.values()) live.marker.remove()
       liveRef.current.clear()
       map.remove()
@@ -196,9 +209,17 @@ function MapboxExploreMap({
       // opening one listing (same as the app).
       return createDotElement(m.item, () => map.easeTo({ center: [m.lng, m.lat], zoom: DOT_TAP_ZOOM }))
     }
-    return createGroupElement(m.count, latest.current.isVenta, () =>
-      map.easeTo({ center: [m.lng, m.lat], zoom: Math.min(m.expansionZoom, 19) }),
-    )
+    // Show every listing in the group, clear of what covers the map: on a
+    // phone, VER LISTA and Filtros along the bottom (same rule as the app).
+    return createGroupElement(m.count, latest.current.isVenta, () => {
+      const { clientWidth: width, clientHeight: height } = map.getContainer()
+      const f = framingForGroup({
+        members: m.members, width, height,
+        top: 12, bottom: latest.current.showPreviewCard ? 16 : GROUP_BOTTOM_CLEARANCE_PHONE,
+        expansionZoom: m.expansionZoom, maxZoom: 19,
+      })
+      map.easeTo({ center: [f.lng, f.lat], zoom: f.zoom })
+    })
   }
 
   // --- the selected listing: privacy circle + (computer) pinned preview -------
