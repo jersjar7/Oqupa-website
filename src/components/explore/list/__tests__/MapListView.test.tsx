@@ -114,12 +114,23 @@ describe('MapListView', () => {
   })
 
   it('the empty state helps: zoom out, and the other operation when it has some here', () => {
+    // A phone: zooming out is two fingers.
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
     const onSwitch = vi.fn()
     renderList({ items: [], otherOperationCount: 4, onSwitchOperation: onSwitch })
     expect(screen.getByText('Aquí no hay propiedades en venta')).toBeDefined()
     expect(screen.getByText('Vuelve al mapa y aléjalo con dos dedos para ver más lugares.')).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: 'O mira las 4 en alquiler que sí hay aquí.' }))
     expect(onSwitch).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('on a computer the empty state names the mouse wheel and the − button, not fingers', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} }))
+    renderList({ items: [], otherOperationCount: 0 })
+    expect(screen.getByText('Vuelve al mapa y aléjalo con la rueda del mouse o el botón − para ver más lugares.')).toBeDefined()
+    expect(screen.queryByText(/dos dedos/)).toBeNull()
+    vi.unstubAllGlobals()
   })
 
   it('the empty state without an offer when the other operation has none', () => {

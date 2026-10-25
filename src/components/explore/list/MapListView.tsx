@@ -1,10 +1,11 @@
 // The list of what the map shows (map plan steps 3–4, ADR-031). The header is
 // the count and the sort button — nothing else (Jerson: no filler text).
 import { useEffect, useMemo, useState } from 'react'
-import { emptyListOtherOperation, emptyListTitle, EMPTY_LIST_ZOOM_OUT_HINT, LIST_SORTS, listHeader, sortListingsForList, type ListSort } from '@/lib/map/listLogic'
+import { emptyListOtherOperation, emptyListTitle, LIST_SORTS, listHeader, sortListingsForList, type ListSort } from '@/lib/map/listLogic'
 import { penPerUsdForThisVisit, penPerUsdRightNow } from '@/lib/map/exchangeRates'
 import ListingListCard from './ListingListCard'
 import type { ListingWithProperty } from '@/types/explore'
+import { pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 interface MapListViewProps {
   items: ListingWithProperty[]
@@ -24,6 +25,7 @@ export default function MapListView({
 }: MapListViewProps) {
   const [sort, setSort] = useState<ListSort>('recomendados')
   const [sheetOpen, setSheetOpen] = useState(false)
+  const pointer = usePointerKind()
   // Soles per dollar for the price sorts: the saved/default rate at once, the
   // live one as soon as this visit's single fetch answers (ADR-031 item 19).
   const [penPerUsd, setPenPerUsd] = useState(penPerUsdRightNow)
@@ -58,7 +60,7 @@ export default function MapListView({
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
           <h3 className="font-serif text-2xl text-text-primary">{emptyListTitle(isVenta)}</h3>
-          <p className="text-[15px] leading-relaxed text-text-secondary">{EMPTY_LIST_ZOOM_OUT_HINT}</p>
+          <p className="text-[15px] leading-relaxed text-text-secondary">{pointerWords(pointer).emptyListZoomOutHint}</p>
           {offer && (
             <button type="button" onClick={onSwitchOperation} className="text-[15px] font-medium text-secondary underline underline-offset-2">
               {offer}

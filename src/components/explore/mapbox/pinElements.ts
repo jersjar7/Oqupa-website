@@ -9,6 +9,7 @@
 import { pinLabelFor, type PinKind } from '@/lib/map/pinLabel'
 import { buildImageUrl } from '@/lib/imageUrl'
 import type { ListingWithProperty } from '@/types/explore'
+import { currentPointerKind, pointerWords, type PointerKind } from '@/lib/pointerWords'
 
 export const PIN_COLORS = {
   venta: '#005B8D',
@@ -189,18 +190,27 @@ export function createDotElement(item: ListingWithProperty, onTap: () => void): 
   return root
 }
 
-/** Pins that would overlap: "N aquí", style A. */
-export function createGroupElement(count: number, isVenta: boolean, onTap: () => void): HTMLDivElement {
+/**
+ * Pins that would overlap: "N aquí", style A. Says "Click para ver" to a
+ * mouse and "Toca para ver" to a finger.
+ */
+export function createGroupElement(
+  count: number,
+  isVenta: boolean,
+  onTap: () => void,
+  device: PointerKind = currentPointerKind(),
+): HTMLDivElement {
+  const say = pointerWords(device)
   const color = isVenta ? PIN_COLORS.venta : PIN_COLORS.alquiler
   const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center' })
   const button = pill({ border: '1px solid rgba(0,0,0,0.06)' }, '#FFFFFF')
-  button.setAttribute('aria-label', `${count} propiedades aquí, toca para ver`)
+  button.setAttribute('aria-label', say.groupAria(count))
   const badge = el('span', {
     width: `${PIN_CIRCLE_PX}px`, height: `${PIN_CIRCLE_PX}px`, borderRadius: '50%', display: 'flex',
     alignItems: 'center', justifyContent: 'center', flex: 'none', backgroundColor: PIN_COLORS.selected,
   })
   badge.innerHTML = `<svg width="15" height="12" viewBox="0 0 26 20" aria-hidden="true"><path d="M1 10 L7 4 L13 10 V19 H1 Z" fill="#fff"/><rect x="14" y="5" width="10" height="14" fill="${color === PIN_COLORS.venta ? '#9CC3DB' : '#F2B98C'}"/></svg>`
-  button.append(badge, words(`${count} aquí`, 'Toca para ver', { wordColor: PIN_COLORS.selected, priceColor: PIN_COLORS.word, priceSize: 11 }))
+  button.append(badge, words(`${count} aquí`, say.groupHint, { wordColor: PIN_COLORS.selected, priceColor: PIN_COLORS.word, priceSize: 11 }))
   // "N aquí" reads first and larger, like the app.
   const w = button.lastElementChild as HTMLElement
   ;(w.firstElementChild as HTMLElement).style.fontSize = '14.5px'

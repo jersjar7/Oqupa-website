@@ -50,11 +50,19 @@ describe('createPinElement', () => {
 describe('createGroupElement', () => {
   it('"5 aquí" and "Toca para ver" — never a bare number', () => {
     const onTap = vi.fn()
-    const el = createGroupElement(5, true, onTap)
+    const el = createGroupElement(5, true, onTap, 'touch')
     expect(el.textContent).toContain('5 aquí')
     expect(el.textContent).toContain('Toca para ver')
     el.querySelector('button')!.click()
     expect(onTap).toHaveBeenCalledOnce()
+  })
+
+  // A computer has a mouse: "Toca" there was the mistake (2026-10-24).
+  it('with a mouse it says "Click para ver", never "Toca"', () => {
+    const el = createGroupElement(5, true, vi.fn(), 'mouse')
+    expect(el.textContent).toContain('Click para ver')
+    expect(el.textContent).not.toMatch(/toca/i)
+    expect(el.querySelector('button')!.getAttribute('aria-label')).toBe('5 propiedades aquí, haz clic para ver')
   })
 })
 

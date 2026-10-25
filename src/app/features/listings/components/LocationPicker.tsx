@@ -8,6 +8,7 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { DepartamentoBorder } from '@/lib/map/departamentoBorder'
 import { addDepartamentoBorder } from '@/components/explore/mapbox/mapLayers'
 import { MAPBOX_DEFAULT_ZOOM } from '@/components/explore/mapbox/mapCamera'
+import { pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 const MAPBOX_STYLE = 'mapbox://styles/mapbox/standard'
 const TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string | undefined) ?? ''
@@ -28,6 +29,7 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
   const [outsideBoundary, setOutsideBoundary] = useState(false)
+  const pointer = usePointerKind()
   const latest = useRef(onChange)
   latest.current = onChange
   const hasPosition = latitude != null && longitude != null
@@ -99,12 +101,12 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
       <div ref={containerRef} className="h-[300px] overflow-hidden rounded-xl border border-border" />
       {outsideBoundary && (
         <p className="mt-2 text-xs text-red-600">
-          Fuera de zona permitida — selecciona una ubicacion dentro del departamento de Piura
+          Fuera de zona permitida — selecciona una ubicación dentro del departamento de Piura
         </p>
       )}
       {hasPosition && !outsideBoundary && (
         <p className="mt-2 text-xs text-text-tertiary">
-          Arrastra el pin o toca el mapa para ajustar la ubicacion — {latitude!.toFixed(6)}, {longitude!.toFixed(6)}
+          {pointerWords(pointer).locationPickerHint} — {latitude!.toFixed(6)}, {longitude!.toFixed(6)}
         </p>
       )}
     </div>
