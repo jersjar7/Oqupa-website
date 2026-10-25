@@ -10,11 +10,29 @@ import type { ListingWithProperty } from '@/types/explore'
 interface MobileListingSheetProps {
   item: ListingWithProperty | null
   onClose: () => void
+  /** The sheet's height while open (0 when closed), so the VER LISTA button
+   *  can slide up above it (map plan step 4). */
+  onHeightChange?: (height: number) => void
 }
 
-export default function MobileListingSheet({ item, onClose }: MobileListingSheetProps) {
+export default function MobileListingSheet({ item, onClose, onHeightChange }: MobileListingSheetProps) {
   const navigate = useNavigate()
   const containerRef = useFocusTrap<HTMLDivElement>(item != null)
+
+  useEffect(() => {
+    if (!onHeightChange) return
+    const el = containerRef.current
+    if (!item || !el) {
+      onHeightChange(0)
+      return
+    }
+    const report = () => onHeightChange(el.getBoundingClientRect().height)
+    report()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(report)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [item, onHeightChange, containerRef])
 
   useEffect(() => {
     if (!item) return

@@ -145,6 +145,10 @@ export default defineConfig({
           // Data fetching.
           if (pkg.startsWith('@tanstack/')) return 'query'
 
+          // Mapbox GL (the explore map and the publish form's location picker
+          // only — both load it lazily, so no other page downloads it).
+          if (pkg === 'mapbox-gl') return 'mapbox'
+
           // Maps + clustering deps used only by map view.
           if (pkg === '@vis.gl/react-google-maps' || pkg.startsWith('@googlemaps/') || pkg === 'supercluster' || pkg === 'fast-equals' || pkg === 'kdbush') return 'maps'
 

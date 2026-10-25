@@ -536,6 +536,9 @@ export const firestoreService = {
     const cleaned = stripUndefined(data as unknown as Record<string, unknown>)
     await setDoc(doc(db, 'listings', listingId), {
       ...cleaned,
+      // Which app created the listing (map plan step 1, ADR-031); the app
+      // writes 'ios' / 'android'. Accepted by the rules on create.
+      createdFrom: 'web',
       viewCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

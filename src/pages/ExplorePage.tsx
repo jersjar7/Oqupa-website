@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useExploreListings } from '@/hooks/useExploreListings'
@@ -7,11 +7,15 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useExploreInteraction } from '@/hooks/useExploreInteraction'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
-import ExploreMap from '@/components/explore/ExploreMap'
+// Mapbox is large: loaded only when the explore page is opened.
+const ExploreMap = lazy(() => import('@/components/explore/ExploreMap'))
 import ExploreFilters from '@/components/explore/ExploreFilters'
-import PropertyCard from '@/components/explore/PropertyCard'
+import MapListView from '@/components/explore/list/MapListView'
+import ListToggleButton from '@/components/explore/list/ListToggleButton'
+import { listingsInsideBounds } from '@/lib/map/listLogic'
+import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
+import type { Bounds } from '@/lib/map/mapPoint'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
-import { StaggerList, staggerItemVariants } from '@/app/components/ui'
 import { thumbnail } from '@/lib/imageUrl'
 import { getExploreEmptyMessage } from '@/lib/exploreEmptyState'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
@@ -53,14 +57,15 @@ export default function ExplorePage() {
     return undefined
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // Venta or Alquiler, never both — no "Todos" on the map (map plan step 4).
   const [filters, setFilters] = useState<MapFilters>({
-    operationType: null,
+    operationType: 'venta',
     rentalDurationType: null,
     propertyTypes: [],
     priceMin: null,
     priceMax: null,
   })
-  const [mapBounds, setMapBounds] = useState<google.maps.LatLngBoundsLiteral | null>(null)
+  const [mapBounds, setMapBounds] = useState<Bounds | null>(null)
   const {
     data: items,
     isLoading,
@@ -74,6 +79,32 @@ export default function ExplorePage() {
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [toastDismissed, setToastDismissed] = useState(false)
+  const isVenta = filters.operationType !== 'alquiler'
+
+  // The list (map plan steps 3–4): exactly what the map is showing. One seed
+  // per visit — a stable order within the visit, fair turns at the top for
+  // equally boosted listings across visits.
+  const [listOpen, setListOpen] = useState(false)
+  const [sessionSeed] = useState(() => Math.floor(Math.random() * 2 ** 31))
+  const [sheetHeight, setSheetHeight] = useState(0)
+
+  // How many of the OTHER operation are in view — only asked when the list is
+  // empty, for its "O mira las 4 en alquiler…" offer.
+  const otherOperation = isVenta ? 'alquiler' : 'venta'
+  const listEmpty = !isLoading && visible.length === 0
+  const { data: otherItems } = useExploreListings(otherOperation, { enabled: listEmpty })
+  const otherOperationCount = useMemo(
+    () => (mapBounds && listEmpty ? listingsInsideBounds(otherItems, mapBounds).length : 0),
+    [otherItems, mapBounds, listEmpty],
+  )
+  const switchOperation = useCallback(() => {
+    setFilters((prev) => ({
+      ...prev,
+      operationType: prev.operationType === 'alquiler' ? 'venta' : 'alquiler',
+      rentalDurationType: null,
+      propertyTypes: [],
+    }))
+  }, [])
 
   const {
     hoveredId,
@@ -91,11 +122,17 @@ export default function ExplorePage() {
   }, [filtered, selectedId])
 
   // Reset toast dismissal when results appear, so it shows again on next empty view
+  // The visit's exchange rate, fetched once in the background as the page opens
+  // so the list's price sorts already have it (ADR-031 item 19).
+  useEffect(() => {
+    void penPerUsdForThisVisit()
+  }, [])
+
   useEffect(() => {
     if (visible.length > 0) setToastDismissed(false)
   }, [visible.length])
 
-  const handleBoundsChanged = (bounds: google.maps.LatLngBoundsLiteral) => {
+  const handleBoundsChanged = (bounds: Bounds) => {
     setMapBounds(bounds)
   }
 
@@ -163,6 +200,7 @@ export default function ExplorePage() {
               </button>
             </motion.div>
           )}
+          <Suspense fallback={<div className="h-full w-full bg-cream" />}>
           <ExploreMap
             items={filtered}
             selectedId={selectedId}
@@ -172,11 +210,13 @@ export default function ExplorePage() {
             onBoundsChanged={handleBoundsChanged}
             initialCenter={initialCenter}
             showPreviewCard={isDesktop}
+            isVenta={isVenta}
           />
+          </Suspense>
 
           {/* Mobile empty area toast */}
           {!isLoading && visible.length === 0 && !toastDismissed && (
-            <div className="absolute bottom-20 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
+            <div className="absolute bottom-36 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
               <MapPin className="h-4 w-4 shrink-0 text-text-tertiary" />
               <p className="flex-1 text-xs text-text-secondary">
                 {getExploreEmptyMessage(total, filtered.length)}
@@ -221,45 +261,23 @@ export default function ExplorePage() {
               el mapa para ver el resto.
             </p>
           )}
-          <AnimatePresence mode="wait">
-            {isLoading ? (
-              <div key="skeleton" className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <PropertyCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : visible.length === 0 ? (
-              <motion.div
-                key="empty"
-                className="flex flex-col items-center gap-3 py-12 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <MapPin className="h-8 w-8 text-text-tertiary/40" />
-                <p className="text-sm text-text-tertiary">
-                  {getExploreEmptyMessage(total, filtered.length)}
-                </p>
-              </motion.div>
-            ) : (
-              <StaggerList className="grid grid-cols-2 gap-3" key="content">
-                {visible.map((item) => (
-                  <motion.div
-                    key={item.listing.id}
-                    variants={staggerItemVariants}
-                    data-listing-id={item.listing.id}
-                    onMouseEnter={() => handleMarkerHover(item.listing.id)}
-                    onMouseLeave={() => handleMarkerHover(null)}
-                  >
-                    <PropertyCard
-                      item={item}
-                      isHighlighted={hoveredId === item.listing.id || selectedId === item.listing.id}
-                    />
-                  </motion.div>
-                ))}
-              </StaggerList>
-            )}
-          </AnimatePresence>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <PropertyCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : (
+            <MapListView
+              items={visible}
+              isVenta={isVenta}
+              sessionSeed={sessionSeed}
+              otherOperationCount={otherOperationCount}
+              onSwitchOperation={switchOperation}
+              highlightedId={hoveredId ?? selectedId}
+              layout="grid"
+            />
+          )}
 
           {/* Infinite scroll sentinel */}
           <div ref={sentinelRef} className="h-1" />
@@ -280,9 +298,43 @@ export default function ExplorePage() {
         </div>
       </div>
 
+      {/* Phone: the list of what the map shows, over the map (the map stays
+          mounted, so VER MAPA returns to exactly the same view). */}
+      {!isDesktop && listOpen && (
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-20 overflow-y-auto bg-cream px-4 pb-40 pt-4">
+          <MapListView
+            items={visible}
+            isVenta={isVenta}
+            sessionSeed={sessionSeed}
+            otherOperationCount={otherOperationCount}
+            onSwitchOperation={switchOperation}
+          />
+        </div>
+      )}
+
+      {/* Phone: one button, "VER LISTA · 9 en venta" / "VER MAPA", just above
+          the Filtros button; it slides up above a listing's card when one
+          opens (ADR-031 item 5). */}
+      {!isDesktop && !isLoading && (
+        <div
+          className="fixed left-1/2 z-40 -translate-x-1/2 transition-[bottom] duration-[250ms] ease-out md:hidden"
+          style={{ bottom: !listOpen && sheetHeight > 0 ? sheetHeight + 12 : 84 }}
+        >
+          <ListToggleButton
+            mode={listOpen ? 'list' : 'map'}
+            count={visible.length}
+            isVenta={isVenta}
+            onClick={() => {
+              handleDismiss()
+              setListOpen((open) => !open)
+            }}
+          />
+        </div>
+      )}
+
       {/* Mobile bottom sheet */}
       {!isDesktop && (
-        <MobileListingSheet item={selectedItem} onClose={handleDismiss} />
+        <MobileListingSheet item={selectedItem} onClose={handleDismiss} onHeightChange={setSheetHeight} />
       )}
 
       {/* Mobile drawer */}

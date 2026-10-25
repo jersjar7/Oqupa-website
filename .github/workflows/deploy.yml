@@ -158,6 +158,14 @@ jobs:
       # the waitlist form's key and a different reCAPTCHA site.
       - name: Add App Check site key (staging)
         run: echo "VITE_RECAPTCHA_APPCHECK_KEY=6Lf1WMYsAAAAAOMgBCCj9f5oDis5ilgzwjr8yK5Z" >> .env
+      # Mapbox public token "Oqupa Website" (map plan step 4, ADR-031), kept in the
+      # repository variable MAPBOX_WEB_TOKEN because GitHub push protection flags any
+      # Mapbox token written in a file. Public by
+      # design (it ships in the bundle) and URL-restricted in the Mapbox account to
+      # oqupa.com, www, both oqupa-production and both oqupa-staging Firebase hosts,
+      # and localhost:5173 — map tiles are refused from any other site.
+      - name: Add Mapbox token (staging)
+        run: echo "VITE_MAPBOX_ACCESS_TOKEN=${{ vars.MAPBOX_WEB_TOKEN }}" >> .env
       # --mode staging makes Vite set MODE='staging' (and PROD=false), which
       # tells imageUrl.ts to use the staging R2 host directly instead of the
       # /cdn-cgi/image/... Cloudflare-only path that production uses.
@@ -192,6 +200,14 @@ jobs:
       # local development runs against staging and uses the staging key.
       - name: Add App Check site key (production)
         run: echo "VITE_RECAPTCHA_APPCHECK_KEY=6LfjWcYsAAAAANSKmb_sTrfeYLriwFGmk7jchxzg" >> .env
+      # Mapbox public token "Oqupa Website" (map plan step 4, ADR-031), kept in the
+      # repository variable MAPBOX_WEB_TOKEN because GitHub push protection flags any
+      # Mapbox token written in a file. Public by
+      # design (it ships in the bundle) and URL-restricted in the Mapbox account to
+      # oqupa.com, www, both oqupa-production and both oqupa-staging Firebase hosts,
+      # and localhost:5173 — map tiles are refused from any other site.
+      - name: Add Mapbox token (production)
+        run: echo "VITE_MAPBOX_ACCESS_TOKEN=${{ vars.MAPBOX_WEB_TOKEN }}" >> .env
       - run: npm run build
       - id: auth
         uses: google-github-actions/auth@v2
