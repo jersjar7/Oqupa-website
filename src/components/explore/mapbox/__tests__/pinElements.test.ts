@@ -4,7 +4,7 @@
 // of these tests pinned the solid-colour pills of map plan step 2; Jerson chose
 // style A on 2026-10-24, so the colour now lives in the small circle.
 import { describe, it, expect, vi } from 'vitest'
-import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, PIN_COLORS } from '../pinElements'
+import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, createRaisedPinElement, PIN_COLORS, RAISED_LEADER_PX } from '../pinElements'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 describe('createPinElement', () => {
@@ -94,10 +94,11 @@ describe('createDotElement (far out)', () => {
 })
 
 describe('createBoostedPinElement (city and close)', () => {
-  it('the same size as a normal pin: a 24-px circle, gold edge, "✦ CASA" and the price', () => {
+  // 21 px since ADR-033 (smaller pins, Jerson 2026-10-25); was 24.
+  it('the same size as a normal pin: a 21-px circle, gold edge, "✦ CASA" and the price', () => {
     const el = createBoostedPinElement(mapListing({ boosted: true, amount: 98000, currency: 'USD', photos: 2 }), { selected: false })
     const circle = el.querySelector<HTMLElement>('[data-role="circle"]')!
-    expect(circle.style.width).toBe('24px')
+    expect(circle.style.width).toBe('21px')
     const normal = createPinElement(mapListing({ amount: 98000, currency: 'USD' }), { selected: false })
     expect(el.querySelector<HTMLElement>('[data-role="pill"]')!.style.padding)
       .toBe(normal.querySelector<HTMLElement>('[data-role="pill"]')!.style.padding)
@@ -124,5 +125,46 @@ describe('createBoostedPinElement (city and close)', () => {
     const el = createBoostedPinElement(mapListing({ boosted: true, photos: 0 }), { selected: false })
     expect(el.querySelector('img')).toBeNull()
     expect(el.querySelector('[data-role="circle"] svg')).not.toBeNull()
+  })
+})
+
+// ADR-033 (Jerson, 2026-10-25): the smaller pins he chose from side-by-side
+// renders — same design, smaller text, lines closer together.
+describe('pin text size (ADR-033)', () => {
+  it('type word 9 px, price 12.5 px, lines close together', () => {
+    const el = createPinElement(mapListing({ amount: 98000, currency: 'USD' }), { selected: false })
+    const [type, price] = [...el.querySelectorAll<HTMLElement>('[data-role="pill"] span span')]
+    expect(type!.style.fontSize).toBe('9px')
+    expect(price!.style.fontSize).toBe('12.5px')
+    expect((type!.parentElement as HTMLElement).style.lineHeight).toBe('1')
+  })
+})
+
+// ADR-033: a tapped dot's pin rises on a leader line from the dot's exact
+// spot; the map does not move. Clicking the raised pin opens the listing.
+describe('createRaisedPinElement', () => {
+  it('the listing\'s pin above a line that grows to full length', async () => {
+    const onOpen = vi.fn()
+    const el = createRaisedPinElement(mapListing({ amount: 98000, currency: 'USD' }), onOpen)
+    expect(el.textContent).toContain('US$ 98 mil')
+    const line = el.querySelector<HTMLElement>('[data-role="leader"]')!
+    expect(line.style.height).toBe('0px')
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    expect(line.style.height).toBe(`${RAISED_LEADER_PX}px`)
+  })
+  it('the line ends at the dot\'s top edge, so the dot stays visible', () => {
+    const el = createRaisedPinElement(mapListing(), vi.fn())
+    expect(el.lastElementChild!.getAttribute('data-role')).toBe('dot-gap')
+    expect((el.lastElementChild as HTMLElement).style.height).toBe('9.5px')
+  })
+  it('a click opens the listing', () => {
+    const onOpen = vi.fn()
+    createRaisedPinElement(mapListing(), onOpen).querySelector('button')!.click()
+    expect(onOpen).toHaveBeenCalledOnce()
+  })
+  it('a boosted listing rises as its gold pin', () => {
+    const el = createRaisedPinElement(mapListing({ boosted: true, photos: 1 }), vi.fn())
+    expect(el.textContent).toContain('✦')
+    expect(el.querySelector<HTMLElement>('[data-role="pill"]')!.style.borderColor).toBe('rgb(245, 158, 11)')
   })
 })

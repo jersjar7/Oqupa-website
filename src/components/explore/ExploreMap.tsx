@@ -14,9 +14,9 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
-import { DOT_TAP_ZOOM } from '@/lib/map/zoomPolicy'
+import { showsDots } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
-import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement } from './mapbox/pinElements'
+import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import { CardContent } from './PreviewCardContent'
@@ -63,10 +63,12 @@ function MapboxExploreMap({
   const liveRef = useRef<Map<string, LiveMarker>>(new Map())
   const [mapReady, setMapReady] = useState(false)
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
+  // The far-out dot whose pin is raised on a leader line (ADR-033).
+  const [raisedId, setRaisedId] = useState<string | null>(null)
 
   // Latest callbacks/values for listeners registered once.
-  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot })
-  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot }
+  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId })
+  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot, raisedId }
 
   const index = useMemo(() => new MapMarkerIndex(items), [items])
   const indexRef = useRef(index)
@@ -118,7 +120,11 @@ function MapboxExploreMap({
       reportBounds()
     })
     map.on('moveend', reportBounds)
-    map.on('click', () => latest.current.onSelect(null))
+    map.on('click', () => {
+      // A raised pin drops back into its dot (ADR-033).
+      setRaisedId(null)
+      latest.current.onSelect(null)
+    })
 
     return () => {
       refit.disconnect()
@@ -139,10 +145,13 @@ function MapboxExploreMap({
       frame = 0
       const b = map.getBounds()
       if (!b) return
+      // Close in every listing is already its own pin.
+      if (latest.current.raisedId && !showsDots(map.getZoom())) setRaisedId(null)
       const wanted = indexRef.current.markersFor(
         { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
         map.getZoom(),
         latest.current.selectedId,
+        latest.current.raisedId,
       )
       reconcile(map, wanted)
     }
@@ -156,7 +165,7 @@ function MapboxExploreMap({
       if (frame) cancelAnimationFrame(frame)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady, index, selectedId, isVenta])
+  }, [mapReady, index, selectedId, isVenta, raisedId])
 
   function reconcile(map: mapboxgl.Map, wanted: MapMarker[]) {
     const live = liveRef.current
@@ -166,12 +175,13 @@ function MapboxExploreMap({
       keep.add(key)
       let entry = live.get(key)
       if (!entry) {
-        const el = elementFor(map, m)
+        const el = elementFor(m)
         const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'dot' ? 'center' : 'bottom' })
           .setLngLat([m.lng, m.lat])
           .addTo(map)
         // Boosted markers sit above everything else; the selected one above them.
         if (m.kind !== 'group' && m.item.listing.isBoosted) el.style.zIndex = '2'
+        if (m.kind === 'raised') el.style.zIndex = '4'
         if (m.kind === 'pin' && m.item.listing.id === latest.current.selectedId) el.style.zIndex = '3'
         entry = { key, marker, el }
         live.set(key, entry)
@@ -187,7 +197,7 @@ function MapboxExploreMap({
     }
   }
 
-  function elementFor(map: mapboxgl.Map, m: MapMarker): HTMLElement {
+  function elementFor(m: MapMarker): HTMLElement {
     if (m.kind === 'pin') {
       const id = m.item.listing.id
       const selected = id === latest.current.selectedId
@@ -204,9 +214,17 @@ function MapboxExploreMap({
       return el
     }
     if (m.kind === 'dot') {
-      // Out here a finger covers several dots, so a tap zooms in rather than
-      // opening one listing (same as the app).
-      return createDotElement(m.item, () => map.easeTo({ center: [m.lng, m.lat], zoom: DOT_TAP_ZOOM }))
+      // Out here a finger covers several dots, so a tap raises the pin of the
+      // one it landed on rather than opening it; the map does not move
+      // (ADR-033, same as the app).
+      return createDotElement(m.item, () => setRaisedId(m.item.listing.id))
+    }
+    if (m.kind === 'raised') {
+      const id = m.item.listing.id
+      return createRaisedPinElement(m.item, () => {
+        setRaisedId(null)
+        latest.current.onSelect(id)
+      })
     }
     // A shared pin: listings at the identical point, which no zoom can split
     // (ADR-032). A click lists exactly those.
@@ -282,6 +300,7 @@ function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean): strin
     const l = m.item.listing
     return `pin:${l.id}:${l.id === selectedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
   }
+  if (m.kind === 'raised') return `raised:${m.item.listing.id}:${mode}`
   if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${m.item.listing.isBoosted ? 'b' : ''}:${mode}`
   return `group:${m.id}:${m.count}:${mode}`
 }

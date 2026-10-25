@@ -3,7 +3,8 @@
 // closer in one style-A pin per listing, overlapping freely — the only shared
 // "N aquí" pin is for listings at the identical point (one building). Boosted listings
 // are always their own (photo) pin at every zoom, never inside a dot field or a
-// group; the selected listing always shows on its own.
+// group; the selected listing always shows on its own. Pins from zoom 14
+// since ADR-033 (was 12); a tapped dot's pin rises on a leader line.
 import { describe, it, expect } from 'vitest'
 import { MapMarkerIndex } from '../mapMarkers'
 import { mapListing } from './mapListingFixture'
@@ -31,7 +32,7 @@ describe('MapMarkerIndex', () => {
   })
 
   it('close in: listings at the identical point share one pin with their count, at every zoom', () => {
-    for (const z of [12, 13, 16, 18, 19, 22]) {
+    for (const z of [14, 15, 16, 18, 19, 22]) {
       const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, z, null)
       expect(out).toHaveLength(1)
       expect(out[0]!.kind === 'group' && out[0]!.count).toBe(3)
@@ -39,7 +40,7 @@ describe('MapMarkerIndex', () => {
   })
 
   it('a shared pin carries its listings, so a click can list exactly those', () => {
-    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 13, null)
+    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 15, null)
     const g = out[0]!
     expect(g.kind === 'group' && g.items.map((i) => i.listing.id).sort()).toEqual(['a', 'b', 'c'])
   })
@@ -48,7 +49,7 @@ describe('MapMarkerIndex', () => {
     const out = new MapMarkerIndex([
       mapListing({ id: 'a', lat: -5.19, lng: -80.63 }),
       mapListing({ id: 'b', lat: -5.15, lng: -80.70 }),
-    ]).markersFor(metro, 13, null)
+    ]).markersFor(metro, 15, null)
     expect(out.map((m) => m.kind)).toEqual(['pin', 'pin'])
   })
 
@@ -56,7 +57,7 @@ describe('MapMarkerIndex', () => {
   // group" and the grouping ceiling (ADR-031 item 17).
   it('close in: neighbours are each their own pin at every zoom, even if the pins overlap', () => {
     for (const metres of [240, 20, 1]) {
-      for (const z of [12, 13, 16, 18, 22]) {
+      for (const z of [14, 15, 16, 18, 22]) {
         const out = new MapMarkerIndex([
           mapListing({ id: 'a', lat: -5.1945, lng: -80.6328 }),
           mapListing({ id: 'b', lat: -5.1945 + metres / 111_320, lng: -80.6328 }),
@@ -67,7 +68,7 @@ describe('MapMarkerIndex', () => {
   })
 
   it('boosted listings are never inside a group, and groups do not count them', () => {
-    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('boost', { boosted: true, boostScore: 2 })]).markersFor(metro, 13, null)
+    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('boost', { boosted: true, boostScore: 2 })]).markersFor(metro, 15, null)
     const pins = out.filter((m) => m.kind === 'pin')
     const groups = out.filter((m) => m.kind === 'group')
     expect(pins.map((m) => (m.kind === 'pin' ? m.item.listing.id : ''))).toEqual(['boost'])
@@ -75,7 +76,7 @@ describe('MapMarkerIndex', () => {
   })
 
   it('the selected listing shows on its own, even inside a group', () => {
-    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 13, 'b')
+    const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 15, 'b')
     const pins = out.filter((m) => m.kind === 'pin')
     expect(pins.map((m) => (m.kind === 'pin' ? m.item.listing.id : ''))).toEqual(['b'])
     const g = out.find((m) => m.kind === 'group')
@@ -84,11 +85,41 @@ describe('MapMarkerIndex', () => {
 
   it('outside the visible area nothing is drawn', () => {
     const far = { south: -4.0, west: -79.0, north: -3.9, east: -78.9 }
-    expect(new MapMarkerIndex([sameSpot('a')]).markersFor(far, 13, null)).toEqual([])
+    expect(new MapMarkerIndex([sameSpot('a')]).markersFor(far, 15, null)).toEqual([])
   })
 
   it('an empty map draws nothing', () => {
-    expect(new MapMarkerIndex([]).markersFor(metro, 13, null)).toEqual([])
+    expect(new MapMarkerIndex([]).markersFor(metro, 15, null)).toEqual([])
     expect(new MapMarkerIndex([]).markersFor(metro, 9, null)).toEqual([])
+  })
+
+  // ADR-033 (Jerson, 2026-10-25): a tapped dot raises its pin on a leader line
+  // instead of zooming in; the dot stays, the raised pin is drawn last.
+  describe('a raised dot', () => {
+    const items = () => [mapListing({ id: 'a', lat: -5.19, lng: -80.63 }), mapListing({ id: 'b', lat: -5.15, lng: -80.70 })]
+
+    it('far out: the dot stays and its raised pin is drawn last, on its exact spot', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, null, 'a')
+      expect(out.map((m) => m.kind)).toEqual(['dot', 'dot', 'raised'])
+      const r = out[2]!
+      expect(r.kind === 'raised' && r.item.listing.id).toBe('a')
+      expect(r.lat).toBeCloseTo(-5.19)
+      expect(r.lng).toBeCloseTo(-80.63)
+    })
+
+    it('close in there is nothing to raise: every listing is already a pin', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 15, null, 'a')
+      expect(out.map((m) => m.kind)).toEqual(['pin', 'pin'])
+    })
+
+    it('a raised dot outside the visible area draws nothing', () => {
+      const far = { south: -5.16, west: -80.75, north: -5.10, east: -80.65 }
+      const out = new MapMarkerIndex(items()).markersFor(far, 12, null, 'a')
+      expect(out.map((m) => m.kind)).toEqual(['dot'])
+    })
+
+    it('an unknown id raises nothing', () => {
+      expect(new MapMarkerIndex(items()).markersFor(metro, 12, null, 'zzz').map((m) => m.kind)).toEqual(['dot', 'dot'])
+    })
   })
 })

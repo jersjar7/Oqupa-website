@@ -6,7 +6,9 @@
 // listings at the IDENTICAL point (several units in one building): one pin
 // would hide the other completely, so they share one "N aquí" pin. Boosted
 // listings are never part of it (always their own photo pin, drawn last so
-// they sit on top); the selected listing always shows on its own.
+// they sit on top); the selected listing always shows on its own. A tapped
+// dot raises its pin on a leader line (ADR-033): the dot stays and the raised
+// pin is drawn last, over every dot.
 import { showsDots } from './zoomPolicy'
 import { mapPointOf, type Bounds } from './mapPoint'
 import type { ListingWithProperty } from '@/types/explore'
@@ -15,6 +17,7 @@ export type MapMarker =
   | { kind: 'pin'; item: ListingWithProperty; lat: number; lng: number }
   | { kind: 'group'; id: string; count: number; lat: number; lng: number; items: ListingWithProperty[] }
   | { kind: 'dot'; item: ListingWithProperty; lat: number; lng: number }
+  | { kind: 'raised'; item: ListingWithProperty; lat: number; lng: number }
 
 export class MapMarkerIndex {
   private readonly regular: ListingWithProperty[]
@@ -36,7 +39,7 @@ export class MapMarkerIndex {
     this.spots = [...byPoint.values()]
   }
 
-  markersFor(bounds: Bounds, zoom: number, selectedId: string | null): MapMarker[] {
+  markersFor(bounds: Bounds, zoom: number, selectedId: string | null, raisedId: string | null = null): MapMarker[] {
     const inView = (lat: number, lng: number) =>
       lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
     if (showsDots(zoom)) {
@@ -46,6 +49,8 @@ export class MapMarkerIndex {
         const p = mapPointOf(item)
         if (inView(p.lat, p.lng)) out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
       }
+      const raised = out.find((m) => m.kind === 'dot' && m.item.listing.id === raisedId)
+      if (raised && raised.kind === 'dot') out.push({ kind: 'raised', item: raised.item, lat: raised.lat, lng: raised.lng })
       return out
     }
     const out: MapMarker[] = []

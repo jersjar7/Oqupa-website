@@ -5,7 +5,7 @@
 // plan step 2, which Jerson dropped: "The districts are already displayed on
 // the base map itself.")
 import { describe, it, expect } from 'vitest'
-import { DOTS_BELOW_ZOOM, DOT_TAP_ZOOM, showsDots } from '../zoomPolicy'
+import { DOTS_BELOW_ZOOM, showsDots } from '../zoomPolicy'
 
 describe('zoom policy', () => {
   it('below the threshold: dots', () => {
@@ -16,11 +16,8 @@ describe('zoom policy', () => {
     expect(showsDots(DOTS_BELOW_ZOOM)).toBe(false)
     expect(showsDots(16)).toBe(false)
   })
-  it('the threshold is the same as the app (12)', () => {
-    expect(DOTS_BELOW_ZOOM).toBe(12)
-  })
-  it('tapping a dot lands where the listing shows as its own pin (app: 14)', () => {
-    expect(DOT_TAP_ZOOM).toBe(14)
-    expect(showsDots(DOT_TAP_ZOOM)).toBe(false)
+  // ADR-033 (Jerson, 2026-10-25): was 12. Tapping a dot no longer zooms.
+  it('the threshold is the same as the app (14)', () => {
+    expect(DOTS_BELOW_ZOOM).toBe(14)
   })
 })

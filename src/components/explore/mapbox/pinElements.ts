@@ -20,9 +20,14 @@ export const PIN_COLORS = {
   amberWord: '#B45309',
 } as const
 
-/** Same sizes as the app (MapMarkerPainter). */
-export const PIN_CIRCLE_PX = 24
+/** Same sizes as the app (MapMarkerPainter). Smaller pins since ADR-033
+ *  (Jerson, 2026-10-25; the circle was 24). */
+export const PIN_CIRCLE_PX = 21
 export const DOT_PX = 19
+/** How far a tapped dot's pin rises on its leader line (ADR-033, as the app). */
+export const RAISED_LEADER_PX = 30
+const TYPE_PX = 9
+const PRICE_PX = 12.5
 
 /** One simple drawing per type, white on the pin's colour (inline SVG). */
 const DRAWINGS: Record<PinKind, string> = {
@@ -71,7 +76,7 @@ function circle(size: number, color: string, kind: PinKind): HTMLSpanElement {
 
 function pill(css: Partial<CSSStyleDeclaration>, background: string): HTMLButtonElement {
   const b = el('button', {
-    display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 11px 4px 4px', borderRadius: '999px',
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 11px 3px 4px', borderRadius: '999px',
     boxShadow: '0 2px 6px rgba(0,0,0,0.18)', fontFamily: FONT, cursor: 'pointer', transformOrigin: 'bottom center',
     ...css,
   })
@@ -82,8 +87,8 @@ function pill(css: Partial<CSSStyleDeclaration>, background: string): HTMLButton
 }
 
 function words(typeText: string, priceText: string, o: { wordColor: string; priceColor: string; priceSize: number }) {
-  const w = el('span', { display: 'flex', flexDirection: 'column', lineHeight: '1.08', textAlign: 'left' })
-  const type = el('span', { fontSize: '10.5px', fontWeight: '700', letterSpacing: '0.4px', whiteSpace: 'nowrap', color: o.wordColor })
+  const w = el('span', { display: 'flex', flexDirection: 'column', lineHeight: '1', textAlign: 'left' })
+  const type = el('span', { fontSize: `${TYPE_PX}px`, fontWeight: '700', letterSpacing: '0.4px', whiteSpace: 'nowrap', color: o.wordColor })
   type.textContent = typeText
   const price = el('span', { fontSize: `${o.priceSize}px`, fontWeight: '700', whiteSpace: 'nowrap', color: o.priceColor })
   price.textContent = priceText
@@ -110,7 +115,7 @@ export function createPinElement(item: ListingWithProperty, state: { selected: b
     words(item.listing.isBoosted ? `✦ ${label.typeLine}` : label.typeLine, label.priceLine, {
       wordColor: state.selected ? '#E5E7EB' : PIN_COLORS.word,
       priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
-      priceSize: 14.5,
+      priceSize: PRICE_PX,
     }),
   )
   root.append(button, pointer(bg))
@@ -160,7 +165,7 @@ export function createBoostedPinElement(item: ListingWithProperty, state: { sele
     words(`✦ ${label.typeLine}`, label.priceLine, {
       wordColor: state.selected ? PIN_COLORS.gold : PIN_COLORS.amberWord,
       priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
-      priceSize: 14.5,
+      priceSize: PRICE_PX,
     }),
   )
   root.append(button, pointer(PIN_COLORS.gold))
@@ -180,7 +185,7 @@ export function createDotElement(item: ListingWithProperty, onTap: () => void): 
   })
   dot.type = 'button'
   dot.style.backgroundColor = modeColor(item)
-  dot.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}. Acercar`)
+  dot.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}`)
   dot.innerHTML = drawingSvg(label.kind, 11, modeColor(item))
   dot.addEventListener('click', (e) => {
     e.stopPropagation()
@@ -210,10 +215,10 @@ export function createGroupElement(
     alignItems: 'center', justifyContent: 'center', flex: 'none', backgroundColor: PIN_COLORS.selected,
   })
   badge.innerHTML = `<svg width="15" height="12" viewBox="0 0 26 20" aria-hidden="true"><path d="M1 10 L7 4 L13 10 V19 H1 Z" fill="#fff"/><rect x="14" y="5" width="10" height="14" fill="${color === PIN_COLORS.venta ? '#9CC3DB' : '#F2B98C'}"/></svg>`
-  button.append(badge, words(`${count} aquí`, say.groupHint, { wordColor: PIN_COLORS.selected, priceColor: PIN_COLORS.word, priceSize: 11 }))
+  button.append(badge, words(`${count} aquí`, say.groupHint, { wordColor: PIN_COLORS.selected, priceColor: PIN_COLORS.word, priceSize: 9.5 }))
   // "N aquí" reads first and larger, like the app.
   const w = button.lastElementChild as HTMLElement
-  ;(w.firstElementChild as HTMLElement).style.fontSize = '14.5px'
+  ;(w.firstElementChild as HTMLElement).style.fontSize = `${PRICE_PX}px`
   ;(w.firstElementChild as HTMLElement).style.letterSpacing = '0'
   ;(w.lastElementChild as HTMLElement).style.fontWeight = '500'
   button.addEventListener('click', (e) => {
@@ -221,5 +226,39 @@ export function createGroupElement(
     onTap()
   })
   root.append(button, pointer('#FFFFFF'))
+  return root
+}
+
+/**
+ * A tapped dot's pin, raised on a leader line (ADR-033): the map does not
+ * move. The line grows from the dot's exact spot and pushes the pin up; it
+ * ends at the dot's top edge (half a dot above the marker's bottom, which
+ * sits on the spot), so the dot it grew from stays visible. A click opens the
+ * listing.
+ */
+export function createRaisedPinElement(item: ListingWithProperty, onOpen: () => void): HTMLDivElement {
+  const pin = item.listing.isBoosted
+    ? createBoostedPinElement(item, { selected: false })
+    : createPinElement(item, { selected: false })
+  pin.querySelector('button')!.addEventListener('click', (e) => {
+    e.stopPropagation()
+    onOpen()
+  })
+  const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' })
+  root.dataset.listingId = item.listing.id
+  root.dataset.raised = '1'
+  const lineColor = item.listing.isBoosted ? PIN_COLORS.gold : PIN_COLORS.selected
+  const leader = el('div', {
+    width: '2px', height: '0px', marginTop: '-1px', backgroundColor: lineColor,
+    boxShadow: '0 0 0 1px #FFFFFF', borderRadius: '1px', transition: 'height 200ms ease-out',
+  })
+  leader.dataset.role = 'leader'
+  const gap = el('div', { height: `${DOT_PX / 2}px`, width: '1px' })
+  gap.dataset.role = 'dot-gap'
+  root.append(pin, leader, gap)
+  // Grow on the frame after it is on the page, so the transition runs.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    leader.style.height = `${RAISED_LEADER_PX}px`
+  }))
   return root
 }
