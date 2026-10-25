@@ -23,9 +23,20 @@ export const PIN_COLORS = {
 /** Same sizes as the app (MapMarkerPainter). Smaller pins since ADR-033
  *  (Jerson, 2026-10-25; the circle was 24). */
 export const PIN_CIRCLE_PX = 21
-export const DOT_PX = 19
-/** How far a tapped dot's pin rises on its leader line (ADR-033, as the app). */
-export const RAISED_LEADER_PX = 30
+/** The first dot size, shared with the app's original. */
+const BASE_DOT_PX = 19
+/** How far a tapped dot's pin rises on its leader line (ADR-033, as the app):
+ *  3/4 of the first 30 (Jerson, 2026-10-25). */
+export const RAISED_LEADER_PX = 22.5
+
+/** The far-out dot's size. Jerson, 2026-10-25 ("the dots are too small"):
+ *  1.3× on a phone-width screen, the same as the app; 1.5× on a computer,
+ *  where there is more room. Read when a dot is drawn. */
+export function dotPx(): number {
+  const wide = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    && window.matchMedia('(min-width: 768px)').matches
+  return BASE_DOT_PX * (wide ? 1.5 : 1.3)
+}
 const TYPE_PX = 9
 const PRICE_PX = 12.5
 
@@ -178,15 +189,17 @@ export function createDotElement(item: ListingWithProperty, onTap: () => void): 
   const label = pinLabelFor(item)
   const root = el('div', { display: 'flex' })
   root.dataset.listingId = item.listing.id
+  const size = dotPx()
+  const k = size / BASE_DOT_PX // edges and drawing grow with the dot
   const dot = el('button', {
-    width: `${DOT_PX}px`, height: `${DOT_PX}px`, borderRadius: '50%', padding: '0',
-    border: item.listing.isBoosted ? `2.5px solid ${PIN_COLORS.gold}` : '1.5px solid #FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
+    width: `${size}px`, height: `${size}px`, borderRadius: '50%', padding: '0',
+    border: item.listing.isBoosted ? `${2.5 * k}px solid ${PIN_COLORS.gold}` : `${1.5 * k}px solid #FFFFFF`, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
     alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
   })
   dot.type = 'button'
   dot.style.backgroundColor = modeColor(item)
   dot.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}`)
-  dot.innerHTML = drawingSvg(label.kind, 11, modeColor(item))
+  dot.innerHTML = drawingSvg(label.kind, Math.round(11 * k), modeColor(item))
   dot.addEventListener('click', (e) => {
     e.stopPropagation()
     onTap()
@@ -253,7 +266,7 @@ export function createRaisedPinElement(item: ListingWithProperty, onOpen: () => 
     boxShadow: '0 0 0 1px #FFFFFF', borderRadius: '1px', transition: 'height 200ms ease-out',
   })
   leader.dataset.role = 'leader'
-  const gap = el('div', { height: `${DOT_PX / 2}px`, width: '1px' })
+  const gap = el('div', { height: `${dotPx() / 2}px`, width: '1px' })
   gap.dataset.role = 'dot-gap'
   root.append(pin, leader, gap)
   // Grow on the frame after it is on the page, so the transition runs.

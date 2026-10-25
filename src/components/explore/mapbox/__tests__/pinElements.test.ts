@@ -3,8 +3,8 @@
 // exactly what the app's do — style A (ADR-031 items 15–18). The first version
 // of these tests pinned the solid-colour pills of map plan step 2; Jerson chose
 // style A on 2026-10-24, so the colour now lives in the small circle.
-import { describe, it, expect, vi } from 'vitest'
-import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, createRaisedPinElement, PIN_COLORS, RAISED_LEADER_PX } from '../pinElements'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, createRaisedPinElement, PIN_COLORS, RAISED_LEADER_PX, dotPx } from '../pinElements'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 describe('createPinElement', () => {
@@ -71,7 +71,7 @@ describe('createDotElement (far out)', () => {
     const onTap = vi.fn()
     const el = createDotElement(mapListing({ type: 'terreno' }), onTap)
     const dot = el.querySelector<HTMLElement>('button')!
-    expect(dot.style.width).toBe('19px')
+    expect(dot.style.width).toBe(`${19 * 1.3}px`)
     expect(dot.style.backgroundColor).toBe('rgb(0, 91, 141)')
     expect(dot.querySelector('svg')).not.toBeNull()
     expect(el.textContent).toBe('')
@@ -85,7 +85,7 @@ describe('createDotElement (far out)', () => {
   it('a boosted listing: the same dot and drawing, with a gold edge and no photo', () => {
     const el = createDotElement(mapListing({ boosted: true, photos: 2 }), () => {})
     const dot = el.querySelector<HTMLElement>('button')!
-    expect(dot.style.width).toBe('19px')
+    expect(dot.style.width).toBe(`${19 * 1.3}px`)
     expect(dot.style.borderColor).toBe('rgb(245, 158, 11)')
     expect(dot.querySelector('svg')).not.toBeNull()
     expect(el.querySelector('img')).toBeNull()
@@ -155,7 +155,7 @@ describe('createRaisedPinElement', () => {
   it('the line ends at the dot\'s top edge, so the dot stays visible', () => {
     const el = createRaisedPinElement(mapListing(), vi.fn())
     expect(el.lastElementChild!.getAttribute('data-role')).toBe('dot-gap')
-    expect((el.lastElementChild as HTMLElement).style.height).toBe('9.5px')
+    expect((el.lastElementChild as HTMLElement).style.height).toBe(`${(19 * 1.3) / 2}px`)
   })
   it('a click opens the listing', () => {
     const onOpen = vi.fn()
@@ -166,5 +166,27 @@ describe('createRaisedPinElement', () => {
     const el = createRaisedPinElement(mapListing({ boosted: true, photos: 1 }), vi.fn())
     expect(el.textContent).toContain('✦')
     expect(el.querySelector<HTMLElement>('[data-role="pill"]')!.style.borderColor).toBe('rgb(245, 158, 11)')
+  })
+})
+
+// Jerson, 2026-10-25: the dots were too small. 1.3× on a phone-width screen
+// (the same as the app), 1.5× on a computer, where there is more room. The
+// line is 3/4 of its first 30 px.
+describe('dot size by screen (ADR-033)', () => {
+  const stubWide = (wide: boolean) =>
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: wide && q.includes('min-width'), media: q }))
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('phone-width screen: 1.3× the original 19 px, like the app', () => {
+    stubWide(false)
+    expect(dotPx()).toBeCloseTo(19 * 1.3)
+  })
+  it('computer screen: 1.5×', () => {
+    stubWide(true)
+    expect(dotPx()).toBeCloseTo(19 * 1.5)
+    expect(createDotElement(mapListing(), () => {}).querySelector<HTMLElement>('button')!.style.width).toBe(`${19 * 1.5}px`)
+  })
+  it('the raised pin\'s line is 22.5 px', () => {
+    expect(RAISED_LEADER_PX).toBe(22.5)
   })
 })

@@ -113,6 +113,18 @@ function MapboxExploreMap({
     const container = containerRef.current
     const refit = new ResizeObserver(() => map.resize())
     refit.observe(container)
+    // No business, transit or landmark names on the base map: they compete
+    // with the dots (Jerson, 2026-10-25, ADR-033 — like Redfin; the app
+    // already hid them). Streets and neighbourhoods stay.
+    map.on('style.load', () => {
+      for (const key of ['showPointOfInterestLabels', 'showTransitLabels', 'showLandmarkIcons', 'showLandmarkIconLabels']) {
+        try {
+          map.setConfigProperty('basemap', key, false)
+        } catch {
+          /* a key this style version lacks */
+        }
+      }
+    })
     map.on('load', () => {
       map.resize()
       addDepartamentoBorder(map)
