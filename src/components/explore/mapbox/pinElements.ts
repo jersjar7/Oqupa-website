@@ -2,8 +2,9 @@
 // same as the app's MapMarkerPainter: a white pill with a small coloured circle
 // holding the type drawing, the type word in small grey letters and the price in
 // bold, with a point at the bottom. Far out, a small coloured dot per listing.
-// Boosted listings: a bigger pill with the first photo in a 48-px gold-edged
-// circle. Plain DOM (not React) because Mapbox owns the marker elements; every
+// Boosted listings are the same size at every zoom (Jerson, 2026-10-24): far
+// out a dot with a gold edge; closer, the same pin with a gold edge and point,
+// "✦" before the word and the first photo in the circle. Plain DOM (not React) because Mapbox owns the marker elements; every
 // marker is a real <button>, reachable by keyboard and named for screen readers.
 import { pinLabelFor, type PinKind } from '@/lib/map/pinLabel'
 import { buildImageUrl } from '@/lib/imageUrl'
@@ -20,7 +21,6 @@ export const PIN_COLORS = {
 
 /** Same sizes as the app (MapMarkerPainter). */
 export const PIN_CIRCLE_PX = 24
-export const BOOSTED_PHOTO_PX = 48
 export const DOT_PX = 19
 
 /** One simple drawing per type, white on the pin's colour (inline SVG). */
@@ -123,8 +123,9 @@ export function boostedPhotoUrl(item: ListingWithProperty): string | null {
   return ref ? buildImageUrl(ref, { width: 96, quality: 70 }) : null
 }
 
-/** A boosted listing's pin: bigger, with its first photo, at every zoom. Shows
- *  the drawing until the photo has loaded (and if it never does). */
+/** A boosted listing's pin once pins show: the same size as a normal pin, gold
+ *  edge and point, its first photo in the circle. Shows the drawing until the
+ *  photo has loaded (and if it never does). */
 export function createBoostedPinElement(item: ListingWithProperty, state: { selected: boolean }): HTMLDivElement {
   const label = pinLabelFor(item)
   const color = modeColor(item)
@@ -135,13 +136,12 @@ export function createBoostedPinElement(item: ListingWithProperty, state: { sele
   root.dataset.boosted = '1'
   const bg = state.selected ? PIN_COLORS.selected : '#FFFFFF'
   const button = pill(
-    { padding: '5px 14px 5px 5px', gap: '8px', borderWidth: '2px', borderStyle: 'solid', boxShadow: '0 4px 12px rgba(245,158,11,0.45)' },
+    { borderWidth: '2px', borderStyle: 'solid', boxShadow: '0 2px 8px rgba(245,158,11,0.45)', transform: state.selected ? 'scale(1.15)' : '' },
     bg,
   )
   button.style.borderColor = PIN_COLORS.gold
   button.setAttribute('aria-label', `Destacado: ${label.typeLine}, ${label.priceLine}`)
-  const c = circle(BOOSTED_PHOTO_PX, color, label.kind)
-  c.style.boxShadow = `0 0 0 2px ${PIN_COLORS.gold}`
+  const c = circle(PIN_CIRCLE_PX, color, label.kind)
   const url = boostedPhotoUrl(item)
   if (url) {
     const img = el('img', { width: '100%', height: '100%', objectFit: 'cover', display: 'none', position: 'absolute', inset: '0' })
@@ -159,21 +159,22 @@ export function createBoostedPinElement(item: ListingWithProperty, state: { sele
     words(`✦ ${label.typeLine}`, label.priceLine, {
       wordColor: state.selected ? PIN_COLORS.gold : PIN_COLORS.amberWord,
       priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
-      priceSize: 16,
+      priceSize: 14.5,
     }),
   )
-  root.append(button, pointer(PIN_COLORS.gold, 8))
+  root.append(button, pointer(PIN_COLORS.gold))
   return root
 }
 
-/** Far out: one small dot per listing, its type drawing inside. */
+/** Far out: one small dot per listing, its type drawing inside. A boosted
+ *  listing's dot has a gold edge instead of white — same size, no photo. */
 export function createDotElement(item: ListingWithProperty, onTap: () => void): HTMLDivElement {
   const label = pinLabelFor(item)
   const root = el('div', { display: 'flex' })
   root.dataset.listingId = item.listing.id
   const dot = el('button', {
     width: `${DOT_PX}px`, height: `${DOT_PX}px`, borderRadius: '50%', padding: '0',
-    border: '1.5px solid #FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
+    border: item.listing.isBoosted ? `2.5px solid ${PIN_COLORS.gold}` : '1.5px solid #FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
     alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
   })
   dot.type = 'button'

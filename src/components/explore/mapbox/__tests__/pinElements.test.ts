@@ -74,13 +74,25 @@ describe('createDotElement (far out)', () => {
   it('rent mode is orange', () => {
     expect(createDotElement(mapListing({ operation: 'alquiler' }), () => {}).querySelector<HTMLElement>('button')!.style.backgroundColor).toBe('rgb(179, 78, 0)')
   })
+  it('a boosted listing: the same dot and drawing, with a gold edge and no photo', () => {
+    const el = createDotElement(mapListing({ boosted: true, photos: 2 }), () => {})
+    const dot = el.querySelector<HTMLElement>('button')!
+    expect(dot.style.width).toBe('19px')
+    expect(dot.style.borderColor).toBe('rgb(245, 158, 11)')
+    expect(dot.querySelector('svg')).not.toBeNull()
+    expect(el.querySelector('img')).toBeNull()
+    expect(createDotElement(mapListing({}), () => {}).querySelector<HTMLElement>('button')!.style.borderColor).toBe('rgb(255, 255, 255)')
+  })
 })
 
-describe('createBoostedPinElement (every zoom)', () => {
-  it('bigger: a 48-px circle, gold edge, "✦ CASA" and the price', () => {
+describe('createBoostedPinElement (city and close)', () => {
+  it('the same size as a normal pin: a 24-px circle, gold edge, "✦ CASA" and the price', () => {
     const el = createBoostedPinElement(mapListing({ boosted: true, amount: 98000, currency: 'USD', photos: 2 }), { selected: false })
     const circle = el.querySelector<HTMLElement>('[data-role="circle"]')!
-    expect(circle.style.width).toBe('48px')
+    expect(circle.style.width).toBe('24px')
+    const normal = createPinElement(mapListing({ amount: 98000, currency: 'USD' }), { selected: false })
+    expect(el.querySelector<HTMLElement>('[data-role="pill"]')!.style.padding)
+      .toBe(normal.querySelector<HTMLElement>('[data-role="pill"]')!.style.padding)
     expect(el.querySelector<HTMLElement>('[data-role="pill"]')!.style.borderColor).toBe('rgb(245, 158, 11)')
     expect(el.textContent).toContain('✦ CASA')
     expect(el.textContent).toContain('US$ 98 mil')

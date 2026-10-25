@@ -30,10 +30,10 @@ describe('MapMarkerIndex', () => {
     expect(out.map((m) => (m.kind === 'dot' ? m.item.listing.id : '')).sort()).toEqual(['a', 'b', 'c'])
   })
 
-  it('far out: a boosted listing is still its own pin, never a dot', () => {
+  it('far out: a boosted listing is a dot the same size as the others (gold edge drawn by the dot)', () => {
     const out = new MapMarkerIndex([sameSpot('a'), sameSpot('boost', { boosted: true, boostScore: 2 })]).markersFor(metro, 9, null)
     const byId = Object.fromEntries(out.map((m) => [m.kind === 'group' ? 'g' : m.item.listing.id, m.kind]))
-    expect(byId).toEqual({ a: 'dot', boost: 'pin' })
+    expect(byId).toEqual({ a: 'dot', boost: 'dot' })
   })
 
   it('far out: dots outside the visible area are not drawn', () => {

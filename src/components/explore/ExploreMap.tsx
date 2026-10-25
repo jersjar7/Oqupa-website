@@ -2,8 +2,8 @@
 // ADR-031; the app moved in July, ADR-012). Style A (ADR-031 items 15–18): far
 // out a small dot per listing with its type drawing; closer in a white pin per
 // listing with the drawing, the type in words and the price, or a word group
-// ("5 aquí") where pins would overlap. Boosted listings are always their bigger
-// photo pin.
+// ("5 aquí") where pins would overlap. Boosted listings are the same size and
+// never grouped: far out a gold-edged dot, closer a gold-edged pin with photo.
 //
 // What to draw is decided by MapMarkerIndex (pure, tested); this component only
 // owns the Mapbox map, its DOM markers and the camera.
@@ -158,8 +158,8 @@ function MapboxExploreMap({
         const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'dot' ? 'center' : 'bottom' })
           .setLngLat([m.lng, m.lat])
           .addTo(map)
-        // Boosted pins sit above everything else; the selected one above them.
-        if (m.kind === 'pin' && m.item.listing.isBoosted) el.style.zIndex = '2'
+        // Boosted markers sit above everything else; the selected one above them.
+        if (m.kind !== 'group' && m.item.listing.isBoosted) el.style.zIndex = '2'
         if (m.kind === 'pin' && m.item.listing.id === latest.current.selectedId) el.style.zIndex = '3'
         entry = { key, marker, el }
         live.set(key, entry)
@@ -268,6 +268,6 @@ function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean): strin
     const l = m.item.listing
     return `pin:${l.id}:${l.id === selectedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
   }
-  if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${mode}`
+  if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${m.item.listing.isBoosted ? 'b' : ''}:${mode}`
   return `group:${m.id}:${m.count}:${mode}`
 }

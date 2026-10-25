@@ -54,9 +54,10 @@ export class MapMarkerIndex {
         const p = mapPointOf(item)
         if (inView(p.lat, p.lng)) out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
       }
+      // Boosted listings are dots too, the same size; the dot draws their gold edge.
       for (const item of this.boosted) {
         const p = mapPointOf(item)
-        if (inView(p.lat, p.lng)) out.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
+        if (inView(p.lat, p.lng)) out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
       }
       return out
     }
