@@ -20,6 +20,7 @@ import { thumbnail } from '@/lib/imageUrl'
 import { getExploreEmptyMessage } from '@/lib/exploreEmptyState'
 import { SlidersHorizontal, X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
+import type { ListingWithProperty } from '@/types/explore'
 
 function PropertyCardSkeleton() {
   return (
@@ -85,6 +86,13 @@ export default function ExplorePage() {
   // per visit — a stable order within the visit, fair turns at the top for
   // equally boosted listings across visits.
   const [listOpen, setListOpen] = useState(false)
+  // Opened from a shared "N aquí" pin (listings at the identical point,
+  // ADR-032): the list shows exactly those until the map moves or VER MAPA.
+  const [spotItems, setSpotItems] = useState<ListingWithProperty[] | null>(null)
+  const openSpot = useCallback((items: ListingWithProperty[]) => {
+    setSpotItems(items)
+    setListOpen(true)
+  }, [])
   const [sessionSeed] = useState(() => Math.floor(Math.random() * 2 ** 31))
   const [sheetHeight, setSheetHeight] = useState(0)
 
@@ -134,6 +142,9 @@ export default function ExplorePage() {
 
   const handleBoundsChanged = (bounds: Bounds) => {
     setMapBounds(bounds)
+    // On a computer the list sits beside the map: moving the map goes back
+    // to "what the map shows". (On a phone the list covers the map.)
+    if (isDesktop) setSpotItems(null)
   }
 
   // Prefetch thumbnail images when listing data arrives
@@ -211,6 +222,7 @@ export default function ExplorePage() {
             initialCenter={initialCenter}
             showPreviewCard={isDesktop}
             isVenta={isVenta}
+            onOpenSpot={openSpot}
           />
           </Suspense>
 
@@ -269,7 +281,7 @@ export default function ExplorePage() {
             </div>
           ) : (
             <MapListView
-              items={visible}
+              items={spotItems ?? visible}
               isVenta={isVenta}
               sessionSeed={sessionSeed}
               otherOperationCount={otherOperationCount}
@@ -303,7 +315,7 @@ export default function ExplorePage() {
       {!isDesktop && listOpen && (
         <div className="fixed inset-x-0 bottom-0 top-[72px] z-20 overflow-y-auto bg-cream px-4 pb-40 pt-4">
           <MapListView
-            items={visible}
+            items={spotItems ?? visible}
             isVenta={isVenta}
             sessionSeed={sessionSeed}
             otherOperationCount={otherOperationCount}
@@ -326,6 +338,7 @@ export default function ExplorePage() {
             isVenta={isVenta}
             onClick={() => {
               handleDismiss()
+              setSpotItems(null)
               setListOpen((open) => !open)
             }}
           />

@@ -14,7 +14,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
-import { DOT_TAP_ZOOM, framingForGroup } from '@/lib/map/zoomPolicy'
+import { DOT_TAP_ZOOM } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
@@ -36,13 +36,12 @@ export interface ExploreMapProps {
   initialCenter?: { lat: number; lng: number }
   showPreviewCard: boolean
   isVenta: boolean
+  /** A shared "N aquí" pin (listings at the identical point) was clicked:
+   *  list exactly those. */
+  onOpenSpot?: (items: ListingWithProperty[]) => void
 }
 
 interface LiveMarker { key: string; marker: mapboxgl.Marker; el: HTMLElement }
-
-/** On a phone, VER LISTA (84 px up, ~48 tall) and Filtros sit over the map's
- *  bottom; a group's listings must land above them. */
-const GROUP_BOTTOM_CLEARANCE_PHONE = 84 + 48 + 8
 
 export default function ExploreMap(props: ExploreMapProps) {
   if (!TOKEN) {
@@ -56,7 +55,7 @@ export default function ExploreMap(props: ExploreMapProps) {
 }
 
 function MapboxExploreMap({
-  items, selectedId, hoveredId, onSelect, onHover, onBoundsChanged, initialCenter, showPreviewCard, isVenta,
+  items, selectedId, hoveredId, onSelect, onHover, onBoundsChanged, initialCenter, showPreviewCard, isVenta, onOpenSpot,
 }: ExploreMapProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -66,8 +65,8 @@ function MapboxExploreMap({
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
 
   // Latest callbacks/values for listeners registered once.
-  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard })
-  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard }
+  const latest = useRef({ onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot })
+  latest.current = { onSelect, onHover, onBoundsChanged, selectedId, isVenta, showPreviewCard, onOpenSpot }
 
   const index = useMemo(() => new MapMarkerIndex(items), [items])
   const indexRef = useRef(index)
@@ -209,16 +208,10 @@ function MapboxExploreMap({
       // opening one listing (same as the app).
       return createDotElement(m.item, () => map.easeTo({ center: [m.lng, m.lat], zoom: DOT_TAP_ZOOM }))
     }
-    // Show every listing in the group, clear of what covers the map: on a
-    // phone, VER LISTA and Filtros along the bottom (same rule as the app).
+    // A shared pin: listings at the identical point, which no zoom can split
+    // (ADR-032). A click lists exactly those.
     return createGroupElement(m.count, latest.current.isVenta, () => {
-      const { clientWidth: width, clientHeight: height } = map.getContainer()
-      const f = framingForGroup({
-        members: m.members, width, height,
-        top: 12, bottom: latest.current.showPreviewCard ? 16 : GROUP_BOTTOM_CLEARANCE_PHONE,
-        expansionZoom: m.expansionZoom, maxZoom: 19,
-      })
-      map.easeTo({ center: [f.lng, f.lat], zoom: f.zoom })
+      latest.current.onOpenSpot?.(m.items)
     })
   }
 
