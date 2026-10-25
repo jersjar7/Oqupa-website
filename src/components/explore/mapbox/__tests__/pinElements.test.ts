@@ -4,7 +4,7 @@
 // of these tests pinned the solid-colour pills of map plan step 2; Jerson chose
 // style A on 2026-10-24, so the colour now lives in the small circle.
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, createRaisedPinElement, PIN_COLORS, RAISED_LEADER_PX, dotPx } from '../pinElements'
+import { createPinElement, createGroupElement, createDotElement, createBoostedPinElement, createRaisedPinElement, createRaisedAnchorElement, PIN_COLORS, RAISED_LEADER_PX, RAISED_ANCHOR_PX, dotPx } from '../pinElements'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 describe('createPinElement', () => {
@@ -152,10 +152,20 @@ describe('createRaisedPinElement', () => {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
     expect(line.style.height).toBe(`${RAISED_LEADER_PX}px`)
   })
-  it('the line ends at the dot\'s top edge, so the dot stays visible', () => {
+  it('the line ends at the top edge of the small black dot at its foot', () => {
     const el = createRaisedPinElement(mapListing(), vi.fn())
     expect(el.lastElementChild!.getAttribute('data-role')).toBe('dot-gap')
-    expect((el.lastElementChild as HTMLElement).style.height).toBe(`${(19 * 1.3) / 2}px`)
+    expect((el.lastElementChild as HTMLElement).style.height).toBe(`${RAISED_ANCHOR_PX / 2}px`)
+  })
+  it('the small black dot: dark, white edge, opens the listing', () => {
+    const onOpen = vi.fn()
+    const el = createRaisedAnchorElement(mapListing(), onOpen)
+    const b = el.querySelector<HTMLElement>('button')!
+    expect(b.style.width).toBe(`${RAISED_ANCHOR_PX}px`)
+    expect(b.style.backgroundColor).toBe('rgb(17, 24, 39)')
+    expect(b.querySelector('svg')).toBeNull()
+    b.click()
+    expect(onOpen).toHaveBeenCalledOnce()
   })
   it('a click opens the listing', () => {
     const onOpen = vi.fn()

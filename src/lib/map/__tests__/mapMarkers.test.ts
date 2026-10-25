@@ -98,9 +98,12 @@ describe('MapMarkerIndex', () => {
   describe('a raised dot', () => {
     const items = () => [mapListing({ id: 'a', lat: -5.19, lng: -80.63 }), mapListing({ id: 'b', lat: -5.15, lng: -80.70 })]
 
-    it('far out: the dot stays and its raised pin is drawn last, on its exact spot', () => {
+    // Its dot becomes a small black dot at the line's foot (Jerson, 2026-10-25):
+    // the drawing is already in the pin above.
+    it('far out: its dot becomes the small black dot, and the raised pin is drawn last, on its exact spot', () => {
       const out = new MapMarkerIndex(items()).markersFor(metro, 12, null, 'a')
-      expect(out.map((m) => m.kind)).toEqual(['dot', 'dot', 'raised'])
+      expect(out.map((m) => m.kind)).toEqual(['anchor', 'dot', 'raised'])
+      expect(out[0]!.kind === 'anchor' && out[0]!.item.listing.id).toBe('a')
       const r = out[2]!
       expect(r.kind === 'raised' && r.item.listing.id).toBe('a')
       expect(r.lat).toBeCloseTo(-5.19)

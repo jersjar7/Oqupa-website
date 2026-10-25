@@ -28,6 +28,9 @@ const BASE_DOT_PX = 19
 /** How far a tapped dot's pin rises on its leader line (ADR-033, as the app):
  *  3/4 of the first 30 (Jerson, 2026-10-25). */
 export const RAISED_LEADER_PX = 22.5
+/** While a pin is raised its dot becomes a small black dot of this size at
+ *  the line's foot (Jerson, 2026-10-25), the same as the app. */
+export const RAISED_ANCHOR_PX = 9
 
 /** The far-out dot's size. Jerson, 2026-10-25 ("the dots are too small"):
  *  1.3× on a phone-width screen, the same as the app; 1.5× on a computer,
@@ -266,12 +269,32 @@ export function createRaisedPinElement(item: ListingWithProperty, onOpen: () => 
     boxShadow: '0 0 0 1px #FFFFFF', borderRadius: '1px', transition: 'height 200ms ease-out',
   })
   leader.dataset.role = 'leader'
-  const gap = el('div', { height: `${dotPx() / 2}px`, width: '1px' })
+  const gap = el('div', { height: `${RAISED_ANCHOR_PX / 2}px`, width: '1px' })
   gap.dataset.role = 'dot-gap'
   root.append(pin, leader, gap)
   // Grow on the frame after it is on the page, so the transition runs.
   requestAnimationFrame(() => requestAnimationFrame(() => {
     leader.style.height = `${RAISED_LEADER_PX}px`
   }))
+  return root
+}
+
+/** The small black dot at a raised pin's foot, centred on the exact spot. The
+ *  type drawing is already in the pin above. A click opens the listing. */
+export function createRaisedAnchorElement(item: ListingWithProperty, onOpen: () => void): HTMLDivElement {
+  const root = el('div', { display: 'flex' })
+  root.dataset.listingId = item.listing.id
+  const b = el('button', {
+    width: `${RAISED_ANCHOR_PX}px`, height: `${RAISED_ANCHOR_PX}px`, borderRadius: '50%', padding: '0',
+    border: '1.5px solid #FFFFFF', boxShadow: '0 1px 2px rgba(0,0,0,0.3)', cursor: 'pointer',
+  })
+  b.type = 'button'
+  b.style.backgroundColor = PIN_COLORS.selected
+  b.setAttribute('aria-label', pinLabelFor(item).typeLine)
+  b.addEventListener('click', (e) => {
+    e.stopPropagation()
+    onOpen()
+  })
+  root.append(b)
   return root
 }

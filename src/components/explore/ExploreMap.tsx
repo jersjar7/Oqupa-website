@@ -16,7 +16,7 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
 import { showsDots } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
-import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement } from './mapbox/pinElements'
+import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement, createRaisedAnchorElement } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import { CardContent } from './PreviewCardContent'
@@ -188,12 +188,12 @@ function MapboxExploreMap({
       let entry = live.get(key)
       if (!entry) {
         const el = elementFor(m)
-        const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'dot' ? 'center' : 'bottom' })
+        const marker = new mapboxgl.Marker({ element: el, anchor: m.kind === 'dot' || m.kind === 'anchor' ? 'center' : 'bottom' })
           .setLngLat([m.lng, m.lat])
           .addTo(map)
         // Boosted markers sit above everything else; the selected one above them.
         if (m.kind !== 'group' && m.item.listing.isBoosted) el.style.zIndex = '2'
-        if (m.kind === 'raised') el.style.zIndex = '4'
+        if (m.kind === 'raised' || m.kind === 'anchor') el.style.zIndex = '4'
         if (m.kind === 'pin' && m.item.listing.id === latest.current.selectedId) el.style.zIndex = '3'
         entry = { key, marker, el }
         live.set(key, entry)
@@ -231,12 +231,13 @@ function MapboxExploreMap({
       // (ADR-033, same as the app).
       return createDotElement(m.item, () => setRaisedId(m.item.listing.id))
     }
-    if (m.kind === 'raised') {
+    if (m.kind === 'raised' || m.kind === 'anchor') {
       const id = m.item.listing.id
-      return createRaisedPinElement(m.item, () => {
+      const open = () => {
         setRaisedId(null)
         latest.current.onSelect(id)
-      })
+      }
+      return m.kind === 'raised' ? createRaisedPinElement(m.item, open) : createRaisedAnchorElement(m.item, open)
     }
     // A shared pin: listings at the identical point, which no zoom can split
     // (ADR-032). A click lists exactly those.
@@ -313,6 +314,7 @@ function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean): strin
     return `pin:${l.id}:${l.id === selectedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
   }
   if (m.kind === 'raised') return `raised:${m.item.listing.id}:${mode}`
+  if (m.kind === 'anchor') return `anchor:${m.item.listing.id}`
   if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${m.item.listing.isBoosted ? 'b' : ''}:${mode}`
   return `group:${m.id}:${m.count}:${mode}`
 }
