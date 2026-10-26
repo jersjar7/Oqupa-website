@@ -63,7 +63,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
                 ever cut ("DEPARTAMEN…" beside "US$ 98 mil", 2026-10-25). */}
             <span className="shrink-0 whitespace-nowrap text-xl font-bold leading-snug text-text-primary">{label.priceLine}</span>
             <span data-role="type-word" className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-bold tracking-wide" style={{ color }}>
-              <span className="shrink-0" dangerouslySetInnerHTML={{ __html: drawingSvg(label.kind, 18, color).replace(/fill="#fff"/g, `fill="${color}"`).replace(/fill="currentColor"/g, 'fill="#fff"') }} />
+              <span className="shrink-0" dangerouslySetInnerHTML={{ __html: drawingSvg(label.kind, 18, color).replace(/fill="#fff"/g, `fill="${color}"`).replace(/stroke="#fff"/g, `stroke="${color}"`).replace(/fill="currentColor"/g, 'fill="#fff"') }} />
               <span>{pinKindWord(label.kind)}</span>
             </span>
           </div>
