@@ -76,10 +76,11 @@ export async function asVisitor(page: Page, camera: { lat: number; lng: number; 
 }
 
 /** Errors the page itself reports. Third-party noise (analytics blocked,
- *  map tile aborts while moving) is not the site's fault and is left out. */
+ *  map tile aborts while moving, Google's own reCAPTCHA frame logging a
+ *  report-only policy note) is not the site's fault and is left out. */
 export function collectPageErrors(page: Page): string[] {
   const errors: string[] = []
-  const ignore = /googletagmanager|google-analytics|facebook|tiktok|clarity|doubleclick|ERR_ABORTED|net::ERR_FAILED.*(api\.mapbox|events\.mapbox)|AbortError|recaptcha|appCheck|App Check|Failed to load resource/i
+  const ignore = /googletagmanager|google-analytics|facebook|tiktok|clarity|doubleclick|ERR_ABORTED|net::ERR_FAILED.*(api\.mapbox|events\.mapbox)|AbortError|recaptcha|appCheck|App Check|Failed to load resource|report-only Content Security Policy/i
   // A local dev server uses a map key that Mapbox refuses for some tiles on
   // localhost; that is the key's domain list, not the site.
   const local = /localhost|127\.0\.0\.1/.test(process.env.E2E_BASE_URL ?? '')
