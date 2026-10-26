@@ -512,6 +512,30 @@ describe('firestoreService', () => {
       expect(id).toMatch(/^listing_/)
     })
 
+    // Map plan step 1 (ADR-031): every new listing records which app created
+    // it — the app writes 'ios' / 'android', the website 'web'.
+    it('records that the website created the listing', async () => {
+      setDocMock.mockClear()
+      await firestoreService.createListing({
+        role: 'owner',
+        ownerId: 'user-1',
+        propertyId: 'prop-1',
+        description: 'Nice house',
+        operationType: 'venta',
+        price: { amount: 100000, currency: 'USD' },
+        status: 'draft',
+        contactClickCount: 0,
+        wantsRealtorHelp: false,
+        maxRealtors: 3,
+        currentClaimsCount: 0,
+        isBoosted: false,
+        boostScore: 1,
+        showExactLocation: true,
+        media: { propertyPhotoUrls: [] },
+      })
+      expect(setDocMock.mock.calls[0]![1].createdFrom).toBe('web')
+    })
+
     it('calls setDoc with viewCount=0 and serverTimestamps', async () => {
       await firestoreService.createListing({
         role: 'owner',

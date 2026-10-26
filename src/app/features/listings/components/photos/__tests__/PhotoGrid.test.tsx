@@ -57,16 +57,22 @@ describe('PhotoGrid', () => {
     expect(badges).toHaveLength(1)
   })
 
-  it('renders both mobile long-press and desktop drag hints (responsive CSS picks one)', () => {
-    const items = [
-      existing('p1', 'a'),
-      existing('p2', 'b'),
-      existing('p3', 'c'),
-    ]
-    render(<PhotoGrid {...defaultProps(items)} />)
-
-    expect(screen.getByText('Mantén presionada una foto para reordenarla')).toBeTruthy()
+  // The hint follows mouse vs finger, not screen width: a narrow computer
+  // window was told to long-press, a tablet to drag (2026-10-24).
+  it('with a mouse: drag the photos; never long-press', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} }))
+    render(<PhotoGrid {...defaultProps([existing('p1', 'a'), existing('p2', 'b'), existing('p3', 'c')])} />)
     expect(screen.getByText('Arrastra las fotos para reordenarlas')).toBeTruthy()
+    expect(screen.queryByText(/Mantén presionada/)).toBeNull()
+    vi.unstubAllGlobals()
+  })
+
+  it('with a finger: hold a photo, then drag it', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
+    render(<PhotoGrid {...defaultProps([existing('p1', 'a'), existing('p2', 'b'), existing('p3', 'c')])} />)
+    expect(screen.getByText('Mantén presionada una foto y arrástrala para reordenarla')).toBeTruthy()
+    expect(screen.queryByText('Arrastra las fotos para reordenarlas')).toBeNull()
+    vi.unstubAllGlobals()
   })
 
   it('shows the "sube al menos 3" hint while below the threshold', () => {

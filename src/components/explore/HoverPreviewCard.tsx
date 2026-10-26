@@ -1,9 +1,9 @@
 import { useLayoutEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CardContent } from './MapPreviewCard'
+import CompactListingCard from './CompactListingCard'
 import type { ListingWithProperty } from '@/types/explore'
+import { cardSide, MAP_CARD_Z } from '@/lib/map/mapView'
 
 interface HoverPreviewCardProps {
   item: ListingWithProperty | null
@@ -13,7 +13,7 @@ interface HoverPreviewCardProps {
 /**
  * Hover preview card rendered outside the Google Maps overlay system.
  *
- * Uses position:fixed via a React portal to document.body so it never
+ * Uses position:fixed (kept inside the explore page, below the filters) so it never
  * competes with AdvancedMarker overlays for mouse events. The card is
  * positioned using getBoundingClientRect() from the marker DOM element
  * (found via data-marker-id attribute) and repositions on window resize.
@@ -24,7 +24,7 @@ interface HoverPreviewCardProps {
  */
 export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProps) {
   const navigate = useNavigate()
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  const [pos, setPos] = useState<{ left: number; top: number; bottom: number; side: 'above' | 'below' } | null>(null)
   const markerId = item?.listing.id ?? null
 
   useLayoutEffect(() => {
@@ -40,9 +40,14 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
         return
       }
       const rect = el.getBoundingClientRect()
+      // Below the pin when it is too close to the top of the map for the card
+      // to fit above (it covered the filters — UX review 2026-10-25).
+      const mapTop = document.querySelector('[data-testid="explore-map"]')?.getBoundingClientRect().top ?? 0
       setPos({
         left: rect.left + rect.width / 2,
         top: rect.top,
+        bottom: rect.bottom,
+        side: cardSide({ pinTop: rect.top, mapTop }),
       })
     }
 
@@ -51,7 +56,9 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
     return () => window.removeEventListener('resize', updatePos)
   }, [markerId])
 
-  return createPortal(
+  // Rendered in place, not moved to the end of the page: there it sat above
+  // everything, the filters included (2026-10-25).
+  return (
     <AnimatePresence>
       {item && pos && (
         <motion.div
@@ -64,13 +71,13 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
           style={{
             position: 'fixed',
             left: pos.left,
-            top: pos.top - 10,
+            top: pos.side === 'above' ? pos.top - 10 : pos.bottom - 5,
             // Use framer-motion's x/y for the offset so they compose with
             // scale instead of being overwritten by it.
             x: '-50%',
-            y: '-100%',
-            transformOrigin: 'bottom center',
-            zIndex: 9999,
+            y: pos.side === 'above' ? '-100%' : '0%',
+            transformOrigin: pos.side === 'above' ? 'bottom center' : 'top center',
+            zIndex: MAP_CARD_Z,
           }}
           role="button"
           tabIndex={0}
@@ -85,25 +92,27 @@ export default function HoverPreviewCard({ item, onHover }: HoverPreviewCardProp
             }
           }}
         >
-          <CardContent item={item} />
-
-          {/* Triangle pointer */}
-          <div className="flex justify-center">
-            <div
-              className="h-0 w-0"
-              style={{
-                borderLeft: '8px solid transparent',
-                borderRight: '8px solid transparent',
-                borderTop: '8px solid white',
-              }}
-            />
-          </div>
-
-          {/* Invisible bridge connecting the card to the price bubble below */}
-          <div style={{ height: 15, width: '100%' }} />
+          {/* Invisible bridge connecting the card to the pin, and the
+              triangle pointing at it, on whichever side the pin is. */}
+          {pos.side === 'below' && (
+            <>
+              <div style={{ height: 15, width: '100%' }} />
+              <div className="flex justify-center">
+                <div className="h-0 w-0" style={{ borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderBottom: '8px solid white' }} />
+              </div>
+            </>
+          )}
+          <CompactListingCard item={item} className="w-[370px]" />
+          {pos.side === 'above' && (
+            <>
+              <div className="flex justify-center">
+                <div className="h-0 w-0" style={{ borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid white' }} />
+              </div>
+              <div style={{ height: 15, width: '100%' }} />
+            </>
+          )}
         </motion.div>
       )}
-    </AnimatePresence>,
-    document.body,
+    </AnimatePresence>
   )
 }

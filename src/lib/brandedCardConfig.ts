@@ -16,7 +16,7 @@ import type { CardFormat } from './cardLayout'
 export interface BrandedCardConfig {
   format: CardFormat
   operationLabel: string    // "SE VENDE" | "SE ALQUILA"
-  propertyType: string      // Short: "Apto.", "Local", etc.
+  propertyType: string      // Short: "Depto.", "Local", etc.
   priceText: string         // "US$ 180,000" or "S/. 1,700/mes"
   specsText: string         // "3 hab. | 2 baños | 120 m²"
   locationText: string      // "San Eduardo, Piura"

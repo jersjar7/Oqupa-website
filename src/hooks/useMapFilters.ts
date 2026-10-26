@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import type { ListingWithProperty, MapFilters } from '@/types/explore'
+import type { Bounds } from '@/lib/map/mapPoint'
 
 export function useMapFilters(
   items: ListingWithProperty[],
   filters: MapFilters,
-  bounds?: google.maps.LatLngBoundsLiteral | null,
+  bounds?: Bounds | null,
 ) {
   const filtered = useMemo(() => {
     return items.filter(({ listing, property }) => {

@@ -4,6 +4,30 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-26 — The map in words, and Guardados sin cuenta
+
+### New Features
+
+- **The map moves to Mapbox and speaks in words** (ADR-031–033): far out, one dot per listing with its type drawing (gold edge = destacado); from zoom 14 every listing is its own pin with type and price; tapping a dot raises its pin on a line without moving the map. No groups — only listings at the identical point share an "N aquí" pin (ADR-032). No business names on the base map.
+- **VER LISTA**: the list of exactly what is in view, with Recomendados / Nuevos en el mercado / Precio / Más grandes primero; list and map point at each other; slim listing card on the map.
+- **Guardados sin cuenta** (ADR-034): a visitor's heart saves in the browser; one card after the third save ("No pierdas tus guardados. Crea una cuenta"); saves move into the account once it is fully set up; "Guardados" everywhere, with a header heart and the /guardados page.
+- "Departamento" everywhere for the flat type; live exchange rate for sorting by price.
+
+### Bug Fixes
+
+- List cards no longer cut "DEPARTAMENTO" next to long prices on a computer.
+- At tablet width the header buttons no longer break onto two lines or run off the screen.
+- On a phone, a visitor with saves gets the Guardados heart in the landing header.
+- Clicking "N aquí" shows every listing at that spot; the map fills its box.
+
+### Technical
+
+- End-to-end walkthrough tests (`npm run e2e`, Playwright) at computer, tablet and phone sizes; 72/72 passed against staging before this release.
+- Publish form's location picker on Mapbox, verified on staging (pin placed, district filled).
+- No Cloud Function, rules or index change needed; production rules verified identical to the repo.
+
+Approved by Jerson 2026-10-25 ("push the website to production" once walked through).
+
 ## 2026-10-24 — Data credit in Términos
 
 ### Technical

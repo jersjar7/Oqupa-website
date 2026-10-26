@@ -92,8 +92,9 @@ describe('PROPERTY_TYPE_LABELS', () => {
     }
   })
 
-  it('maps departamento to "Apartamento"', () => {
-    expect(PROPERTY_TYPE_LABELS.departamento).toBe('Apartamento')
+  // Jerson, 2026-10-24: "Let's use Departamento everywhere for consistency."
+  it('maps departamento to "Departamento"', () => {
+    expect(PROPERTY_TYPE_LABELS.departamento).toBe('Departamento')
   })
 
   it('maps habitacion to "Cuarto"', () => {
@@ -108,8 +109,8 @@ describe('PROPERTY_TYPE_SHORT_LABELS', () => {
     }
   })
 
-  it('maps departamento to abbreviated "Apto."', () => {
-    expect(PROPERTY_TYPE_SHORT_LABELS.departamento).toBe('Apto.')
+  it('maps departamento to abbreviated "Depto."', () => {
+    expect(PROPERTY_TYPE_SHORT_LABELS.departamento).toBe('Depto.')
   })
 
   it('maps hospedaje to "Aloja."', () => {
@@ -310,6 +311,15 @@ describe('propertyTypeIsRoom', () => {
     const others = Object.values(PropertyType).filter((t) => t !== 'habitacion')
     for (const type of others) {
       expect(propertyTypeIsRoom(type)).toBe(false)
+    }
+  })
+})
+
+describe('no property type shows "Apartamento"', () => {
+  it('neither label set uses the word', () => {
+    for (const label of [...Object.values(PROPERTY_TYPE_LABELS), ...Object.values(PROPERTY_TYPE_SHORT_LABELS)]) {
+      expect(label.toLowerCase()).not.toContain('apartamento')
+      expect(label.toLowerCase()).not.toContain('apto')
     }
   })
 })

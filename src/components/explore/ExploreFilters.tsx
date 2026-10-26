@@ -18,6 +18,10 @@ interface ExploreFiltersProps {
   resultCount: number
   total: number
   layout?: 'horizontal' | 'vertical'
+  /** False where Venta / Alquiler is already shown beside it (MapFilterBar). */
+  showOperation?: boolean
+  /** False where the count is already on screen (the list's heading). */
+  showCount?: boolean
 }
 
 export default function ExploreFilters({
@@ -26,6 +30,8 @@ export default function ExploreFilters({
   resultCount,
   total,
   layout = 'horizontal',
+  showOperation = true,
+  showCount = true,
 }: ExploreFiltersProps) {
   const isVertical = layout === 'vertical'
   const isAlquiler = filters.operationType === 'alquiler'
@@ -44,14 +50,13 @@ export default function ExploreFilters({
   return (
     <div className={isVertical ? 'space-y-5' : 'flex flex-wrap items-center gap-3'}>
       {/* Operation type */}
-      <div className="flex gap-1.5">
-        {[
-          { value: null, label: 'Todos' },
-          ...Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => ({
-            value: value as 'venta' | 'alquiler',
-            label,
-          })),
-        ].map((opt) => (
+      {showOperation && <div className="flex gap-1.5">
+        {/* Venta / Alquiler only — no "Todos": the map shows one or the
+            other, like the app (map plan step 4, Jerson 2026-10-24). */}
+        {Object.entries(OPERATION_TYPE_LABELS).map(([value, label]) => ({
+          value: value as 'venta' | 'alquiler',
+          label,
+        })).map((opt) => (
           <button
             key={opt.label}
             onClick={() =>
@@ -76,7 +81,7 @@ export default function ExploreFilters({
             {opt.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Rental duration (only when Alquiler is selected) */}
       {isAlquiler && (
@@ -199,11 +204,13 @@ export default function ExploreFilters({
       </div>
 
       {/* Result count */}
-      {!isVertical && <div className="h-5 w-px bg-border" />}
-      <p className="text-sm text-text-secondary">
-        <span className="font-bold text-text-primary">{resultCount}</span>
-        {' '}de {total} propiedades
-      </p>
+      {showCount && !isVertical && <div className="h-5 w-px bg-border" />}
+      {showCount && (
+        <p className="text-sm text-text-secondary">
+          <span className="font-bold text-text-primary">{resultCount}</span>
+          {' '}de {total} propiedades
+        </p>
+      )}
     </div>
   )
 }

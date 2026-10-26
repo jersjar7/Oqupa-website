@@ -23,6 +23,7 @@ import { card as cardUrl } from '@/lib/imageUrl'
 import PhotoTile from './PhotoTile'
 import PhotoDropzone from './PhotoDropzone'
 import { MAX_PHOTOS, type PhotoItem } from './usePhotoQueue'
+import { pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 interface PhotoGridProps {
   items: PhotoItem[]
@@ -70,6 +71,7 @@ export default function PhotoGrid({
 }: PhotoGridProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const pointer = usePointerKind()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -134,14 +136,11 @@ export default function PhotoGrid({
         Fotos ({items.length}/{MAX_PHOTOS})
       </h3>
       <p className="mt-1 text-xs text-text-tertiary">
-        La primera foto sera la portada de tu publicacion
+        La primera foto será la portada de tu publicación
         <InfoTip text="La portada es la primera imagen que ven los compradores en los resultados de búsqueda. Pon tu mejor foto primero." />
       </p>
-      <p className="mt-1 hidden text-xs text-text-tertiary sm:block">
-        Arrastra las fotos para reordenarlas
-      </p>
-      <p className="mt-1 text-xs text-text-tertiary sm:hidden">
-        Mantén presionada una foto para reordenarla
+      <p className="mt-1 text-xs text-text-tertiary">
+        {pointerWords(pointer).photoReorderHint}
       </p>
       {!canContinue && !photoError && (
         <p className="mt-1 text-xs text-text-tertiary">

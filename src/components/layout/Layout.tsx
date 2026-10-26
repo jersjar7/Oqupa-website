@@ -32,7 +32,9 @@ export default function Layout() {
         </PageTransition>
       </main>
 
-      <Footer />
+      {/* The explore page is a full-screen map: a footer behind it only ever
+          showed through as a strip under the header (2026-10-25). */}
+      {location.pathname !== '/explorar' && <Footer />}
     </div>
   )
 }

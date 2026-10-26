@@ -13,3 +13,6 @@ coverage
 # Firebase CLI debug output
 firebase-debug.log
 firebase-debug.*.log
+
+# Playwright walkthrough output
+e2e/.results/

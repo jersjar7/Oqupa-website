@@ -1,45 +1,100 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 import { Heart, Plus, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useListStore, isSavedInAnyList } from '@/stores/listStore'
+import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
+import { isAccountReady } from '@/lib/accountReady'
 import { listService } from '@/services/listService'
-import { setReturnUrl } from '@/lib/utils'
 import { Spinner } from '@/app/components/ui'
 import type { UserList } from '@/types/userList'
 
 interface SaveButtonProps {
   listingId: string
   className?: string
-  variant?: 'card' | 'page'
+  /** 'card': white heart on a dark circle, over a photo. 'plain': just the
+   *  heart — faded red outline, full red once saved — on a white card (the
+   *  slim map card; Jerson, 2026-10-25). 'page': the labelled button. */
+  variant?: 'card' | 'plain' | 'page'
+}
+
+/** Where the "Guardar en" menu goes (px from the top of the screen): below
+ *  the heart, or above it when there is no room below — it ran off the bottom
+ *  of the phone screen (2026-10-25). Never above the top of the screen. */
+export function popoverTop({ anchorTop, anchorBottom, popoverHeight, viewportHeight, gap = 6, margin = 8 }: {
+  anchorTop: number
+  anchorBottom: number
+  popoverHeight: number
+  viewportHeight: number
+  gap?: number
+  margin?: number
+}): number {
+  const below = anchorBottom + gap
+  if (below + popoverHeight <= viewportHeight - margin) return below
+  return Math.max(margin, anchorTop - gap - popoverHeight)
 }
 
 export default function SaveButton({ listingId, className = '', variant = 'card' }: SaveButtonProps) {
-  const navigate = useNavigate()
-  const firebaseUser = useAuthStore((s) => s.firebaseUser)
+  const authUser = useAuthStore((s) => s.firebaseUser)
+  // Until the account is fully set up, hearts save in the browser; the saves
+  // move in when it is ready (hostile review 2026-10-25).
+  const ready = useAuthStore((s) => isAccountReady(s.firebaseUser, s.user))
+  const firebaseUser = ready ? authUser : null
+  const deviceIds = useDeviceSavesStore((s) => s.ids)
+  const toggleDeviceSave = useDeviceSavesStore((s) => s.toggle)
   const lists = useListStore((s) => s.lists)
+  const listsArrived = useListStore((s) => !!authUser && s.loadedUid === authUser.uid)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const saved = isSavedInAnyList(lists, listingId)
+  // A visitor's saves live in this browser (Guardados sin cuenta, 2026-10-25).
+  // Someone mid set-up may also have account lists from before: a listing in
+  // them shows saved too, and its heart opens the menu (re-review).
+  const inAccount = !!authUser && isSavedInAnyList(lists, listingId)
+  const inDevice = deviceIds.includes(listingId)
+  const saved = firebaseUser ? isSavedInAnyList(lists, listingId) : inDevice || inAccount
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
 
+    // A visitor (or an account mid set-up): the heart saves and un-saves in
+    // this browser. The card after the third save is for visitors only.
     if (!firebaseUser) {
-      setReturnUrl(window.location.pathname)
-      navigate('/app/login')
+      if (inAccount && !inDevice) {
+        setOpen((v) => !v)
+        return
+      }
+      toggleDeviceSave(listingId, { canNudge: !authUser })
+      return
+    }
+
+    // The account's lists have not arrived yet: wait, or "no lists" would
+    // make a second Guardados (re-review).
+    if (!listsArrived) return
+
+    // An empty heart saves at once, to the default list; a full one opens
+    // the menu to change lists or un-save (2026-10-25: an empty heart used to
+    // open the menu instead of saving).
+    if (lists.length > 0 && !saved) {
+      const target = lists.find((l) => l.isDefault) ?? lists[0]!
+      setBusy(true)
+      try {
+        await listService.addListing(firebaseUser.uid, target.id, listingId)
+      } catch {
+        toast.error('No se pudo guardar')
+      } finally {
+        setBusy(false)
+      }
       return
     }
 
     if (lists.length === 0) {
       setBusy(true)
       try {
-        const listId = await listService.createList(firebaseUser.uid, 'Guardados', true)
+        const listId = await listService.ensureDefaultList(firebaseUser.uid)
         await listService.addListing(firebaseUser.uid, listId, listingId)
         toast.success('Guardado')
       } catch {
@@ -59,13 +114,15 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         ref={buttonRef}
         onClick={handleClick}
         disabled={busy}
-        aria-label={saved ? 'Administrar listas' : 'Guardar propiedad'}
+        aria-label={saved ? (firebaseUser || (inAccount && !inDevice) ? 'Administrar listas' : 'Quitar de Guardados') : 'Guardar propiedad'}
         className={
           variant === 'page'
             ? `inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide transition-colors hover:bg-black/5 ${
                 saved ? 'border-red-300 text-red-500' : 'border-border text-text-secondary'
               } ${className}`
-            : `flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors hover:bg-black/60 ${className}`
+            : variant === 'plain'
+              ? `flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 ${className}`
+              : `flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors hover:bg-black/60 ${className}`
         }
       >
         {busy ? (
@@ -75,6 +132,13 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
             <Heart className={`h-4 w-4 ${saved ? 'fill-red-500 text-red-500' : ''}`} />
             {saved ? 'Guardado' : 'Guardar'}
           </>
+        ) : variant === 'plain' ? (
+          <Heart
+            strokeWidth={2.25}
+            className={`h-5 w-5 transition-colors ${
+              saved ? 'fill-red-500 text-red-500' : 'fill-transparent text-red-500/60'
+            }`}
+          />
         ) : (
           <Heart
             className={`h-4 w-4 transition-colors ${
@@ -84,10 +148,10 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         )}
       </button>
 
-      {open && firebaseUser && (
+      {open && authUser && (
         <ListPopover
           listingId={listingId}
-          uid={firebaseUser.uid}
+          uid={authUser.uid}
           lists={lists}
           anchorRef={buttonRef}
           onClose={() => setOpen(false)}
@@ -112,18 +176,26 @@ function ListPopover({ listingId, uid, lists, anchorRef, onClose }: ListPopoverP
   const [newListName, setNewListName] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
 
-  const style = useMemo(() => {
+  const [style, setStyle] = useState<React.CSSProperties>({ position: 'fixed', visibility: 'hidden', zIndex: 99999 })
+  // Placed once it has its height, so it can open upward near the bottom of
+  // the screen; the visible height leaves out the phone browser's bars.
+  useLayoutEffect(() => {
     const el = anchorRef.current
-    if (!el) return {}
+    if (!el) return
     const rect = el.getBoundingClientRect()
     const popoverW = 224
     const vw = window.innerWidth
     let left = rect.right - popoverW
     if (left < 8) left = 8
     if (left + popoverW > vw - 8) left = vw - popoverW - 8
-    const top = rect.bottom + 6
-    return { position: 'fixed' as const, top, left, width: popoverW, zIndex: 99999 }
-  }, [anchorRef])
+    const top = popoverTop({
+      anchorTop: rect.top,
+      anchorBottom: rect.bottom,
+      popoverHeight: popoverRef.current?.offsetHeight ?? 0,
+      viewportHeight: window.visualViewport?.height ?? window.innerHeight,
+    })
+    setStyle({ position: 'fixed', top, left, width: popoverW, zIndex: 99999 })
+  }, [anchorRef, lists.length, creating])
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -187,6 +259,9 @@ function ListPopover({ listingId, uid, lists, anchorRef, onClose }: ListPopoverP
     <div
       ref={popoverRef}
       style={style}
+      // The menu is moved to the end of the page, but React still passes its
+      // taps to the card it came from — which opens the listing. Stop them.
+      onClick={(e) => e.stopPropagation()}
       className="overflow-hidden rounded-xl border border-border bg-white shadow-large"
     >
       <div className="p-2">

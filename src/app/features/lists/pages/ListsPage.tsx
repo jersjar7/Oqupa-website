@@ -10,7 +10,8 @@ import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import type { UserList } from '@/types/userList'
 
 export default function ListsPage() {
-  useSetPageMeta({ title: 'Mis listas', subtitle: 'Colecciones de propiedades guardadas.' })
+  // The panel's title says it once; no subtitle restating it (2026-10-25).
+  useSetPageMeta({ title: 'Guardados' })
 
   const firebaseUser = useAuthStore((s) => s.firebaseUser)
   const lists = useListStore((s) => s.lists)
@@ -75,8 +76,7 @@ export default function ListsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-[28px] font-normal text-text-primary">Mis listas</h1>
+      <div className="mb-6 flex items-center justify-end">
         <button
           onClick={() => setCreating(true)}
           className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-opacity hover:opacity-90"
