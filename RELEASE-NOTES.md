@@ -19,6 +19,7 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 - At tablet width the header buttons no longer break onto two lines or run off the screen.
 - On a phone, a visitor with saves gets the Guardados heart in the landing header.
 - Clicking "N aquí" shows every listing at that spot; the map fills its box.
+- Land listings' drawing on list cards showed only its flag (follow-up the same night, after checking oqupa.com).
 
 ### Technical
 
