@@ -72,7 +72,7 @@ function AuthBlock() {
       <Link
         to="/app/login"
         onClick={() => setReturnUrl(location.pathname)}
-        className="inline-flex h-10 items-center rounded-full border-[1.5px] border-secondary px-4 font-sans text-sm font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover sm:h-12 sm:px-6 sm:text-base"
+        className="inline-flex h-10 items-center whitespace-nowrap rounded-full border-[1.5px] border-secondary px-4 font-sans text-sm font-medium uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover sm:h-12 sm:px-6 sm:text-base"
       >
         Iniciar sesión
       </Link>
@@ -202,13 +202,13 @@ export default function Header({
                 e.preventDefault()
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
-              className="flex items-center"
+              className="flex shrink-0 items-center"
             >
               <img
                 src={logo}
                 alt="Oqupa"
-                className={`transition-all duration-300 ${
-                  isScrolled ? 'h-12' : 'h-[60px]'
+                className={`max-w-none transition-all duration-300 ${
+                  isScrolled ? 'h-12' : 'h-[60px] md:h-12 lg:h-[60px]'
                 }`}
               />
             </a>
@@ -216,14 +216,17 @@ export default function Header({
 
           {/* Desktop Nav (full variant) */}
           {variant === 'full' && (
-            <nav className="hidden items-center gap-8 md:flex">
+            <nav className="hidden items-center gap-3 md:flex lg:gap-8">
+              {/* Between tablet and computer width the row is tight: smaller
+                  gaps and pills keep every label on one line (they broke in
+                  two at 820px, 2026-10-25). */}
               {NAV_LINKS.map((link) =>
                 link.isRoute ? (
                   <Link
                     key={link.label}
                     to={link.href}
                     onClick={link.beforeNavigate}
-                    className={`font-sans text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                    className={`whitespace-nowrap font-sans text-xs font-medium uppercase transition-colors duration-200 hover:text-primary lg:text-sm ${
                       isScrolled ? 'text-secondary' : 'text-secondary'
                     }`}
                   >
@@ -238,7 +241,7 @@ export default function Header({
                         ? handleAction(e, link.action)
                         : handleSmoothScroll(e, link.href)
                     }
-                    className={`font-sans text-sm font-medium uppercase transition-colors duration-200 hover:text-primary ${
+                    className={`whitespace-nowrap font-sans text-xs font-medium uppercase transition-colors duration-200 hover:text-primary lg:text-sm ${
                       isScrolled ? 'text-secondary' : 'text-secondary'
                     }`}
                   >
@@ -247,7 +250,7 @@ export default function Header({
                 )
               )}
               <GuardadosLink />
-              <PublishCta />
+              <PublishCta className="whitespace-nowrap md:px-4 md:text-sm lg:px-6 lg:text-base" />
               <AuthBlock />
             </nav>
           )}
@@ -265,6 +268,15 @@ export default function Header({
               <div className="hidden sm:flex">
                 <AuthBlock />
               </div>
+            </div>
+          )}
+
+          {/* Phone, full variant: the Guardados heart beside the menu, so a
+              visitor's saves are one tap away on every page (ADR-034 item 6;
+              it was missing here, 2026-10-25). */}
+          {variant === 'full' && (
+            <div className="ml-auto mr-1 md:hidden">
+              <GuardadosLink />
             </div>
           )}
 

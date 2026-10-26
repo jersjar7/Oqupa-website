@@ -58,12 +58,13 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
           )}
         </div>
         <div className="flex flex-col px-3.5 pb-3 pt-2">
-          <div className="flex items-center gap-2">
-            {/* Short of room, the type word gives way, never the price. */}
+          <div className="flex flex-wrap items-center gap-x-2">
+            {/* Short of room, the type word moves under the price; neither is
+                ever cut ("DEPARTAMEN…" beside "US$ 98 mil", 2026-10-25). */}
             <span className="shrink-0 whitespace-nowrap text-xl font-bold leading-snug text-text-primary">{label.priceLine}</span>
-            <span className="flex min-w-0 flex-1 items-center justify-end gap-1.5 text-[13px] font-bold tracking-wide" style={{ color }}>
+            <span data-role="type-word" className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-bold tracking-wide" style={{ color }}>
               <span className="shrink-0" dangerouslySetInnerHTML={{ __html: drawingSvg(label.kind, 18, color).replace(/fill="#fff"/g, `fill="${color}"`).replace(/fill="currentColor"/g, 'fill="#fff"') }} />
-              <span className="truncate">{pinKindWord(label.kind)}</span>
+              <span>{pinKindWord(label.kind)}</span>
             </span>
           </div>
           {details && <span className="truncate text-sm leading-snug text-text-secondary">{details}</span>}
