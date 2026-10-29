@@ -163,6 +163,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {listing.status === 'active' && !listing.isBoosted && (
           <BoostPurchaseFlow
             listingId={listing.id}
+            placement="my_listings"
             onSuccess={handleBoostSuccess}
           >
             {(openFlow) => (

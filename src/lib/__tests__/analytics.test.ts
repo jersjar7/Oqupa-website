@@ -545,7 +545,7 @@ describe('AnalyticsLogger — A0 additions', () => {
       },
     )
 
-    it.each(['create', 'edit', 'reminder'] as const)(
+    it.each(['create', 'edit', 'reminder', 'my_listings', 'listing_page'] as const)(
       'boost_offer_viewed placement %s is sent verbatim',
       (placement) => {
         AnalyticsLogger.boostOfferViewed(placement)

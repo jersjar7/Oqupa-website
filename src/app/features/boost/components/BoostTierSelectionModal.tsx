@@ -6,7 +6,8 @@ import type { BoostTier, BoostTierConfiguration } from '@/types/boost'
 
 interface BoostTierSelectionModalProps {
   isOpen: boolean
-  onClose: () => void
+  /** Receives the tier highlighted at closing, for `boost_checkout_abandoned`. */
+  onClose: (highlightedTier: BoostTier) => void
   onConfirm: (tier: BoostTier) => void
   isProcessing: boolean
 }
@@ -23,7 +24,7 @@ export default function BoostTierSelectionModal({
   const selectedConfig = tiers?.find((t) => t.tier === selectedTier)
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={() => onClose(selectedTier)}>
       <div className="text-center">
         <h2 className="font-sans text-[28px] font-medium text-secondary">
           Destaca tu publicación

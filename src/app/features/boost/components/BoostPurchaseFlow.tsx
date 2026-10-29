@@ -5,12 +5,15 @@ import BoostTierSelectionModal from './BoostTierSelectionModal'
 import StripePaymentModal from './StripePaymentModal'
 import { useCreateBoostPayment, useBoostTiers, usePollPaymentCompletion } from '@/hooks/useBoost'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { AnalyticsLogger, type BoostOfferPlacement } from '@/lib/analytics'
 import type { BoostTier } from '@/types/boost'
 
 type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'success' | 'error'
 
 interface BoostPurchaseFlowProps {
   listingId: string
+  /** Where the offer is shown. Sent as `boost_offer_viewed.placement`. */
+  placement: BoostOfferPlacement
   /** Called when boost purchase completes successfully */
   onSuccess: (data: { tier: BoostTier; durationDays: number }) => void
   /** Render prop to trigger the flow */
@@ -27,6 +30,7 @@ interface BoostPurchaseFlowProps {
  */
 export default function BoostPurchaseFlow({
   listingId,
+  placement,
   onSuccess,
   children,
 }: BoostPurchaseFlowProps) {
@@ -36,15 +40,32 @@ export default function BoostPurchaseFlow({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [selectedTier, setSelectedTier] = useState<BoostTier | null>(null)
   const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Set once this opening was abandoned at payment. Cancelling payment returns
+  // to tier selection, and closing that is the same abandonment — the app
+  // sends one event for it, not two.
+  const abandonedAtPayment = useRef(false)
 
   const createPayment = useCreateBoostPayment()
   const pollCompletion = usePollPaymentCompletion()
   const { data: tiers } = useBoostTiers()
   const queryClient = useQueryClient()
 
-  const openFlow = useCallback(() => setStep('tier-selection'), [])
+  const openFlow = useCallback(() => {
+    abandonedAtPayment.current = false
+    track(() => AnalyticsLogger.boostOfferViewed(placement))
+    setStep('tier-selection')
+  }, [placement])
+
+  const handleTierClose = useCallback((highlightedTier: BoostTier) => {
+    // A tier already confirmed, whose payment is still being created, was not abandoned.
+    if (!createPayment.isPending && !abandonedAtPayment.current) {
+      track(() => AnalyticsLogger.boostCheckoutAbandoned(highlightedTier, 'tier_selection'))
+    }
+    setStep('closed')
+  }, [createPayment.isPending])
 
   const handleTierConfirm = useCallback(async (tier: BoostTier) => {
+    track(() => AnalyticsLogger.boostTierSelected(tier))
     setSelectedTier(tier)
     try {
       const result = await createPayment.mutateAsync({ listingId, boostTier: tier })
@@ -103,6 +124,11 @@ export default function BoostPurchaseFlow({
     setPaymentId('')
   }, [])
 
+  const handlePaymentAbandon = useCallback(() => {
+    abandonedAtPayment.current = true
+    if (selectedTier) track(() => AnalyticsLogger.boostCheckoutAbandoned(selectedTier, 'payment'))
+  }, [selectedTier])
+
   const handlePaymentError = useCallback((message: string) => {
     setErrorMessage(message)
     setStep('error')
@@ -142,7 +168,7 @@ export default function BoostPurchaseFlow({
       {/* Step 1: Tier selection */}
       <BoostTierSelectionModal
         isOpen={step === 'tier-selection'}
-        onClose={() => setStep('closed')}
+        onClose={handleTierClose}
         onConfirm={handleTierConfirm}
         isProcessing={createPayment.isPending}
       />
@@ -154,6 +180,7 @@ export default function BoostPurchaseFlow({
           clientSecret={clientSecret}
           onSuccess={handlePaymentSuccess}
           onCancel={handlePaymentCancel}
+          onAbandon={handlePaymentAbandon}
           onError={handlePaymentError}
         />
       )}
@@ -265,6 +292,15 @@ export default function BoostPurchaseFlow({
 
     </>
   )
+}
+
+/** Analytics only observes: a failure there must never break or delay the purchase. */
+function track(send: () => void) {
+  try {
+    send()
+  } catch {
+    // Ignored on purpose.
+  }
 }
 
 /** Maps Cloud Function error messages to user-friendly Spanish text */

@@ -12,8 +12,17 @@ import { PropertyType, type Currency } from '@/types/enums'
 /** How a listing claim attempt ended. Sent as `claim_attempted.result`. */
 export type ClaimAttemptResult = 'ok' | 'limit_reached' | 'full' | 'duplicate' | 'error'
 
-/** Where a boost offer was shown. Sent as `boost_offer_viewed.placement`. */
-export type BoostOfferPlacement = 'create' | 'edit' | 'reminder'
+/**
+ * Where a boost offer was shown. Sent as `boost_offer_viewed.placement`.
+ * `my_listings` is the dashboard card, `listing_page` the owner's view of the
+ * listing page. `create`, `edit` and `reminder` are kept for future placements.
+ */
+export type BoostOfferPlacement =
+  | 'create'
+  | 'edit'
+  | 'reminder'
+  | 'my_listings'
+  | 'listing_page'
 
 /** Who tapped "contact". Sent as `contact_tapped.auth_state`. */
 export type ContactTapAuthState = 'guest' | 'unverified' | 'verified'
