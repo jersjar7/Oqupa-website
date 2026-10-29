@@ -56,6 +56,12 @@ export interface FilterSetParams {
   maxPricePen?: number | null
   minPriceUsd?: number | null
   maxPriceUsd?: number | null
+  /**
+   * The currency the user typed the price in, which decides which range is
+   * sent when both are set. The website's filter has no currency yet, so it
+   * leaves this unset.
+   */
+  priceInputCurrency?: Currency | null
 }
 
 // Firebase limits. Longer values are truncated by Firebase or the event is
@@ -175,6 +181,17 @@ function listingSegmentParams(extras: ListingSegmentParams = {}) {
  * `property_types` is sorted and comma-joined so the same selection always
  * produces the same string. Price bounds are what the user typed into the
  * filter, not any listing's price.
+ *
+ * **Only one price range is ever sent**, the same rule as
+ * `_filterSetParameters` in the app. When one range is converted from the
+ * other at the live rate, the converted one is a number nobody typed. So:
+ * - both set: the one in `priceInputCurrency`; neither if that is unknown;
+ * - one set, in `priceInputCurrency` or with it unset: that one;
+ * - one set in the other currency: neither (it is the converted range).
+ *
+ * Dropping the range never drops `filter_type` or `result_count`: it is still
+ * a price filter, only its bounds go unreported. `price_currency` is always
+ * the single sent range's currency.
  */
 function filterSetParams(filters: FilterSetParams): Record<string, ParamValue> {
   const propertyTypes = (filters.propertyTypes ?? [])
@@ -182,19 +199,27 @@ function filterSetParams(filters: FilterSetParams): Record<string, ParamValue> {
     .sort()
   const hasPenRange = filters.minPricePen != null || filters.maxPricePen != null
   const hasUsdRange = filters.minPriceUsd != null || filters.maxPriceUsd != null
-  // Follows the ranges actually set. The filter allows both at once (OR
-  // logic), and then neither single currency would be true.
-  const currencies = [hasPenRange && 'PEN', hasUsdRange && 'USD'].filter(Boolean)
+  const onlyRangeCurrency: Currency | null =
+    hasPenRange && !hasUsdRange ? 'PEN' : hasUsdRange && !hasPenRange ? 'USD' : null
+  const inputCurrency = filters.priceInputCurrency ?? null
+  const sentCurrency: Currency | null =
+    hasPenRange && hasUsdRange
+      ? inputCurrency
+      : inputCurrency == null || inputCurrency === onlyRangeCurrency
+        ? onlyRangeCurrency
+        : null
+  const sendPen = sentCurrency === 'PEN'
+  const sendUsd = sentCurrency === 'USD'
   return {
     filter_type: filters.filterType,
     operation_type: filters.operationType,
     property_types: propertyTypes.length ? propertyTypes.join(',') : undefined,
     rental_duration: filters.rentalDuration,
-    min_price_pen: filters.minPricePen,
-    max_price_pen: filters.maxPricePen,
-    min_price_usd: filters.minPriceUsd,
-    max_price_usd: filters.maxPriceUsd,
-    price_currency: currencies.length ? currencies.join(',') : undefined,
+    min_price_pen: sendPen ? filters.minPricePen : undefined,
+    max_price_pen: sendPen ? filters.maxPricePen : undefined,
+    min_price_usd: sendUsd ? filters.minPriceUsd : undefined,
+    max_price_usd: sendUsd ? filters.maxPriceUsd : undefined,
+    price_currency: sentCurrency ?? undefined,
   }
 }
 

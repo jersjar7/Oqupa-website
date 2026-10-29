@@ -7,6 +7,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useExploreInteraction } from '@/hooks/useExploreInteraction'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
+import { useFilterAnalytics } from '@/hooks/useFilterAnalytics'
 // Mapbox is large: loaded only when the explore page is opened.
 const ExploreMap = lazy(() => import('@/components/explore/ExploreMap'))
 import ExploreFilters from '@/components/explore/ExploreFilters'
@@ -81,6 +82,14 @@ export default function ExplorePage() {
     refetch,
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
+  // filter_applied / search_no_results (metrics plan A12a). Counts every
+  // matching listing, not just those in view, as the app does — so it waits
+  // until the whole catalogue for this operation has loaded.
+  useFilterAnalytics(
+    filters,
+    filtered.length,
+    !isLoading && !error && !isFetchingNextPage && (!hasNextPage || hitPageCeiling),
+  )
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [toastDismissed, setToastDismissed] = useState(false)
   const isVenta = filters.operationType !== 'alquiler'
