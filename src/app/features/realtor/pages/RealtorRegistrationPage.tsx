@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,6 +20,9 @@ export default function RealtorRegistrationPage() {
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  // realtor_application_started goes out once per visit; the effect below
+  // reruns whenever the user object changes.
+  const startedSentRef = useRef(false)
 
   const {
     register,
@@ -37,6 +40,21 @@ export default function RealtorRegistrationPage() {
 
   useEffect(() => {
     if (!user) return
+
+    // Anyone who can still apply, including the incomplete-profile screen, to
+    // match the app. Not verified realtors or a pending application.
+    if (
+      !startedSentRef.current &&
+      !user.isVerifiedRealtor &&
+      user.realtorApplicationStatus !== 'pending'
+    ) {
+      startedSentRef.current = true
+      try {
+        AnalyticsLogger.realtorApplicationStarted()
+      } catch {
+        // Analytics must never affect the page.
+      }
+    }
 
     // Pre-flight checks
     if (!user.name || !user.isPhoneVerified || !user.contactInfo?.whatsappPhoneNumber) {

@@ -20,6 +20,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/lib/firebase'
 import { getOrCreateClientId } from '@/lib/clientId'
+import { AnalyticsLogger, type ClaimAttemptResult } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import type { ContactTimeSlot, SupportedCountryCode, OperationType } from '@/types/enums'
@@ -38,6 +39,35 @@ function mapClaimError(err: unknown): string {
     return e.message
   }
   return 'No se pudo reclamar la oportunidad. Intenta de nuevo.'
+}
+
+// Rejection reasons claimOpportunity sends as HttpsError details: { reason }.
+const CLAIM_REJECTION_REASONS: readonly ClaimAttemptResult[] = [
+  'limit_reached',
+  'full',
+  'duplicate',
+  'error',
+]
+
+// Reads the claim_attempted result off a claimOpportunity error. Only a
+// Functions error carries a server reason; anything else, or a reason we do
+// not know, is 'error'.
+function claimResultFromError(err: unknown): ClaimAttemptResult {
+  const e = err as { code?: unknown; details?: { reason?: unknown } }
+  const isFunctionsError =
+    typeof e?.code === 'string' && e.code.startsWith('functions/')
+  if (!isFunctionsError) return 'error'
+  const reason = e.details?.reason
+  return CLAIM_REJECTION_REASONS.find((r) => r === reason) ?? 'error'
+}
+
+// Analytics only observes: a failure here must never change the claim outcome.
+function logClaimAttempt(listingId: string, result: ClaimAttemptResult) {
+  try {
+    AnalyticsLogger.claimAttempted(listingId, result)
+  } catch {
+    // ignore
+  }
 }
 
 // Strip undefined values recursively (Firestore rejects undefined)
@@ -780,8 +810,10 @@ export const firestoreService = {
     try {
       await claim({ listingId: data.listingId })
     } catch (err) {
+      logClaimAttempt(data.listingId, claimResultFromError(err))
       throw new Error(mapClaimError(err))
     }
+    logClaimAttempt(data.listingId, 'ok')
   },
 
   async getClaimedLeadsWithDetails(
