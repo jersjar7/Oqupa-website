@@ -73,8 +73,7 @@ export default function BoostPurchaseFlow({
       setPaymentId(result.paymentId)
       setStep('payment')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al crear el pago'
-      const userMessage = mapErrorToSpanish(message)
+      const userMessage = mapErrorToSpanish(err)
       setErrorMessage(userMessage)
       setStep('error')
       toast.error(userMessage)
@@ -303,22 +302,33 @@ function track(send: () => void) {
   }
 }
 
-/** Maps Cloud Function error messages to user-friendly Spanish text */
-function mapErrorToSpanish(message: string): string {
-  if (message.includes('unauthenticated')) {
-    return 'Debes iniciar sesión para destacar tu publicación'
+/**
+ * Maps a refused createBoostPaymentIntent call to Spanish text. The SDK error
+ * carries the code ('functions/already-exists') and the server's details; the
+ * message itself never contains the code name.
+ */
+function mapErrorToSpanish(err: unknown): string {
+  const { code, message, details } = (err ?? {}) as { code?: unknown; message?: unknown; details?: unknown }
+  switch (typeof code === 'string' ? code.replace(/^functions\//, '') : '') {
+    case 'unauthenticated':
+      return 'Debes iniciar sesión para destacar tu publicación'
+    case 'not-found':
+      return 'Publicación no encontrada'
+    case 'permission-denied':
+      return 'Solo puedes destacar tus propias publicaciones'
+    case 'failed-precondition':
+      return 'La publicación debe estar activa para ser destacada'
+    case 'already-exists': {
+      // Two refusals share this code; details.reason says which. Older servers
+      // send no reason, but their in-progress message says so.
+      const reason = (details as { reason?: unknown } | null | undefined)?.reason
+      const inProgress = reason === 'paymentInProgress'
+        || (reason === undefined && typeof message === 'string' && message.includes('pago en proceso'))
+      return inProgress
+        ? 'Ya tienes un pago en proceso para esta publicación. Espera a que termine.'
+        : 'Esta publicación ya está destacada'
+    }
+    default:
+      return 'Error al procesar el pago. Intenta de nuevo.'
   }
-  if (message.includes('not-found')) {
-    return 'Publicación no encontrada'
-  }
-  if (message.includes('permission-denied')) {
-    return 'Solo puedes destacar tus propias publicaciones'
-  }
-  if (message.includes('failed-precondition')) {
-    return 'La publicación debe estar activa para ser destacada'
-  }
-  if (message.includes('already-exists')) {
-    return 'Esta publicación ya está destacada'
-  }
-  return 'Error al procesar el pago. Intenta de nuevo.'
 }
