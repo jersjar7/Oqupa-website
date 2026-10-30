@@ -808,3 +808,17 @@ describe('AnalyticsLogger — dev console line', () => {
     expect(setUserPropertiesMock).toHaveBeenCalledTimes(1)
   })
 })
+
+// A12c: a label must be removable — on sign-out, and when a person no longer
+// has one — or it stays for the rest of the visit, under whoever comes next.
+describe('AnalyticsLogger.clearUserProperties', () => {
+  beforeEach(() => setUserPropertiesMock.mockReset())
+
+  it('removes all three by sending null to Firebase, in one call', () => {
+    AnalyticsLogger.clearUserProperties()
+    expect(setUserPropertiesMock).toHaveBeenCalledExactlyOnceWith(
+      { __analytics: true },
+      { user_segment: null, home_district: null, is_realtor: null },
+    )
+  })
+})

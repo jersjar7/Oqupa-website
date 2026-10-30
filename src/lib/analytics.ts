@@ -422,4 +422,16 @@ export const AnalyticsLogger = {
     }
     setUserProperties(analytics, values)
   },
+
+  /**
+   * Removes the three audience user properties (metrics plan A12c).
+   *
+   * setUserProperties above never sends null, so without this a label stays
+   * for the rest of the visit — after sign-out, and under whoever signs in
+   * next. Called on sign-out, and when a person has no labels.
+   */
+  clearUserProperties: () => {
+    printInDev('user_segment, home_district, is_realtor (cleared)')
+    setUserProperties(analytics, { user_segment: null, home_district: null, is_realtor: null })
+  },
 }

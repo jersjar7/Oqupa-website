@@ -6,7 +6,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 
 type Options = { isStillSignedIn?: () => boolean }
-const { applyMock } = vi.hoisted(() => ({ applyMock: vi.fn(async (_uid: string, _options?: Options) => {}) }))
+const { applyMock, clearMock } = vi.hoisted(() => ({
+  applyMock: vi.fn(async (_uid: string, _options?: Options) => {}),
+  clearMock: vi.fn(),
+}))
 const mockAuthState = { firebaseUser: null as { uid: string } | null }
 
 vi.mock('@/stores/authStore', () => ({
@@ -14,6 +17,7 @@ vi.mock('@/stores/authStore', () => ({
 }))
 vi.mock('@/services/analyticsLabelsService', () => ({
   applyAnalyticsLabels: (uid: string, options?: Options) => applyMock(uid, options),
+  clearAnalyticsLabels: () => clearMock(),
 }))
 
 import AnalyticsLabelsInitializer from '../AnalyticsLabelsInitializer'
@@ -21,6 +25,7 @@ import AnalyticsLabelsInitializer from '../AnalyticsLabelsInitializer'
 describe('AnalyticsLabelsInitializer', () => {
   beforeEach(() => {
     applyMock.mockClear()
+    clearMock.mockClear()
     mockAuthState.firebaseUser = null
   })
 
@@ -55,6 +60,15 @@ describe('AnalyticsLabelsInitializer', () => {
   it('does nothing for a guest', () => {
     render(<AnalyticsLabelsInitializer />)
     expect(applyMock).not.toHaveBeenCalled()
+    expect(clearMock).not.toHaveBeenCalled()
+  })
+
+  it('signing out clears the labels, so a guest is not tagged', () => {
+    mockAuthState.firebaseUser = { uid: 'u1' }
+    const { rerender } = render(<AnalyticsLabelsInitializer />)
+    mockAuthState.firebaseUser = null
+    rerender(<AnalyticsLabelsInitializer />)
+    expect(clearMock).toHaveBeenCalledOnce()
   })
 
   it('tells a read for the last person that they have gone', () => {

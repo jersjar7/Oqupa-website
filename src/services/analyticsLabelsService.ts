@@ -28,8 +28,8 @@ const readFromFirestore: ReadLabels = async (uid) => {
 
 /**
  * Never throws. The labels are never shown to the user, and this site goes
- * live before the rule that lets it read them: no doc yet, a refused read or
- * no network all simply set nothing.
+ * live before the rule that lets it read them: a refused read or no network
+ * changes nothing. A missing doc does clear the labels: the person has none.
  */
 export async function applyAnalyticsLabels(
   uid: string,
@@ -44,8 +44,12 @@ export async function applyAnalyticsLabels(
 ): Promise<void> {
   try {
     const labels = await read(uid)
-    if (!labels) return
     if (isStillSignedIn && !isStillSignedIn()) return
+    // Cleared first, every time: no doc means no label (a new account, or a
+    // group the person has left), and a label the doc no longer carries must
+    // not linger from earlier in the visit or from someone else.
+    AnalyticsLogger.clearUserProperties()
+    if (!labels) return
     const { userSegment, homeDistrict, isRealtor } = labels
     // A field of the wrong type is left out, never sent: an odd value in
     // Analytics would split the reports into a group nobody defined.
@@ -56,5 +60,17 @@ export async function applyAnalyticsLabels(
     })
   } catch (err) {
     if (import.meta.env.DEV) console.info('[analyticsLabels] not applied', err)
+  }
+}
+
+/**
+ * Removes the labels: on sign-out, so a guest, or the next person on the same
+ * browser, is not reported under them. Never throws.
+ */
+export function clearAnalyticsLabels(): void {
+  try {
+    AnalyticsLogger.clearUserProperties()
+  } catch (err) {
+    if (import.meta.env.DEV) console.info('[analyticsLabels] not cleared', err)
   }
 }

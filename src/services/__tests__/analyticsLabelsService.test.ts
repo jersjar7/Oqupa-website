@@ -5,17 +5,34 @@
 // failure must be silent.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { setUserPropertiesMock } = vi.hoisted(() => ({ setUserPropertiesMock: vi.fn() }))
+const { setUserPropertiesMock, clearUserPropertiesMock } = vi.hoisted(() => ({
+  setUserPropertiesMock: vi.fn(),
+  clearUserPropertiesMock: vi.fn(),
+}))
 
 vi.mock('@/lib/firebase', () => ({ db: { __db: true } }))
 vi.mock('@/lib/analytics', () => ({
-  AnalyticsLogger: { setUserProperties: (...args: unknown[]) => setUserPropertiesMock(...args) },
+  AnalyticsLogger: {
+    setUserProperties: (...args: unknown[]) => setUserPropertiesMock(...args),
+    clearUserProperties: () => clearUserPropertiesMock(),
+  },
 }))
 
-import { applyAnalyticsLabels } from '../analyticsLabelsService'
+import { applyAnalyticsLabels, clearAnalyticsLabels } from '../analyticsLabelsService'
 
 describe('applyAnalyticsLabels', () => {
-  beforeEach(() => setUserPropertiesMock.mockReset())
+  beforeEach(() => {
+    setUserPropertiesMock.mockReset()
+    clearUserPropertiesMock.mockReset()
+  })
+
+  it('clears before setting, so nothing from yesterday or someone else lingers', async () => {
+    const order: string[] = []
+    clearUserPropertiesMock.mockImplementation(() => order.push('clear'))
+    setUserPropertiesMock.mockImplementation(() => order.push('set'))
+    await applyAnalyticsLabels('u1', { read: async () => ({ userSegment: 'buyer', homeDistrict: null, isRealtor: false }) })
+    expect(order).toEqual(['clear', 'set'])
+  })
 
   it('copies all three labels into Analytics user properties', async () => {
     await applyAnalyticsLabels('u1', {
@@ -43,8 +60,9 @@ describe('applyAnalyticsLabels', () => {
     })
   })
 
-  it('sets nothing when there is no doc yet (new account, first night not run)', async () => {
+  it('clears the labels when there is no doc (new account, or no group any more)', async () => {
     await applyAnalyticsLabels('u1', { read: async () => null })
+    expect(clearUserPropertiesMock).toHaveBeenCalledOnce()
     expect(setUserPropertiesMock).not.toHaveBeenCalled()
   })
 
@@ -52,6 +70,7 @@ describe('applyAnalyticsLabels', () => {
     const refused = Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' })
     await expect(applyAnalyticsLabels('u1', { read: async () => { throw refused } })).resolves.toBeUndefined()
     expect(setUserPropertiesMock).not.toHaveBeenCalled()
+    expect(clearUserPropertiesMock).not.toHaveBeenCalled()
   })
 
   it('ignores fields of the wrong type rather than sending them', async () => {
@@ -69,5 +88,15 @@ describe('applyAnalyticsLabels', () => {
       isStillSignedIn: () => false,
     })
     expect(setUserPropertiesMock).not.toHaveBeenCalled()
+    expect(clearUserPropertiesMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('clearAnalyticsLabels', () => {
+  it('removes the labels (sign-out) and never throws', () => {
+    clearUserPropertiesMock.mockReset()
+    clearUserPropertiesMock.mockImplementationOnce(() => { throw new Error('no analytics') })
+    expect(() => clearAnalyticsLabels()).not.toThrow()
+    expect(clearUserPropertiesMock).toHaveBeenCalledOnce()
   })
 })
