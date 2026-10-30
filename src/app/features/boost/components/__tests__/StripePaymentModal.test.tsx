@@ -28,15 +28,28 @@ vi.mock('@/app/components/ui', () => ({
 
 import StripePaymentModal from '../StripePaymentModal'
 
-function fakeStripe() {
+/**
+ * A Payment Element that loads at once. By default it also reports a complete
+ * payment method, as if the owner had entered a card; `startIncomplete` leaves
+ * that to the test, through the returned `change`.
+ */
+function fakeStripe({ startIncomplete = false } = {}) {
+  let onChange: (e: { complete: boolean }) => void = () => {}
   const element = {
     mount: vi.fn(),
-    on: (event: string, cb: () => void) => { if (event === 'ready') cb() },
+    on: (event: string, cb: (e?: { complete: boolean }) => void) => {
+      if (event === 'ready') cb()
+      if (event === 'change') {
+        onChange = cb as typeof onChange
+        if (!startIncomplete) cb({ complete: true })
+      }
+    },
   }
-  return {
+  const stripe = {
     elements: () => ({ create: () => element }),
     confirmPayment: confirmPaymentMock,
   }
+  return { stripe, change: (complete: boolean) => act(() => onChange({ complete })) }
 }
 
 function setup() {
@@ -49,7 +62,7 @@ describe('StripePaymentModal — onAbandon', () => {
   beforeEach(() => {
     getStripeMock.mockReset()
     confirmPaymentMock.mockReset()
-    getStripeMock.mockResolvedValue(fakeStripe())
+    getStripeMock.mockResolvedValue(fakeStripe().stripe)
   })
 
   it('fires on the Cancelar button, alongside onCancel', async () => {
@@ -101,5 +114,46 @@ describe('StripePaymentModal — onAbandon', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar ventana' }))
     expect(props.onCancel).toHaveBeenCalledTimes(2)
     expect(props.onAbandon).not.toHaveBeenCalled()
+  })
+})
+
+// A saved Link card only counts as chosen after the owner presses Link's own
+// "Confirma" and enters the code. Pressing Pagar ahora before that sent Stripe
+// no payment method and showed "Selecciona un método de pago para realizar el
+// pago." The button now waits until the Payment Element reports `complete`.
+describe('StripePaymentModal — Pagar ahora waits for a usable payment method', () => {
+  const HINT = 'Ingresa tu tarjeta o confirma la guardada para continuar.'
+  let fake: ReturnType<typeof fakeStripe>
+
+  beforeEach(() => {
+    getStripeMock.mockReset()
+    confirmPaymentMock.mockReset()
+    fake = fakeStripe({ startIncomplete: true })
+    getStripeMock.mockResolvedValue(fake.stripe)
+  })
+
+  const payButton = () => screen.findByRole('button', { name: 'Pagar ahora' }) as Promise<HTMLButtonElement>
+
+  it('is disabled, with a hint, until a card is entered or a saved one confirmed', async () => {
+    setup()
+    expect((await payButton()).disabled).toBe(true)
+    expect(screen.getByText(HINT)).toBeTruthy()
+
+    fake.change(true)
+    expect((await payButton()).disabled).toBe(false)
+    expect(screen.queryByText(HINT)).toBeNull()
+  })
+
+  it('does not try to pay when pressed before then', async () => {
+    setup()
+    fireEvent.click(await payButton())
+    expect(confirmPaymentMock).not.toHaveBeenCalled()
+  })
+
+  it('is disabled again if the card details become incomplete', async () => {
+    setup()
+    fake.change(true)
+    fake.change(false)
+    expect((await payButton()).disabled).toBe(true)
   })
 })

@@ -31,6 +31,9 @@ export default function StripePaymentModal({
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [stripeReady, setStripeReady] = useState(false)
+  // True once the Payment Element holds a usable payment method: a card typed
+  // in full, or a saved Link card the owner has confirmed with its code.
+  const [paymentComplete, setPaymentComplete] = useState(false)
   const [mountError, setMountError] = useState<string | null>(null)
 
   // Store refs for Stripe instances
@@ -93,6 +96,7 @@ export default function StripePaymentModal({
         setIsLoading(false)
         setStripeReady(true)
       })
+      paymentElement.on('change', (event) => setPaymentComplete(event.complete))
 
       setStripeInstances({ stripe, elements })
     } catch (err) {
@@ -111,12 +115,13 @@ export default function StripePaymentModal({
       // Cleanup on close
       setStripeInstances(null)
       setStripeReady(false)
+      setPaymentComplete(false)
       setIsLoading(true)
     }
   }, [isOpen, clientSecret, initializeStripe])
 
   const handleSubmit = async () => {
-    if (!stripeInstances || isSubmitting) return
+    if (!stripeInstances || isSubmitting || !paymentComplete) return
 
     setIsSubmitting(true)
 
@@ -182,9 +187,14 @@ export default function StripePaymentModal({
 
           {stripeReady && (
             <div className="mt-6 space-y-3">
+              {!paymentComplete && (
+                <p className="text-center text-sm text-text-secondary">
+                  Ingresa tu tarjeta o confirma la guardada para continuar.
+                </p>
+              )}
               <button
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !paymentComplete}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600 disabled:bg-gray-300 disabled:text-gray-500"
               >
                 {isSubmitting ? (
