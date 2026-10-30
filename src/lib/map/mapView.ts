@@ -1,0 +1,39 @@
+// Where the map puts things around a chosen listing (UX review, 2026-10-25).
+// Pure, so the rules are tested without a map.
+
+/** The listing card that opens on the map on a computer: the slim card,
+ *  a 96-px photo with 8 px around it (UX review 2026-10-25; it was 300). */
+export const PREVIEW_CARD_HEIGHT = 115
+const CARD_GAP = 20
+
+/** Open the card above the pin, unless the pin is too close to the top of the
+ *  map for it to fit — then below, so it is never cut off or laid over the
+ *  filters. `pinTop` and `mapTop` are screen positions in px. */
+export function cardSide({ pinTop, mapTop }: { pinTop: number; mapTop: number }): 'above' | 'below' {
+  return pinTop - PREVIEW_CARD_HEIGHT - CARD_GAP >= mapTop ? 'above' : 'below'
+}
+
+/**
+ * On a phone, the card at the bottom (and the VER LISTA button above it)
+ * covers part of the map. If the listing just chosen is hidden there, how far
+ * to move the map up (px; negative = down) to bring it to the middle of what
+ * is still visible. 0 when it is already visible: Jerson does not want the
+ * map moving when nobody asked (ADR-033), so it moves only when needed.
+ */
+export function panToReveal({ pointY, mapHeight, coveredBottom, margin = 24 }: {
+  pointY: number
+  mapHeight: number
+  coveredBottom: number
+  margin?: number
+}): number {
+  if (coveredBottom <= 0) return 0
+  const visibleBottom = mapHeight - coveredBottom
+  if (pointY >= margin && pointY <= visibleBottom - margin) return 0
+  return pointY - visibleBottom / 2
+}
+
+/** Layering on the explore page (Jerson, 2026-10-25: "Filters should appear
+ *  above any card"): every card on the map — hover or open — sits below the
+ *  filter bar and its panel. Pins use 2–4. */
+export const MAP_CARD_Z = 10
+export const MAP_FILTERS_Z = 20

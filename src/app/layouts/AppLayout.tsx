@@ -74,7 +74,7 @@ export default function AppLayout() {
                         ]
                       : []),
                     {
-                      label: 'Mis Listas',
+                      label: 'Guardados',
                       icon: <Heart className="h-4 w-4" />,
                       to: '/app/lists',
                     },

@@ -3,6 +3,7 @@ import { CalendarOff, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Spinner } from '@/app/components/ui'
 import { useContentLinks, dateKey } from '@/hooks/useContentLinks'
 import type { ContentLink } from '@/types/contentLink'
+import { pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 /**
  * Pick a day for a piece of material, with the month laid out as a grid and
@@ -81,6 +82,7 @@ export default function DayPickerDialog({
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+  const pointer = usePointerKind()
 
   // Opening on the month the item is already on, when it has one — otherwise
   // moving something from March means three clicks before you can even see it.
@@ -264,7 +266,7 @@ export default function DayPickerDialog({
           )}
 
           <p className="pt-3 font-serif text-xs font-light italic text-text-tertiary">
-            Toca un día para programar. Lo que ya está en cada día se muestra solo como
+            {pointerWords(pointer).dayPickerHint} Lo que ya está en cada día se muestra solo como
             referencia; desde aquí no se edita.
           </p>
 

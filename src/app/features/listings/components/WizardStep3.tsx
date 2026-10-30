@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
@@ -7,7 +7,11 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { Button, Input, InfoTip } from '@/app/components/ui'
 import RevealField from './RevealField'
-import LocationPicker from './LocationPicker'
+// Mapbox is large: loaded only when this step is shown.
+const LocationPicker = lazy(() => import('./LocationPicker'))
+import OfficialDistrictPicker from './OfficialDistrictPicker'
+import { DistrictResolver } from '@/lib/map/districtResolver'
+import { findDistrict, type PeruDistrict } from '@/lib/map/peruGeography'
 
 export default function WizardStep3() {
   const { data, updateData, nextStep, prevStep, isEditMode } =
@@ -38,6 +42,29 @@ export default function WizardStep3() {
   const watchedLat = watch('latitude')
   const watchedLng = watch('longitude')
   const distrito = watch('distrito')
+  const provincia = watch('provincia')
+  const departamento = watch('departamento')
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  // Map plan step 1 (ADR-031): district, provincia and departamento come from
+  // the official outlines, never free text. A pin outside every outline leaves
+  // them empty and the owner chooses from the official list.
+  const applyDistrict = useCallback(
+    (d: PeruDistrict | null) => {
+      setValue('distrito', d?.distrito ?? '', { shouldValidate: true })
+      setValue('provincia', d?.provincia ?? '', { shouldValidate: true })
+      setValue('departamento', d?.departamento ?? '', { shouldValidate: true })
+    },
+    [setValue],
+  )
+
+  // Editing an older listing: show (and re-save) the official spelling.
+  useEffect(() => {
+    if (!data.distrito) return
+    const official = findDistrict(data.distrito, data.provincia)
+    if (official) applyDistrict(official)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { isRevealed, wasInitial } = useRevealedFields(
     {
@@ -62,8 +89,11 @@ export default function WizardStep3() {
       setValue('latitude', lat, { shouldValidate: true })
       setValue('longitude', lng, { shouldValidate: true })
       setHasPinPlaced(true)
+      DistrictResolver.load()
+        .then((r) => applyDistrict(r.districtForPin(lat, lng)))
+        .catch(() => applyDistrict(null))
     },
-    [setValue]
+    [setValue, applyDistrict]
   )
 
   return (
@@ -74,11 +104,13 @@ export default function WizardStep3() {
           <h3 className="text-sm font-medium uppercase text-text-primary">Ubicación</h3>
 
           <div className="mt-3">
-            <LocationPicker
-              latitude={watchedLat ?? null}
-              longitude={watchedLng ?? null}
-              onChange={handleLocationChange}
-            />
+            <Suspense fallback={<div className="h-[300px] rounded-xl border border-border bg-cream" />}>
+              <LocationPicker
+                latitude={watchedLat ?? null}
+                longitude={watchedLng ?? null}
+                onChange={handleLocationChange}
+              />
+            </Suspense>
           </div>
           {(errors.latitude || errors.longitude) && (
             <p className="mt-1.5 text-sm text-error">
@@ -105,27 +137,36 @@ export default function WizardStep3() {
             {...register('urbanizacion')}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Distrito"
-              placeholder="Ej: Piura"
-              error={errors.distrito?.message}
-              {...register('distrito')}
-            />
-            <Input
-              label="Provincia"
-              placeholder="Ej: Piura"
-              error={errors.provincia?.message}
-              {...register('provincia')}
-            />
+          {/* District — from the pin; corrected only from the official list. */}
+          <div className="rounded-xl border border-border p-4">
+            <p className="text-sm font-medium uppercase text-text-primary">Distrito</p>
+            {distrito ? (
+              <p className="mt-1 text-base text-text-primary">
+                {[distrito, provincia, departamento].filter(Boolean).join(', ')}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-error">Elige el distrito</p>
+            )}
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="mt-2 text-sm font-medium text-secondary underline underline-offset-2"
+            >
+              Cambiar distrito
+            </button>
+            {(errors.distrito || errors.provincia) && !distrito && (
+              <p className="mt-1.5 text-sm text-error">{errors.distrito?.message ?? errors.provincia?.message}</p>
+            )}
           </div>
-
-          <Input
-            label="Departamento"
-            placeholder="Ej: Piura"
-            error={errors.departamento?.message}
-            {...register('departamento')}
-          />
+          {pickerOpen && (
+            <OfficialDistrictPicker
+              onPick={(d) => {
+                applyDistrict(d)
+                setPickerOpen(false)
+              }}
+              onClose={() => setPickerOpen(false)}
+            />
+          )}
         </div>
       </RevealField>
 

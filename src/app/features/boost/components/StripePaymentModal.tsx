@@ -8,6 +8,11 @@ interface StripePaymentModalProps {
   onSuccess: () => void
   onCancel: () => void
   onError: (message: string) => void
+  /**
+   * The user left before paying. Fires with `onCancel`, but not while the
+   * payment is being submitted or after the form failed to load.
+   */
+  onAbandon?: () => void
 }
 
 /**
@@ -21,6 +26,7 @@ export default function StripePaymentModal({
   onSuccess,
   onCancel,
   onError,
+  onAbandon,
 }: StripePaymentModalProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -143,8 +149,13 @@ export default function StripePaymentModal({
     }
   }
 
+  const handleUserCancel = () => {
+    if (!isSubmitting) onAbandon?.()
+    onCancel()
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title="Pago seguro">
+    <Modal isOpen={isOpen} onClose={mountError ? onCancel : handleUserCancel} title="Pago seguro">
       {mountError ? (
         <div className="py-6 text-center">
           <p className="text-error">{mountError}</p>
@@ -187,7 +198,7 @@ export default function StripePaymentModal({
               </button>
 
               <button
-                onClick={onCancel}
+                onClick={handleUserCancel}
                 disabled={isSubmitting}
                 className="flex w-full items-center justify-center rounded-xl border border-border px-6 py-3 text-sm font-medium text-text-secondary transition-colors hover:bg-black/5 disabled:opacity-50"
               >

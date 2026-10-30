@@ -114,7 +114,7 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       {/* Back link */}
       <div className="mx-auto max-w-4xl px-4 pt-6 sm:px-6">
         <Link
@@ -380,7 +380,7 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.1)]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-2px_8px_rgba(0,0,0,0.1)]">
         <div className="mx-auto flex max-w-2xl items-center gap-4">
           <div className="text-xs text-text-tertiary">
             {claimStatus.remaining} reclamaciones restantes

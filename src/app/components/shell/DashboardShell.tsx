@@ -22,7 +22,7 @@ function defaultMetaForPath(pathname: string): { title: string; subtitle?: strin
   if (pathname === '/app/numbers')                      return { title: 'Números',       subtitle: 'Métricas internas de la plataforma.' }
   if (pathname === '/app/equipo')                       return { title: 'Ing. de Software', subtitle: 'Tareas del equipo y en qué trabaja cada quien.' }
   if (pathname === '/app/verify')                       return { title: 'Verificación',  subtitle: 'Completa la verificación de tu cuenta.' }
-  if (pathname === '/app/lists')                        return { title: 'Mis listas',    subtitle: 'Colecciones de propiedades guardadas.' }
+  if (pathname === '/app/lists')                        return { title: 'Guardados' }
   if (pathname.startsWith('/app/lists/'))               return { title: 'Lista' }
   return { title: 'Oqupa' }
 }
@@ -75,7 +75,7 @@ function DashboardShellInner() {
             caps={rawCaps}
           />
           <VerificationBanner />
-          <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+          <main className="flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             <Outlet />
           </main>
         </div>

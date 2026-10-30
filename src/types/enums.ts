@@ -104,7 +104,7 @@ export type PaymentMethod =
 
 export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   casa: 'Casa',
-  departamento: 'Apartamento',
+  departamento: 'Departamento',
   terreno: 'Terreno',
   oficina: 'Oficina',
   local: 'Local Comercial',
@@ -115,7 +115,7 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 /** Abbreviated labels for compact contexts (branded card overlay). */
 export const PROPERTY_TYPE_SHORT_LABELS: Record<PropertyType, string> = {
   casa: 'Casa',
-  departamento: 'Apto.',
+  departamento: 'Depto.',
   terreno: 'Terreno',
   oficina: 'Oficina',
   local: 'Local',

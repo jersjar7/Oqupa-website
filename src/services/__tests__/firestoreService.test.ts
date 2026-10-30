@@ -10,6 +10,7 @@ const {
   writeBatchMock, batchSetMock, batchUpdateMock, batchCommitMock,
   httpsCallableMock, callableFnMock,
   getOrCreateClientIdMock,
+  claimAttemptedMock,
 } = vi.hoisted(() => {
   const callableFnMock = vi.fn()
   const batchSetMock = vi.fn()
@@ -40,6 +41,7 @@ const {
     httpsCallableMock: vi.fn((..._args: unknown[]) => callableFnMock),
     callableFnMock,
     getOrCreateClientIdMock: vi.fn((..._args: unknown[]) => 'client-id-123'),
+    claimAttemptedMock: vi.fn(),
   }
 })
 
@@ -77,6 +79,10 @@ vi.mock('@/lib/firebase', () => ({
 
 vi.mock('@/lib/clientId', () => ({
   getOrCreateClientId: () => getOrCreateClientIdMock(),
+}))
+
+vi.mock('@/lib/analytics', () => ({
+  AnalyticsLogger: { claimAttempted: (...args: unknown[]) => claimAttemptedMock(...args) },
 }))
 
 import { firestoreService } from '../firestoreService'
@@ -512,6 +518,30 @@ describe('firestoreService', () => {
       expect(id).toMatch(/^listing_/)
     })
 
+    // Map plan step 1 (ADR-031): every new listing records which app created
+    // it — the app writes 'ios' / 'android', the website 'web'.
+    it('records that the website created the listing', async () => {
+      setDocMock.mockClear()
+      await firestoreService.createListing({
+        role: 'owner',
+        ownerId: 'user-1',
+        propertyId: 'prop-1',
+        description: 'Nice house',
+        operationType: 'venta',
+        price: { amount: 100000, currency: 'USD' },
+        status: 'draft',
+        contactClickCount: 0,
+        wantsRealtorHelp: false,
+        maxRealtors: 3,
+        currentClaimsCount: 0,
+        isBoosted: false,
+        boostScore: 1,
+        showExactLocation: true,
+        media: { propertyPhotoUrls: [] },
+      })
+      expect(setDocMock.mock.calls[0]![1].createdFrom).toBe('web')
+    })
+
     it('calls setDoc with viewCount=0 and serverTimestamps', async () => {
       await firestoreService.createListing({
         role: 'owner',
@@ -828,6 +858,85 @@ describe('firestoreService', () => {
         realtorPhone: '+51987',
         realtorBusinessName: 'JG',
       })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
+    })
+  })
+
+  // ── claim_attempted (metrics plan A8) ────────────────────────────────────
+
+  describe('createRealtorClaim → claim_attempted', () => {
+    const CLAIM = {
+      listingId: 'listing-1',
+      realtorId: 'realtor-1',
+      listingOwnerId: 'owner-1',
+      realtorName: 'Juan',
+      realtorPhone: '+51987',
+      realtorBusinessName: 'JG',
+    }
+
+    beforeEach(() => {
+      claimAttemptedMock.mockReset()
+    })
+
+    it('sends ok once after a successful claim', async () => {
+      callableFnMock.mockResolvedValue({ data: {} })
+      await firestoreService.createRealtorClaim(CLAIM)
+      expect(claimAttemptedMock).toHaveBeenCalledTimes(1)
+      expect(claimAttemptedMock).toHaveBeenCalledWith('listing-1', 'ok')
+    })
+
+    it.each(['limit_reached', 'full', 'duplicate', 'error'] as const)(
+      'sends the function error reason %s, and still throws its message',
+      async (reason) => {
+        callableFnMock.mockRejectedValue({
+          code: 'functions/failed-precondition',
+          message: 'Mensaje del servidor',
+          details: { reason },
+        })
+        await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow('Mensaje del servidor')
+        expect(claimAttemptedMock).toHaveBeenCalledTimes(1)
+        expect(claimAttemptedMock).toHaveBeenCalledWith('listing-1', reason)
+      },
+    )
+
+    it.each([
+      ['no details', undefined],
+      ['details without a reason', {}],
+      ['an unknown reason', { reason: 'banned' }],
+      ['a reason that is not a string', { reason: 42 }],
+      ['ok as a rejection reason', { reason: 'ok' }],
+    ])('sends error for a functions error with %s', async (_label, details) => {
+      callableFnMock.mockRejectedValue({
+        code: 'functions/internal',
+        message: 'Mensaje del servidor',
+        details,
+      })
+      await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow('Mensaje del servidor')
+      expect(claimAttemptedMock).toHaveBeenCalledWith('listing-1', 'error')
+    })
+
+    it('sends error for a non-functions error, even one carrying a reason', async () => {
+      callableFnMock.mockRejectedValue(Object.assign(new Error('network error'), { details: { reason: 'full' } }))
+      await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow(
+        'No se pudo reclamar la oportunidad. Intenta de nuevo.',
+      )
+      expect(claimAttemptedMock).toHaveBeenCalledTimes(1)
+      expect(claimAttemptedMock).toHaveBeenCalledWith('listing-1', 'error')
+    })
+
+    it('a throwing logger does not break a successful claim', async () => {
+      callableFnMock.mockResolvedValue({ data: {} })
+      claimAttemptedMock.mockImplementation(() => { throw new Error('analytics down') })
+      await expect(firestoreService.createRealtorClaim(CLAIM)).resolves.toBeUndefined()
+    })
+
+    it('a throwing logger does not change the error the user sees', async () => {
+      callableFnMock.mockRejectedValue({
+        code: 'functions/resource-exhausted',
+        message: 'No tienes más créditos este mes',
+        details: { reason: 'limit_reached' },
+      })
+      claimAttemptedMock.mockImplementation(() => { throw new Error('analytics down') })
+      await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow('No tienes más créditos este mes')
     })
   })
 

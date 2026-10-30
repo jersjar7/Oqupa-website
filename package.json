@@ -15,7 +15,8 @@
     "coverage": "vitest run --coverage",
     "access:sync": "tsx scripts/syncAccessToRules.ts",
     "access:check": "tsx scripts/syncAccessToRules.ts --check",
-    "plan:seed": "tsx scripts/seedGrowthPlan.ts"
+    "plan:seed": "tsx scripts/seedGrowthPlan.ts",
+    "e2e": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -42,6 +43,7 @@
     "firebase": "^12.9.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.575.0",
+    "mapbox-gl": "3.10.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
@@ -53,6 +55,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
