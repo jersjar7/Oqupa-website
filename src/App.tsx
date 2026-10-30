@@ -47,6 +47,7 @@ import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
 import ListsPage from '@/app/features/lists/pages/ListsPage'
 import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
 import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
+import AnalyticsLabelsInitializer from '@/components/analytics/AnalyticsLabelsInitializer'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -55,6 +56,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ListStoreInitializer />
+      <AnalyticsLabelsInitializer />
       {import.meta.env.DEV && (
         <div style={{
           position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
