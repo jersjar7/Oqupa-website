@@ -4,10 +4,11 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
-## 2026-10-30 — Metrics plan week 3: tracking, honest boost messages
+## 2026-10-31 — Metrics plan weeks 3–4: tracking, honest boost messages, one tap on a dot
 
 ### New Features
 
+- **One tap on a dot** raises its pin on its line AND opens the listing card (ADR-036); the pin stays raised, dark, while the card is open, and drops back into its dot when the card closes. The map never zooms.
 - **Tracking for the metrics plan** (Firebase Analytics only, nothing personal): realtor application and every claim attempt with its result (A8), each step of buying a boost (A9), searches with their filters and the ones that find nothing (A12a), and each signed-in person's user groups as Analytics labels (A12c — needs the `analyticsLabels` rule on production first; without it the site simply sends no labels).
 
 ### Bug Fixes
