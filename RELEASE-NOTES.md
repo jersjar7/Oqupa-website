@@ -4,6 +4,24 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-31 (later) — Refunds and payment history in plain Spanish, Reembolsos on Números
+
+### Bug Fixes
+
+- Mis pagos shows "Reembolsado", "Reembolso parcial — Te devolvimos S/. X", "En disputa", "Disputa perdida" and a Spanish line for failed payments; never Stripe's English text. Refused refunds explain why in Spanish (before, every refusal showed the generic error).
+- A partly refunded payment no longer offers the owner a refund button.
+
+### New Features
+
+- Números → Dinero: "Reembolsos" as its own series; paid checkouts and revenue stay on the day they were paid.
+- Refund tracking events (requested / succeeded / refused).
+
+### Technical
+
+- Test pinning that the payment form keeps Apple Pay and Google Pay on.
+- Staging build gets Stripe's test publishable key (staging only).
+- reCAPTCHA / App Check: unchanged.
+
 ## 2026-10-31 — Metrics plan weeks 3–4: tracking, honest boost messages, one tap on a dot
 
 ### New Features
