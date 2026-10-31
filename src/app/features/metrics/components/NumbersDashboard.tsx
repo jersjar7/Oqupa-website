@@ -395,13 +395,17 @@ function Dinero({ data, range }: TabProps) {
   const revenue = rangeStat(s.revenuePEN, 'sum', range, today)
   const started = rangeStat(s.checkoutsStarted, 'sum', range, today)
   const paid = rangeStat(s.checkoutsPaid, 'sum', range, today)
+  const refunds = rangeStat(s.refundsPEN ?? {}, 'sum', range, today)
+  const refundsCount = rangeStat(s.refundsCount ?? {}, 'sum', range, today)
+  const refundN = refundsCount.value ?? 0
   return (
     <>
       <Glance
         items={[
-          { label: 'Ingresos por boost', value: `S/ ${num(revenue.value, 2)}`, detail: 'pagos completados, sin el equipo' },
+          { label: 'Ingresos por boost', value: `S/ ${num(revenue.value, 2)}`, detail: 'lo pagado, el día que se pagó; sin el equipo' },
           { label: 'Empezaron a pagar', value: num(started.value), detail: <Change stat={started} /> },
           { label: 'Terminaron de pagar', value: num(paid.value), detail: <Change stat={paid} /> },
+          { label: 'Reembolsos', value: `S/ ${num(refunds.value ?? 0, 2)}`, detail: `${refundN} reembolso${refundN === 1 ? '' : 's'}, el día que se devolvió` },
         ]}
         footnote="Cuántos ven la oferta de boost y en qué paso abandonan el pago llega con el plan de métricas."
       />
@@ -411,6 +415,9 @@ function Dinero({ data, range }: TabProps) {
         </Section>
         <Section title="Ingresos por boost" note="Soles cobrados, sin pagos del equipo.">
           <Trend series={s.revenuePEN} range={range} today={today} color={SUPPLY} prefix="S/ " digits={2} />
+        </Section>
+        <Section title="Reembolsos" note="Soles devueltos (completos y parciales), el día que se devolvieron.">
+          <Trend series={s.refundsPEN ?? {}} range={range} today={today} color={SUPPLY} prefix="S/ " digits={2} />
         </Section>
       </Charts>
     </>

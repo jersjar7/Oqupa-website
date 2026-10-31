@@ -5,16 +5,17 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserBoostPayments, useRefundBoostPayment } from '@/hooks/useBoost'
 import { Spinner } from '@/app/components/ui'
-import type { Payment, PaymentDocStatus } from '@/types/boost'
-import { PAYMENT_STATUS_LABELS, BOOST_TIER_LABELS } from '@/types/boost'
+import type { Payment } from '@/types/boost'
+import { BOOST_TIER_LABELS } from '@/types/boost'
+import { paymentStatusDisplay, isRefundEligible as refundEligible, refundErrorMessage, type StatusTone } from '../lib/paymentDisplay'
+import { AnalyticsLogger } from '@/lib/analytics'
 
-const STATUS_COLORS: Record<PaymentDocStatus, string> = {
+const TONE_COLORS: Record<StatusTone, string> = {
   pending: 'bg-amber-100 text-amber-700',
-  completed: 'bg-green-100 text-green-700',
-  failed: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-100 text-gray-600',
-  refunded: 'bg-blue-100 text-blue-700',
-  expired: 'bg-gray-100 text-gray-600',
+  success: 'bg-green-100 text-green-700',
+  danger: 'bg-red-100 text-red-700',
+  muted: 'bg-gray-100 text-gray-600',
+  info: 'bg-blue-100 text-blue-700',
 }
 
 export default function PaymentHistoryPage() {
@@ -85,20 +86,21 @@ function PaymentCard({ payment }: { payment: Payment }) {
   const [showRefundConfirm, setShowRefundConfirm] = useState(false)
   const [refundError, setRefundError] = useState<string | null>(null)
 
-  const isRefundEligible =
-    payment.status === 'completed' &&
-    payment.completedAt &&
-    (Date.now() - payment.completedAt.getTime()) < 48 * 60 * 60 * 1000
+  const isRefundEligible = refundEligible(payment)
+  const status = paymentStatusDisplay(payment)
 
   const handleRefund = async () => {
     setRefundError(null)
+    void AnalyticsLogger.boostRefund('requested', payment.boostTier)
     try {
       await refundMutation.mutateAsync(payment.id)
       setShowRefundConfirm(false)
+      void AnalyticsLogger.boostRefund('succeeded', payment.boostTier)
       toast.success('Reembolso procesado exitosamente')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al procesar el reembolso'
-      const userMessage = mapRefundError(message)
+      const code = String((err as { code?: string } | null)?.code ?? 'unknown')
+      void AnalyticsLogger.boostRefund('failed', payment.boostTier, code)
+      const userMessage = refundErrorMessage(err)
       setRefundError(userMessage)
       toast.error(userMessage)
     }
@@ -120,10 +122,13 @@ function PaymentCard({ payment }: { payment: Payment }) {
             </p>
           )}
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLORS[payment.status]}`}>
-          {PAYMENT_STATUS_LABELS[payment.status]}
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${TONE_COLORS[status.tone]}`}>
+          {status.label}
         </span>
       </div>
+      {status.detail && (
+        <p className="mt-1 text-xs text-text-secondary">{status.detail}</p>
+      )}
 
       {/* Date */}
       <p className="mt-3 font-serif text-xs font-light italic text-text-tertiary">
@@ -148,7 +153,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
       )}
 
       {/* Refund eligibility note */}
-      {payment.status === 'completed' && !isRefundEligible && (
+      {payment.status === 'completed' && !payment.partiallyRefunded && !isRefundEligible && (
         <p className="mt-3 text-xs text-text-tertiary">
           El período de reembolso (48 horas) ha expirado
         </p>
@@ -161,7 +166,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
             ¿Solicitar reembolso de S/. {payment.amount.toFixed(2)}?
           </p>
           <p className="mt-1 text-xs text-amber-700">
-            El reembolso desactivará el destacado de tu publicación.
+            Se quitarán de tu destacado los días de esta compra.
           </p>
           {refundError && (
             <p className="mt-2 text-xs font-medium text-error">{refundError}</p>
@@ -195,20 +200,4 @@ function PaymentCard({ payment }: { payment: Payment }) {
       )}
     </div>
   )
-}
-
-function mapRefundError(message: string): string {
-  if (message.includes('unauthenticated')) {
-    return 'Debes iniciar sesión para solicitar un reembolso'
-  }
-  if (message.includes('not-found')) {
-    return 'Pago no encontrado'
-  }
-  if (message.includes('permission-denied')) {
-    return 'Solo puedes solicitar reembolso de tus propios pagos'
-  }
-  if (message.includes('failed-precondition')) {
-    return 'No se puede procesar el reembolso en este momento'
-  }
-  return 'Error al procesar el reembolso. Intenta de nuevo.'
 }

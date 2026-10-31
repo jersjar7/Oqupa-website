@@ -24,6 +24,7 @@ export interface Payment {
   currency: string
   status: PaymentDocStatus
   provider: string
+  /** How it was paid: card | link | apple_pay | google_pay (no personal data). */
   method: string
   description: string
   paymentPurpose: string
@@ -35,6 +36,13 @@ export interface Payment {
   updatedAt: Date
   completedAt?: Date
   expiresAt?: Date
+  /** Refund details, written by the server (audit 2026-10-31). */
+  refundedAt?: Date
+  refundedAmount?: number
+  partiallyRefunded?: boolean
+  /** Set when the payer disputed the charge with their bank. */
+  disputeId?: string
+  disputeStatus?: string
 }
 
 export type PaymentDocStatus =

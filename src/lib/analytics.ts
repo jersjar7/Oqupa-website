@@ -371,6 +371,14 @@ export const AnalyticsLogger = {
     logFirebaseEvent('boost_checkout_abandoned', { tier, step }),
 
   /**
+   * An owner's own boost refund (audit 2026-10-31): asked, done, or refused
+   * with the error code. Refunds made in Stripe's dashboard are counted on
+   * Números from the payments themselves.
+   */
+  boostRefund: (stage: 'requested' | 'succeeded' | 'failed', tier: string, code?: string) =>
+    logFirebaseEvent(`boost_refund_${stage}`, code ? { tier, code } : { tier }),
+
+  /**
    * The tap on "contact", before any gate. Compare with `contact_revealed` to
    * see how many are lost on the way.
    */
