@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         Política de Privacidad
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
-        Última actualización: 16 de agosto de 2026
+        Última actualización: 31 de octubre de 2026
       </p>
 
       <div className="mt-8 space-y-8">
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
             <li>
               <strong>Metadatos de pagos:</strong> cuando realizas una compra
               dentro de la aplicación (por ejemplo, un boost), almacenamos el
-              identificador de la transacción, el monto y el estado del pago.{' '}
+              identificador de la transacción, el monto, el método de pago (tarjeta, Link, Apple Pay o Google Pay) y el estado del pago.{' '}
               <strong>
                 No almacenamos información de tarjetas de crédito ni datos
                 financieros sensibles
