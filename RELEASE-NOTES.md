@@ -4,6 +4,22 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-30 — Metrics plan week 3: tracking, honest boost messages
+
+### New Features
+
+- **Tracking for the metrics plan** (Firebase Analytics only, nothing personal): realtor application and every claim attempt with its result (A8), each step of buying a boost (A9), searches with their filters and the ones that find nothing (A12a), and each signed-in person's user groups as Analytics labels (A12c — needs the `analyticsLabels` rule on production first; without it the site simply sends no labels).
+
+### Bug Fixes
+
+- A refused boost checkout now says the real reason ("Ya tienes un pago en proceso para esta publicación. Espera a que termine.", "Solo puedes destacar tus propias publicaciones", …) instead of the generic "Error al procesar el pago".
+- "Pagar ahora" stays greyed out until a card is typed in full or a saved card is confirmed.
+
+### Technical
+
+- Server side ships with the oqupa functions promotion the same day (abandoned checkouts no longer lock a listing; claim attempt log; follow-up cards; nightly labels).
+- reCAPTCHA / App Check: unchanged.
+
 ## 2026-10-26 — The map in words, and Guardados sin cuenta
 
 ### New Features
