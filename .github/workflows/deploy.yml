@@ -166,6 +166,14 @@ jobs:
       # and localhost:5173 — map tiles are refused from any other site.
       - name: Add Mapbox token (staging)
         run: echo "VITE_MAPBOX_ACCESS_TOKEN=${{ vars.MAPBOX_WEB_TOKEN }}" >> .env
+      # Stripe TEST publishable key (pk_test_, public by design, same one the app's
+      # .env.staging uses). DOTENV_STAGING never had it, so the staging boost form
+      # said "Stripe no está configurado" (Sarah, 2026-10-30). Appended for the same
+      # reason as the keys above: nobody can read DOTENV_STAGING back to edit it.
+      # Kept in the repository variable STRIPE_PUBLISHABLE_KEY_STAGING. Production
+      # keeps its pk_live key from DOTENV_PRODUCTION; this step is staging only.
+      - name: Add Stripe test publishable key (staging)
+        run: echo "VITE_STRIPE_PUBLISHABLE_KEY=${{ vars.STRIPE_PUBLISHABLE_KEY_STAGING }}" >> .env
       # --mode staging makes Vite set MODE='staging' (and PROD=false), which
       # tells imageUrl.ts to use the staging R2 host directly instead of the
       # /cdn-cgi/image/... Cloudflare-only path that production uses.
