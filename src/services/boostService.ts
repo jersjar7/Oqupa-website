@@ -48,6 +48,11 @@ function paymentFromDoc(id: string, data: Record<string, unknown>): Payment {
     updatedAt: toDate(data['updatedAt']),
     completedAt: data['completedAt'] ? toDate(data['completedAt']) : undefined,
     expiresAt: data['expiresAt'] ? toDate(data['expiresAt']) : undefined,
+    refundedAt: data['refundedAt'] ? toDate(data['refundedAt']) : undefined,
+    refundedAmount: typeof data['refundedAmount'] === 'number' ? (data['refundedAmount'] as number) : undefined,
+    partiallyRefunded: data['partiallyRefunded'] === true ? true : undefined,
+    disputeId: typeof data['disputeId'] === 'string' ? (data['disputeId'] as string) : undefined,
+    disputeStatus: typeof data['disputeStatus'] === 'string' ? (data['disputeStatus'] as string) : undefined,
   }
 }
 

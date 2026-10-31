@@ -69,6 +69,9 @@ export interface DashboardSeries {
     checkoutsStarted: DailySeries
     checkoutsPaid: DailySeries
     revenuePEN: DailySeries
+    /** Refunds on the day refunded (absent in documents built before 2026-10-31). */
+    refundsPEN?: DailySeries
+    refundsCount?: DailySeries
   }
   /** Null when Google Analytics was unavailable (always on staging). */
   analytics: {
