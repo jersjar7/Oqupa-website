@@ -4,6 +4,11 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-31 (evening) — Privacy: the payment method we record
+
+- Privacy policy's data list names the payment method we keep (tarjeta, Link, Apple Pay o Google Pay), matching section 5; never card details. Last updated 31 Oct 2026.
+- reCAPTCHA / App Check: unchanged.
+
 ## 2026-10-31 (later) — Refunds and payment history in plain Spanish, Reembolsos on Números
 
 ### Bug Fixes
