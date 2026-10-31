@@ -73,7 +73,11 @@ test.describe('the map', () => {
     await shot(page, info, '01-map-far-dots')
   })
 
-  test('tapping a dot raises its pin on a line and the map does not move', async ({ page }, info) => {
+  // Jerson, 2026-10-30: "I don't want to tap twice to see the listing card.
+  // [...] When the dot is tapped, the dot should have the leader line
+  // animation and display the listing card at the same time." It used to take
+  // a second tap, on the raised pin.
+  test('one tap on a dot raises its pin on a line and opens its card; the map does not move', async ({ page }, info) => {
     await asVisitor(page, PIURA_FAR)
     await openExplore(page)
     const dot = await tappableMarker(page, 'dot')
@@ -90,18 +94,25 @@ test.describe('the map', () => {
     await expect(up).toHaveCount(1)
     await expect(up).toHaveAttribute('data-listing-id', id!)
     await expect(up.locator('[data-role="leader"]')).toBeVisible()
+    // The card is open after that one tap, and it is this dot's listing.
+    const card = mapCard(page, isPhone(info))
+    await expect(card).toBeVisible()
+    // The raised pin stays, and shows as the open one.
+    await expect(up.locator('[data-selected="1"]')).toHaveCount(1)
     await page.waitForTimeout(400)
     const after = await other.boundingBox()
-    if (before && after) {
+    if (before && after && !isPhone(info)) {
       expect(Math.abs(after.x - before.x)).toBeLessThan(2)
       expect(Math.abs(after.y - before.y)).toBeLessThan(2)
     }
-    await shot(page, info, '02-dot-raised')
+    await shot(page, info, '02-dot-raised-and-card')
 
-    // Its raised pin opens the listing's card.
-    await up.locator('button').first().click()
-    await expect(mapCard(page, isPhone(info))).toBeVisible()
-    await shot(page, info, '03-card-from-raised')
+    // Closing the card (a tap on the map) drops the pin back into its dot.
+    const box = (await page.getByTestId('explore-map').boundingBox())!
+    await page.mouse.click(box.x + 20, box.y + box.height / 2)
+    await expect(raised(page)).toHaveCount(0)
+    await expect(card).toBeHidden()
+    await shot(page, info, '03-card-closed')
   })
 
   test('close in: pins with the type word and the price; a pin opens its card', async ({ page }, info) => {

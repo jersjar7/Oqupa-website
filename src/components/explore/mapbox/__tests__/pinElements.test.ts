@@ -196,6 +196,15 @@ describe('dot size by screen (ADR-033)', () => {
     expect(dotPx()).toBeCloseTo(19 * 1.5)
     expect(createDotElement(mapListing(), () => {}).querySelector<HTMLElement>('button')!.style.width).toBe(`${19 * 1.5}px`)
   })
+  // Jerson, 2026-10-30: a tapped dot opens its card at once, so its raised
+  // pin is the opened listing and looks it (dark, like a selected pin).
+  it('a raised pin that is open looks selected; one that is not, does not', () => {
+    const open = createRaisedPinElement(mapListing(), vi.fn(), { selected: true })
+    expect((open.querySelector('[data-selected]') as HTMLElement).dataset.selected).toBe('1')
+    const shut = createRaisedPinElement(mapListing(), vi.fn())
+    expect((shut.querySelector('[data-selected]') as HTMLElement).dataset.selected).toBe('')
+  })
+
   it('the raised pin\'s line is 22.5 px', () => {
     expect(RAISED_LEADER_PX).toBe(22.5)
   })
