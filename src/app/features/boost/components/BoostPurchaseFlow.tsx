@@ -5,12 +5,15 @@ import BoostTierSelectionModal from './BoostTierSelectionModal'
 import StripePaymentModal from './StripePaymentModal'
 import { useCreateBoostPayment, useBoostTiers, usePollPaymentCompletion } from '@/hooks/useBoost'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { AnalyticsLogger, type BoostOfferPlacement } from '@/lib/analytics'
 import type { BoostTier } from '@/types/boost'
 
 type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'success' | 'error'
 
 interface BoostPurchaseFlowProps {
   listingId: string
+  /** Where the offer is shown. Sent as `boost_offer_viewed.placement`. */
+  placement: BoostOfferPlacement
   /** Called when boost purchase completes successfully */
   onSuccess: (data: { tier: BoostTier; durationDays: number }) => void
   /** Render prop to trigger the flow */
@@ -27,6 +30,7 @@ interface BoostPurchaseFlowProps {
  */
 export default function BoostPurchaseFlow({
   listingId,
+  placement,
   onSuccess,
   children,
 }: BoostPurchaseFlowProps) {
@@ -36,15 +40,32 @@ export default function BoostPurchaseFlow({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [selectedTier, setSelectedTier] = useState<BoostTier | null>(null)
   const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Set once this opening was abandoned at payment. Cancelling payment returns
+  // to tier selection, and closing that is the same abandonment — the app
+  // sends one event for it, not two.
+  const abandonedAtPayment = useRef(false)
 
   const createPayment = useCreateBoostPayment()
   const pollCompletion = usePollPaymentCompletion()
   const { data: tiers } = useBoostTiers()
   const queryClient = useQueryClient()
 
-  const openFlow = useCallback(() => setStep('tier-selection'), [])
+  const openFlow = useCallback(() => {
+    abandonedAtPayment.current = false
+    track(() => AnalyticsLogger.boostOfferViewed(placement))
+    setStep('tier-selection')
+  }, [placement])
+
+  const handleTierClose = useCallback((highlightedTier: BoostTier) => {
+    // A tier already confirmed, whose payment is still being created, was not abandoned.
+    if (!createPayment.isPending && !abandonedAtPayment.current) {
+      track(() => AnalyticsLogger.boostCheckoutAbandoned(highlightedTier, 'tier_selection'))
+    }
+    setStep('closed')
+  }, [createPayment.isPending])
 
   const handleTierConfirm = useCallback(async (tier: BoostTier) => {
+    track(() => AnalyticsLogger.boostTierSelected(tier))
     setSelectedTier(tier)
     try {
       const result = await createPayment.mutateAsync({ listingId, boostTier: tier })
@@ -52,8 +73,7 @@ export default function BoostPurchaseFlow({
       setPaymentId(result.paymentId)
       setStep('payment')
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al crear el pago'
-      const userMessage = mapErrorToSpanish(message)
+      const userMessage = mapErrorToSpanish(err)
       setErrorMessage(userMessage)
       setStep('error')
       toast.error(userMessage)
@@ -103,6 +123,11 @@ export default function BoostPurchaseFlow({
     setPaymentId('')
   }, [])
 
+  const handlePaymentAbandon = useCallback(() => {
+    abandonedAtPayment.current = true
+    if (selectedTier) track(() => AnalyticsLogger.boostCheckoutAbandoned(selectedTier, 'payment'))
+  }, [selectedTier])
+
   const handlePaymentError = useCallback((message: string) => {
     setErrorMessage(message)
     setStep('error')
@@ -142,7 +167,7 @@ export default function BoostPurchaseFlow({
       {/* Step 1: Tier selection */}
       <BoostTierSelectionModal
         isOpen={step === 'tier-selection'}
-        onClose={() => setStep('closed')}
+        onClose={handleTierClose}
         onConfirm={handleTierConfirm}
         isProcessing={createPayment.isPending}
       />
@@ -154,6 +179,7 @@ export default function BoostPurchaseFlow({
           clientSecret={clientSecret}
           onSuccess={handlePaymentSuccess}
           onCancel={handlePaymentCancel}
+          onAbandon={handlePaymentAbandon}
           onError={handlePaymentError}
         />
       )}
@@ -267,22 +293,42 @@ export default function BoostPurchaseFlow({
   )
 }
 
-/** Maps Cloud Function error messages to user-friendly Spanish text */
-function mapErrorToSpanish(message: string): string {
-  if (message.includes('unauthenticated')) {
-    return 'Debes iniciar sesión para destacar tu publicación'
+/** Analytics only observes: a failure there must never break or delay the purchase. */
+function track(send: () => void) {
+  try {
+    send()
+  } catch {
+    // Ignored on purpose.
   }
-  if (message.includes('not-found')) {
-    return 'Publicación no encontrada'
+}
+
+/**
+ * Maps a refused createBoostPaymentIntent call to Spanish text. The SDK error
+ * carries the code ('functions/already-exists') and the server's details; the
+ * message itself never contains the code name.
+ */
+function mapErrorToSpanish(err: unknown): string {
+  const { code, message, details } = (err ?? {}) as { code?: unknown; message?: unknown; details?: unknown }
+  switch (typeof code === 'string' ? code.replace(/^functions\//, '') : '') {
+    case 'unauthenticated':
+      return 'Debes iniciar sesión para destacar tu publicación'
+    case 'not-found':
+      return 'Publicación no encontrada'
+    case 'permission-denied':
+      return 'Solo puedes destacar tus propias publicaciones'
+    case 'failed-precondition':
+      return 'La publicación debe estar activa para ser destacada'
+    case 'already-exists': {
+      // Two refusals share this code; details.reason says which. Older servers
+      // send no reason, but their in-progress message says so.
+      const reason = (details as { reason?: unknown } | null | undefined)?.reason
+      const inProgress = reason === 'paymentInProgress'
+        || (reason === undefined && typeof message === 'string' && message.includes('pago en proceso'))
+      return inProgress
+        ? 'Ya tienes un pago en proceso para esta publicación. Espera a que termine.'
+        : 'Esta publicación ya está destacada'
+    }
+    default:
+      return 'Error al procesar el pago. Intenta de nuevo.'
   }
-  if (message.includes('permission-denied')) {
-    return 'Solo puedes destacar tus propias publicaciones'
-  }
-  if (message.includes('failed-precondition')) {
-    return 'La publicación debe estar activa para ser destacada'
-  }
-  if (message.includes('already-exists')) {
-    return 'Esta publicación ya está destacada'
-  }
-  return 'Error al procesar el pago. Intenta de nuevo.'
 }

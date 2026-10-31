@@ -121,6 +121,15 @@ describe('MapMarkerIndex', () => {
       expect(out.map((m) => m.kind)).toEqual(['dot'])
     })
 
+    // Jerson, 2026-10-30: "I don't want to tap twice to see the listing
+    // card." A tapped dot is raised AND opened at once, so the opened listing
+    // stays raised on its line rather than dropping to a plain pin.
+    it('raised and opened at once: still the small black dot and the raised pin, not a plain pin', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, 'a', 'a')
+      expect(out.map((m) => m.kind)).toEqual(['anchor', 'dot', 'raised'])
+      expect(out[2]!.kind === 'raised' && out[2]!.item.listing.id).toBe('a')
+    })
+
     it('an unknown id raises nothing', () => {
       expect(new MapMarkerIndex(items()).markersFor(metro, 12, null, 'zzz').map((m) => m.kind)).toEqual(['dot', 'dot'])
     })

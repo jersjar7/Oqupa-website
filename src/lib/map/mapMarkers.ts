@@ -56,7 +56,9 @@ export class MapMarkerIndex {
       // Boosted listings are dots too, the same size; the dot draws their gold edge.
       // The selected listing, and one pointed at in the list, show as their
       // pins even far out (as in the app), drawn after the dots.
-      const shownAsPin = new Set([selectedId, emphasizedId].filter((id): id is string => !!id))
+      // A raised listing stays raised when it is also the open one: a tapped
+      // dot is raised and opened at once (Jerson, 2026-10-30).
+      const shownAsPin = new Set([selectedId, emphasizedId].filter((id): id is string => !!id && id !== raisedId))
       const pins: MapMarker[] = []
       for (const item of [...this.regular, ...this.boosted]) {
         const p = mapPointOf(item)

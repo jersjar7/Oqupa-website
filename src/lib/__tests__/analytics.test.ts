@@ -545,7 +545,7 @@ describe('AnalyticsLogger — A0 additions', () => {
       },
     )
 
-    it.each(['create', 'edit', 'reminder'] as const)(
+    it.each(['create', 'edit', 'reminder', 'my_listings', 'listing_page'] as const)(
       'boost_offer_viewed placement %s is sent verbatim',
       (placement) => {
         AnalyticsLogger.boostOfferViewed(placement)
@@ -578,6 +578,7 @@ describe('AnalyticsLogger — A0 additions', () => {
         maxPricePen: 2000,
         minPriceUsd: 100,
         maxPriceUsd: 900,
+        priceInputCurrency: 'PEN',
         resultCount: 0,
       })
       expect(loggedParams()).toEqual({
@@ -587,9 +588,7 @@ describe('AnalyticsLogger — A0 additions', () => {
         rental_duration: 'shortTerm',
         min_price_pen: 500,
         max_price_pen: 2000,
-        min_price_usd: 100,
-        max_price_usd: 900,
-        price_currency: 'PEN,USD',
+        price_currency: 'PEN',
         result_count: 0,
       })
     })
@@ -608,10 +607,61 @@ describe('AnalyticsLogger — A0 additions', () => {
       [{ maxPricePen: 3000 }, 'PEN'],
       [{ minPriceUsd: 50000 }, 'USD'],
       [{ maxPriceUsd: 90000 }, 'USD'],
-      [{ maxPricePen: 3000, minPriceUsd: 1 }, 'PEN,USD'],
+      [{ maxPricePen: 3000, minPriceUsd: 1 }, undefined],
     ])('price_currency follows the ranges set: %j → %s', (prices, currency) => {
       AnalyticsLogger.searchNoResults({ filterType: 'price', ...prices })
       expect(loggedParams()!.price_currency).toBe(currency)
+    })
+
+    // Same rule as _filterSetParameters in the app's analytics_logger.dart:
+    // only one range is ever sent, and price_currency is a single code.
+    describe('single-currency rule', () => {
+      const both = { minPricePen: 500, maxPricePen: 2000, minPriceUsd: 130, maxPriceUsd: 530 }
+
+      it('both ranges set: sends the one in priceInputCurrency (PEN)', () => {
+        AnalyticsLogger.searchNoResults({ filterType: 'price', ...both, priceInputCurrency: 'PEN' })
+        expect(loggedParams()).toEqual({
+          filter_type: 'price',
+          min_price_pen: 500,
+          max_price_pen: 2000,
+          price_currency: 'PEN',
+        })
+      })
+
+      it('both ranges set: sends the one in priceInputCurrency (USD)', () => {
+        AnalyticsLogger.searchNoResults({ filterType: 'price', ...both, priceInputCurrency: 'USD' })
+        expect(loggedParams()).toEqual({
+          filter_type: 'price',
+          min_price_usd: 130,
+          max_price_usd: 530,
+          price_currency: 'USD',
+        })
+      })
+
+      it('both ranges set, input currency unknown: sends neither, keeps filter_type and result_count', () => {
+        AnalyticsLogger.filterApplied({ filterType: 'price', ...both, resultCount: 4 })
+        expect(loggedParams()).toEqual({ filter_type: 'price', result_count: 4 })
+      })
+
+      it('one range set in the currency typed: sends it', () => {
+        AnalyticsLogger.searchNoResults({ filterType: 'price', maxPriceUsd: 900, priceInputCurrency: 'USD' })
+        expect(loggedParams()).toEqual({ filter_type: 'price', max_price_usd: 900, price_currency: 'USD' })
+      })
+
+      it('one range set in the other currency: sends neither (it is the converted one)', () => {
+        AnalyticsLogger.filterApplied({
+          filterType: 'price',
+          minPriceUsd: 2.910992898923922,
+          priceInputCurrency: 'PEN',
+          resultCount: 2,
+        })
+        expect(loggedParams()).toEqual({ filter_type: 'price', result_count: 2 })
+      })
+
+      it('priceInputCurrency alone, with no range, sends no price fields', () => {
+        AnalyticsLogger.searchNoResults({ filterType: 'price', priceInputCurrency: 'USD' })
+        expect(loggedParams()).toEqual({ filter_type: 'price' })
+      })
     })
 
     it('omits price_currency when no range is set', () => {
@@ -756,5 +806,19 @@ describe('AnalyticsLogger — dev console line', () => {
     expect(debugSpy).not.toHaveBeenCalled()
     expect(logEventMock).toHaveBeenCalledTimes(2)
     expect(setUserPropertiesMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+// A12c: a label must be removable — on sign-out, and when a person no longer
+// has one — or it stays for the rest of the visit, under whoever comes next.
+describe('AnalyticsLogger.clearUserProperties', () => {
+  beforeEach(() => setUserPropertiesMock.mockReset())
+
+  it('removes all three by sending null to Firebase, in one call', () => {
+    AnalyticsLogger.clearUserProperties()
+    expect(setUserPropertiesMock).toHaveBeenCalledExactlyOnceWith(
+      { __analytics: true },
+      { user_segment: null, home_district: null, is_realtor: null },
+    )
   })
 })

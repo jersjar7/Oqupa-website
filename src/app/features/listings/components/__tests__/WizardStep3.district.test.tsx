@@ -25,6 +25,8 @@ describe('WizardStep3 — the district', () => {
   beforeEach(() => {
     // jsdom has no matchMedia; the reveal animations ask for reduced motion.
     window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
+    // jsdom has no scrollIntoView; RevealField calls it on a timer after reveal.
+    Element.prototype.scrollIntoView = vi.fn()
     useListingFormStore.getState().reset?.()
     pinRef.onChange = null
     resolverMock.districtForPin.mockReset()

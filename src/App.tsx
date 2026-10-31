@@ -47,6 +47,7 @@ import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
 import ListsPage from '@/app/features/lists/pages/ListsPage'
 import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
 import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
+import AnalyticsLabelsInitializer from '@/components/analytics/AnalyticsLabelsInitializer'
 import SaveNudge from '@/components/lists/SaveNudge'
 import GuardadosPage from '@/pages/GuardadosPage'
 
@@ -57,6 +58,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ListStoreInitializer />
+      <AnalyticsLabelsInitializer />
       <SaveNudge />
       {import.meta.env.DEV && (
         <div style={{

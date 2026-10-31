@@ -644,6 +644,7 @@ export default function PropertyPage() {
                 // Boost CTA for owner
                 <BoostPurchaseFlow
                   listingId={listing.id}
+                  placement="listing_page"
                   onSuccess={() => {}}
                 >
                   {(openFlow) => (

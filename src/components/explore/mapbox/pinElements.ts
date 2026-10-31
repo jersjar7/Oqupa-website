@@ -247,15 +247,20 @@ export function createGroupElement(
 
 /**
  * A tapped dot's pin, raised on a leader line (ADR-033): the map does not
- * move. The line grows from the dot's exact spot and pushes the pin up; it
+ * move, and the listing's card opens at the same time (Jerson, 2026-10-30),
+ * so the raised pin is usually the open one and looks selected. The line grows from the dot's exact spot and pushes the pin up; it
  * ends at the dot's top edge (half a dot above the marker's bottom, which
  * sits on the spot), so the dot it grew from stays visible. A click opens the
  * listing.
  */
-export function createRaisedPinElement(item: ListingWithProperty, onOpen: () => void): HTMLDivElement {
+export function createRaisedPinElement(
+  item: ListingWithProperty,
+  onOpen: () => void,
+  state: { selected: boolean } = { selected: false },
+): HTMLDivElement {
   const pin = item.listing.isBoosted
-    ? createBoostedPinElement(item, { selected: false })
-    : createPinElement(item, { selected: false })
+    ? createBoostedPinElement(item, state)
+    : createPinElement(item, state)
   pin.querySelector('button')!.addEventListener('click', (e) => {
     e.stopPropagation()
     onOpen()
