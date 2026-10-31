@@ -109,7 +109,8 @@ export const dots = (page: Page) =>
 export const raised = (page: Page) => page.locator('.mapboxgl-marker[data-raised="1"]')
 
 /** A dot or pin whose centre is inside the visible map and clear of the
- *  controls floating over it, so a tap lands on it and nothing else. */
+ *  controls floating over it and not covered by another marker, so a tap
+ *  lands on it and nothing else. */
 export async function tappableMarker(page: Page, which: 'dot' | 'pin') {
   const map = (await page.getByTestId('explore-map').boundingBox())!
   const list = which === 'dot' ? dots(page) : pins(page)
@@ -123,6 +124,9 @@ export async function tappableMarker(page: Page, which: 'dot' | 'pin') {
     const cy = b.y + b.height / 2
     if (cx < map.x + margin.side || cx > map.x + map.width - margin.side) continue
     if (cy < map.y + margin.top || cy > map.y + map.height - margin.bottom) continue
+    // Dots overlap freely (ADR-032): skip one another marker covers.
+    const onTop = await m.evaluate((el, [x, y]) => el.contains(document.elementFromPoint(x!, y!)), [cx, cy])
+    if (!onTop) continue
     return m
   }
   throw new Error(`no ${which} clear of the controls (${n} on the map)`)
