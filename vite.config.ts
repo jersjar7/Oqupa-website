@@ -3,8 +3,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { legalLastUpdated } from './scripts/legalLastUpdated'
 
 export default defineConfig({
+  // "Última actualización" on the privacy and terms pages comes from git, not
+  // from memory (Jerson, 2026-11-01). See scripts/legalLastUpdated.ts.
+  define: {
+    __LEGAL_LAST_UPDATED__: JSON.stringify(legalLastUpdated(process.cwd())),
+  },
   plugins: [
     react(),
     tailwindcss(),

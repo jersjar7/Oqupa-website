@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # Full history: the legal pages' "Última actualización" comes from git
+        # (scripts/legalLastUpdated.ts) and a shallow clone fails the build.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -135,6 +139,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        # Full history: the legal pages' "Última actualización" comes from git
+        # (scripts/legalLastUpdated.ts) and a shallow clone fails the build.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -195,6 +203,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        # Full history: the legal pages' "Última actualización" comes from git
+        # (scripts/legalLastUpdated.ts) and a shallow clone fails the build.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
