@@ -175,6 +175,10 @@ describe('the owner, on their own listing', () => {
       'Esta publicación está desactivada. Solo tú puedes verla.',
     )
     expect(screen.queryByRole('button', { name: /whatsapp/i })).toBeNull()
+    // The note says it once; no label repeating it.
+    expect(screen.getByRole('status').textContent).toBe('Esta publicación está desactivada. Solo tú puedes verla.')
+    // A link to a page only they can open would show others "no encontrada".
+    expect(screen.queryByRole('button', { name: 'Compartir' })).toBeNull()
   })
 
   it('sees their sold listing marked Vendido too', () => {

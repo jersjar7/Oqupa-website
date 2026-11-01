@@ -19,7 +19,7 @@ import {
   logContactRevealFailed,
   logContactTapped,
 } from '@/app/features/listings/contactFunnel'
-import { LISTING_STATUS_LABELS, PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
 import { AnimatedImage } from '@/app/components/ui'
@@ -493,10 +493,7 @@ export default function PropertyPage() {
                 role="status"
                 className="mb-4 rounded-xl border border-border bg-background-secondary px-4 py-3"
               >
-                <p className="font-sans text-xs font-medium uppercase tracking-wide text-text-secondary">
-                  {LISTING_STATUS_LABELS[listing.status]}
-                </p>
-                <p className="mt-1 text-sm text-text-primary">{ownerOnlyNote(listing.status)}</p>
+                <p className="text-sm text-text-primary">{ownerOnlyNote(listing.status)}</p>
               </div>
             ) : null}
 
@@ -524,6 +521,7 @@ export default function PropertyPage() {
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
                 </span>
                 {canContact && <SaveButton listingId={listing.id} variant="page" />}
+{view !== 'owner-only' && (
                 <button
                   onClick={handleShare}
                   className="whitespace-nowrap rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
@@ -531,6 +529,7 @@ export default function PropertyPage() {
                 >
                   Compartir
                 </button>
+                )}
               </div>
             </div>
 
