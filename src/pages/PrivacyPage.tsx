@@ -53,7 +53,7 @@ export default function PrivacyPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             Conforme al artículo VII del Reglamento de la Ley N° 29733, Oqupa
             LLC designa como su representante para el territorio peruano a{' '}
-            <strong>Jerson Garcia</strong>, quien actúa en nombre de Oqupa LLC.
+            <strong>Jerson Jaramillo Garcia</strong>, quien actúa en nombre de Oqupa LLC.
             El representante es el punto de contacto con la{' '}
             <strong>
               Autoridad Nacional de Protección de Datos Personales
@@ -887,7 +887,7 @@ export default function PrivacyPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             <strong>Oqupa LLC</strong> — Utah, Estados Unidos
             <br />
-            Representante en el Perú: Jerson Garcia —{' '}
+            Representante en el Perú: Jerson Jaramillo Garcia —{' '}
             <a
               href="mailto:admin@oqupa.com"
               className="text-primary hover:text-primary-hover hover:underline"
