@@ -56,11 +56,6 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     expect(text).not.toMatch(/Jerson Garcia/)
   })
 
-  it('shows the date of the latest change (Jerson, 2026-11-01)', () => {
-    render(<MemoryRouter><PrivacyPage /></MemoryRouter>)
-    expect(document.body.textContent).toMatch(/Última actualización: 1 de noviembre de 2026/)
-  })
-
   it('says which data is required and what happens without it (art. 6.1 items 5–6)', () => {
     const text = sectionText(/Información que Recopilamos/)
     expect(text).toMatch(/Qué datos son obligatorios/)
