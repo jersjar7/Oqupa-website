@@ -14,6 +14,16 @@ import {
 } from '../lib/series'
 import { summarizeCloses } from '../lib/closes'
 import { contactsThisWeek, costPerContactThisWeek, durationWords, percent, weekWindow } from '../lib/headline'
+import {
+  changeWords,
+  checkpointDate,
+  latestComplete,
+  monthChange,
+  monthName,
+  type Change as MonthChange,
+  type Checkpoint,
+  type CheckpointKey,
+} from '../lib/checkpoint'
 
 // Same brand pair as the rest of the page: warm for supply and money, cool for
 // demand. The dashboard has no dark mode, like the rest of the site.
@@ -22,9 +32,10 @@ const DEMAND = '#3A6A55'
 const GRID = '#EFE8DF'
 const AXIS = '#737373'
 
-type TabKey = 'resumen' | 'buscadores' | 'oferta' | 'cierres' | 'dinero' | 'publicidad'
+type TabKey = 'checkpoint' | 'resumen' | 'buscadores' | 'oferta' | 'cierres' | 'dinero' | 'publicidad'
 
 const TABS: Array<{ key: TabKey; label: string; question: string }> = [
+  { key: 'checkpoint', label: 'Punto de control', question: '¿Seguimos? Tres números, mes a mes' },
   { key: 'resumen', label: 'Resumen', question: '¿Cómo va Oqupa?' },
   { key: 'buscadores', label: 'Buscadores', question: '¿Llegan personas buscando, y escriben?' },
   { key: 'oferta', label: 'Oferta', question: '¿Qué se publica, dónde, y recibe contactos?' },
@@ -476,6 +487,199 @@ function Publicidad({ data, range }: TabProps) {
   )
 }
 
+// ─── Punto de control ───────────────────────────────────────────────────────
+// Three numbers by month for the founder's decision. By month, not by the
+// 7 / 30 / 90 switch: the question is whether each one grows month on month.
+
+const CHECKPOINT_NUMBERS: Array<{
+  key: CheckpointKey
+  label: string
+  color: string
+  note: (since: Checkpoint['since']) => string
+}> = [
+  {
+    key: 'activeListings',
+    label: 'Publicaciones activas',
+    color: SUPPLY,
+    note: (since) =>
+      `Publicaciones activas al cierre de cada mes, sin las del equipo ni las de prueba${
+        since.activeListings ? `; desde ${monthName(since.activeListings.slice(0, 7))}` : ''
+      }.`,
+  },
+  {
+    key: 'contacts',
+    label: 'Contactos',
+    color: DEMAND,
+    note: (since) =>
+      `Una persona que desbloquea el WhatsApp de una publicación cuenta una sola vez, para siempre, y el equipo no cuenta${
+        since.contacts ? `; desde el ${shortDay(since.contacts)} ${since.contacts.slice(0, 4)}` : ''
+      }.`,
+  },
+  {
+    key: 'returning',
+    label: 'Personas que vuelven',
+    color: DEMAND,
+    note: (since) =>
+      since.returning
+        ? `Teléfonos y navegadores que usaron Oqupa en el mes y ya lo habían usado un mes antes, según Google Analytics (cuenta aparatos, no personas, e incluye al equipo); desde ${monthName(since.returning)}.`
+        : 'Teléfonos y navegadores que usaron Oqupa en el mes y ya lo habían usado un mes antes; necesita Google Analytics, que este entorno no tiene.',
+  },
+]
+
+function ChangeMark({ change }: { change: MonthChange }) {
+  const tone = change.direction === 'up' ? 'text-secondary' : change.direction === 'down' ? 'text-error' : 'text-text-secondary'
+  return <span className={`font-bold ${tone}`}>{changeWords(change)}</span>
+}
+
+const NoData = () => <span className="text-text-tertiary">Sin datos</span>
+
+function MonthTrend({ checkpoint, field, color }: { checkpoint: Checkpoint; field: CheckpointKey; color: string }) {
+  // Complete months only: half a month always looks like a fall.
+  const data = checkpoint.months
+    .filter((m) => m.complete)
+    .map((m) => ({ month: monthName(m.month).replace(/ \d{4}$/, '').slice(0, 3), full: monthName(m.month), value: m[field] }))
+  if (!data.some((d) => d.value !== null)) return <p className="font-sans text-sm text-text-secondary">Sin datos todavía.</p>
+  return (
+    <div className="h-40 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
+          <CartesianGrid stroke={GRID} vertical={false} />
+          <XAxis dataKey="month" stroke={AXIS} fontSize={11} tickLine={false} axisLine={{ stroke: GRID }} />
+          <YAxis stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={48} />
+          <Tooltip
+            contentStyle={{ borderRadius: 12, border: `1px solid ${GRID}`, fontSize: 12 }}
+            labelFormatter={(_, payload) => String(payload?.[0]?.payload?.full ?? '')}
+            formatter={(v) => [num(Number(v)), 'Total']}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={2}
+            fill={color}
+            fillOpacity={0.12}
+            connectNulls={false}
+            dot={{ r: 3 }}
+            activeDot={{ r: 4 }}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function PuntoDeControl({ data }: TabProps) {
+  const cp = data.checkpoint
+  if (!cp) {
+    return (
+      <p className="font-sans text-sm text-text-secondary">
+        El punto de control aparece después de la actualización de esta noche.
+      </p>
+    )
+  }
+  const newestFirst = [...cp.months].reverse()
+  const byMonth = new Map(cp.months.map((m, i) => [m.month, i]))
+  const changeFor = (month: string, key: CheckpointKey) => {
+    const i = byMonth.get(month) ?? 0
+    const row = cp.months[i]!
+    const prev = i > 0 ? cp.months[i - 1]! : null
+    return row.complete && prev ? monthChange(prev[key], row[key]) : null
+  }
+  return (
+    <>
+      <p className="-mt-2 mb-4 font-sans text-sm text-text-primary">
+        <b>Punto de control: {checkpointDate(cp.checkpointDay)}</b> — unos tres meses después de que la versión 1.5.0
+        llegue a las tiendas.
+      </p>
+
+      <section
+        aria-label="Último mes completo"
+        className="grid grid-cols-1 gap-x-6 gap-y-5 rounded-2xl border border-border bg-white p-5 shadow-light sm:grid-cols-3"
+      >
+        {CHECKPOINT_NUMBERS.map((n) => {
+          const latest = latestComplete(cp.months, n.key)
+          return (
+            <div key={n.key} className="flex flex-col gap-0.5">
+              <span className="font-sans text-[11px] font-medium uppercase tracking-wider text-text-secondary">{n.label}</span>
+              {latest ? (
+                <>
+                  <span className="font-serif text-[40px] font-normal leading-tight tabular-nums text-secondary">
+                    {num(latest.value)}
+                  </span>
+                  <span className="font-sans text-xs text-text-secondary">{monthName(latest.month)}</span>
+                  <span className="font-sans text-xs text-text-secondary">
+                    {latest.change ? (
+                      <>
+                        <ChangeMark change={latest.change} />
+                        {` vs ${monthName(latest.previousMonth ?? '')}`}
+                      </>
+                    ) : (
+                      'sin un mes anterior para comparar'
+                    )}
+                  </span>
+                </>
+              ) : (
+                <span className="font-serif text-[40px] font-normal leading-tight text-text-tertiary">Sin datos</span>
+              )}
+            </div>
+          )
+        })}
+      </section>
+
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-white">
+        <table className="w-full min-w-[520px] border-collapse font-sans text-sm">
+          <thead>
+            <tr className="border-b border-border text-left">
+              <th scope="col" className="px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-text-secondary">Mes</th>
+              {CHECKPOINT_NUMBERS.map((n) => (
+                <th key={n.key} scope="col" className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-text-secondary">
+                  {n.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {newestFirst.map((m) => (
+              <tr key={m.month} className="border-b border-border last:border-b-0">
+                <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium text-text-primary">
+                  {monthName(m.month)}{' '}
+                  {!m.complete && <span className="font-normal text-text-tertiary">(en curso)</span>}
+                </th>
+                {CHECKPOINT_NUMBERS.map((n) => {
+                  const value = m[n.key]
+                  const change = changeFor(m.month, n.key)
+                  return (
+                    <td key={n.key} className="px-4 py-3 text-right tabular-nums text-text-primary">
+                      {value === null ? <NoData /> : num(value)}
+                      {n.key === 'activeListings' && m.newListings !== null && (
+                        <span className="text-xs text-text-tertiary">{` · ${num(m.newListings)} nuevas`}</span>
+                      )}
+                      {change && (
+                        <span className="ml-2 text-xs">
+                          <ChangeMark change={change} />
+                        </span>
+                      )}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Charts>
+        {CHECKPOINT_NUMBERS.map((n) => (
+          <Section key={n.key} title={n.label} note={n.note(cp.since)}>
+            <MonthTrend checkpoint={cp} field={n.key} color={n.color} />
+          </Section>
+        ))}
+      </Charts>
+    </>
+  )
+}
+
 // ─── Headline (A1b) ─────────────────────────────────────────────────────────
 
 /**
@@ -566,6 +770,7 @@ function Headline({ data }: { data: DashboardSeries }) {
 }
 
 const PANELS: Record<TabKey, (props: TabProps) => ReactNode> = {
+  checkpoint: PuntoDeControl,
   resumen: Resumen,
   buscadores: Buscadores,
   oferta: Oferta,
@@ -611,6 +816,7 @@ export default function NumbersDashboard({ data }: { data: DashboardSeries }) {
             </button>
           ))}
         </div>
+        {current.key !== 'checkpoint' && (
         <div role="group" aria-label="Periodo" className="my-1.5 flex rounded-full border border-border bg-white p-0.5">
           {RANGES.map((r) => (
             <button
@@ -626,6 +832,7 @@ export default function NumbersDashboard({ data }: { data: DashboardSeries }) {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       <h2 className="mb-4 font-serif text-xl font-normal text-text-primary">{current.question}</h2>
