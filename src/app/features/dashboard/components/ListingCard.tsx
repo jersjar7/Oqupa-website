@@ -53,6 +53,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showCloseSurvey, setShowCloseSurvey] = useState(false)
   const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -92,6 +93,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // action that matches how it is offered.
   const isRental = property.operationType === 'alquiler'
   const canClose = listing.status === 'active'
+  // Deactivating does not pause a boost: the expiry job ignores status, so the
+  // paid days keep running and nothing is returned. A boosted listing asks
+  // first and says so; an unboosted one has nothing to lose.
+  const asksBeforeDeactivating = listing.status === 'active' && listing.isBoosted
+  const boostDaysLeft = listing.boostedUntil
+    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
@@ -222,6 +230,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               onClick={() =>
                 isClosed
                   ? setShowRepublishConfirm(true)
+                  : asksBeforeDeactivating
+                  ? setShowDeactivateConfirm(true)
                   : toggleStatus.mutate({
                       listingId: listing.id,
                       currentStatus: listing.status,
@@ -319,6 +329,37 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                 {isRental ? 'Sí, alquilado' : 'Sí, vendido'}
               </Button>
               <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Desactivar a boosted listing — the paid days keep running */}
+        {showDeactivateConfirm && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">¿Desactivar esta publicación?</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              {boostDaysLeft
+                ? boostDaysLeft === 1
+                  ? 'Te queda 1 día de destacado. Sigue corriendo mientras esté desactivada.'
+                  : `Te quedan ${boostDaysLeft} días de destacado. Siguen corriendo mientras esté desactivada.`
+                : 'Los días de tu destacado siguen corriendo mientras esté desactivada.'}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                isLoading={toggleStatus.isPending}
+                onClick={() =>
+                  toggleStatus.mutate(
+                    { listingId: listing.id, currentStatus: listing.status },
+                    { onSuccess: () => setShowDeactivateConfirm(false) }
+                  )
+                }
+              >
+                Sí, desactivar
+              </Button>
+              <Button variant="text" onClick={() => setShowDeactivateConfirm(false)}>
                 Cancelar
               </Button>
             </div>
