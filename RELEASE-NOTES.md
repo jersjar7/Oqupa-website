@@ -4,6 +4,28 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-10-31 (night) — Owner fixes, sold listings, and the brand pass (ADR-038)
+
+### Bug Fixes
+- Editing a hidden-address listing keeps the address private; urbanización no longer erased on edit.
+- Listings with fewer than 3 photos can be edited again.
+- Owners can release an assigned agent from Mis propiedades.
+- An edit keeps the cover photo's blurred preview; the stored address text follows a new address.
+
+### Listings no longer live
+- Sold / rented listings show a "VENDIDO" / "ALQUILADO" banner, no WhatsApp, and "VER PROPIEDADES DISPONIBLES"; page title starts "Vendido · " / "Alquilado · ".
+- Draft, unpaid, expired and deactivated listings are "Propiedad no encontrada" for strangers; the owner sees their own with a note.
+- A refused contact says "Esta publicación ya no está disponible."
+- Desactivar on a boosted listing asks first ("¿Desactivar esta publicación?").
+
+### Brand (ADR-038, docs/brand-audit-2026-10-31.md)
+- The deck cream #FFF9F0 everywhere (with a darker cream token for hover/fill); "PUBLICAR" for the create action everywhere.
+- DESTACADO dark on amber; prices green; status badges neutral (no red); Venta/Alquiler green when selected; serif headings Regular; 404 page restyled.
+- Brand tokens replace stock greys, reds and greens; about 160 accent fixes.
+- Orange buttons keep white text; logo and sign-in unchanged.
+
+reCAPTCHA / App Check: unchanged.
+
 ## 2026-10-31 (evening) — Privacy: the payment method we record
 
 - Privacy policy's data list names the payment method we keep (tarjeta, Link, Apple Pay o Google Pay), matching section 5; never card details. Last updated 31 Oct 2026.
