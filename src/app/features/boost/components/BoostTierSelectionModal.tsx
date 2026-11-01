@@ -55,19 +55,19 @@ export default function BoostTierSelectionModal({
       {/* Benefits */}
       <div className="mt-6 space-y-2">
         <div className="flex items-start gap-2 text-sm text-text-secondary">
-          <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-boost" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
           <span>Aparece primero en los resultados de búsqueda</span>
         </div>
         <div className="flex items-start gap-2 text-sm text-text-secondary">
-          <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-boost" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
           <span>Insignia &quot;Destacado&quot; visible para todos</span>
         </div>
         <div className="flex items-start gap-2 text-sm text-text-secondary">
-          <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-boost" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
           <span>Mayor visibilidad en el mapa</span>
@@ -78,7 +78,7 @@ export default function BoostTierSelectionModal({
       <button
         onClick={() => onConfirm(selectedTier)}
         disabled={isProcessing || isLoadingTiers}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600 disabled:bg-gray-300 disabled:text-gray-500"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover disabled:bg-separator disabled:text-text-secondary"
       >
         {isProcessing ? (
           <>
@@ -123,18 +123,18 @@ function TierCard({
       onClick={onSelect}
       className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors ${
         isSelected
-          ? 'border-amber-500 bg-amber-50'
-          : 'border-border bg-white hover:border-gray-300'
+          ? 'border-boost bg-boost/10'
+          : 'border-border bg-white hover:border-separator'
       }`}
     >
       {/* Radio indicator */}
       <div
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-          isSelected ? 'border-amber-500' : 'border-gray-400'
+          isSelected ? 'border-boost' : 'border-ink-tertiary'
         }`}
       >
         {isSelected && (
-          <div className="h-3 w-3 rounded-full bg-amber-500" />
+          <div className="h-3 w-3 rounded-full bg-boost" />
         )}
       </div>
 
@@ -145,8 +145,8 @@ function TierCard({
             {config.displayName}
           </span>
           {isPopular && (
-            <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-amber-600">
-              MAS POPULAR
+            <span className="rounded bg-boost/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-ink">
+              MÁS POPULAR
             </span>
           )}
           {isBestValue && (
@@ -156,7 +156,7 @@ function TierCard({
           )}
         </div>
         <span className="text-[11px] text-text-tertiary">
-          S/. {(config.feeInSoles / config.durationDays).toFixed(2)}/dia
+          S/. {(config.feeInSoles / config.durationDays).toFixed(2)}/día
         </span>
       </div>
 

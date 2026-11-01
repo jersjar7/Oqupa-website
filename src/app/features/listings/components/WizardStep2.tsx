@@ -76,14 +76,14 @@ export default function WizardStep2() {
         <div>
           <label
             htmlFor="description"
-            className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+            className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
           >
-            Descripcion
+            Descripción
           </label>
           <textarea
             id="description"
             rows={5}
-            placeholder="Describe tu propiedad. Incluye detalles sobre amenidades y caracteristicas especiales. (Minimo 20 caracteres)"
+            placeholder="Describe tu propiedad. Incluye detalles sobre amenidades y características especiales. (Mínimo 20 caracteres)"
             className={`w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
               errors.description ? 'border-error' : 'border-border'
             }`}
@@ -102,7 +102,7 @@ export default function WizardStep2() {
         tooltip="Incluye toda la superficie construida o del lote."
       >
         <Input
-          label="Area total (m²)"
+          label="Área total (m²)"
           type="number"
           placeholder="Ej: 120"
           hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
@@ -123,7 +123,7 @@ export default function WizardStep2() {
               {...register('bedroomCount', { valueAsNumber: true })}
             />
             <Input
-              label="Banos"
+              label="Baños"
               type="number"
               placeholder="Ej: 2"
               error={errors.bathroomCount?.message}
@@ -171,7 +171,7 @@ export default function WizardStep2() {
 
           <div className="flex gap-3">
             <Button type="button" variant="text" onClick={prevStep} className="flex-1">
-              Atras
+              Atrás
             </Button>
             <Button type="submit" className="flex-1">
               Continuar

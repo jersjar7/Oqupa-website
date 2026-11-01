@@ -9,7 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, { base: string; disabled: string }> = {
   primary: {
-    base: 'h-12 rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary hover:border-secondary-hover hover:text-secondary-hover focus-visible:ring-secondary',
+    base: 'h-12 rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase tracking-[1px] text-secondary hover:border-secondary-hover hover:text-secondary-hover focus-visible:ring-secondary',
     disabled: 'border-black/20 text-black/20',
   },
   text: {
@@ -17,7 +17,7 @@ const variantStyles: Record<ButtonVariant, { base: string; disabled: string }> =
     disabled: 'text-black/20',
   },
   danger: {
-    base: 'h-12 rounded-full border-[1.5px] border-[#E63946] px-6 text-base font-bold uppercase text-[#E63946] hover:border-[#C5303C] hover:text-[#C5303C] focus-visible:ring-[#E63946]',
+    base: 'h-12 rounded-full border-[1.5px] border-error px-6 text-base font-bold uppercase tracking-[1px] text-error hover:border-error-strong hover:text-error-strong focus-visible:ring-error',
     disabled: 'border-black/20 text-black/20',
   },
 }

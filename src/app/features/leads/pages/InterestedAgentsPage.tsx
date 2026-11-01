@@ -100,13 +100,13 @@ export default function InterestedAgentsPage() {
               className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />
           ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs text-text-tertiary">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-xs text-text-tertiary">
             Sin foto
           </div>
           )
         })()}
         <div>
-          <p className="font-bold text-primary">
+          <p className="font-bold text-text-primary">
             {CURRENCY_SYMBOLS[listing.price.currency as keyof typeof CURRENCY_SYMBOLS]}{' '}
             {listing.price.amount.toLocaleString('es-PE')}
             {(() => {
@@ -147,7 +147,7 @@ export default function InterestedAgentsPage() {
           <div className="flex items-center gap-2">
             <Badge variant={listing.assignmentStatus === 'pending_acceptance' ? 'warning' : 'info'}>
               {listing.assignmentStatus === 'pending_acceptance'
-                ? 'Pendiente de aceptacion'
+                ? 'Pendiente de aceptación'
                 : 'Agente asignado'}
             </Badge>
             <span className="text-sm text-text-secondary">
@@ -156,7 +156,7 @@ export default function InterestedAgentsPage() {
           </div>
           <button
             type="button"
-            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+            className="mt-2 text-sm font-medium text-error hover:text-error-strong"
             onClick={() => setConfirmUnassign(true)}
           >
             Quitar Agente
@@ -178,8 +178,8 @@ export default function InterestedAgentsPage() {
         )}
 
         {claims.isError && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
-            <p className="text-red-700">
+          <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+            <p className="text-error-strong">
               Error al cargar los agentes interesados.
             </p>
             <button
@@ -194,10 +194,10 @@ export default function InterestedAgentsPage() {
         {claims.data && claims.data.length === 0 && (
           <div className="rounded-2xl border border-border bg-white p-12 text-center">
             <p className="text-text-secondary">
-              Aun no hay agentes interesados.
+              Aún no hay agentes interesados.
             </p>
             <p className="mt-1 text-sm text-text-tertiary">
-              Los agentes inmobiliarios verificados podran reclamar esta oportunidad.
+              Los agentes inmobiliarios verificados podrán reclamar esta oportunidad.
             </p>
           </div>
         )}
@@ -259,9 +259,9 @@ export default function InterestedAgentsPage() {
             <p className="mt-3 text-sm font-medium text-text-primary">Al asignar un agente:</p>
             <ul className="mt-2 space-y-2">
               {[
-                'Su numero de WhatsApp reemplazara al tuyo como contacto principal del anuncio',
-                'Los interesados en tu propiedad contactaran directamente al agente',
-                'Tu seguiras viendo todas las estadisticas y el estado de tu anuncio',
+                'Su número de WhatsApp reemplazará al tuyo como contacto principal del anuncio',
+                'Los interesados en tu propiedad contactarán directamente al agente',
+                'Tú seguirás viendo todas las estadísticas y el estado de tu anuncio',
                 'Puedes cambiar de agente en cualquier momento',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-2 text-sm text-text-secondary">
@@ -300,11 +300,11 @@ export default function InterestedAgentsPage() {
       >
         <div>
           <p className="text-sm text-text-secondary">
-            El agente dejara de manejar los contactos de esta propiedad. Podras elegir otro agente.
+            El agente dejará de manejar los contactos de esta propiedad. Podrás elegir otro agente.
           </p>
           <div className="mt-6 flex gap-3">
             <Button
-              className="flex-1 !bg-red-600 hover:!bg-red-700"
+              className="flex-1 !bg-error hover:!bg-error-strong"
               onClick={handleUnassignConfirm}
               isLoading={unassignRealtor.isPending}
             >

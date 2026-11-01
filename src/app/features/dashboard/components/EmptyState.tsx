@@ -12,12 +12,12 @@ export default function EmptyState() {
         No tienes publicaciones
       </h2>
       <p className="mt-2 max-w-sm text-base text-text-secondary">
-        Crea tu primera publicacion para que miles de personas vean tu propiedad.
+        Crea tu primera publicación para que miles de personas vean tu propiedad.
       </p>
       <Link to="/app/listings/new" className="mt-6">
         <Button>
           <Plus className="h-5 w-5" />
-          Crear Publicacion
+          Publicar
         </Button>
       </Link>
     </div>

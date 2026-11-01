@@ -28,11 +28,11 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
-          <h2 className="font-serif text-xl font-bold text-text-primary">
-            Algo salio mal
+          <h2 className="font-serif text-xl font-normal text-text-primary">
+            Algo salió mal
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Ocurrio un error inesperado.
+            Ocurrió un error inesperado.
           </p>
           <button
             onClick={() => {
@@ -41,7 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             }}
             className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
           >
-            Recargar pagina
+            Recargar página
           </button>
         </div>
       )

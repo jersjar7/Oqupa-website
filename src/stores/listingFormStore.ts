@@ -26,10 +26,15 @@ export interface ListingFormData {
   provincia: string
   departamento: string
   showExactLocation: boolean
+  // Editing a listing that hides its address: the blurred point the public
+  // document holds, and the true one the form was loaded with. Lets the save
+  // leave the public document alone when the owner did not move the pin.
+  hiddenAddress: HiddenAddress | null
   photos: File[]
   existingPhotoUrls: string[] // for edit mode
   existingPhotoBlurHashes: string[] // parallel to existingPhotoUrls
   originalExistingPhotoUrls: string[] // snapshot at edit-init for delete diff
+  originalCoverMicroThumb: string // the cover's blurred preview at edit-init ('' if none)
 
   // Photo ordering (maps final position to source)
   photoOrder: Array<{ type: 'existing' | 'new'; index: number }>
@@ -39,6 +44,14 @@ export interface ListingFormData {
   currency: Currency
   wantsRealtorHelp: boolean
   maxRealtors: number
+}
+
+export interface HiddenAddress {
+  publicLatitude: number
+  publicLongitude: number
+  trueLatitude: number
+  trueLongitude: number
+  trueCalle: string
 }
 
 interface ListingFormState {
@@ -76,10 +89,12 @@ const INITIAL_DATA: ListingFormData = {
   provincia: '',
   departamento: '',
   showExactLocation: true,
+  hiddenAddress: null,
   photos: [],
   existingPhotoUrls: [],
   existingPhotoBlurHashes: [],
   originalExistingPhotoUrls: [],
+  originalCoverMicroThumb: '',
   photoOrder: [],
   amount: null,
   currency: 'PEN',

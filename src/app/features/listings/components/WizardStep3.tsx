@@ -186,13 +186,13 @@ export default function WizardStep3() {
             />
             <div>
               <span className="text-sm font-medium text-text-primary">
-                Mostrar ubicacion exacta
+                Mostrar ubicación exacta
                 <InfoTip text="Si desactivas esta opción, los compradores solo verán un área aproximada en el mapa. Recomendado para mayor privacidad." />
               </span>
               <p className="text-xs text-text-secondary">
                 {showExactLocation
-                  ? 'Se mostrara tu direccion completa y ubicacion exacta en el mapa'
-                  : 'Se mostrara solo el distrito y una ubicacion aproximada en el mapa'}
+                  ? 'Se mostrará tu dirección completa y ubicación exacta en el mapa'
+                  : 'Se mostrará solo el distrito y una ubicación aproximada en el mapa'}
               </p>
             </div>
           </label>
@@ -208,7 +208,7 @@ export default function WizardStep3() {
             onClick={prevStep}
             className="flex-1"
           >
-            Atras
+            Atrás
           </Button>
           <Button type="submit" className="flex-1">
             Continuar

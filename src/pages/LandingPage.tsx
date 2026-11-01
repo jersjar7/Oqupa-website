@@ -16,7 +16,7 @@ export default function LandingPage() {
   const { heroRef } = useOutletContext<LayoutContext>()
 
   useDocumentMeta({
-    title: 'Oqupa - Tu proximo hogar ya esta en el mapa',
+    title: 'Oqupa - Tu próximo hogar ya está en el mapa',
     description:
       'Oqupa centraliza los avisos inmobiliarios de Piura, elimina fraudes y conecta a usuarios con propietarios y agentes verificados.',
     url: 'https://oqupa.com',

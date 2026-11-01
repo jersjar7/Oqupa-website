@@ -13,6 +13,7 @@ import { listingDetailsLine, listingLocationLine } from '@/lib/map/listLogic'
 import { drawingSvg, PIN_COLORS } from '@/components/explore/mapbox/pinElements'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
+import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 interface ListingListCardProps {
   item: ListingWithProperty
@@ -35,7 +36,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
     <div
       data-testid="listing-list-card"
       className={`relative overflow-hidden rounded-2xl bg-white shadow-light ${
-        listing.isBoosted ? 'border-2 border-amber-500' : isHighlighted ? 'border border-primary ring-2 ring-primary/20' : 'border border-border'
+        listing.isBoosted ? 'border-2 border-boost' : isHighlighted ? 'border border-primary ring-2 ring-primary/20' : 'border border-border'
       }`}
     >
       <Link to={`/property/${listing.id}`} className="block">
@@ -47,9 +48,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
             <AnimatedImage src={cardUrl(photoRef)} alt={`${pinKindWord(label.kind)} en ${listingLocationLine(item)}`} className="h-full w-full object-cover" />
           )}
           {listing.isBoosted && (
-            <span className="absolute left-3 top-3 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-bold tracking-wide text-[#1F2937]">
-              DESTACADO
-            </span>
+            <DestacadoBadge className="absolute left-3 top-3" />
           )}
           {photos.length > 1 && (
             <span className="absolute bottom-3 right-3 rounded-lg bg-black/55 px-2 py-0.5 text-xs text-white">

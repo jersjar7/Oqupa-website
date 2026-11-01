@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
-import type { PhotoOverlayTone } from '@/app/components/ui/PhotoOverlayBadge'
+import { LISTING_STATUS_TONE } from '@/lib/listingStatusTone'
 import { useToggleListingStatus, useDeleteListing, useMarkListingClosed } from '@/hooks/useListings'
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
@@ -18,23 +18,12 @@ import {
   PROPERTY_TYPE_LABELS,
   LISTING_STATUS_LABELS,
   CURRENCY_SYMBOLS,
-  type ListingStatus,
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 
 interface ListingCardProps {
   listing: Listing
   property: Property
-}
-
-const STATUS_OVERLAY_TONE: Record<ListingStatus, PhotoOverlayTone> = {
-  draft: 'neutral',
-  paymentPending: 'warning',
-  active: 'success',
-  expired: 'warning',
-  deactivated: 'error',
-  sold: 'info',
-  rented: 'info',
 }
 
 function formatPrice(amount: number, currency: string): string {
@@ -53,6 +42,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showCloseSurvey, setShowCloseSurvey] = useState(false)
   const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -92,6 +82,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // action that matches how it is offered.
   const isRental = property.operationType === 'alquiler'
   const canClose = listing.status === 'active'
+  // Deactivating does not pause a boost: the expiry job ignores status, so the
+  // paid days keep running and nothing is returned. A boosted listing asks
+  // first and says so; an unboosted one has nothing to lose.
+  const asksBeforeDeactivating = listing.status === 'active' && listing.isBoosted
+  const boostDaysLeft = listing.boostedUntil
+    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
@@ -105,7 +102,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           className="h-48"
         />
         <PhotoOverlayBadge
-          tone={STATUS_OVERLAY_TONE[listing.status]}
+          tone={LISTING_STATUS_TONE[listing.status]}
           className="absolute top-3 left-3"
         >
           {LISTING_STATUS_LABELS[listing.status]}
@@ -115,11 +112,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
       {/* Content — grows to fill so footers pin to bottom */}
       <div className="flex flex-1 flex-col p-4">
         {/* Price */}
-        <p className="font-sans text-lg font-bold text-primary line-clamp-1">
+        <p className="font-serif text-xl font-normal text-secondary line-clamp-1">
           {formatPrice(listing.price.amount, listing.price.currency)}
           {(() => {
             const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-            return suffix ? <span className="text-sm font-normal text-text-secondary"> {suffix}</span> : null
+            return suffix ? <span className="font-sans text-sm font-normal text-text-secondary"> {suffix}</span> : null
           })()}
         </p>
 
@@ -169,7 +166,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             {(openFlow) => (
               <button
                 onClick={openFlow}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-boost/20 px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-boost/30"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Destacar mi propiedad
@@ -179,10 +176,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         )}
 
         {/* Realtor agents */}
-        {listing.wantsRealtorHelp && listing.status === 'active' && (
+        {/* Reachable while an agent is assigned too, as in the app (bug B3):
+            the agents page is the owner's only way to "Quitar agente". */}
+        {(listing.wantsRealtorHelp || listing.assignedRealtorId) && listing.status === 'active' && (
           <div className="mt-2">
             {listing.assignedRealtorId ? (
-              <Badge variant="info">Agente asignado</Badge>
+              <Link to={`/app/listings/${listing.id}/agents`} className="inline-flex">
+                <Badge variant="info">Agente asignado</Badge>
+              </Link>
             ) : (
               <Link
                 to={`/app/listings/${listing.id}/agents`}
@@ -218,6 +219,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               onClick={() =>
                 isClosed
                   ? setShowRepublishConfirm(true)
+                  : asksBeforeDeactivating
+                  ? setShowDeactivateConfirm(true)
                   : toggleStatus.mutate({
                       listingId: listing.id,
                       currentStatus: listing.status,
@@ -246,7 +249,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           {listing.status === 'deactivated' && (
             <Button
               variant="text"
-              className="text-red-600 hover:text-red-700"
+              className="text-error hover:text-error-strong"
               onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="h-4 w-4" />
@@ -257,14 +260,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
 
         {/* Delete confirmation */}
         {showDeleteConfirm && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-            <p className="text-sm font-medium text-red-800">
+          <div className="mt-3 rounded-lg border border-error/20 bg-error/5 p-3">
+            <p className="text-sm font-medium text-error-strong">
               ¿Eliminar esta publicación? Esta acción no se puede deshacer.
             </p>
             <div className="mt-2 flex gap-2">
               <Button
                 variant="text"
-                className="text-red-600 hover:text-red-700"
+                className="text-error hover:text-error-strong"
                 isLoading={deleteListing.isPending}
                 onClick={() =>
                   deleteListing.mutate(
@@ -315,6 +318,37 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                 {isRental ? 'Sí, alquilado' : 'Sí, vendido'}
               </Button>
               <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Desactivar a boosted listing — the paid days keep running */}
+        {showDeactivateConfirm && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">¿Desactivar esta publicación?</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              {boostDaysLeft
+                ? boostDaysLeft === 1
+                  ? 'Te queda 1 día de destacado. Sigue corriendo mientras esté desactivada.'
+                  : `Te quedan ${boostDaysLeft} días de destacado. Siguen corriendo mientras esté desactivada.`
+                : 'Los días de tu destacado siguen corriendo mientras esté desactivada.'}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                isLoading={toggleStatus.isPending}
+                onClick={() =>
+                  toggleStatus.mutate(
+                    { listingId: listing.id, currentStatus: listing.status },
+                    { onSuccess: () => setShowDeactivateConfirm(false) }
+                  )
+                }
+              >
+                Sí, desactivar
+              </Button>
+              <Button variant="text" onClick={() => setShowDeactivateConfirm(false)}>
                 Cancelar
               </Button>
             </div>

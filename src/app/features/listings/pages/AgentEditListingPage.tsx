@@ -72,7 +72,7 @@ export default function AgentEditListingPage() {
   const handleSubmit = async () => {
     const trimmedDesc = description.trim()
     if (!trimmedDesc) {
-      setSubmitError('La descripcion no puede estar vacia')
+      setSubmitError('La descripción no puede estar vacía')
       return
     }
     if (existingPhotoUrls.length === 0 && newPhotos.length === 0) {
@@ -171,7 +171,7 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="rounded-full p-1 text-text-secondary hover:bg-gray-100"
+          className="rounded-full p-1 text-text-secondary hover:bg-surface-muted"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -184,7 +184,7 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
         <p className="text-sm text-blue-800">
-          Como agente asignado, puedes editar la descripcion y las fotos.
+          Como agente asignado, puedes editar la descripción y las fotos.
         </p>
       </div>
 
@@ -198,13 +198,13 @@ export default function AgentEditListingPage() {
           {/* Description */}
           <div className="mb-6">
             <label className="mb-2 block font-sans text-sm font-medium uppercase text-text-secondary">
-              Descripcion
+              Descripción
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
-              className="w-full rounded-lg border border-gray-200 p-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border p-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="Describe la propiedad..."
             />
           </div>
@@ -227,7 +227,7 @@ export default function AgentEditListingPage() {
                   <button
                     onClick={() => handleRemoveExisting(index)}
                     aria-label={`Eliminar foto ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -250,7 +250,7 @@ export default function AgentEditListingPage() {
                   <button
                     onClick={() => handleRemoveNew(index)}
                     aria-label={`Eliminar foto nueva ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -262,7 +262,7 @@ export default function AgentEditListingPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   aria-label="Agregar foto"
-                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400 transition-colors hover:border-primary hover:text-primary"
+                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-separator text-text-tertiary transition-colors hover:border-primary hover:text-primary"
                 >
                   <Upload className="h-6 w-6" />
                 </button>

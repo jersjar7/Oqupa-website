@@ -8,15 +8,34 @@
   --color-secondary-hover: #2E5544;
   --color-accent: #FFCD60;
   --color-accent-hover: #F0BD4A;
-  --color-cream: #FFFAF5;
+  --color-cream: #FFF9F0; /* the brand deck cream — the only cream (founder, 2026-10-31) */
   --color-success: #3A6A55;
   --color-warning: #FFCD60;
   --color-error: #E63946; /* Alert Red — Brand Deck value; was #D94035 */
-  --color-background: #FFFAF5;
-  --color-background-secondary: #FFF4E6;
-  --color-text-primary: #1C1C1E;
-  --color-text-secondary: #636366;
-  --color-text-tertiary: #8E8E93;
+  --color-error-strong: #C5303C; /* hover state, and small error text on a red tint (5.3:1) */
+  /* Destacado (boosted) amber — the same gold the map uses for boosted pins
+     (PIN_COLORS.gold, ADR-031). Always carries ink text, never white
+     (white on it is 2.15:1; ink is 6.9:1). */
+  --color-boost: #F59E0B;
+  --color-boost-hover: #D97706;
+  --color-background: #FFF9F0;
+  /* A step darker than cream, for hover and quiet fills that sit ON cream
+     (photo placeholders, chips, confirm panels). Same offset from cream as the
+     retired #FFF4E6 had from #FFFAF5 (G -6, B -15), applied to #FFF9F0. */
+  --color-cream-strong: #FFF3E1;
+  --color-background-secondary: var(--color-cream-strong);
+
+  /* Neutrals — the only greys the site uses (brand audit A2, 2026-10-31).
+     Replaced Apple's system greys (#1C1C1E / #636366 / #8E8E93) and stock
+     Tailwind gray-* classes. Every text grey passes 4.5:1 on cream and white. */
+  --color-ink: #1A1A1A;            /* text, Destacado label, dark map pills */
+  --color-ink-secondary: #5C5C5C;  /* secondary text — 6.6:1 on cream */
+  --color-ink-tertiary: #737373;   /* captions, metadata — 4.6:1 on cream */
+  --color-surface-muted: #F4F1EC;  /* quiet fill: read-only fields, chips, hovers */
+  --color-surface-strong: #E7E2DB; /* skeletons, tracks, stronger fills */
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-ink-secondary);
+  --color-text-tertiary: var(--color-ink-tertiary);
   --color-border: #E8E0D6;
   --color-separator: #D4CCC2;
   --color-footer-bg: #3A6A55;
@@ -134,7 +153,7 @@ body {
 
 /* Sonner toast overrides for brand consistency */
 [data-sonner-toaster] [data-sonner-toast] {
-  --normal-bg: #FFFAF5;
+  --normal-bg: #FFF9F0;
   --normal-border: #E8E0D6;
 }
 

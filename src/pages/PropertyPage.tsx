@@ -32,6 +32,8 @@ import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { contactService, ContactDenied } from '@/services/contactService'
+import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
+import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -45,7 +47,7 @@ function PropertyGallery({ images }: { images: string[] }) {
 
   if (images.length === 0) {
     return (
-      <div className="flex h-[300px] w-full items-center justify-center bg-gray-100 md:h-[400px]">
+      <div className="flex h-[300px] w-full items-center justify-center bg-surface-muted md:h-[400px]">
         <span className="text-text-secondary">Sin imágenes</span>
       </div>
     )
@@ -189,7 +191,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                   />
                   {isLast && hasMore && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900">
+                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-text-primary">
                         Ver todas las {images.length} fotos
                       </span>
                     </div>
@@ -217,8 +219,11 @@ export default function PropertyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { pathname, hash } = useLocation()
-  const { listing, property, isLoading, error } = useProperty(id)
-  const { firebaseUser, user } = useAuthStore()
+  const { firebaseUser, user, isInitialized } = useAuthStore()
+  const { listing, property, isLoading, error } = useProperty(id, {
+    viewerId: user?.id,
+    authReady: isInitialized,
+  })
   const [showAuthModal, setShowAuthModal] = useState(false)
   // Set only when the server says no phone is attached to this account,
   // so the gate can say "otra vez" instead of contradicting the profile
@@ -238,7 +243,10 @@ export default function PropertyPage() {
     if (!listing || !property) return 'Propiedad - Oqupa'
     const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
     const distrito = property.location?.distrito
-    return distrito ? `${typeLabel} en ${distrito} - Oqupa` : `${typeLabel} - Oqupa`
+    const base = distrito ? `${typeLabel} en ${distrito} - Oqupa` : `${typeLabel} - Oqupa`
+    // A sold page must not read as an available one where it is shared.
+    const closed = closedLabel(listing.status)
+    return closed ? `${closed} · ${base}` : base
   }, [listing, property])
 
   const metaDescription = useMemo(() => {
@@ -295,6 +303,8 @@ export default function PropertyPage() {
   const autoContactDone = useRef(false)
   useEffect(() => {
     if (autoContactDone.current || !listing) return
+    // Closed or unpublished meanwhile: nothing to contact.
+    if (listing.status !== 'active') return
     if (!wantsAutoContact(hash)) return
     if (!firebaseUser?.emailVerified || !user?.isPhoneVerified) return
     autoContactDone.current = true
@@ -332,7 +342,7 @@ export default function PropertyPage() {
   if (error || !listing || !property) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="font-serif text-2xl font-bold text-text-primary">
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">
           Propiedad no encontrada
         </h1>
         <p className="text-text-secondary">
@@ -349,6 +359,10 @@ export default function PropertyPage() {
   }
 
   const isOwner = user?.id === listing.ownerId
+  const view = listingPageView(listing.status, isOwner)
+  // Only an active listing can be contacted; the server refuses the rest.
+  const canContact = view === 'open'
+  const closed = closedLabel(listing.status)
   const gate = contactGateCopy({
     signedIn: Boolean(firebaseUser),
     emailVerified: firebaseUser?.emailVerified ?? false,
@@ -424,6 +438,8 @@ export default function PropertyPage() {
         )
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
+      } else if (reason === 'listing-not-available') {
+        toast.error('Esta publicación ya no está disponible.')
       } else if (reason === 'listing-has-no-contact') {
         toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
@@ -464,30 +480,46 @@ export default function PropertyPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left column — listing details */}
           <div className="lg:col-span-2">
+            {/* Status: Vendido / Alquilado for everyone; for the owner, a note
+                on a listing nobody else can see. */}
+            {closed ? (
+              <div
+                role="status"
+                className="mb-4 rounded-xl bg-secondary px-4 py-3 text-white"
+              >
+                <p className="font-sans text-sm font-bold uppercase tracking-[1px]">{closed}</p>
+              </div>
+            ) : view === 'owner-only' ? (
+              <div
+                role="status"
+                className="mb-4 rounded-xl border border-border bg-background-secondary px-4 py-3"
+              >
+                <p className="text-sm text-text-primary">{ownerOnlyNote(listing.status)}</p>
+              </div>
+            ) : null}
+
             {/* Price + Destacado badge + views / save / share.
                 One row from sm up. On a phone the price takes its own line —
                 squeezed into the row it wrapped to "S/." / "540,000" and pushed
                 Compartir off-screen (Jerson, staging, 2026-08-26). */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="whitespace-nowrap text-2xl font-bold text-primary">
+              <p className="whitespace-nowrap font-serif text-[28px] font-normal leading-tight text-secondary">
                 {formatPrice(listing.price?.amount)}
                 {(() => {
                   const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-                  return suffix ? <span className="text-lg font-normal text-text-secondary"> {suffix}</span> : null
+                  return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
                 })()}
               </p>
               {listing.isBoosted && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-600 ring-1 ring-amber-500/30">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  Destacado
-                </span>
+                <DestacadoBadge withStar />
               )}
               <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
                 <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
                   <Eye className="h-4 w-4 shrink-0" />
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
                 </span>
-                <SaveButton listingId={listing.id} variant="page" />
+                {canContact && <SaveButton listingId={listing.id} variant="page" />}
+{view !== 'owner-only' && (
                 <button
                   onClick={handleShare}
                   className="whitespace-nowrap rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
@@ -495,6 +527,7 @@ export default function PropertyPage() {
                 >
                   Compartir
                 </button>
+                )}
               </div>
             </div>
 
@@ -564,10 +597,10 @@ export default function PropertyPage() {
             {/* Description */}
             {listing.description && (
               <div className="mt-6">
-                <h2 className="font-serif text-lg font-semibold text-text-primary">
+                <h2 className="font-serif text-lg font-normal text-text-primary">
                   Descripción
                 </h2>
-                <p className="mt-2 whitespace-pre-line text-gray-600 leading-relaxed">
+                <p className="mt-2 whitespace-pre-line text-text-secondary leading-relaxed">
                   {listing.description}
                 </p>
               </div>
@@ -576,8 +609,16 @@ export default function PropertyPage() {
 
           {/* Right column — sticky widgets */}
           <aside className="space-y-4 lg:sticky lg:top-24 lg:col-span-1 lg:h-fit lg:self-start lg:border-l lg:border-border lg:pl-8">
-            {/* WhatsApp button + helper notes */}
-            {(
+            {/* WhatsApp button + helper notes — only while the listing is up */}
+            {!canContact && closed && (
+              <Link
+                to="/explorar"
+                className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-4 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+              >
+                Ver propiedades disponibles
+              </Link>
+            )}
+            {canContact && (
               <div>
               <button
                 onClick={() => handleWhatsAppClick()}
@@ -613,14 +654,14 @@ export default function PropertyPage() {
             {isOwner && listing.status === 'active' && (
               listing.isBoosted ? (
                 // Boost status for owner
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="rounded-xl border border-boost/40 bg-boost/10 p-4">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm font-semibold text-amber-700">
+                    <Sparkles className="h-5 w-5 text-boost" />
+                    <span className="text-sm font-semibold text-ink">
                       Tu publicación está destacada
                     </span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-amber-600">
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
                     {listing.boostTier && (
                       <span>Plan: {BOOST_TIER_LABELS[listing.boostTier]}</span>
                     )}
@@ -650,7 +691,7 @@ export default function PropertyPage() {
                   {(openFlow) => (
                     <button
                       onClick={openFlow}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover"
                     >
                       <Sparkles className="h-5 w-5" />
                       Destacar mi propiedad
@@ -707,7 +748,7 @@ export default function PropertyPage() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
             >
-              <h3 className="font-serif text-lg font-bold text-text-primary">
+              <h3 className="font-serif text-lg font-normal text-text-primary">
                 {gate.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">

@@ -16,6 +16,7 @@ import { listingDetailsLine, listingLocationLine } from '@/lib/map/listLogic'
 import { drawingSvg, PIN_COLORS } from '@/components/explore/mapbox/pinElements'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
+import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 export const COMPACT_CARD_PHOTO_PX = 96
 
@@ -35,7 +36,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
     <div
       data-testid="compact-listing-card"
       className={`relative flex items-center gap-3 rounded-2xl bg-white p-2 pr-2 shadow-large ${
-        listing.isBoosted ? 'border-2 border-amber-500' : ''
+        listing.isBoosted ? 'border-2 border-boost' : ''
       } ${className}`}
     >
       <div
@@ -52,7 +53,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {listing.isBoosted && (
-          <span className="self-start rounded bg-amber-500 px-1.5 py-px text-[10px] font-bold tracking-wide text-[#1F2937]">DESTACADO</span>
+          <DestacadoBadge size="sm" className="self-start" />
         )}
         <span className="truncate text-lg font-bold leading-tight text-text-primary">{label.priceLine}</span>
         <span className="flex items-center gap-1.5 text-xs font-bold tracking-wide" style={{ color }}>

@@ -100,8 +100,7 @@ export default function ListingsPage() {
         <Link to="/app/listings/new" className="sm:ml-auto self-end sm:self-auto">
           <Button>
             <Plus className="h-5 w-5" />
-            <span className="hidden sm:inline">Crear Publicacion</span>
-            <span className="sm:hidden">Crear</span>
+            Publicar
           </Button>
         </Link>
       </div>

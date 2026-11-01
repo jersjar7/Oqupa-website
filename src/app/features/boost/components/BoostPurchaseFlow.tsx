@@ -193,7 +193,7 @@ export default function BoostPurchaseFlow({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
         >
           <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-xl">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-boost border-t-transparent" />
             <h3 className="mt-4 font-sans text-lg font-medium text-text-primary">
               Tu pago fue exitoso
             </h3>
@@ -216,8 +216,8 @@ export default function BoostPurchaseFlow({
         >
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-                <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
+                <svg className="h-7 w-7 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>

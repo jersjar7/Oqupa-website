@@ -117,7 +117,7 @@ export default function ShareFormatModal({
         className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-black/5 disabled:opacity-50"
       >
         <div className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${
-          linkDone ? 'bg-green-600' : 'bg-[var(--color-secondary)]'
+          linkDone ? 'bg-success' : 'bg-[var(--color-secondary)]'
         }`}>
           {linkDone ? <Check className="h-5 w-5" /> : <Link className="h-5 w-5" />}
         </div>
@@ -161,7 +161,7 @@ export default function ShareFormatModal({
         onClick={onClose}
         className="mt-6 w-full rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
       >
-        Listo — Ver mi publicacion
+        Listo — Ver mi publicación
       </button>
     </Modal>
   )
@@ -192,7 +192,7 @@ function FormatButton({
       disabled={isDisabled}
       className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors disabled:opacity-50 ${
         isDone
-          ? 'border-green-300 bg-green-50'
+          ? 'border-success/40 bg-success/5'
           : 'border-[var(--color-border)] hover:border-[var(--color-secondary)] hover:bg-black/5'
       }`}
     >
@@ -204,11 +204,11 @@ function FormatButton({
         <div className="relative">
           <div
             className={`${aspectClass} w-10 rounded border-2 ${
-              isDone ? 'border-green-600 bg-green-100' : 'border-[var(--color-secondary)] bg-[var(--color-cream)]'
+              isDone ? 'border-success bg-success/10' : 'border-[var(--color-secondary)] bg-[var(--color-cream)]'
             }`}
           />
           {isDone && (
-            <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white">
+            <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-success text-white">
               <Check className="h-2.5 w-2.5" />
             </div>
           )}
@@ -219,7 +219,7 @@ function FormatButton({
         <p className="text-xs text-text-secondary">{sublabel}</p>
       </div>
       <div className={`flex items-center gap-1 text-xs ${
-        isDone ? 'text-green-600' : 'text-[var(--color-secondary)]'
+        isDone ? 'text-success' : 'text-[var(--color-secondary)]'
       }`}>
         {isDone ? <Check className="h-3 w-3" /> : <Download className="h-3 w-3" />}
         <span>{isDone ? 'Descargado' : 'Descargar'}</span>

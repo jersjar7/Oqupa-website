@@ -79,11 +79,26 @@ export default function EditListingPage() {
       latitude: trueLocation?.latitude ?? property.location.latitude,
       longitude: trueLocation?.longitude ?? property.location.longitude,
       calle: trueLocation?.calle ?? property.location.calle,
+      // Both must be loaded, never left at the new-listing defaults: saving
+      // writes them back. Missing, every edit of a hidden-address listing
+      // published the real address, and every edit erased the urbanización.
+      urbanizacion: property.location.urbanizacion ?? '',
+      showExactLocation: listing.showExactLocation !== false,
+      hiddenAddress: trueLocation
+        ? {
+            publicLatitude: property.location.latitude,
+            publicLongitude: property.location.longitude,
+            trueLatitude: trueLocation.latitude,
+            trueLongitude: trueLocation.longitude,
+            trueCalle: trueLocation.calle,
+          }
+        : null,
       distrito: property.location.distrito,
       provincia: property.location.provincia,
       departamento: property.location.departamento,
       existingPhotoUrls: property.media.photoKeys ?? property.media.propertyPhotoUrls,
       existingPhotoBlurHashes: property.media.photoBlurHashes ?? [],
+      originalCoverMicroThumb: property.media.primaryPhotoMicroThumb ?? '',
       originalExistingPhotoUrls:
         property.media.photoKeys ?? property.media.propertyPhotoUrls,
       photos: [],
@@ -113,7 +128,7 @@ export default function EditListingPage() {
   if (error || !result) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <p className="text-error">No se pudo cargar la publicacion</p>
+        <p className="text-error">No se pudo cargar la publicación</p>
         <button
           onClick={() => navigate('/app')}
           className="text-base text-secondary hover:text-secondary-hover"
@@ -135,7 +150,7 @@ export default function EditListingPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="font-serif text-[28px] font-normal text-text-primary">
-        Editar Publicacion
+        Editar Publicación
       </h1>
       <p className="mt-1 text-base text-text-secondary">
         Modifica los datos de tu propiedad

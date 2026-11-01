@@ -25,7 +25,7 @@ import {
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
 import { toast } from 'sonner'
-import { contactService } from '@/services/contactService'
+import { contactService, ContactDenied } from '@/services/contactService'
 
 interface ClaimedLeadCardProps {
   claim: RealtorClaim
@@ -78,8 +78,14 @@ export default function ClaimedLeadCard({
         '_blank',
         'noopener,noreferrer',
       )
-    } catch {
-      toast.error('No se pudo obtener el contacto del propietario.')
+    } catch (error) {
+      // Sold, rented or deactivated since the claim: the server refuses it.
+      // Saying "could not" would invite a retry that can never work.
+      toast.error(
+        error instanceof ContactDenied && error.reason === 'listing-not-available'
+          ? 'Esta publicación ya no está disponible.'
+          : 'No se pudo obtener el contacto del propietario.',
+      )
     } finally {
       setOpening(false)
     }
@@ -107,10 +113,10 @@ export default function ClaimedLeadCard({
       {/* Content — grows to fill so the footer pins to the bottom */}
       <div className="flex flex-1 flex-col p-4">
         {/* Price */}
-        <p className="font-sans text-lg font-bold text-primary line-clamp-1">
+        <p className="font-serif text-xl font-normal text-secondary line-clamp-1">
           {formatPrice(listing.price.amount, listing.price.currency)}
           {priceSuffix && (
-            <span className="font-normal text-text-secondary"> {priceSuffix}</span>
+            <span className="font-sans text-sm font-normal text-text-secondary"> {priceSuffix}</span>
           )}
         </p>
 
@@ -145,7 +151,7 @@ export default function ClaimedLeadCard({
             type="button"
             onClick={openWhatsApp}
             disabled={opening}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-success hover:text-secondary-hover disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" />
             Contactar por WhatsApp

@@ -240,8 +240,8 @@ function DisponiblesPane({
   }
   if (query.isError) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
-        <p className="text-red-700">Error al cargar las oportunidades.</p>
+      <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+        <p className="text-error-strong">Error al cargar las oportunidades.</p>
         <button onClick={() => query.refetch()} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">
           Reintentar
         </button>
@@ -282,8 +282,8 @@ function DisponiblesPane({
       >
         {confirmLead && (
           <div>
-            <div className="rounded-xl border border-border bg-gray-50 p-3">
-              <p className="font-bold text-primary">
+            <div className="rounded-xl border border-border bg-surface-muted p-3">
+              <p className="font-bold text-text-primary">
                 {CURRENCY_SYMBOLS[confirmLead.listing.price.currency as keyof typeof CURRENCY_SYMBOLS]}{' '}
                 {confirmLead.listing.price.amount.toLocaleString('es-PE')}
                 {(() => {
@@ -338,8 +338,8 @@ function EnEsperaPane({
   }
   if (query.isError) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
-        <p className="text-red-700">Error al cargar tus reclamos.</p>
+      <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+        <p className="text-error-strong">Error al cargar tus reclamos.</p>
       </div>
     )
   }

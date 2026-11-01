@@ -1,8 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 import { firestoreService } from '@/services/firestoreService'
+import { listingPageView, type ListingPageView } from '@/app/features/listings/listingVisibility'
 
-export function useProperty(listingId: string | undefined) {
-  const { data, isLoading, error } = useQuery({
+interface UsePropertyOptions {
+  /** The signed-in user's id, so an owner can see their own unpublished listing. */
+  viewerId?: string | null
+  /** False while sign-in is still being restored. A non-public listing waits
+   *  for it, so its owner is not shown "not found" for a moment first. */
+  authReady?: boolean
+}
+
+export function useProperty(
+  listingId: string | undefined,
+  { viewerId, authReady = true }: UsePropertyOptions = {},
+) {
+  const { data, isLoading: queryLoading, error } = useQuery({
     queryKey: ['listings', 'detail', listingId],
     queryFn: () => firestoreService.getListingWithProperty(listingId!),
     enabled: !!listingId,
@@ -11,13 +23,19 @@ export function useProperty(listingId: string | undefined) {
   const listing = data?.listing ?? null
   const property = data?.property ?? null
 
-  // Treat deactivated listings as not found
-  const notFound =
-    !isLoading && (!data || listing?.status === 'deactivated')
+  const isOwner = Boolean(viewerId && listing && viewerId === listing.ownerId)
+  const view: ListingPageView | null = listing ? listingPageView(listing.status, isOwner) : null
+
+  // Who is looking only matters for a listing strangers cannot see.
+  const waitingForAuth = !authReady && view === 'hidden'
+  const isLoading = queryLoading || waitingForAuth
+
+  const notFound = !isLoading && (!data || view === 'hidden')
 
   return {
-    listing,
-    property,
+    listing: notFound ? null : listing,
+    property: notFound ? null : property,
+    view: isLoading ? null : view,
     isLoading,
     error: error
       ? 'Error al cargar la propiedad'

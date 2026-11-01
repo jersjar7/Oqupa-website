@@ -32,7 +32,7 @@ function formatRelativeDate(date: Date): string {
   if (diffDays < 0) return 'Hoy' // Future date (clock skew or serverTimestamp pending)
   if (diffDays === 0) return 'Hoy'
   if (diffDays === 1) return 'Ayer'
-  if (diffDays < 7) return `Hace ${diffDays} dias`
+  if (diffDays < 7) return `Hace ${diffDays} días`
   if (diffDays < 30) {
     const weeks = Math.floor(diffDays / 7)
     return `Hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`
@@ -42,8 +42,8 @@ function formatRelativeDate(date: Date): string {
 
 function formatExperience(years: number): string {
   if (years === 0) return 'Sin experiencia'
-  if (years === 1) return '1 ano'
-  return `${years} anos`
+  if (years === 1) return '1 año'
+  return `${years} años`
 }
 
 export default function AdminApplicationsPage() {
@@ -176,7 +176,7 @@ export default function AdminApplicationsPage() {
           <Card>
             <p className="text-center text-text-secondary">
               {filter === 'all'
-                ? 'No hay solicitudes aun.'
+                ? 'No hay solicitudes aún.'
                 : `No hay solicitudes con estado "${FILTER_OPTIONS.find((o) => o.value === filter)?.label}".`}
             </p>
           </Card>
@@ -235,7 +235,7 @@ export default function AdminApplicationsPage() {
                         {/* Professional info */}
                         <div className="mt-4 space-y-2">
                           <h3 className="text-sm font-medium uppercase text-text-secondary">
-                            Informacion Profesional
+                            Información Profesional
                           </h3>
                           <div className="flex flex-col gap-1.5 text-sm text-text-primary">
                             {app.businessName && (
@@ -261,7 +261,7 @@ export default function AdminApplicationsPage() {
                         {app.motivation && (
                           <div className="mt-4 space-y-2">
                             <h3 className="text-sm font-medium uppercase text-text-secondary">
-                              Motivacion
+                              Motivación
                             </h3>
                             <blockquote className="flex gap-2 rounded-lg bg-black/[0.03] px-4 py-3 text-sm italic text-text-secondary">
                               <Quote className="mt-0.5 h-4 w-4 flex-shrink-0 text-text-tertiary" />
@@ -316,7 +316,7 @@ export default function AdminApplicationsPage() {
       >
         <p className="text-text-secondary">
           {confirmAction?.type === 'approve'
-            ? `Vas a aprobar la solicitud de ${confirmAction.application.fullName}. Se le otorgara el rol de agente inmobiliario verificado.`
+            ? `Vas a aprobar la solicitud de ${confirmAction.application.fullName}. Se le otorgará el rol de agente inmobiliario verificado.`
             : `Vas a rechazar la solicitud de ${confirmAction?.application.fullName}.`}
         </p>
         {actionError && (

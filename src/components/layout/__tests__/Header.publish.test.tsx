@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The door on the website: "Anuncia tu propiedad" as the primary header CTA,
+// The door on the website: "Publicar" as the primary header CTA,
 // for visitors and signed-in people alike, on every page variant.
 // docs/new-user-navigation-path.md, step 4. Brand rule (2026-08-25):
 // *anunciar* on the public site, *publicar* inside the product.
@@ -32,9 +32,9 @@ function renderHeader(variant: 'full' | 'minimal') {
 describe('Header — the publish door', () => {
   beforeEach(() => { mockAuth.firebaseUser = null; mockAuth.user = null })
 
-  it('a visitor sees "Anuncia tu propiedad" that leads to creating an account', () => {
+  it('a visitor sees "Publicar" that leads to creating an account', () => {
     renderHeader('full')
-    const cta = screen.getAllByRole('link', { name: /Anuncia tu propiedad/i })[0]
+    const cta = screen.getAllByRole('link', { name: /^Publicar$/i })[0]
     expect(cta?.getAttribute('href')).toBe('/app/login')
     expect(screen.queryByText(/Publica Gratis/i)).toBeNull()
   })
@@ -42,7 +42,7 @@ describe('Header — the publish door', () => {
   it('a signed-in person is taken straight to the wizard', () => {
     mockAuth.firebaseUser = { uid: 'u1' }; mockAuth.user = { name: 'Ana' }
     renderHeader('full')
-    const cta = screen.getAllByRole('link', { name: /Anuncia tu propiedad/i })[0]
+    const cta = screen.getAllByRole('link', { name: /^Publicar$/i })[0]
     expect(cta?.getAttribute('href')).toBe('/app/listings/new')
   })
 
@@ -52,7 +52,7 @@ describe('Header — the publish door', () => {
     // phone, where the ads land. jsdom cannot apply Tailwind, so pin the
     // class list itself.
     renderHeader('minimal')
-    const cta = screen.getAllByRole('link', { name: /Anuncia tu propiedad/i })[0]
+    const cta = screen.getAllByRole('link', { name: /^Publicar$/i })[0]
     expect(cta).toBeTruthy()
     expect(cta?.className).not.toMatch(/\bhidden\b/)
     expect(cta?.className).toMatch(/whitespace-nowrap/)
@@ -64,7 +64,7 @@ describe('Header — the publish door', () => {
   it('renders for a visitor before the auth store has initialised (no pop-in)', () => {
     mockAuth.isInitialized = false
     renderHeader('minimal')
-    expect(screen.getAllByRole('link', { name: /Anuncia tu propiedad/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: /^Publicar$/i }).length).toBeGreaterThan(0)
     mockAuth.isInitialized = true
   })
 })

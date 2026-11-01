@@ -104,7 +104,7 @@ export default function ProfilePage() {
       const verId = await authService.sendPhoneVerificationCode(phoneWithCountry)
       setVerificationId(verId)
       setSmsCooldown(60)
-      toast.success('Codigo enviado')
+      toast.success('Código enviado')
 
       // Store pending phone to save AFTER successful verification
       pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
@@ -152,7 +152,7 @@ export default function ProfilePage() {
       }
 
       await refreshUser()
-      toast.success('Telefono verificado')
+      toast.success('Teléfono verificado')
       setPhoneMode('idle')
       setVerificationId(null)
     } catch (err) {
@@ -209,7 +209,7 @@ export default function ProfilePage() {
           <Card>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
-                label="Correo electronico"
+                label="Correo electrónico"
                 value={user.email}
                 disabled
               />
@@ -229,11 +229,11 @@ export default function ProfilePage() {
                 <div role="group" aria-labelledby="profile-phone-label">
                   <span
                     id="profile-phone-label"
-                    className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                    className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
                   >
-                    Telefono
+                    Teléfono
                   </span>
-                  <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-muted px-4 py-2.5">
                     <Phone className="h-4 w-4 text-text-tertiary" aria-hidden="true" />
                     <span className="text-base text-text-secondary">
                       {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
@@ -252,7 +252,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="notes"
-                  className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                  className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
                 >
                   Notas adicionales de contacto
                 </label>
@@ -280,7 +280,7 @@ export default function ProfilePage() {
           {/* Verification status */}
           <Card>
         <h2 className="text-sm font-medium uppercase text-text-primary">
-          Estado de verificacion
+          Estado de verificación
         </h2>
         <div className="mt-3 space-y-3">
           {/* Phone verification row */}
@@ -291,7 +291,7 @@ export default function ProfilePage() {
                   className={`h-4 w-4 ${user.isPhoneVerified ? 'text-success' : 'text-text-tertiary'}`}
                 />
                 <span className="text-sm text-text-secondary">
-                  Telefono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
+                  Teléfono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
                 </span>
               </div>
               {!user.isPhoneVerified && phoneMode === 'idle' && (
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                   onClick={handleChangeNumber}
                   className="text-sm font-medium text-secondary hover:text-secondary-hover"
                 >
-                  Cambiar numero
+                  Cambiar número
                 </button>
               )}
             </div>
@@ -390,7 +390,7 @@ export default function ProfilePage() {
               <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
                 <span className="text-sm text-text-secondary">
-                  Solicitud de agente en revision
+                  Solicitud de agente en revisión
                 </span>
                 {user.realtorApplicationDate && (
                   <p className="text-xs text-text-tertiary">
@@ -426,7 +426,7 @@ export default function ProfilePage() {
                 to="/app/realtor-registration"
                 className="text-sm font-medium text-secondary hover:text-secondary-hover"
               >
-                Registrate como Agente
+                Regístrate como Agente
               </Link>
             </div>
           )}
@@ -444,10 +444,10 @@ export default function ProfilePage() {
       {/* Delete account */}
       <Card>
         <h2 className="text-sm font-medium uppercase text-text-secondary">
-          Configuracion de cuenta
+          Configuración de cuenta
         </h2>
         <p className="mt-2 text-sm text-text-tertiary">
-          Al eliminar tu cuenta se desactivaran tus anuncios y se eliminaran tus datos personales.
+          Al eliminar tu cuenta se desactivarán tus anuncios y se eliminarán tus datos personales.
         </p>
         <div className="mt-4">
           <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
@@ -469,15 +469,15 @@ export default function ProfilePage() {
         title="Eliminar cuenta"
       >
         <p className="text-sm text-text-secondary">
-          Esta accion es permanente. Se eliminara:
+          Esta acción es permanente. Se eliminará:
         </p>
         <ul className="mt-2 list-disc pl-5 text-sm text-text-secondary">
           <li>Tu perfil y datos personales</li>
           <li>Tus favoritos y notificaciones</li>
-          <li>Tus anuncios activos seran desactivados</li>
+          <li>Tus anuncios activos serán desactivados</li>
         </ul>
         <p className="mt-3 text-sm font-medium text-text-primary">
-          ¿Estas seguro que deseas continuar?
+          ¿Estás seguro que deseas continuar?
         </p>
 
         {deleteError && (
@@ -542,7 +542,7 @@ function PhoneForm({
         <div className="relative">
           <select
             {...register('countryCode')}
-            className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
+            className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-surface-muted pl-3 pr-8 text-base text-text-secondary outline-none"
           >
             <option value="+51">+51</option>
             <option value="+1">+1</option>
@@ -582,7 +582,7 @@ function PhoneForm({
           isLoading={isSubmitting}
           disabled={cooldown > 0}
         >
-          {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar codigo'}
+          {cooldown > 0 ? `Espera ${cooldown}s` : 'Enviar código'}
         </Button>
         <Button
           type="button"
@@ -664,7 +664,7 @@ function CodeForm({
           onClick={onChangeNumber}
           className="text-sm text-secondary hover:text-secondary-hover"
         >
-          Cambiar numero
+          Cambiar número
         </button>
       </div>
     </form>

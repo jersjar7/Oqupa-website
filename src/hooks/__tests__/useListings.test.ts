@@ -143,7 +143,7 @@ describe('useListings hooks', () => {
         await result.current.mutateAsync({ listingId: 'l1', currentStatus: 'active' })
       })
 
-      expect(toastSuccessMock).toHaveBeenCalledWith('Publicacion desactivada')
+      expect(toastSuccessMock).toHaveBeenCalledWith('Publicación desactivada')
     })
 
     it('shows success toast after activating', async () => {
@@ -155,7 +155,7 @@ describe('useListings hooks', () => {
         await result.current.mutateAsync({ listingId: 'l1', currentStatus: 'draft' })
       })
 
-      expect(toastSuccessMock).toHaveBeenCalledWith('Publicacion activada')
+      expect(toastSuccessMock).toHaveBeenCalledWith('Publicación activada')
     })
 
     it('shows error toast on failure', async () => {
@@ -200,7 +200,7 @@ describe('useListings hooks', () => {
         await result.current.mutateAsync({ listingId: 'l1', propertyId: 'p1' })
       })
 
-      expect(toastSuccessMock).toHaveBeenCalledWith('Publicacion eliminada')
+      expect(toastSuccessMock).toHaveBeenCalledWith('Publicación eliminada')
     })
 
     it('shows error toast on failure', async () => {

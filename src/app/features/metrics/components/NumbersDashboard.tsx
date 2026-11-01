@@ -20,7 +20,7 @@ import { contactsThisWeek, costPerContactThisWeek, durationWords, percent, weekW
 const SUPPLY = '#F47843'
 const DEMAND = '#3A6A55'
 const GRID = '#EFE8DF'
-const AXIS = '#8E8E93'
+const AXIS = '#737373'
 
 type TabKey = 'resumen' | 'buscadores' | 'oferta' | 'cierres' | 'dinero' | 'publicidad'
 

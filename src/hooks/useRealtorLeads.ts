@@ -147,10 +147,10 @@ export function useDeclineAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
-      toast.success('Asignacion rechazada')
+      toast.success('Asignación rechazada')
     },
     onError: () => {
-      toast.error('Error al rechazar la asignacion')
+      toast.error('Error al rechazar la asignación')
     },
   })
 }
