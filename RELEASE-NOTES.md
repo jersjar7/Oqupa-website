@@ -4,6 +4,16 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-01 (later) — Privacy: 2-year erasure, representative moved
+
+### Legal
+- Section 13: the deletion record is erased 2 years after an account is deleted, and each sent email 2 years after sending (ADR-039; the job is live on production since today).
+- The representative for Peru now sits in section 18, Contáctanos, named once, instead of at the top (Jerson, 2026-11-01).
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-01 — Follow-up card, Punto de control, Peru privacy
 
 ### New Features
