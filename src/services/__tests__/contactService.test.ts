@@ -136,6 +136,26 @@ describe('contactService', () => {
       })
     })
 
+    // The server refuses a listing that is no longer active (sold, rented,
+    // deactivated — 2026-10-31). Recognised by its message, whatever code it
+    // arrives with, so it never opens the account gate by mistake.
+    it.each(['functions/failed-precondition', 'functions/not-found', 'functions/permission-denied'])(
+      'throws ContactDenied("listing-not-available") for "ya no está disponible" (%s)',
+      async (code) => {
+        callableFnMock.mockRejectedValue({ code, message: 'Esta publicación ya no está disponible.' })
+        await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+          reason: 'listing-not-available',
+        })
+      },
+    )
+
+    it('throws ContactDenied("listing-not-available") when the listing no longer exists', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/not-found', message: 'Esta publicación ya no existe.' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'listing-not-available',
+      })
+    })
+
     it('throws ContactDenied("unavailable") for any other error', async () => {
       callableFnMock.mockRejectedValue({ code: 'functions/internal' })
       await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({

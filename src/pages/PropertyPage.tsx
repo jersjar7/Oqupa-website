@@ -19,7 +19,7 @@ import {
   logContactRevealFailed,
   logContactTapped,
 } from '@/app/features/listings/contactFunnel'
-import { PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { LISTING_STATUS_LABELS, PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
 import { AnimatedImage } from '@/app/components/ui'
@@ -32,6 +32,7 @@ import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { contactService, ContactDenied } from '@/services/contactService'
+import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -217,8 +218,11 @@ export default function PropertyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { pathname, hash } = useLocation()
-  const { listing, property, isLoading, error } = useProperty(id)
-  const { firebaseUser, user } = useAuthStore()
+  const { firebaseUser, user, isInitialized } = useAuthStore()
+  const { listing, property, isLoading, error } = useProperty(id, {
+    viewerId: user?.id,
+    authReady: isInitialized,
+  })
   const [showAuthModal, setShowAuthModal] = useState(false)
   // Set only when the server says no phone is attached to this account,
   // so the gate can say "otra vez" instead of contradicting the profile
@@ -238,7 +242,10 @@ export default function PropertyPage() {
     if (!listing || !property) return 'Propiedad - Oqupa'
     const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] ?? property.propertyType
     const distrito = property.location?.distrito
-    return distrito ? `${typeLabel} en ${distrito} - Oqupa` : `${typeLabel} - Oqupa`
+    const base = distrito ? `${typeLabel} en ${distrito} - Oqupa` : `${typeLabel} - Oqupa`
+    // A sold page must not read as an available one where it is shared.
+    const closed = closedLabel(listing.status)
+    return closed ? `${closed} · ${base}` : base
   }, [listing, property])
 
   const metaDescription = useMemo(() => {
@@ -295,6 +302,8 @@ export default function PropertyPage() {
   const autoContactDone = useRef(false)
   useEffect(() => {
     if (autoContactDone.current || !listing) return
+    // Closed or unpublished meanwhile: nothing to contact.
+    if (listing.status !== 'active') return
     if (!wantsAutoContact(hash)) return
     if (!firebaseUser?.emailVerified || !user?.isPhoneVerified) return
     autoContactDone.current = true
@@ -349,6 +358,10 @@ export default function PropertyPage() {
   }
 
   const isOwner = user?.id === listing.ownerId
+  const view = listingPageView(listing.status, isOwner)
+  // Only an active listing can be contacted; the server refuses the rest.
+  const canContact = view === 'open'
+  const closed = closedLabel(listing.status)
   const gate = contactGateCopy({
     signedIn: Boolean(firebaseUser),
     emailVerified: firebaseUser?.emailVerified ?? false,
@@ -424,6 +437,8 @@ export default function PropertyPage() {
         )
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
+      } else if (reason === 'listing-not-available') {
+        toast.error('Esta publicación ya no está disponible.')
       } else if (reason === 'listing-has-no-contact') {
         toast.error('Esta publicación no tiene un número de contacto.')
       } else if (reason === 'rate-limited') {
@@ -464,6 +479,27 @@ export default function PropertyPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left column — listing details */}
           <div className="lg:col-span-2">
+            {/* Status: Vendido / Alquilado for everyone; for the owner, a note
+                on a listing nobody else can see. */}
+            {closed ? (
+              <div
+                role="status"
+                className="mb-4 rounded-xl bg-secondary px-4 py-3 text-white"
+              >
+                <p className="font-sans text-sm font-bold uppercase tracking-[1px]">{closed}</p>
+              </div>
+            ) : view === 'owner-only' ? (
+              <div
+                role="status"
+                className="mb-4 rounded-xl border border-border bg-background-secondary px-4 py-3"
+              >
+                <p className="font-sans text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  {LISTING_STATUS_LABELS[listing.status]}
+                </p>
+                <p className="mt-1 text-sm text-text-primary">{ownerOnlyNote(listing.status)}</p>
+              </div>
+            ) : null}
+
             {/* Price + Destacado badge + views / save / share.
                 One row from sm up. On a phone the price takes its own line —
                 squeezed into the row it wrapped to "S/." / "540,000" and pushed
@@ -487,7 +523,7 @@ export default function PropertyPage() {
                   <Eye className="h-4 w-4 shrink-0" />
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
                 </span>
-                <SaveButton listingId={listing.id} variant="page" />
+                {canContact && <SaveButton listingId={listing.id} variant="page" />}
                 <button
                   onClick={handleShare}
                   className="whitespace-nowrap rounded-full border border-border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide text-text-secondary transition-colors hover:bg-black/5"
@@ -576,8 +612,16 @@ export default function PropertyPage() {
 
           {/* Right column — sticky widgets */}
           <aside className="space-y-4 lg:sticky lg:top-24 lg:col-span-1 lg:h-fit lg:self-start lg:border-l lg:border-border lg:pl-8">
-            {/* WhatsApp button + helper notes */}
-            {(
+            {/* WhatsApp button + helper notes — only while the listing is up */}
+            {!canContact && closed && (
+              <Link
+                to="/explorar"
+                className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-4 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+              >
+                Ver propiedades disponibles
+              </Link>
+            )}
+            {canContact && (
               <div>
               <button
                 onClick={() => handleWhatsAppClick()}
