@@ -94,6 +94,7 @@ hard-coded hex in components. Full palette and rules: `ui_guidance.md`.
 | Token | Value | Use |
 |---|---|---|
 | `cream` / `background` | `#FFF9F0` | Page background — the deck's cream, the **only** cream (founder, 2026-10-31). Use `bg-cream`, never a hex |
+| `cream-strong` (= `background-secondary`) | `#FFF3E1` | Hover and quiet fills that sit on cream — must stay visibly darker than cream |
 | `white` | `#FFFFFF` | **Cards, sheets and panels sit white on the cream page** (border + soft shadow) |
 | `text-primary` → `ink` | `#1A1A1A` | Text; the label on amber |
 | `text-secondary` → `ink-secondary` | `#5C5C5C` | Secondary text |

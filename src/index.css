@@ -19,7 +19,11 @@
   --color-boost: #F59E0B;
   --color-boost-hover: #D97706;
   --color-background: #FFF9F0;
-  --color-background-secondary: #FFF9F0;
+  /* A step darker than cream, for hover and quiet fills that sit ON cream
+     (photo placeholders, chips, confirm panels). Same offset from cream as the
+     retired #FFF4E6 had from #FFFAF5 (G -6, B -15), applied to #FFF9F0. */
+  --color-cream-strong: #FFF3E1;
+  --color-background-secondary: var(--color-cream-strong);
 
   /* Neutrals — the only greys the site uses (brand audit A2, 2026-10-31).
      Replaced Apple's system greys (#1C1C1E / #636366 / #8E8E93) and stock

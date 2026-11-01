@@ -33,6 +33,7 @@ Tailwind's). Every text grey passes contrast (4.5:1) on both cream and white.
 | Ink              | `#1A1A1A` | Text. Also the label colour on amber (Destacado).      |
 | Ink Secondary    | `#5C5C5C` | Secondary text.                                        |
 | Ink Tertiary     | `#737373` | Captions, metadata, timestamps.                        |
+| Cream Strong     | `#FFF3E1` | Hover and quiet fills on cream (one step darker).      |
 | Surface Muted    | `#F4F1EC` | Quiet fills: read-only fields, neutral chips, hovers.  |
 | Surface Strong   | `#E7E2DB` | Loading placeholders, progress tracks.                 |
 | Border           | `#E8E0D6` | Hairlines around cards and fields.                     |
@@ -182,5 +183,6 @@ Settled 2026-10-31 (brand audit, batch 3). The app and the website must look the
 
 ### WhatsApp button
 
-- Label uppercase. Fill is WhatsApp's own green with a white label — 1.98:1, which fails contrast.
-  Left as is pending a decision (brand-level: WhatsApp's own button colours vs. our contrast rule).
+- Label uppercase. Fill is WhatsApp's own green (`#25D366`) with a white label — kept on purpose
+  (Claude as UI owner, 2026-10-31): people recognise WhatsApp's button instantly, and it is WhatsApp's
+  brand, not ours. It is the one accepted exception to the contrast rule (1.98:1).
