@@ -405,6 +405,32 @@ export const AnalyticsLogger = {
     logFirebaseEvent('search_no_results', filterSetParams(filters)),
 
   /**
+   * A contact follow-up card appeared (metrics plan A11b). `card` is the
+   * server's card name — `wrote`, `reply`, or `reason` for the "¿Por qué?"
+   * step; `contactRole` is `owner` or `agent`. Same name and params as the
+   * app's logFollowUpShown.
+   */
+  followUpShown: (p: { card: string; contactRole: string; listingId: string }) =>
+    logFirebaseEvent('follow_up_shown', {
+      card: p.card,
+      contact_role: p.contactRole,
+      listing_id: p.listingId,
+    }),
+
+  /**
+   * A follow-up card was answered — `answer` exactly as sent to the server
+   * (`yes`, `not_yet`, `not_interested`, `dismissed`, `found_other`, `price`,
+   * `not_convinced`, `other`, `skipped`). Same as the app's logFollowUpAnswered.
+   */
+  followUpAnswered: (p: { card: string; answer: string; contactRole: string; listingId: string }) =>
+    logFirebaseEvent('follow_up_answered', {
+      card: p.card,
+      answer: p.answer,
+      contact_role: p.contactRole,
+      listing_id: p.listingId,
+    }),
+
+  /**
    * User properties for segmenting audiences in GA.
    *
    * A property left out is not touched: only the ones given are sent, and

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { DailySeries } from '@/app/features/metrics/lib/series'
+import type { Checkpoint } from '@/app/features/metrics/lib/checkpoint'
 
 /** One listing, described without anything that identifies it. */
 export interface SeriesListing {
@@ -90,6 +91,8 @@ export interface DashboardSeries {
   /** Absent on documents built before 2026-10-20 evening. */
   closeCounts?: CloseCounts
   headline?: DashboardHeadline
+  /** Punto de control: three numbers by Lima month. Absent on documents built before 2026-11-01. */
+  checkpoint?: Checkpoint
   metaReported: { installs?: number; spendUSD?: number } | null
   since: { snapshots: string | null; contactLog: string | null; analytics: string | null }
 }

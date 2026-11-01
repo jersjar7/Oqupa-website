@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-01 — Follow-up card, Punto de control, Peru privacy
+
+### New Features
+- "¿Pudiste contactar al dueño?" (or "al agente") card when a person comes back to the Oqupa tab after WhatsApp; follow-ups "¿El dueño te respondió?" and "¿Por qué?". Same wording and events as the app (metrics plan A11b; wording approved by Jerson 2026-11-01). Uses the follow-up server change promoted 2026-11-01.
+- Números → Punto de control tab (team only): active listings, contacts and people who came back, by month.
+
+### Legal
+- Privacy page: Peru data-protection sections (Ley 29733, DS 016-2024-JUS) — representative for Peru (Jerson Jaramillo Garcia, admin@oqupa.com), bases de datos, international transfers, retention, automated decisions, rights. Registration with the ANPD requested by email 2026-11-01. Approved by Jerson ("Privacy ok").
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-10-31 (night) — Owner fixes, sold listings, and the brand pass (ADR-038)
 
 ### Bug Fixes
