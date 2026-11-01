@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             El responsable del tratamiento de tus datos personales y titular
-            de los bancos de datos donde se guardan es{' '}
+            de las bases de datos donde se guardan es{' '}
             <strong>Oqupa LLC</strong>, una empresa registrada en Utah,
             Estados Unidos. Oqupa LLC no tiene establecimiento en el Perú, pero
             ofrece Oqupa a personas que están en el Perú; por eso cumple la{' '}
@@ -76,10 +76,10 @@ export default function PrivacyPage() {
           </p>
 
           <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
-            Bancos de datos personales
+            Bases de datos personales
           </h3>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Tus datos se guardan en los siguientes bancos de datos personales
+            Tus datos se guardan en las siguientes bases de datos personales
             de Oqupa LLC:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
             </li>
           </ul>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Estamos inscribiendo estos bancos de datos en el Registro Nacional
+            Estamos inscribiendo estas bases de datos en el Registro Nacional
             de Protección de Datos Personales. Cuando la inscripción esté
             lista, publicaremos aquí sus códigos de inscripción.
           </p>
