@@ -15,8 +15,8 @@ describe('PrivacyPage — payments', () => {
     expect(item.textContent).toMatch(/No almacenamos información de tarjetas de crédito/)
   })
 
-  it('says when it was last updated: 31 October 2026', () => {
+  it('says when it was last updated: 1 November 2026 (Jerson, 2026-11-01)', () => {
     render(<MemoryRouter><PrivacyPage /></MemoryRouter>)
-    expect(screen.getByText(/Última actualización: 31 de octubre de 2026/)).toBeDefined()
+    expect(screen.getByText(/Última actualización: 1 de noviembre de 2026/)).toBeDefined()
   })
 })
