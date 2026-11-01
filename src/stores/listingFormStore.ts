@@ -34,6 +34,7 @@ export interface ListingFormData {
   existingPhotoUrls: string[] // for edit mode
   existingPhotoBlurHashes: string[] // parallel to existingPhotoUrls
   originalExistingPhotoUrls: string[] // snapshot at edit-init for delete diff
+  originalCoverMicroThumb: string // the cover's blurred preview at edit-init ('' if none)
 
   // Photo ordering (maps final position to source)
   photoOrder: Array<{ type: 'existing' | 'new'; index: number }>
@@ -93,6 +94,7 @@ const INITIAL_DATA: ListingFormData = {
   existingPhotoUrls: [],
   existingPhotoBlurHashes: [],
   originalExistingPhotoUrls: [],
+  originalCoverMicroThumb: '',
   photoOrder: [],
   amount: null,
   currency: 'PEN',

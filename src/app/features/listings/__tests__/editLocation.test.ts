@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { publicLocationOnEdit } from '../editLocation'
+import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 
 /**
  * What an edit writes to the PUBLIC property document for the location.
@@ -41,5 +41,28 @@ describe('publicLocationOnEdit', () => {
 
   it('a listing that never hid its address: what the form holds', () => {
     expect(publicLocationOnEdit({ ...base, showExactLocation: true, hiddenAddress: null })).toEqual({ latitude: -5.19, longitude: -80.63, calle: 'Calle Real 9' })
+  })
+})
+
+/**
+ * The address text stored next to the location (`normalizedAddress`). An edit
+ * never rewrote it, so after an address change it kept describing the old
+ * place. Same shape the server writes (functions/lib/location-privacy.js):
+ * the parts that exist, joined by commas.
+ */
+describe('normalizedAddressOnEdit', () => {
+  const place = { urbanizacion: 'Los Ficus', distrito: 'Castilla', provincia: 'Piura', departamento: 'Piura' }
+
+  it('follows the new address', () => {
+    expect(normalizedAddressOnEdit('Av. Grau 123', place)).toBe('Av. Grau 123, Los Ficus, Castilla, Piura, Piura')
+  })
+
+  it('skips empty parts instead of leaving ", ,"', () => {
+    expect(normalizedAddressOnEdit('Av. Grau 123', { ...place, urbanizacion: '' }))
+      .toBe('Av. Grau 123, Castilla, Piura, Piura')
+  })
+
+  it('with no street (a hidden address left as is) carries no street', () => {
+    expect(normalizedAddressOnEdit('', place)).toBe('Los Ficus, Castilla, Piura, Piura')
   })
 })

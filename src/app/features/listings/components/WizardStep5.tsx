@@ -18,7 +18,8 @@ import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
-import { publicLocationOnEdit } from '../editLocation'
+import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
+import { coverMicroThumbOnEdit } from '../editMedia'
 
 function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
   if (amount == null || isNaN(amount)) return ''
@@ -114,6 +115,7 @@ export default function WizardStep5() {
         // Upload new photos if any
         let newPhotoKeys: string[] = []
         let newBlurHashes: string[] = []
+        let newMicroThumbs: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
           const results = await storageService.uploadMultiplePropertyPhotos(
@@ -123,6 +125,7 @@ export default function WizardStep5() {
           )
           newPhotoKeys = results.map(r => r.objectKey)
           newBlurHashes = results.map(r => r.blurHash)
+          newMicroThumbs = results.map(r => r.microThumb)
         }
 
         // Build ordered photo key + blurHash arrays using photoOrder from Step 4.
@@ -155,6 +158,21 @@ export default function WizardStep5() {
           (k) => !keptKeys.has(k)
         )
 
+        // The cover's blurred preview: rewriting `media` without it dropped it.
+        const coverMicroThumb = coverMicroThumbOnEdit({
+          photoOrder: data.photoOrder,
+          existingPhotoUrls: data.existingPhotoUrls,
+          newMicroThumbs,
+          originalCoverKey: data.originalExistingPhotoUrls[0],
+          originalCoverMicroThumb: data.originalCoverMicroThumb ?? '',
+        })
+        const editedMedia = {
+          propertyPhotoUrls: allPhotoKeys,
+          photoKeys: allPhotoKeys,
+          photoBlurHashes: allBlurHashes,
+          ...(coverMicroThumb ? { primaryPhotoMicroThumb: coverMicroThumb } : {}),
+        }
+
         setUploadProgress('Actualizando propiedad...')
         const publicLocation = publicLocationOnEdit(data)
         await firestoreService.updateProperty(editPropertyId, {
@@ -183,11 +201,10 @@ export default function WizardStep5() {
             amount: formData.amount,
             currency: formData.currency,
           },
-          media: {
-            propertyPhotoUrls: allPhotoKeys,
-            photoKeys: allPhotoKeys,
-            photoBlurHashes: allBlurHashes,
-          },
+          // The address text went stale after an address change: an edit
+          // never rewrote it.
+          normalizedAddress: normalizedAddressOnEdit(publicLocation.calle, data),
+          media: editedMedia,
         })
 
         await firestoreService.updateListing(editListingId, {
@@ -203,11 +220,7 @@ export default function WizardStep5() {
           role: data.role as Listing['role'],
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
-          media: {
-            propertyPhotoUrls: allPhotoKeys,
-            photoKeys: allPhotoKeys,
-            photoBlurHashes: allBlurHashes,
-          },
+          media: editedMedia,
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,
         })

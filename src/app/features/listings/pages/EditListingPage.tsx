@@ -98,6 +98,7 @@ export default function EditListingPage() {
       departamento: property.location.departamento,
       existingPhotoUrls: property.media.photoKeys ?? property.media.propertyPhotoUrls,
       existingPhotoBlurHashes: property.media.photoBlurHashes ?? [],
+      originalCoverMicroThumb: property.media.primaryPhotoMicroThumb ?? '',
       originalExistingPhotoUrls:
         property.media.photoKeys ?? property.media.propertyPhotoUrls,
       photos: [],
