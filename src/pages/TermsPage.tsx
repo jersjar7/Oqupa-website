@@ -1,4 +1,5 @@
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
+import { termsLastUpdated } from '@/lib/legalLastUpdated'
 
 export default function TermsPage() {
   // Sets the title, the description and — the part that matters for search —
@@ -16,7 +17,7 @@ export default function TermsPage() {
         Términos de Servicio
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
-        Última actualización: 28 de abril de 2026
+        Última actualización: {termsLastUpdated}
       </p>
 
       <div className="mt-8 space-y-8">

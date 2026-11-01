@@ -1,4 +1,5 @@
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
+import { privacyLastUpdated } from '@/lib/legalLastUpdated'
 
 export default function PrivacyPage() {
   // Sets the title, the description and — the part that matters for search —
@@ -16,7 +17,7 @@ export default function PrivacyPage() {
         Política de Privacidad
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
-        Última actualización: 1 de noviembre de 2026
+        Última actualización: {privacyLastUpdated}
       </p>
 
       <div className="mt-8 space-y-8">
