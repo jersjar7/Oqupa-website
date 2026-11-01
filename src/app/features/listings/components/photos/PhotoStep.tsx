@@ -3,11 +3,11 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button } from '@/app/components/ui'
 import { usePhotoQueue } from './usePhotoQueue'
 import PhotoGrid from './PhotoGrid'
-
-const MIN_PHOTOS = 3
+import { minPhotosFor } from './minPhotos'
 
 export default function PhotoStep() {
-  const { data, updateData, nextStep, prevStep } = useListingFormStore()
+  const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
+  const MIN_PHOTOS = minPhotosFor({ isEditMode, originalCount: data.originalExistingPhotoUrls.length })
   const queue = usePhotoQueue({
     existingPhotoUrls: data.existingPhotoUrls,
     existingPhotoBlurHashes: data.existingPhotoBlurHashes,
