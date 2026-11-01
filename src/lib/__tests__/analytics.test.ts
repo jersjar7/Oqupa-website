@@ -522,6 +522,9 @@ describe('AnalyticsLogger — A0 additions', () => {
       ['contactRevealFailed', () => AnalyticsLogger.contactRevealFailed('l1', 'permission-denied'), 'contact_reveal_failed', { listing_id: 'l1', code: 'permission-denied' }],
       ['filterApplied', () => AnalyticsLogger.filterApplied({ filterType: 'price' }), 'filter_applied', { filter_type: 'price' }],
       ['searchNoResults', () => AnalyticsLogger.searchNoResults({ filterType: 'price' }), 'search_no_results', { filter_type: 'price' }],
+      // A11b — same names and params as the app's logFollowUpShown / logFollowUpAnswered.
+      ['followUpShown', () => AnalyticsLogger.followUpShown({ card: 'wrote', contactRole: 'agent', listingId: 'l1' }), 'follow_up_shown', { card: 'wrote', contact_role: 'agent', listing_id: 'l1' }],
+      ['followUpAnswered', () => AnalyticsLogger.followUpAnswered({ card: 'reason', answer: 'not_convinced', contactRole: 'owner', listingId: 'l1' }), 'follow_up_answered', { card: 'reason', answer: 'not_convinced', contact_role: 'owner', listing_id: 'l1' }],
     ]
 
     it.each(cases)('%s logs %s', (_desc, action, name, params) => {
