@@ -48,34 +48,6 @@ export default function PrivacyPage() {
           </p>
 
           <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
-            Representante en el Perú
-          </h3>
-          <p className="mt-3 text-text-secondary leading-relaxed">
-            Conforme al artículo VII del Reglamento de la Ley N° 29733, Oqupa
-            LLC designa como su representante para el territorio peruano a{' '}
-            <strong>Jerson Jaramillo Garcia</strong>, quien actúa en nombre de Oqupa LLC.
-            El representante es el punto de contacto con la{' '}
-            <strong>
-              Autoridad Nacional de Protección de Datos Personales
-            </strong>{' '}
-            y atiende las solicitudes de los titulares de datos personales —
-            incluido el ejercicio de los derechos de acceso, rectificación,
-            cancelación y oposición (derechos ARCO) — así como cualquier
-            reclamación, denuncia o comunicación relacionada con el tratamiento
-            de tus datos.
-          </p>
-          <p className="mt-3 text-text-secondary leading-relaxed">
-            Correo para comunicaciones y contacto con el representante:{' '}
-            <a
-              href="mailto:admin@oqupa.com"
-              className="text-primary hover:text-primary-hover hover:underline"
-            >
-              admin@oqupa.com
-            </a>
-            .
-          </p>
-
-          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
             Bases de datos personales
           </h3>
           <p className="mt-3 text-text-secondary leading-relaxed">
@@ -689,11 +661,13 @@ export default function PrivacyPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             Cuando eliminas tu cuenta guardamos una constancia de la
             eliminación con tu nombre, correo, teléfono y una copia de tu
-            perfil. También quedan los correos que te enviamos, tu solicitud
-            para ser asesor inmobiliario si la hiciste, las respuestas a
-            encuestas, los reportes que enviaste, los datos de las propiedades
+            perfil. La constancia se borra automáticamente 2 años después de
+            eliminada tu cuenta, y cada correo que te enviamos se borra
+            automáticamente 2 años después de enviado. También quedan tu
+            solicitud para ser asesor inmobiliario si la hiciste, las respuestas
+            a encuestas, los reportes que enviaste, los datos de las propiedades
             que publicaste y tus anuncios, que quedan desactivados. Hoy estos
-            registros no tienen un plazo fijo de borrado: puedes pedir su
+            otros registros no tienen un plazo fijo de borrado: puedes pedir su
             supresión en cualquier momento escribiendo a{' '}
             <a
               href="mailto:admin@oqupa.com"
@@ -886,14 +860,34 @@ export default function PrivacyPage() {
           </p>
           <p className="mt-3 text-text-secondary leading-relaxed">
             <strong>Oqupa LLC</strong> — Utah, Estados Unidos
-            <br />
-            Representante en el Perú: Jerson Jaramillo Garcia —{' '}
+          </p>
+
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Representante en el Perú
+          </h3>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Conforme al artículo VII del Reglamento de la Ley N° 29733, Oqupa
+            LLC designa como su representante para el territorio peruano a{' '}
+            <strong>Jerson Jaramillo Garcia</strong>, quien actúa en nombre de Oqupa LLC.
+            El representante es el punto de contacto con la{' '}
+            <strong>
+              Autoridad Nacional de Protección de Datos Personales
+            </strong>{' '}
+            y atiende las solicitudes de los titulares de datos personales —
+            incluido el ejercicio de los derechos de acceso, rectificación,
+            cancelación y oposición (derechos ARCO) — así como cualquier
+            reclamación, denuncia o comunicación relacionada con el tratamiento
+            de tus datos.
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Correo para comunicaciones y contacto con el representante:{' '}
             <a
               href="mailto:admin@oqupa.com"
               className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>
+            .
           </p>
         </section>
       </div>
