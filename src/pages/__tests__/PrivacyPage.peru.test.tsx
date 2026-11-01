@@ -22,8 +22,8 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     expect(text).toMatch(/Decreto Supremo N° 016-2024-JUS/)
   })
 
-  it('designates a representative for Peru, with an email (art. VII 7.1–7.2.1)', () => {
-    const text = sectionText(/Quién es Responsable de tus Datos/)
+  it('designates a representative for Peru, with an email, near the end (art. VII 7.1–7.2.1; Jerson, 2026-11-01)', () => {
+    const text = sectionText(/Contáctanos/)
     expect(text).toMatch(/Representante en el Perú/)
     expect(text).toMatch(/representante para el territorio peruano a Jerson Jaramillo Garcia/)
     expect(text).toMatch(/en nombre de Oqupa LLC/)
@@ -47,10 +47,12 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     expect(text).not.toMatch(/bancos? de datos/i)
   })
 
-  it('names the representative by full legal name in both places (Jerson, 2026-11-01)', () => {
+  it('names the representative by full legal name, once, not at the top (Jerson, 2026-11-01)', () => {
     render(<MemoryRouter><PrivacyPage /></MemoryRouter>)
     const text = document.body.textContent ?? ''
-    expect(text.match(/Jerson Jaramillo Garcia/g)?.length).toBe(2)
+    expect(text.match(/Jerson Jaramillo Garcia/g)?.length).toBe(1)
+    const top = screen.getByRole('heading', { level: 2, name: /Quién es Responsable de tus Datos/ })
+    expect(top.closest('section')!.textContent).not.toMatch(/Representante en el Perú/)
     expect(text).not.toMatch(/Jerson Garcia/)
   })
 
