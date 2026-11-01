@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-01 (evening) — Legal dates update themselves
+
+### Legal
+- "Última actualización" on Privacidad and Términos is now worked out from each page's own change history when the site is built, so it can no longer go stale (Jerson, 2026-11-01). Styling-only changes are listed in `legal-dates-ignore-revs.txt` and do not move it.
+- Términos now reads 24 de octubre de 2026. It had said 28 de abril de 2026 although its text changed on 24 October (IGN map credit).
+
+### Technical
+- CI checks out the full history; a shallow checkout fails the build instead of showing the build day.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-01 (later) — Privacy: 2-year erasure, representative moved
 
 ### Legal
