@@ -18,11 +18,11 @@ export default function VerificationBanner() {
 
   let message: string
   if (missingName && missingPhone) {
-    message = 'Completa tu nombre y verifica tu telefono para acceder a todas las funciones.'
+    message = 'Completa tu nombre y verifica tu teléfono para acceder a todas las funciones.'
   } else if (missingName) {
     message = 'Completa tu nombre para acceder a todas las funciones.'
   } else {
-    message = 'Verifica tu telefono para acceder a todas las funciones.'
+    message = 'Verifica tu teléfono para acceder a todas las funciones.'
   }
 
   return (
@@ -34,7 +34,7 @@ export default function VerificationBanner() {
           to="/app/verify"
           className="shrink-0 text-sm font-medium text-secondary hover:text-secondary-hover"
         >
-          Completar verificacion
+          Completar verificación
         </Link>
       </div>
     </div>

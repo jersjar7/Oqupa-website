@@ -14,13 +14,13 @@ export const changePasswordSchema = z
   .object({
     newPassword: z
       .string()
-      .min(6, 'La contrasena debe tener al menos 6 caracteres'),
+      .min(6, 'La contraseña debe tener al menos 6 caracteres'),
     confirmPassword: z
       .string()
-      .min(1, 'Confirma tu contrasena'),
+      .min(1, 'Confirma tu contraseña'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Las contrasenas no coinciden',
+    message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   })
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>

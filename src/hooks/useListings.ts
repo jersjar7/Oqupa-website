@@ -41,12 +41,12 @@ export function useToggleListingStatus() {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       toast.success(
         variables.currentStatus === 'active'
-          ? 'Publicacion desactivada'
-          : 'Publicacion activada'
+          ? 'Publicación desactivada'
+          : 'Publicación activada'
       )
     },
     onError: () => {
-      toast.error('Error al cambiar el estado de la publicacion')
+      toast.error('Error al cambiar el estado de la publicación')
     },
   })
 }
@@ -69,7 +69,7 @@ export function useMarkListingClosed() {
       )
     },
     onError: () => {
-      toast.error('Error al cambiar el estado de la publicacion')
+      toast.error('Error al cambiar el estado de la publicación')
     },
   })
 }
@@ -90,10 +90,10 @@ export function useDeleteListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
-      toast.success('Publicacion eliminada')
+      toast.success('Publicación eliminada')
     },
     onError: () => {
-      toast.error('Error al eliminar la publicacion')
+      toast.error('Error al eliminar la publicación')
     },
   })
 }

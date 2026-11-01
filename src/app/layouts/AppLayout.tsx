@@ -108,7 +108,7 @@ export default function AppLayout() {
                     ...(!user?.isVerifiedRealtor && user?.realtorApplicationStatus !== 'pending'
                       ? [
                           {
-                            label: 'Registrate como Agente',
+                            label: 'Regístrate como Agente',
                             icon: <Briefcase className="h-4 w-4" />,
                             to: '/app/realtor-registration',
                           },
@@ -117,7 +117,7 @@ export default function AppLayout() {
                     ...(user?.realtorApplicationStatus === 'pending'
                       ? [
                           {
-                            label: 'Solicitud en Revision',
+                            label: 'Solicitud en Revisión',
                             icon: <Clock className="h-4 w-4" />,
                             to: '/app/realtor-registration',
                             className: 'text-text-tertiary',
@@ -125,7 +125,7 @@ export default function AppLayout() {
                         ]
                       : []),
                     {
-                      label: 'Cerrar Sesion',
+                      label: 'Cerrar Sesión',
                       icon: <LogOut className="h-4 w-4" />,
                       onClick: handleLogout,
                       className: 'text-error',
@@ -137,7 +137,7 @@ export default function AppLayout() {
                   to="/app/login"
                   className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
                 >
-                  Iniciar Sesion
+                  Iniciar Sesión
                 </Link>
               )}
             </nav>

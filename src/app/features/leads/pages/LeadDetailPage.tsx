@@ -295,7 +295,7 @@ export default function LeadDetailPage() {
           )}
         </div>
         <span className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-          Ubicacion aproximada
+          Ubicación aproximada
         </span>
 
         {/* Feature badges */}
@@ -425,12 +425,12 @@ export default function LeadDetailPage() {
           </div>
 
           <p className="mt-4 text-sm text-text-secondary">
-            Usaras <span className="font-bold">1</span> de{' '}
+            Usarás <span className="font-bold">1</span> de{' '}
             <span className="font-bold">{claimStatus.remaining}</span> reclamaciones restantes
             este mes.
           </p>
           <p className="mt-2 text-sm text-text-secondary">
-            Al reclamar, podras ver la informacion de contacto del propietario.
+            Al reclamar, podrás ver la información de contacto del propietario.
           </p>
 
           <div className="mt-6 flex gap-3">

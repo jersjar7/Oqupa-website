@@ -161,7 +161,7 @@ export default function ShareFormatModal({
         onClick={onClose}
         className="mt-6 w-full rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
       >
-        Listo — Ver mi publicacion
+        Listo — Ver mi publicación
       </button>
     </Modal>
   )

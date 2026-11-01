@@ -286,7 +286,7 @@ export default function WizardStep5() {
         }
 
         // Create listing
-        setUploadProgress('Creando publicacion...')
+        setUploadProgress('Creando publicación...')
         const now = new Date()
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -423,13 +423,13 @@ export default function WizardStep5() {
 
       const message = err instanceof Error ? err.message : ''
       if (message.includes('permission-denied') || message.includes('PERMISSION_DENIED')) {
-        setSubmitError('No tienes permisos para realizar esta accion.')
+        setSubmitError('No tienes permisos para realizar esta acción.')
       } else if (message.includes('not-found')) {
-        setSubmitError('No se encontro la publicacion. Puede haber sido eliminada.')
+        setSubmitError('No se encontró la publicación. Puede haber sido eliminada.')
       } else if (message.includes('storage') || message.includes('upload')) {
-        setSubmitError('Error al subir las fotos. Verifica tu conexion e intenta de nuevo.')
+        setSubmitError('Error al subir las fotos. Verifica tu conexión e intenta de nuevo.')
       } else if (!navigator.onLine) {
-        setSubmitError('Sin conexion a internet. Verifica tu conexion e intenta de nuevo.')
+        setSubmitError('Sin conexión a internet. Verifica tu conexión e intenta de nuevo.')
       } else {
         setSubmitError('Error al guardar. Intenta de nuevo.')
       }
@@ -551,7 +551,7 @@ export default function WizardStep5() {
                 Quiero ayuda de agentes
               </span>
               <p className="text-xs text-text-secondary">
-                Agentes verificados podran contactarte para ayudar a vender tu propiedad
+                Agentes verificados podrán contactarte para ayudar a vender tu propiedad
               </p>
             </div>
           </label>
@@ -559,7 +559,7 @@ export default function WizardStep5() {
           {wantsRealtorHelp && (
             <div className="mt-4">
               <label className="text-sm font-medium uppercase text-text-primary">
-                Maximo de agentes
+                Máximo de agentes
                 <InfoTip text="Limita cuántos agentes pueden solicitar ayudarte con tu propiedad. Puedes cambiar esto después de publicar." />
               </label>
               <div className="mt-2 flex gap-2">
@@ -605,7 +605,7 @@ export default function WizardStep5() {
               disabled={isSubmitting}
               className="flex-1"
             >
-              Atras
+              Atrás
             </Button>
             <Button
               type="submit"

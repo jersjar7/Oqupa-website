@@ -47,7 +47,7 @@ export default function ExplorePage() {
   useDocumentMeta({
     title: 'Explorar Propiedades - Oqupa',
     description:
-      'Explora propiedades en venta y alquiler en Piura. Encuentra casas, departamentos, terrenos y mas en el mapa interactivo de Oqupa.',
+      'Explora propiedades en venta y alquiler en Piura. Encuentra casas, departamentos, terrenos y más en el mapa interactivo de Oqupa.',
     url: `${window.location.origin}/explorar`,
   })
 
@@ -266,7 +266,7 @@ export default function ExplorePage() {
               it does is querying by map viewport. */}
           {hitPageCeiling && (
             <p className="mb-3 rounded-lg bg-accent/30 px-3 py-2 text-xs text-[#8A6400]">
-              Mostrando las propiedades mas recientes. Usa los filtros o acerca
+              Mostrando las propiedades más recientes. Usa los filtros o acerca
               el mapa para ver el resto.
             </p>
           )}

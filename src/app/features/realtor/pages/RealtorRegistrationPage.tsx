@@ -136,7 +136,7 @@ export default function RealtorRegistrationPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="font-sans text-[28px] font-medium text-text-primary">
-        Registrate como Agente
+        Regístrate como Agente
       </h1>
 
       {/* Incomplete profile */}
@@ -149,11 +149,11 @@ export default function RealtorRegistrationPage() {
                 Completa tu perfil primero
               </p>
               <p className="mt-1 text-sm text-text-secondary">
-                Necesitas tener tu nombre completo y telefono verificado antes de aplicar como agente.
+                Necesitas tener tu nombre completo y teléfono verificado antes de aplicar como agente.
               </p>
               <div className="mt-4">
                 <Button onClick={() => navigate('/app/verify')}>
-                  Completar verificacion
+                  Completar verificación
                 </Button>
               </div>
             </div>
@@ -185,10 +185,10 @@ export default function RealtorRegistrationPage() {
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div>
               <p className="text-sm font-medium text-text-primary">
-                Solicitud en revision
+                Solicitud en revisión
               </p>
               <p className="mt-1 text-sm text-text-secondary">
-                Tu solicitud esta siendo revisada. Te contactaremos en 24-48 horas.
+                Tu solicitud está siendo revisada. Te contactaremos en 24-48 horas.
               </p>
               {user.realtorApplicationDate && (
                 <p className="mt-2 text-xs text-text-tertiary">
@@ -214,7 +214,7 @@ export default function RealtorRegistrationPage() {
                     Tu solicitud anterior fue rechazada
                   </p>
                   <p className="mt-1 text-sm text-text-secondary">
-                    Puedes enviar una nueva solicitud con informacion actualizada.
+                    Puedes enviar una nueva solicitud con información actualizada.
                   </p>
                 </div>
               </div>
@@ -224,14 +224,14 @@ export default function RealtorRegistrationPage() {
           {/* How it works */}
           <Card className="mt-6">
             <h2 className="text-sm font-medium uppercase text-text-primary">
-              Como funciona
+              Cómo funciona
             </h2>
             <ol className="mt-3 space-y-3">
               {[
-                'Completa el formulario con tu informacion profesional',
-                'Nuestro equipo revisara tu solicitud',
-                'Te contactaremos por telefono para verificar tu identidad',
-                'Una vez aprobado, tendras acceso a oportunidades inmobiliarias',
+                'Completa el formulario con tu información profesional',
+                'Nuestro equipo revisará tu solicitud',
+                'Te contactaremos por teléfono para verificar tu identidad',
+                'Una vez aprobado, tendrás acceso a oportunidades inmobiliarias',
               ].map((step, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
@@ -246,7 +246,7 @@ export default function RealtorRegistrationPage() {
           {/* Profile info (read-only) */}
           <Card className="mt-6">
             <h2 className="text-sm font-medium uppercase text-text-primary">
-              Tu informacion
+              Tu información
             </h2>
             <div className="mt-3 space-y-2">
               <div className="flex justify-between text-sm">
@@ -258,7 +258,7 @@ export default function RealtorRegistrationPage() {
                 <span className="text-text-primary">{user.email}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Telefono</span>
+                <span className="text-text-tertiary">Teléfono</span>
                 <span className="text-text-primary">
                   {user.contactInfo?.whatsappPhoneNumber}
                 </span>
@@ -269,7 +269,7 @@ export default function RealtorRegistrationPage() {
           {/* Professional info form */}
           <Card className="mt-6">
             <h2 className="text-sm font-medium uppercase text-text-primary">
-              Informacion profesional
+              Información profesional
             </h2>
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -283,7 +283,7 @@ export default function RealtorRegistrationPage() {
               />
 
               <Input
-                label="Anos de experiencia"
+                label="Años de experiencia"
                 type="number"
                 min={0}
                 max={50}
@@ -298,7 +298,7 @@ export default function RealtorRegistrationPage() {
                 {...register('serviceZones')}
               />
               <p className="-mt-2 text-xs text-text-tertiary">
-                Separar multiples zonas con comas
+                Separar múltiples zonas con comas
               </p>
 
               <div>
@@ -306,12 +306,12 @@ export default function RealtorRegistrationPage() {
                   htmlFor="motivation"
                   className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
                 >
-                  Motivacion
+                  Motivación
                 </label>
                 <textarea
                   id="motivation"
                   rows={4}
-                  placeholder="¿Por que quieres ser agente en Oqupa?"
+                  placeholder="¿Por qué quieres ser agente en Oqupa?"
                   className={`w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
                     errors.motivation
                       ? 'border-error focus:border-error focus:ring-error/20'

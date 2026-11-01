@@ -72,7 +72,7 @@ export default function AgentEditListingPage() {
   const handleSubmit = async () => {
     const trimmedDesc = description.trim()
     if (!trimmedDesc) {
-      setSubmitError('La descripcion no puede estar vacia')
+      setSubmitError('La descripción no puede estar vacía')
       return
     }
     if (existingPhotoUrls.length === 0 && newPhotos.length === 0) {
@@ -184,7 +184,7 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
         <p className="text-sm text-blue-800">
-          Como agente asignado, puedes editar la descripcion y las fotos.
+          Como agente asignado, puedes editar la descripción y las fotos.
         </p>
       </div>
 
@@ -198,7 +198,7 @@ export default function AgentEditListingPage() {
           {/* Description */}
           <div className="mb-6">
             <label className="mb-2 block font-sans text-sm font-medium uppercase text-text-secondary">
-              Descripcion
+              Descripción
             </label>
             <textarea
               value={description}

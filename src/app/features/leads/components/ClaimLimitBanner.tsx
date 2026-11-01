@@ -14,7 +14,7 @@ export default function ClaimLimitBanner({ used, limit }: ClaimLimitBannerProps)
           {used} de {limit} reclamaciones usadas este mes
         </span>
         {atLimit && (
-          <span className="text-xs font-medium text-amber-700">Limite alcanzado</span>
+          <span className="text-xs font-medium text-amber-700">Límite alcanzado</span>
         )}
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">

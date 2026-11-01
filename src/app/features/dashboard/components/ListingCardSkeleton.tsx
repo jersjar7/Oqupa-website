@@ -1,6 +1,6 @@
 export default function ListingCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light animate-pulse" aria-busy="true" aria-label="Cargando publicacion">
+    <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light animate-pulse" aria-busy="true" aria-label="Cargando publicación">
       {/* Photo skeleton */}
       <div className="h-48 bg-gray-200" />
 
