@@ -628,7 +628,7 @@ function PuntoDeControl({ data }: TabProps) {
       </section>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-white">
-        <table className="w-full min-w-[520px] border-collapse font-sans text-sm">
+        <table className="w-full min-w-[440px] border-collapse font-sans text-sm">
           <thead>
             <tr className="border-b border-border text-left">
               <th scope="col" className="px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-text-secondary">Mes</th>
@@ -642,7 +642,7 @@ function PuntoDeControl({ data }: TabProps) {
           <tbody>
             {newestFirst.map((m) => (
               <tr key={m.month} className="border-b border-border last:border-b-0">
-                <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium text-text-primary">
+                <th scope="row" className="px-4 py-3 text-left align-top font-medium text-text-primary">
                   {monthName(m.month)}{' '}
                   {!m.complete && <span className="font-normal text-text-tertiary">(en curso)</span>}
                 </th>
@@ -650,14 +650,16 @@ function PuntoDeControl({ data }: TabProps) {
                   const value = m[n.key]
                   const change = changeFor(m.month, n.key)
                   return (
-                    <td key={n.key} className="px-4 py-3 text-right tabular-nums text-text-primary">
-                      {value === null ? <NoData /> : num(value)}
-                      {n.key === 'activeListings' && m.newListings !== null && (
-                        <span className="text-xs text-text-tertiary">{` · ${num(m.newListings)} nuevas`}</span>
-                      )}
-                      {change && (
-                        <span className="ml-2 text-xs">
-                          <ChangeMark change={change} />
+                    <td key={n.key} className="whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-text-primary">
+                      <span className="block">{value === null ? <NoData /> : num(value)}</span>
+                      {(change || (n.key === 'activeListings' && m.newListings !== null)) && (
+                        <span className="block text-xs text-text-tertiary">
+                          {n.key === 'activeListings' && m.newListings !== null && `${num(m.newListings)} nuevas`}
+                          {change && (
+                            <span className="ml-2">
+                              <ChangeMark change={change} />
+                            </span>
+                          )}
                         </span>
                       )}
                     </td>
