@@ -9,18 +9,18 @@ export const step1Schema = z.object({
     { message: 'Selecciona el tipo de propiedad' },
   ),
   operationType: z.enum(['venta', 'alquiler'], {
-    message: 'Selecciona el tipo de operacion',
+    message: 'Selecciona el tipo de operación',
   }),
   rentalDurationType: z.enum(['longTerm', 'shortTerm', '']).optional(),
   role: z.enum(['owner', 'realtor', 'relative'], {
-    message: 'Selecciona tu relacion con la propiedad',
+    message: 'Selecciona tu relación con la propiedad',
   }),
 }).superRefine((data, ctx) => {
   if (data.operationType === 'alquiler' && !data.rentalDurationType) {
     ctx.addIssue({
       code: 'custom',
       path: ['rentalDurationType'],
-      message: 'Selecciona la duracion del alquiler',
+      message: 'Selecciona la duración del alquiler',
     })
   }
 })
@@ -32,11 +32,11 @@ export const step2Schema = z
     propertyType: z.string(), // passed through for conditional validation
     description: z
       .string()
-      .min(20, 'La descripcion debe tener al menos 20 caracteres')
-      .max(2000, 'La descripcion no puede exceder 2000 caracteres'),
+      .min(20, 'La descripción debe tener al menos 20 caracteres')
+      .max(2000, 'La descripción no puede exceder 2000 caracteres'),
     totalAreaInSquareMeters: z
-      .number({ message: 'Ingresa un numero valido' })
-      .positive('El area debe ser mayor a 0'),
+      .number({ message: 'Ingresa un número válido' })
+      .positive('El área debe ser mayor a 0'),
     bedroomCount: z.number().int().min(1).optional().nullable(),
     bathroomCount: z.number().int().min(1).optional().nullable(),
     availableParkingSpaces: z.number().int().min(0),
@@ -58,7 +58,7 @@ export const step2Schema = z
         ctx.addIssue({
           code: 'custom',
           path: ['bathroomCount'],
-          message: 'Ingresa cantidad de banos',
+          message: 'Ingresa cantidad de baños',
         })
       }
     }
@@ -68,14 +68,14 @@ export type Step2Data = z.infer<typeof step2Schema>
 // Step 3: Location + Photos
 export const step3Schema = z.object({
   latitude: z
-    .number({ message: 'Selecciona una ubicacion en el mapa' })
+    .number({ message: 'Selecciona una ubicación en el mapa' })
     .min(-90)
     .max(90),
   longitude: z
-    .number({ message: 'Selecciona una ubicacion en el mapa' })
+    .number({ message: 'Selecciona una ubicación en el mapa' })
     .min(-180)
     .max(180),
-  calle: z.string().min(1, 'Ingresa la calle y numero'),
+  calle: z.string().min(1, 'Ingresa la calle y número'),
   urbanizacion: z.string(),
   distrito: z.string().min(1, 'Ingresa el distrito'),
   provincia: z.string().min(1, 'Ingresa la provincia'),
@@ -90,11 +90,11 @@ export const step4Schema = z
     rentalDurationType: z.string().optional(), // passed through for price validation
     propertyType: z.string().optional(), // passed through for price validation
     amount: z
-      .number({ message: 'Ingresa un precio valido' })
+      .number({ message: 'Ingresa un precio válido' })
       .positive('El precio debe ser mayor a 0'),
     currency: z.enum(['PEN', 'USD']),
     wantsRealtorHelp: z.boolean(),
-    maxRealtors: z.number().int().min(1).max(5, 'Selecciona un numero valido de agentes'),
+    maxRealtors: z.number().int().min(1).max(5, 'Selecciona un número válido de agentes'),
   })
 export type Step4Data = z.infer<typeof step4Schema>
 
@@ -102,21 +102,21 @@ export type Step4Data = z.infer<typeof step4Schema>
 export const fullListingSchema = z.object({
   // Step 1
   propertyType: z.string().min(1, 'Tipo de propiedad no seleccionado (Paso 1)'),
-  operationType: z.string().min(1, 'Tipo de operacion no seleccionado (Paso 1)'),
+  operationType: z.string().min(1, 'Tipo de operación no seleccionado (Paso 1)'),
   rentalDurationType: z.string().optional(),
-  role: z.string().min(1, 'Relacion con la propiedad no seleccionada (Paso 1)'),
+  role: z.string().min(1, 'Relación con la propiedad no seleccionada (Paso 1)'),
   // Step 2
-  description: z.string().min(20, 'La descripcion es muy corta (Paso 2)'),
+  description: z.string().min(20, 'La descripción es muy corta (Paso 2)'),
   totalAreaInSquareMeters: z
-    .number({ message: 'Area total no ingresada (Paso 2)' })
-    .positive('Area total no ingresada (Paso 2)'),
+    .number({ message: 'Área total no ingresada (Paso 2)' })
+    .positive('Área total no ingresada (Paso 2)'),
   // Step 3
   latitude: z
-    .number({ message: 'Ubicacion no seleccionada en el mapa (Paso 3)' })
+    .number({ message: 'Ubicación no seleccionada en el mapa (Paso 3)' })
     .min(-90)
     .max(90),
   longitude: z
-    .number({ message: 'Ubicacion no seleccionada en el mapa (Paso 3)' })
+    .number({ message: 'Ubicación no seleccionada en el mapa (Paso 3)' })
     .min(-180)
     .max(180),
   calle: z.string().min(1, 'Calle no ingresada (Paso 3)'),
@@ -133,5 +133,5 @@ export const fullListingSchema = z.object({
   wantsRealtorHelp: z.boolean({
     message: 'Preferencia de agente no seleccionada (Paso 5)',
   }),
-  maxRealtors: z.number({ message: 'Numero de agentes no ingresado (Paso 5)' }).int().min(1).max(5, 'Numero de agentes invalido (Paso 5)'),
+  maxRealtors: z.number({ message: 'Número de agentes no ingresado (Paso 5)' }).int().min(1).max(5, 'Número de agentes inválido (Paso 5)'),
 })

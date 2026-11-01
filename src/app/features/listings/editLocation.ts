@@ -35,3 +35,18 @@ export function publicLocationOnEdit(data: {
   }
   return { latitude: data.latitude!, longitude: data.longitude!, calle: data.calle }
 }
+
+/**
+ * The address text an edit writes next to the location (`normalizedAddress`).
+ * Pass the street actually being written (publicLocationOnEdit's `calle`), so
+ * a hidden address left as is carries no street. Same shape as the server's
+ * (functions/lib/location-privacy.js): the parts present, comma-joined.
+ */
+export function normalizedAddressOnEdit(
+  calle: string,
+  place: { urbanizacion?: string; distrito: string; provincia: string; departamento: string },
+): string {
+  return [calle, place.urbanizacion, place.distrito, place.provincia, place.departamento]
+    .filter((part): part is string => typeof part === 'string' && part.trim().length > 0)
+    .join(', ')
+}

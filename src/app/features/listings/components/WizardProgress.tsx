@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 
-const STEP_LABELS = ['Tipo', 'Detalles', 'Ubicacion', 'Fotos', 'Precio']
+const STEP_LABELS = ['Tipo', 'Detalles', 'Ubicación', 'Fotos', 'Precio']
 
 interface WizardProgressProps {
   currentStep: number

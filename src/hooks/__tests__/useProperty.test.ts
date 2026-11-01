@@ -89,6 +89,62 @@ describe('useProperty', () => {
     expect(result.current.error).toBe('Propiedad no encontrada')
   })
 
+  it.each(['draft', 'paymentPending', 'expired'])('returns "not found" to a stranger for a %s listing', async (status) => {
+    getListingWithPropertyMock.mockResolvedValueOnce({
+      listing: { id: 'l1', status, ownerId: 'owner' },
+      property: { id: 'p1' },
+    })
+
+    const { result } = renderHook(() => useProperty('l1', { viewerId: 'someone-else' }), { wrapper })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBe('Propiedad no encontrada')
+    expect(result.current.view).toBe('hidden')
+  })
+
+  it.each(['deactivated', 'draft'])('shows the owner their own %s listing', async (status) => {
+    const listing = { id: 'l1', status, ownerId: 'owner' }
+    getListingWithPropertyMock.mockResolvedValueOnce({ listing, property: { id: 'p1' } })
+
+    const { result } = renderHook(() => useProperty('l1', { viewerId: 'owner' }), { wrapper })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.listing).toBe(listing)
+    expect(result.current.view).toBe('owner-only')
+  })
+
+  it('keeps loading a non-public listing until it knows who is looking', async () => {
+    getListingWithPropertyMock.mockResolvedValueOnce({
+      listing: { id: 'l1', status: 'deactivated', ownerId: 'owner' },
+      property: { id: 'p1' },
+    })
+
+    const { result } = renderHook(() => useProperty('l1', { viewerId: undefined, authReady: false }), { wrapper })
+
+    await waitFor(() => expect(getListingWithPropertyMock).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.error).toBeNull()
+  })
+
+  it.each(['sold', 'rented'])('shows a %s listing to anyone, as closed', async (status) => {
+    getListingWithPropertyMock.mockResolvedValueOnce({
+      listing: { id: 'l1', status, ownerId: 'owner' },
+      property: { id: 'p1' },
+    })
+
+    const { result } = renderHook(() => useProperty('l1'), { wrapper })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.view).toBe('closed')
+  })
+
   it('returns error message when the query fails', async () => {
     getListingWithPropertyMock.mockRejectedValueOnce(new Error('permission-denied'))
 

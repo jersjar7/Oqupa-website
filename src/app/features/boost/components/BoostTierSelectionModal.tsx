@@ -156,7 +156,7 @@ function TierCard({
           )}
         </div>
         <span className="text-[11px] text-text-tertiary">
-          S/. {(config.feeInSoles / config.durationDays).toFixed(2)}/dia
+          S/. {(config.feeInSoles / config.durationDays).toFixed(2)}/día
         </span>
       </div>
 

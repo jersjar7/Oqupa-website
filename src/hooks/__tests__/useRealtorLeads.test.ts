@@ -390,7 +390,7 @@ describe('useDeclineAssignment', () => {
     await act(async () => {
       await result.current.mutateAsync({ listingId: 'l-1', currentDeclinedIds: [], agentId: 'agent-1' })
     })
-    expect(toastMock.success).toHaveBeenCalledWith('Asignacion rechazada')
+    expect(toastMock.success).toHaveBeenCalledWith('Asignación rechazada')
   })
 
   it('shows error toast when declining fails', async () => {
@@ -403,7 +403,7 @@ describe('useDeclineAssignment', () => {
         // expected
       }
     })
-    expect(toastMock.error).toHaveBeenCalledWith('Error al rechazar la asignacion')
+    expect(toastMock.error).toHaveBeenCalledWith('Error al rechazar la asignación')
   })
 })
 

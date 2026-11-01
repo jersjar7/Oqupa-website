@@ -25,7 +25,7 @@ function formatRelativeDate(date: Date): string {
     return `Hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`
   }
   if (diffDays === 1) return 'Ayer'
-  if (diffDays < 7) return `Hace ${diffDays} dias`
+  if (diffDays < 7) return `Hace ${diffDays} días`
   const weeks = Math.floor(diffDays / 7)
   return `Hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`
 }
@@ -59,7 +59,7 @@ export default function RealtorClaimCard({
 
           {/* Claimed date */}
           <p className="mt-1 text-xs text-text-tertiary">
-            Reclamo {formatRelativeDate(claim.claimedAt)}
+            Reclamó {formatRelativeDate(claim.claimedAt)}
           </p>
         </div>
       </div>

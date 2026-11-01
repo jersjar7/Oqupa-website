@@ -18,7 +18,8 @@ import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
-import { publicLocationOnEdit } from '../editLocation'
+import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
+import { coverMicroThumbOnEdit } from '../editMedia'
 
 function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
   if (amount == null || isNaN(amount)) return ''
@@ -114,6 +115,7 @@ export default function WizardStep5() {
         // Upload new photos if any
         let newPhotoKeys: string[] = []
         let newBlurHashes: string[] = []
+        let newMicroThumbs: string[] = []
         if (data.photos.length > 0) {
           setUploadProgress('Subiendo fotos...')
           const results = await storageService.uploadMultiplePropertyPhotos(
@@ -123,6 +125,7 @@ export default function WizardStep5() {
           )
           newPhotoKeys = results.map(r => r.objectKey)
           newBlurHashes = results.map(r => r.blurHash)
+          newMicroThumbs = results.map(r => r.microThumb)
         }
 
         // Build ordered photo key + blurHash arrays using photoOrder from Step 4.
@@ -155,6 +158,21 @@ export default function WizardStep5() {
           (k) => !keptKeys.has(k)
         )
 
+        // The cover's blurred preview: rewriting `media` without it dropped it.
+        const coverMicroThumb = coverMicroThumbOnEdit({
+          photoOrder: data.photoOrder,
+          existingPhotoUrls: data.existingPhotoUrls,
+          newMicroThumbs,
+          originalCoverKey: data.originalExistingPhotoUrls[0],
+          originalCoverMicroThumb: data.originalCoverMicroThumb ?? '',
+        })
+        const editedMedia = {
+          propertyPhotoUrls: allPhotoKeys,
+          photoKeys: allPhotoKeys,
+          photoBlurHashes: allBlurHashes,
+          ...(coverMicroThumb ? { primaryPhotoMicroThumb: coverMicroThumb } : {}),
+        }
+
         setUploadProgress('Actualizando propiedad...')
         const publicLocation = publicLocationOnEdit(data)
         await firestoreService.updateProperty(editPropertyId, {
@@ -183,11 +201,10 @@ export default function WizardStep5() {
             amount: formData.amount,
             currency: formData.currency,
           },
-          media: {
-            propertyPhotoUrls: allPhotoKeys,
-            photoKeys: allPhotoKeys,
-            photoBlurHashes: allBlurHashes,
-          },
+          // The address text went stale after an address change: an edit
+          // never rewrote it.
+          normalizedAddress: normalizedAddressOnEdit(publicLocation.calle, data),
+          media: editedMedia,
         })
 
         await firestoreService.updateListing(editListingId, {
@@ -203,11 +220,7 @@ export default function WizardStep5() {
           role: data.role as Listing['role'],
           wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
           maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
-          media: {
-            propertyPhotoUrls: allPhotoKeys,
-            photoKeys: allPhotoKeys,
-            photoBlurHashes: allBlurHashes,
-          },
+          media: editedMedia,
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,
         })
@@ -286,7 +299,7 @@ export default function WizardStep5() {
         }
 
         // Create listing
-        setUploadProgress('Creando publicacion...')
+        setUploadProgress('Creando publicación...')
         const now = new Date()
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -423,13 +436,13 @@ export default function WizardStep5() {
 
       const message = err instanceof Error ? err.message : ''
       if (message.includes('permission-denied') || message.includes('PERMISSION_DENIED')) {
-        setSubmitError('No tienes permisos para realizar esta accion.')
+        setSubmitError('No tienes permisos para realizar esta acción.')
       } else if (message.includes('not-found')) {
-        setSubmitError('No se encontro la publicacion. Puede haber sido eliminada.')
+        setSubmitError('No se encontró la publicación. Puede haber sido eliminada.')
       } else if (message.includes('storage') || message.includes('upload')) {
-        setSubmitError('Error al subir las fotos. Verifica tu conexion e intenta de nuevo.')
+        setSubmitError('Error al subir las fotos. Verifica tu conexión e intenta de nuevo.')
       } else if (!navigator.onLine) {
-        setSubmitError('Sin conexion a internet. Verifica tu conexion e intenta de nuevo.')
+        setSubmitError('Sin conexión a internet. Verifica tu conexión e intenta de nuevo.')
       } else {
         setSubmitError('Error al guardar. Intenta de nuevo.')
       }
@@ -551,7 +564,7 @@ export default function WizardStep5() {
                 Quiero ayuda de agentes
               </span>
               <p className="text-xs text-text-secondary">
-                Agentes verificados podran contactarte para ayudar a vender tu propiedad
+                Agentes verificados podrán contactarte para ayudar a vender tu propiedad
               </p>
             </div>
           </label>
@@ -559,7 +572,7 @@ export default function WizardStep5() {
           {wantsRealtorHelp && (
             <div className="mt-4">
               <label className="text-sm font-medium uppercase text-text-primary">
-                Maximo de agentes
+                Máximo de agentes
                 <InfoTip text="Limita cuántos agentes pueden solicitar ayudarte con tu propiedad. Puedes cambiar esto después de publicar." />
               </label>
               <div className="mt-2 flex gap-2">
@@ -605,7 +618,7 @@ export default function WizardStep5() {
               disabled={isSubmitting}
               className="flex-1"
             >
-              Atras
+              Atrás
             </Button>
             <Button
               type="submit"

@@ -62,9 +62,9 @@ function renderPage() {
 }
 
 function fillAndSubmit({ motivation = 'Quiero ayudar a mis clientes a encontrar casa en Piura.' } = {}) {
-  fireEvent.change(screen.getByLabelText(/Anos de experiencia/i), { target: { value: '5' } })
+  fireEvent.change(screen.getByLabelText(/Años de experiencia/i), { target: { value: '5' } })
   fireEvent.change(screen.getByLabelText(/Zonas de servicio/i), { target: { value: 'Piura, Castilla' } })
-  fireEvent.change(screen.getByLabelText(/Motivacion/i), { target: { value: motivation } })
+  fireEvent.change(screen.getByLabelText(/Motivación/i), { target: { value: motivation } })
   fireEvent.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 }
 
@@ -97,7 +97,7 @@ describe('realtor_application_submitted', () => {
   it('does not fire when validation fails', async () => {
     renderPage()
     fillAndSubmit({ motivation: 'corta' })
-    await waitFor(() => expect(screen.getByText(/minimo 20 caracteres/i)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/mínimo 20 caracteres/i)).toBeTruthy())
     expect(submitApplicationMock).not.toHaveBeenCalled()
     expect(submittedMock).not.toHaveBeenCalled()
   })

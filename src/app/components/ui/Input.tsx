@@ -57,7 +57,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setRevealed((v) => !v)}
-              aria-label={revealed ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              aria-label={revealed ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               aria-pressed={revealed}
               tabIndex={-1}
               className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-background-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"

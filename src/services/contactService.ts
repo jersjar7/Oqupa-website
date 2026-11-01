@@ -29,6 +29,8 @@ export type ContactDenialReason =
   | 'needs-email-verification'
   /** The LISTING has no number — nothing about the caller is wrong. */
   | 'listing-has-no-contact'
+  /** The listing is no longer active (sold, rented, deactivated) or gone. */
+  | 'listing-not-available'
   | 'rate-limited'
   | 'unavailable'
 
@@ -66,6 +68,14 @@ export const contactService = {
     } catch (error) {
       const code = (error as FunctionsError)?.code ?? ''
       const raw = code ? code.replace(/^functions\//, '') : 'unknown'
+      // A listing that is no longer up. Matched on the server's words rather
+      // than a code, so it can never be mistaken for something the caller has
+      // to fix (2026-10-31: getListingContact refuses non-active listings).
+      const message = String((error as { message?: unknown })?.message ?? '')
+      // The server's code for it is `out-of-range` (2026-10-31).
+      if (code.includes('out-of-range') || /ya no está disponible|ya no existe/i.test(message)) {
+        throw new ContactDenied('listing-not-available', raw)
+      }
       if (code.includes('unauthenticated')) throw new ContactDenied('needs-login', raw)
       if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification', raw)
       // The seller has no number on file. Telling the buyer to verify THEIR

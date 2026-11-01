@@ -147,7 +147,7 @@ export default function InterestedAgentsPage() {
           <div className="flex items-center gap-2">
             <Badge variant={listing.assignmentStatus === 'pending_acceptance' ? 'warning' : 'info'}>
               {listing.assignmentStatus === 'pending_acceptance'
-                ? 'Pendiente de aceptacion'
+                ? 'Pendiente de aceptación'
                 : 'Agente asignado'}
             </Badge>
             <span className="text-sm text-text-secondary">
@@ -194,10 +194,10 @@ export default function InterestedAgentsPage() {
         {claims.data && claims.data.length === 0 && (
           <div className="rounded-2xl border border-border bg-white p-12 text-center">
             <p className="text-text-secondary">
-              Aun no hay agentes interesados.
+              Aún no hay agentes interesados.
             </p>
             <p className="mt-1 text-sm text-text-tertiary">
-              Los agentes inmobiliarios verificados podran reclamar esta oportunidad.
+              Los agentes inmobiliarios verificados podrán reclamar esta oportunidad.
             </p>
           </div>
         )}
@@ -259,9 +259,9 @@ export default function InterestedAgentsPage() {
             <p className="mt-3 text-sm font-medium text-text-primary">Al asignar un agente:</p>
             <ul className="mt-2 space-y-2">
               {[
-                'Su numero de WhatsApp reemplazara al tuyo como contacto principal del anuncio',
-                'Los interesados en tu propiedad contactaran directamente al agente',
-                'Tu seguiras viendo todas las estadisticas y el estado de tu anuncio',
+                'Su número de WhatsApp reemplazará al tuyo como contacto principal del anuncio',
+                'Los interesados en tu propiedad contactarán directamente al agente',
+                'Tú seguirás viendo todas las estadísticas y el estado de tu anuncio',
                 'Puedes cambiar de agente en cualquier momento',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-2 text-sm text-text-secondary">
@@ -300,7 +300,7 @@ export default function InterestedAgentsPage() {
       >
         <div>
           <p className="text-sm text-text-secondary">
-            El agente dejara de manejar los contactos de esta propiedad. Podras elegir otro agente.
+            El agente dejará de manejar los contactos de esta propiedad. Podrás elegir otro agente.
           </p>
           <div className="mt-6 flex gap-3">
             <Button

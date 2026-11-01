@@ -54,7 +54,7 @@ export default function PhotoStep() {
 
       <div className="flex gap-3">
         <Button type="button" variant="text" onClick={prevStep} className="flex-1">
-          Atras
+          Atrás
         </Button>
         <Button type="submit" disabled={!canContinue} className="flex-1">
           Continuar

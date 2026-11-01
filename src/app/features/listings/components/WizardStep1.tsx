@@ -118,7 +118,7 @@ export default function WizardStep1() {
       {/* Operation Type — always visible */}
       <RevealField visible={isRevealed('operationType')} animate={!wasInitial('operationType')}>
         <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operacion</h3>
+          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operación</h3>
           {errors.operationType && (
             <p className="mt-1 text-sm text-error">{errors.operationType.message}</p>
           )}
@@ -150,7 +150,7 @@ export default function WizardStep1() {
         >
           <div>
             <h3 className="text-sm font-medium uppercase text-text-primary">
-              Duracion del alquiler
+              Duración del alquiler
               <InfoTip text="Largo plazo: contratos mensuales (1 mes o más). Corto plazo: alquiler por noches o días, estilo Airbnb." />
             </h3>
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -216,7 +216,7 @@ export default function WizardStep1() {
       >
         <div>
           <h3 className="text-sm font-medium uppercase text-text-primary">
-            Tu relacion con la propiedad
+            Tu relación con la propiedad
             <InfoTip text="Selecciona 'Agente inmobiliario' si trabajas como agente. 'Represento al propietario' si eres familiar, amigo, o apoderado del dueño." />
           </h3>
           {errors.role && (
