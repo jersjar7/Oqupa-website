@@ -149,6 +149,15 @@ describe('contactService', () => {
       },
     )
 
+    // The code the server actually uses for it (staging, 2026-10-31).
+    it('throws ContactDenied("listing-not-available") for out-of-range, whatever the message', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/out-of-range', message: '' })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'listing-not-available',
+        code: 'out-of-range',
+      })
+    })
+
     it('throws ContactDenied("listing-not-available") when the listing no longer exists', async () => {
       callableFnMock.mockRejectedValue({ code: 'functions/not-found', message: 'Esta publicación ya no existe.' })
       await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({

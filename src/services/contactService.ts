@@ -72,7 +72,8 @@ export const contactService = {
       // than a code, so it can never be mistaken for something the caller has
       // to fix (2026-10-31: getListingContact refuses non-active listings).
       const message = String((error as { message?: unknown })?.message ?? '')
-      if (/ya no está disponible|ya no existe/i.test(message)) {
+      // The server's code for it is `out-of-range` (2026-10-31).
+      if (code.includes('out-of-range') || /ya no está disponible|ya no existe/i.test(message)) {
         throw new ContactDenied('listing-not-available', raw)
       }
       if (code.includes('unauthenticated')) throw new ContactDenied('needs-login', raw)

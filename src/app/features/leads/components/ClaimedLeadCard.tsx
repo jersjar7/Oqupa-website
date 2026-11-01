@@ -25,7 +25,7 @@ import {
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
 import { toast } from 'sonner'
-import { contactService } from '@/services/contactService'
+import { contactService, ContactDenied } from '@/services/contactService'
 
 interface ClaimedLeadCardProps {
   claim: RealtorClaim
@@ -78,8 +78,14 @@ export default function ClaimedLeadCard({
         '_blank',
         'noopener,noreferrer',
       )
-    } catch {
-      toast.error('No se pudo obtener el contacto del propietario.')
+    } catch (error) {
+      // Sold, rented or deactivated since the claim: the server refuses it.
+      // Saying "could not" would invite a retry that can never work.
+      toast.error(
+        error instanceof ContactDenied && error.reason === 'listing-not-available'
+          ? 'Esta publicación ya no está disponible.'
+          : 'No se pudo obtener el contacto del propietario.',
+      )
     } finally {
       setOpening(false)
     }
