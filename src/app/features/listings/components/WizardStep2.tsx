@@ -76,7 +76,7 @@ export default function WizardStep2() {
         <div>
           <label
             htmlFor="description"
-            className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+            className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
           >
             Descripción
           </label>

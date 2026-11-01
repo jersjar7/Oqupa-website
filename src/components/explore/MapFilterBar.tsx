@@ -35,7 +35,7 @@ export default function MapFilterBar({ filters, setFilters, count }: MapFilterBa
               }))
             }
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              filters.operationType === value ? 'bg-primary text-white' : 'text-text-secondary hover:bg-background-secondary'
+              filters.operationType === value ? 'bg-secondary text-white' : 'text-text-secondary hover:bg-background-secondary'
             }`}
           >
             {label}

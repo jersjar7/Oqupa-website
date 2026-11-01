@@ -304,7 +304,7 @@ export default function RealtorRegistrationPage() {
               <div>
                 <label
                   htmlFor="motivation"
-                  className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                  className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
                 >
                   Motivación
                 </label>

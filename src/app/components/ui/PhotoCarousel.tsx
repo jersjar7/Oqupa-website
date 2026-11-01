@@ -77,7 +77,7 @@ export default function PhotoCarousel({
   if (count === 0) {
     return (
       <div
-        className={`group relative flex items-center justify-center bg-gray-100 text-text-tertiary ${className}`}
+        className={`group relative flex items-center justify-center bg-surface-muted text-text-tertiary ${className}`}
         role="img"
         aria-label={alt}
       >
@@ -91,7 +91,7 @@ export default function PhotoCarousel({
 
   return (
     <div
-      className={`group relative overflow-hidden bg-gray-100 ${className}`}
+      className={`group relative overflow-hidden bg-surface-muted ${className}`}
       style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       tabIndex={count > 1 ? 0 : undefined}
       onKeyDown={count > 1 ? onKey : undefined}

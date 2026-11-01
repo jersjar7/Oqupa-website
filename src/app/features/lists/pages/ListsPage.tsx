@@ -203,7 +203,7 @@ export default function ListsPage() {
                     <button
                       onClick={() => handleDelete(list)}
                       disabled={busy === list.id}
-                      className="rounded-lg border border-border p-2 text-error transition-colors hover:bg-red-50 disabled:opacity-50"
+                      className="rounded-lg border border-border p-2 text-error transition-colors hover:bg-error/5 disabled:opacity-50"
                       aria-label="Eliminar lista"
                     >
                       {busy === list.id ? <Spinner size="sm" /> : <Trash2 className="h-3.5 w-3.5" />}

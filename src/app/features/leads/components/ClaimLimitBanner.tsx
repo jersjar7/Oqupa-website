@@ -17,7 +17,7 @@ export default function ClaimLimitBanner({ used, limit }: ClaimLimitBannerProps)
           <span className="text-xs font-medium text-amber-700">Límite alcanzado</span>
         )}
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted">
         <div
           className={`h-full rounded-full transition-all ${atLimit ? 'bg-warning' : 'bg-primary'}`}
           style={{ width: `${percentage}%` }}

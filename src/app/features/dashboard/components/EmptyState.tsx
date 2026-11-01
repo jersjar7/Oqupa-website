@@ -17,7 +17,7 @@ export default function EmptyState() {
       <Link to="/app/listings/new" className="mt-6">
         <Button>
           <Plus className="h-5 w-5" />
-          Crear Publicación
+          Publicar
         </Button>
       </Link>
     </div>

@@ -16,7 +16,7 @@ type Props = {
 /**
  * Sticky page header for the authenticated /app area. Shows the decorative page title
  * (Roboto Serif in Pacific Green), optional subtitle, ViewAsMenu (admin only), and a
- * slot for page-specific actions (e.g. "Crear anuncio" on listings).
+ * slot for page-specific actions (e.g. "Publicar" on listings).
  *
  * When an admin is in view-as mode, a warning ribbon appears at the top so they
  * can't forget they're debugging.
@@ -25,7 +25,7 @@ export default function Topbar({ title, subtitle, caps, actions, accessArea }: P
   const { viewAs, setViewAs } = useViewAs()
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-[#FFFAF5]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-border bg-cream/90 backdrop-blur-md">
       {caps.isAdmin && viewAs !== 'self' && (
         <div
           role="status"

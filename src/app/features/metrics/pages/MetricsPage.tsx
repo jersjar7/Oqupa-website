@@ -24,7 +24,7 @@ const COLORS = {
   primary: '#F47843',
   secondary: '#3A6A55',
   grid: '#EFE8DF',
-  axis: '#8E8E93',
+  axis: '#737373',
 }
 
 const SPARKLINE_DAYS = 30

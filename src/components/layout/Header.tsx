@@ -29,12 +29,13 @@ const NAV_LINKS: NavLink[] = [
 ]
 
 /**
- * The door. "Anuncia tu propiedad" as the primary, filled CTA on every page
+ * The door. "PUBLICAR" as the primary, filled CTA on every page
  * variant — sellers over 40 publish from a laptop, so this is the website's
  * most important button (docs/new-user-navigation-path.md, step 4).
- * *Anunciar* on the public site, *publicar* inside the product (brand rule,
- * 2026-08-25). A visitor goes to create an account with the wizard stashed
- * as the return address; a signed-in person goes straight to the wizard.
+ * One verb for the action everywhere, as in the app: "Publicar" (founder,
+ * 2026-10-31; replaced "Anuncia tu propiedad", 2026-08-25 rule).
+ * A visitor goes to create an account with the
+ * wizard stashed as the return address; a signed-in person goes straight to the wizard.
  */
 function PublishCta({ className = '', onNavigate }: { className?: string; onNavigate?: () => void }) {
   // Rendered immediately: a visitor's destination does not depend on the
@@ -56,7 +57,7 @@ function PublishCta({ className = '', onNavigate }: { className?: string; onNavi
       }}
       className={`inline-flex h-10 items-center justify-center rounded-full bg-primary px-3 font-sans text-xs font-bold uppercase tracking-[0.5px] text-white transition-colors hover:bg-primary-hover sm:h-12 sm:px-6 sm:text-base sm:tracking-[1px] ${className}`}
     >
-      Anuncia tu propiedad
+      Publicar
     </Link>
   )
 }
@@ -178,7 +179,7 @@ export default function Header({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 bg-[#FFFAF5]/95 backdrop-blur-xl transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 bg-cream/95 backdrop-blur-xl transition-all duration-300 ${
         isScrolled ? 'shadow-light py-3' : 'py-5'
       }`}
     >
@@ -332,7 +333,7 @@ export default function Header({
           {/* Slide-down menu */}
           <div
             ref={menuRef}
-            className={`fixed top-0 right-0 left-0 z-40 transform bg-[#FFFAF5] pt-20 shadow-medium transition-transform duration-300 ease-in-out md:hidden ${
+            className={`fixed top-0 right-0 left-0 z-40 transform bg-cream pt-20 shadow-medium transition-transform duration-300 ease-in-out md:hidden ${
               isOpen ? 'translate-y-0' : '-translate-y-full'
             }`}
           >

@@ -317,7 +317,7 @@ export default function DashboardPage() {
       <section className="space-y-4">
         <SectionHeader
           label="Mis propiedades"
-          action={{ label: '+ Crear anuncio', to: '/app/listings/new' }}
+          action={{ label: '+ Publicar', to: '/app/listings/new' }}
         />
         <OwnerKpis userId={user?.id} />
       </section>

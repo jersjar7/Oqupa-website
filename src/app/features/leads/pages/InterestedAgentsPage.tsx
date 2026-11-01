@@ -100,13 +100,13 @@ export default function InterestedAgentsPage() {
               className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />
           ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs text-text-tertiary">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-xs text-text-tertiary">
             Sin foto
           </div>
           )
         })()}
         <div>
-          <p className="font-bold text-primary">
+          <p className="font-bold text-text-primary">
             {CURRENCY_SYMBOLS[listing.price.currency as keyof typeof CURRENCY_SYMBOLS]}{' '}
             {listing.price.amount.toLocaleString('es-PE')}
             {(() => {
@@ -156,7 +156,7 @@ export default function InterestedAgentsPage() {
           </div>
           <button
             type="button"
-            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+            className="mt-2 text-sm font-medium text-error hover:text-error-strong"
             onClick={() => setConfirmUnassign(true)}
           >
             Quitar Agente
@@ -178,8 +178,8 @@ export default function InterestedAgentsPage() {
         )}
 
         {claims.isError && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
-            <p className="text-red-700">
+          <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+            <p className="text-error-strong">
               Error al cargar los agentes interesados.
             </p>
             <button
@@ -304,7 +304,7 @@ export default function InterestedAgentsPage() {
           </p>
           <div className="mt-6 flex gap-3">
             <Button
-              className="flex-1 !bg-red-600 hover:!bg-red-700"
+              className="flex-1 !bg-error hover:!bg-error-strong"
               onClick={handleUnassignConfirm}
               isLoading={unassignRealtor.isPending}
             >

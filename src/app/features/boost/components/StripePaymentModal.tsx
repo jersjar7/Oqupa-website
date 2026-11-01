@@ -195,7 +195,7 @@ export default function StripePaymentModal({
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !paymentComplete}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600 disabled:bg-gray-300 disabled:text-gray-500"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover disabled:bg-separator disabled:text-text-secondary"
               >
                 {isSubmitting ? (
                   <>

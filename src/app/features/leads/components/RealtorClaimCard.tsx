@@ -71,7 +71,7 @@ export default function RealtorClaimCard({
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Button variant="text" className="text-green-600 hover:text-green-700">
+          <Button variant="text" className="text-success hover:text-secondary-hover">
             <MessageCircle className="h-4 w-4" />
             Contactar por WhatsApp
           </Button>

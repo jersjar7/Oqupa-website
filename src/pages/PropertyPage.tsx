@@ -33,6 +33,7 @@ import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { contactService, ContactDenied } from '@/services/contactService'
 import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
+import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -46,7 +47,7 @@ function PropertyGallery({ images }: { images: string[] }) {
 
   if (images.length === 0) {
     return (
-      <div className="flex h-[300px] w-full items-center justify-center bg-gray-100 md:h-[400px]">
+      <div className="flex h-[300px] w-full items-center justify-center bg-surface-muted md:h-[400px]">
         <span className="text-text-secondary">Sin imágenes</span>
       </div>
     )
@@ -190,7 +191,7 @@ function PropertyGallery({ images }: { images: string[] }) {
                   />
                   {isLast && hasMore && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900">
+                      <span className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-text-primary">
                         Ver todas las {images.length} fotos
                       </span>
                     </div>
@@ -341,7 +342,7 @@ export default function PropertyPage() {
   if (error || !listing || !property) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="font-serif text-2xl font-bold text-text-primary">
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">
           Propiedad no encontrada
         </h1>
         <p className="text-text-secondary">
@@ -502,18 +503,15 @@ export default function PropertyPage() {
                 squeezed into the row it wrapped to "S/." / "540,000" and pushed
                 Compartir off-screen (Jerson, staging, 2026-08-26). */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="whitespace-nowrap text-2xl font-bold text-primary">
+              <p className="whitespace-nowrap font-serif text-[28px] font-normal leading-tight text-secondary">
                 {formatPrice(listing.price?.amount)}
                 {(() => {
                   const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-                  return suffix ? <span className="text-lg font-normal text-text-secondary"> {suffix}</span> : null
+                  return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
                 })()}
               </p>
               {listing.isBoosted && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-600 ring-1 ring-amber-500/30">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  Destacado
-                </span>
+                <DestacadoBadge withStar />
               )}
               <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
                 <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
@@ -599,10 +597,10 @@ export default function PropertyPage() {
             {/* Description */}
             {listing.description && (
               <div className="mt-6">
-                <h2 className="font-serif text-lg font-semibold text-text-primary">
+                <h2 className="font-serif text-lg font-normal text-text-primary">
                   Descripción
                 </h2>
-                <p className="mt-2 whitespace-pre-line text-gray-600 leading-relaxed">
+                <p className="mt-2 whitespace-pre-line text-text-secondary leading-relaxed">
                   {listing.description}
                 </p>
               </div>
@@ -656,14 +654,14 @@ export default function PropertyPage() {
             {isOwner && listing.status === 'active' && (
               listing.isBoosted ? (
                 // Boost status for owner
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="rounded-xl border border-boost/40 bg-boost/10 p-4">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm font-semibold text-amber-700">
+                    <Sparkles className="h-5 w-5 text-boost" />
+                    <span className="text-sm font-semibold text-ink">
                       Tu publicación está destacada
                     </span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-amber-600">
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
                     {listing.boostTier && (
                       <span>Plan: {BOOST_TIER_LABELS[listing.boostTier]}</span>
                     )}
@@ -693,7 +691,7 @@ export default function PropertyPage() {
                   {(openFlow) => (
                     <button
                       onClick={openFlow}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-600"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover"
                     >
                       <Sparkles className="h-5 w-5" />
                       Destacar mi propiedad
@@ -750,7 +748,7 @@ export default function PropertyPage() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
             >
-              <h3 className="font-serif text-lg font-bold text-text-primary">
+              <h3 className="font-serif text-lg font-normal text-text-primary">
                 {gate.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">

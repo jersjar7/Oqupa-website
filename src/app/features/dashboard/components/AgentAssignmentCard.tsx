@@ -68,9 +68,9 @@ export default function AgentAssignmentCard({
 
       {/* Content — grows to fill */}
       <div className="flex flex-1 flex-col p-4">
-        <p className="font-sans text-lg font-bold text-primary line-clamp-1">
+        <p className="font-serif text-xl font-normal text-secondary line-clamp-1">
           {symbol} {listing.price.amount.toLocaleString('es-PE')}
-          {suffix && <span className="font-normal text-text-secondary"> {suffix}</span>}
+          {suffix && <span className="font-sans text-sm font-normal text-text-secondary"> {suffix}</span>}
         </p>
         <p className="mt-1 text-sm text-text-secondary line-clamp-1">
           <span className="font-medium">{PROPERTY_TYPE_LABELS[property.propertyType]}</span>
@@ -114,7 +114,7 @@ export default function AgentAssignmentCard({
               </Button>
               <Button
                 variant="text"
-                className="flex-1 !text-red-600 hover:!text-red-700"
+                className="flex-1 !text-error hover:!text-error-strong"
                 onClick={onDecline}
                 isLoading={isDeclining}
                 disabled={isAccepting}

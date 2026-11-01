@@ -10,12 +10,13 @@ import { BOOST_TIER_LABELS } from '@/types/boost'
 import { paymentStatusDisplay, isRefundEligible as refundEligible, refundErrorMessage, type StatusTone } from '../lib/paymentDisplay'
 import { AnalyticsLogger } from '@/lib/analytics'
 
+// Brand tokens only (audit A6): every chip text passes 4.5:1 on its tint.
 const TONE_COLORS: Record<StatusTone, string> = {
-  pending: 'bg-amber-100 text-amber-700',
-  success: 'bg-green-100 text-green-700',
-  danger: 'bg-red-100 text-red-700',
-  muted: 'bg-gray-100 text-gray-600',
-  info: 'bg-blue-100 text-blue-700',
+  pending: 'bg-accent/40 text-ink',
+  success: 'bg-success/10 text-success',
+  danger: 'bg-error/10 text-error-strong',
+  muted: 'bg-surface-muted text-text-secondary',
+  info: 'bg-primary/10 text-ink',
 }
 
 export default function PaymentHistoryPage() {
@@ -54,7 +55,7 @@ export default function PaymentHistoryPage() {
         </div>
       ) : !payments || payments.length === 0 ? (
         <div className="mt-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted">
             <Receipt className="h-8 w-8 text-text-tertiary" />
           </div>
           <h3 className="mt-4 font-sans text-lg font-medium text-text-primary">
@@ -161,11 +162,11 @@ function PaymentCard({ payment }: { payment: Payment }) {
 
       {/* Refund confirmation */}
       {showRefundConfirm && (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm font-medium text-amber-800">
+        <div className="mt-3 rounded-lg border border-boost/40 bg-boost/10 p-3">
+          <p className="text-sm font-medium text-ink">
             ¿Solicitar reembolso de S/. {payment.amount.toFixed(2)}?
           </p>
-          <p className="mt-1 text-xs text-amber-700">
+          <p className="mt-1 text-xs text-text-secondary">
             Se quitarán de tu destacado los días de esta compra.
           </p>
           {refundError && (
@@ -175,7 +176,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
             <button
               onClick={handleRefund}
               disabled={refundMutation.isPending}
-              className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-300"
+              className="inline-flex items-center gap-1 rounded-lg bg-boost px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-boost-hover disabled:bg-separator"
             >
               {refundMutation.isPending ? (
                 <>
@@ -191,7 +192,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
                 setShowRefundConfirm(false)
                 setRefundError(null)
               }}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-black/5"
+              className="rounded-lg border border-separator px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-black/5"
             >
               Cancelar
             </button>

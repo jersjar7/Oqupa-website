@@ -11,7 +11,7 @@ import logoUrl from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 // Brand colors (matching Flutter AppColors)
 const COLOR_BRICK_ORANGE = '#F47843'
 const COLOR_PACIFIC_GREEN = '#3A6A55'
-const COLOR_CREAM_LIGHT = '#FFFAF5'
+const COLOR_CREAM_LIGHT = '#FFF9F0'
 
 // Font family (must match index.css @font-face declarations)
 const FONT_FAMILY = 'Gotham'

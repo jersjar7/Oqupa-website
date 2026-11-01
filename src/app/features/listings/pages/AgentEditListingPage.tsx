@@ -171,7 +171,7 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="rounded-full p-1 text-text-secondary hover:bg-gray-100"
+          className="rounded-full p-1 text-text-secondary hover:bg-surface-muted"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -204,7 +204,7 @@ export default function AgentEditListingPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
-              className="w-full rounded-lg border border-gray-200 p-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border p-3 text-base focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="Describe la propiedad..."
             />
           </div>
@@ -227,7 +227,7 @@ export default function AgentEditListingPage() {
                   <button
                     onClick={() => handleRemoveExisting(index)}
                     aria-label={`Eliminar foto ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -250,7 +250,7 @@ export default function AgentEditListingPage() {
                   <button
                     onClick={() => handleRemoveNew(index)}
                     aria-label={`Eliminar foto nueva ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -262,7 +262,7 @@ export default function AgentEditListingPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   aria-label="Agregar foto"
-                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400 transition-colors hover:border-primary hover:text-primary"
+                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-separator text-text-tertiary transition-colors hover:border-primary hover:text-primary"
                 >
                   <Upload className="h-6 w-6" />
                 </button>

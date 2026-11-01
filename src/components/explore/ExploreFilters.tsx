@@ -74,7 +74,7 @@ export default function ExploreFilters({
             }
             className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
               filters.operationType === opt.value
-                ? 'bg-primary text-white'
+                ? 'bg-secondary text-white'
                 : 'bg-background-secondary text-text-secondary hover:bg-border'
             }`}
           >
@@ -94,7 +94,7 @@ export default function ExploreFilters({
               }
               className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
                 filters.rentalDurationType === null
-                  ? 'bg-primary text-white'
+                  ? 'bg-secondary text-white'
                   : 'bg-background-secondary text-text-secondary hover:bg-border'
               }`}
             >
@@ -118,7 +118,7 @@ export default function ExploreFilters({
                 }
                 className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
                   filters.rentalDurationType === value
-                    ? 'bg-primary text-white'
+                    ? 'bg-secondary text-white'
                     : 'bg-background-secondary text-text-secondary hover:bg-border'
                 }`}
               >
