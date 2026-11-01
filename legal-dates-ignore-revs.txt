@@ -1,0 +1,6 @@
+# Commits that touched the privacy or terms page without changing what a
+# reader sees. They do not move "Última actualización"
+# (scripts/legalLastUpdated.ts). One full hash per line; # starts a comment.
+
+06c803fa5ffc79948682830bb24f16c5bdc2b782  # brand consistency sweep 2026-10-31 (styling only)
+c881569e02db02df05903380ac1249995ead3fd1  # the date itself became automatic (wiring only)
