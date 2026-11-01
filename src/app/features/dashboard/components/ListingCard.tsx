@@ -179,10 +179,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         )}
 
         {/* Realtor agents */}
-        {listing.wantsRealtorHelp && listing.status === 'active' && (
+        {/* Reachable while an agent is assigned too, as in the app (bug B3):
+            the agents page is the owner's only way to "Quitar agente". */}
+        {(listing.wantsRealtorHelp || listing.assignedRealtorId) && listing.status === 'active' && (
           <div className="mt-2">
             {listing.assignedRealtorId ? (
-              <Badge variant="info">Agente asignado</Badge>
+              <Link to={`/app/listings/${listing.id}/agents`} className="inline-flex">
+                <Badge variant="info">Agente asignado</Badge>
+              </Link>
             ) : (
               <Link
                 to={`/app/listings/${listing.id}/agents`}
