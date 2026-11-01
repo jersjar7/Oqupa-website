@@ -79,6 +79,20 @@ export default function EditListingPage() {
       latitude: trueLocation?.latitude ?? property.location.latitude,
       longitude: trueLocation?.longitude ?? property.location.longitude,
       calle: trueLocation?.calle ?? property.location.calle,
+      // Both must be loaded, never left at the new-listing defaults: saving
+      // writes them back. Missing, every edit of a hidden-address listing
+      // published the real address, and every edit erased the urbanización.
+      urbanizacion: property.location.urbanizacion ?? '',
+      showExactLocation: listing.showExactLocation !== false,
+      hiddenAddress: trueLocation
+        ? {
+            publicLatitude: property.location.latitude,
+            publicLongitude: property.location.longitude,
+            trueLatitude: trueLocation.latitude,
+            trueLongitude: trueLocation.longitude,
+            trueCalle: trueLocation.calle,
+          }
+        : null,
       distrito: property.location.distrito,
       provincia: property.location.provincia,
       departamento: property.location.departamento,

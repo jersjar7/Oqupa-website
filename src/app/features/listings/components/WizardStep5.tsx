@@ -18,6 +18,7 @@ import { AnalyticsLogger } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
+import { publicLocationOnEdit } from '../editLocation'
 
 function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
   if (amount == null || isNaN(amount)) return ''
@@ -155,6 +156,7 @@ export default function WizardStep5() {
         )
 
         setUploadProgress('Actualizando propiedad...')
+        const publicLocation = publicLocationOnEdit(data)
         await firestoreService.updateProperty(editPropertyId, {
           propertyType: data.propertyType as Property['propertyType'],
           operationType: data.operationType as Property['operationType'],
@@ -170,9 +172,7 @@ export default function WizardStep5() {
             ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
           },
           location: {
-            latitude: data.latitude!,
-            longitude: data.longitude!,
-            calle: data.calle,
+            ...publicLocation,
             urbanizacion: data.urbanizacion,
             distrito: data.distrito,
             provincia: data.provincia,

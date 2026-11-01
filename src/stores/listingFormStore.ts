@@ -26,6 +26,10 @@ export interface ListingFormData {
   provincia: string
   departamento: string
   showExactLocation: boolean
+  // Editing a listing that hides its address: the blurred point the public
+  // document holds, and the true one the form was loaded with. Lets the save
+  // leave the public document alone when the owner did not move the pin.
+  hiddenAddress: HiddenAddress | null
   photos: File[]
   existingPhotoUrls: string[] // for edit mode
   existingPhotoBlurHashes: string[] // parallel to existingPhotoUrls
@@ -39,6 +43,14 @@ export interface ListingFormData {
   currency: Currency
   wantsRealtorHelp: boolean
   maxRealtors: number
+}
+
+export interface HiddenAddress {
+  publicLatitude: number
+  publicLongitude: number
+  trueLatitude: number
+  trueLongitude: number
+  trueCalle: string
 }
 
 interface ListingFormState {
@@ -76,6 +88,7 @@ const INITIAL_DATA: ListingFormData = {
   provincia: '',
   departamento: '',
   showExactLocation: true,
+  hiddenAddress: null,
   photos: [],
   existingPhotoUrls: [],
   existingPhotoBlurHashes: [],
