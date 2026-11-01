@@ -15,7 +15,7 @@ export default function GuardadosLink() {
     <Link
       to={firebaseUser ? '/app/lists' : '/guardados'}
       aria-label="Guardados"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-black/5 sm:h-12 sm:w-12"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-error transition-colors hover:bg-black/5 sm:h-12 sm:w-12"
     >
       <Heart className="h-6 w-6" strokeWidth={2.25} aria-hidden="true" />
     </Link>

@@ -24,7 +24,7 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
                       ? 'bg-primary text-white'
                       : isCompleted
                         ? 'bg-primary/20 text-primary'
-                        : 'bg-gray-200 text-text-tertiary'
+                        : 'bg-surface-strong text-text-tertiary'
                   }`}
                 >
                   {isCompleted ? (
@@ -46,7 +46,7 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
               {i < STEP_LABELS.length - 1 && (
                 <div
                   className={`mt-4 h-0.5 flex-1 ${
-                    isCompleted ? 'bg-primary/30' : 'bg-gray-200'
+                    isCompleted ? 'bg-primary/30' : 'bg-surface-strong'
                   }`}
                 />
               )}

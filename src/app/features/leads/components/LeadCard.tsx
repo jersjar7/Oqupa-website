@@ -12,6 +12,7 @@ import {
   PROPERTY_TYPE_LABELS,
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
+import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 interface LeadCardProps {
   listing: Listing
@@ -45,7 +46,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
     <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
       {/* Photo carousel */}
       <div
-        className="group relative h-44 bg-gray-100"
+        className="group relative h-44 bg-surface-muted"
         style={placeholderUrl ? { backgroundImage: `url(${placeholderUrl})`, backgroundSize: 'cover' } : undefined}
       >
         {cardPhotos.length > 0 ? (
@@ -128,20 +129,18 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
         )}
 
         {listing.isBoosted && (
-          <Badge variant="warning" className="absolute top-3 left-3">
-            Destacado
-          </Badge>
+          <DestacadoBadge className="absolute top-3 left-3" />
         )}
       </div>
 
       {/* Content area — links to detail page */}
-      <Link to={`/app/leads/${listing.id}`} className="block p-4 hover:bg-gray-50 transition-colors">
+      <Link to={`/app/leads/${listing.id}`} className="block p-4 hover:bg-surface-muted transition-colors">
         {/* Price */}
-        <p className="text-lg font-bold text-primary">
+        <p className="font-serif text-xl font-normal text-secondary">
           {formatPrice(listing.price.amount, listing.price.currency)}
           {(() => {
             const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-            return suffix ? <span className="text-sm font-normal text-text-secondary"> {suffix}</span> : null
+            return suffix ? <span className="font-sans text-sm font-normal text-text-secondary"> {suffix}</span> : null
           })()}
         </p>
 

@@ -229,11 +229,11 @@ export default function ProfilePage() {
                 <div role="group" aria-labelledby="profile-phone-label">
                   <span
                     id="profile-phone-label"
-                    className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                    className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
                   >
                     Teléfono
                   </span>
-                  <div className="flex items-center gap-2 rounded-xl border border-border bg-gray-50 px-4 py-2.5">
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-muted px-4 py-2.5">
                     <Phone className="h-4 w-4 text-text-tertiary" aria-hidden="true" />
                     <span className="text-base text-text-secondary">
                       {user.contactInfo?.whatsappPhoneNumber || 'No registrado'}
@@ -252,7 +252,7 @@ export default function ProfilePage() {
               <div>
                 <label
                   htmlFor="notes"
-                  className="mb-1.5 block text-sm font-medium uppercase text-text-primary"
+                  className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
                 >
                   Notas adicionales de contacto
                 </label>
@@ -542,7 +542,7 @@ function PhoneForm({
         <div className="relative">
           <select
             {...register('countryCode')}
-            className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
+            className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-surface-muted pl-3 pr-8 text-base text-text-secondary outline-none"
           >
             <option value="+51">+51</option>
             <option value="+1">+1</option>

@@ -456,7 +456,7 @@ function PhoneStep({
             <select
               {...register('countryCode')}
               aria-label="País"
-              className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-gray-50 pl-3 pr-8 text-base text-text-secondary outline-none"
+              className="h-[42px] cursor-pointer appearance-none rounded-xl border border-border bg-surface-muted pl-3 pr-8 text-base text-text-secondary outline-none"
             >
               <option value="+51">+51</option>
               <option value="+1">+1</option>

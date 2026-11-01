@@ -12,7 +12,7 @@ export default function PrivacyPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Política de Privacidad
       </h1>
       <p className="mt-2 font-serif italic font-light text-sm text-text-secondary">
@@ -22,13 +22,13 @@ export default function PrivacyPage() {
       <div className="mt-8 space-y-8">
         {/* 1 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             1. Información que Recopilamos
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Recopilamos la siguiente información cuando utilizas Oqupa:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
               <strong>Nombre:</strong> utilizado para tu perfil dentro de la
               aplicación.
@@ -83,10 +83,10 @@ export default function PrivacyPage() {
 
         {/* 2 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             2. Uso de la Cámara
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa solicita acceso a la cámara de tu dispositivo{' '}
             <strong>únicamente</strong> para permitirte fotografiar propiedades
             que deseas publicar en tus anuncios. La cámara no se utiliza en
@@ -96,10 +96,10 @@ export default function PrivacyPage() {
 
         {/* 3 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             3. Uso de la Ubicación
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa solicita acceso a tu ubicación{' '}
             <strong>únicamente</strong> cuando seleccionas la ubicación de una
             propiedad en el mapa. Tu ubicación no se rastrea de forma continua,
@@ -109,21 +109,21 @@ export default function PrivacyPage() {
 
         {/* 4 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             4. Notificaciones Push
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa utiliza Firebase Cloud Messaging (FCM) para enviarte
             notificaciones push relacionadas con eventos importantes de tu
             cuenta, tales como:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>Reclamos de leads por parte de asesores inmobiliarios.</li>
             <li>Cambios en el estado de tus anuncios.</li>
             <li>Revisiones de tu solicitud como asesor inmobiliario.</li>
             <li>Recordatorios de expiración de anuncios.</li>
           </ul>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Para enviarte notificaciones, almacenamos un token de dispositivo
             FCM asociado a tu cuenta. Puedes desactivar las notificaciones push
             en cualquier momento desde la configuración de tu dispositivo, lo
@@ -133,15 +133,15 @@ export default function PrivacyPage() {
 
         {/* 5 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             5. Procesamiento de Pagos
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa ofrece funciones de pago opcionales (como boosts para destacar
             tus anuncios). El procesamiento de pagos se realiza a través de{' '}
             <strong>Stripe, Inc.</strong>
           </p>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             <strong>Importante:</strong> Oqupa no recopila ni almacena
             información de tarjetas de crédito, datos bancarios ni credenciales
             financieras. Toda la información sensible de pago se ingresa
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
             guardamos el identificador de la transacción, el monto, el método de
             pago utilizado y el estado.
           </p>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Para más información sobre cómo Stripe protege tu información,
             consulta la{' '}
             <a
@@ -167,13 +167,13 @@ export default function PrivacyPage() {
 
         {/* 6 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             6. Cómo Usamos tu Información
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Utilizamos la información recopilada para:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>Gestionar y mantener tu cuenta.</li>
             <li>Verificar tu identidad mediante el código SMS enviado a tu número de teléfono.</li>
             <li>Publicar y mostrar tus anuncios de propiedades.</li>
@@ -190,10 +190,10 @@ export default function PrivacyPage() {
 
         {/* 7 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             7. Almacenamiento y Seguridad
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Tus datos de cuenta y de anuncios se almacenan en{' '}
             <strong>Cloud Firestore</strong> (Google Cloud, región Brasil
             <code className="ml-1">southamerica-east1</code>). Las imágenes de
@@ -209,13 +209,13 @@ export default function PrivacyPage() {
 
         {/* 8 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             8. Servicios de Terceros
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa utiliza los siguientes servicios de terceros:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
               <strong>Firebase Authentication:</strong> para gestión de cuentas,
               autenticación con teléfono y federación con proveedores externos.{' '}
@@ -355,7 +355,7 @@ export default function PrivacyPage() {
           <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
             Cómo supimos que llegaste
           </h3>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Guardamos en tu navegador una nota de cómo llegaste a Oqupa por
             primera vez — por ejemplo &quot;desde un anuncio de Facebook&quot; o
             &quot;desde una búsqueda en Google&quot; — para saber qué canales
@@ -369,16 +369,16 @@ export default function PrivacyPage() {
 
         {/* 9 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             9. Compartición de Datos
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             No vendemos ni intercambiamos tu información personal con terceros.
             La información incluida en tus anuncios de propiedades (como fotos,
             descripción y datos de contacto) es visible para otros usuarios de la
             plataforma como parte del funcionamiento del servicio.
           </p>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Compartimos información mínima e indispensable con los proveedores
             indicados en la sección 8 únicamente para que la aplicación funcione
             (por ejemplo, identificadores de pago con Stripe, claves de imagen
@@ -389,13 +389,13 @@ export default function PrivacyPage() {
 
         {/* 10 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             10. Eliminación de Cuenta y Datos
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Tienes dos formas de eliminar tu cuenta y todos los datos asociados:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
               <strong>Desde la aplicación:</strong> ingresa a tu perfil y
               selecciona la opción <strong>"Eliminar mi cuenta"</strong>. La
@@ -414,7 +414,7 @@ export default function PrivacyPage() {
               tu solicitud dentro de un plazo razonable.
             </li>
           </ul>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Algunos registros pueden conservarse por períodos limitados cuando
             la ley lo exija (por ejemplo, registros contables de transacciones
             de pago).
@@ -423,15 +423,15 @@ export default function PrivacyPage() {
 
         {/* 11 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             11. Tus Derechos (Ley 29733 - Perú)
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             En cumplimiento de la <strong>Ley N° 29733</strong> de Protección de
             Datos Personales del Perú y su Reglamento, como titular de los datos
             tienes los siguientes derechos:
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-600 leading-relaxed">
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
               <strong>Acceso:</strong> conocer qué datos personales tuyos
               tratamos.
@@ -450,7 +450,7 @@ export default function PrivacyPage() {
               en supuestos previstos por la ley.
             </li>
           </ul>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Para ejercer cualquiera de estos derechos, contáctanos a{' '}
             <a
               href="mailto:admin@oqupa.com"
@@ -470,10 +470,10 @@ export default function PrivacyPage() {
 
         {/* 12 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             12. Privacidad de los Niños
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa no está dirigida a menores de 18 años. No recopilamos
             intencionalmente información de menores de edad. Si descubrimos que
             hemos recopilado información de un menor de 18 años, tomaremos
@@ -483,10 +483,10 @@ export default function PrivacyPage() {
 
         {/* 13 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             13. Cambios a esta Política
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Podemos actualizar esta Política de Privacidad periódicamente. Te
             notificaremos sobre cualquier cambio significativo a través de la
             aplicación o por correo electrónico. Te recomendamos revisar esta
@@ -496,10 +496,10 @@ export default function PrivacyPage() {
 
         {/* 14 */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             14. Contáctanos
           </h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Si tienes preguntas o inquietudes sobre esta Política de Privacidad,
             puedes contactarnos en{' '}
             <a
@@ -510,7 +510,7 @@ export default function PrivacyPage() {
             </a>
             .
           </p>
-          <p className="mt-3 text-gray-600 leading-relaxed">
+          <p className="mt-3 text-text-secondary leading-relaxed">
             <strong>Oqupa LLC</strong>
           </p>
         </section>

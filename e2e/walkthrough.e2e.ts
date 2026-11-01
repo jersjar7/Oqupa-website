@@ -31,10 +31,10 @@ const mapCard = (page: Page, phone: boolean) =>
   phone ? page.getByRole('dialog', { name: 'Detalle de la propiedad' }) : page.getByTestId('compact-listing-card')
 
 test.describe('landing and header', () => {
-  test('the landing page loads and the door says Anuncia tu propiedad', async ({ page }, info) => {
+  test('the landing page loads and the door says Publicar', async ({ page }, info) => {
     await asVisitor(page)
     await page.goto('/')
-    await expect(page.getByRole('link', { name: 'Anuncia tu propiedad' }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Publicar', exact: true }).first()).toBeVisible()
     await noHorizontalOverflow(page)
     // Every header button on one line (they broke in two at tablet size).
     for (const lines of await textLines(page, 'header a, header button')) expect(lines).toBeLessThanOrEqual(1)
@@ -53,10 +53,10 @@ test.describe('landing and header', () => {
     }
   })
 
-  test('a visitor pressing Anuncia tu propiedad is asked to sign in', async ({ page }) => {
+  test('a visitor pressing Publicar is asked to sign in', async ({ page }) => {
     await asVisitor(page)
     await page.goto('/explorar')
-    await page.getByRole('link', { name: 'Anuncia tu propiedad' }).first().click()
+    await page.getByRole('link', { name: 'Publicar', exact: true }).first().click()
     await expect(page).toHaveURL(/\/app\/login/)
     await expect(page.getByText('Entra a Oqupa')).toBeVisible()
     await expect(page.getByRole('button', { name: /Continuar con Google/ })).toBeVisible()

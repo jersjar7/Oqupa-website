@@ -28,7 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
-          <h2 className="font-serif text-xl font-bold text-text-primary">
+          <h2 className="font-serif text-xl font-normal text-text-primary">
             Algo salió mal
           </h2>
           <p className="mt-2 text-sm text-text-secondary">

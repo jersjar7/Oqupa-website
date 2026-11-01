@@ -12,7 +12,7 @@ export default function SolutionSection() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="bg-[#FFFAF5] py-8 lg:py-14">
+    <section className="bg-cream py-8 lg:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}

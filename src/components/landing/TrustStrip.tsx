@@ -75,7 +75,7 @@ export default function TrustStrip() {
   const { ref, isVisible } = useAnimateOnScroll()
 
   return (
-    <section className="bg-[#FFFAF5] py-6 lg:py-10">
+    <section className="bg-cream py-6 lg:py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
@@ -84,7 +84,7 @@ export default function TrustStrip() {
           {TRUST_CARDS.map((card, index) => (
             <div
               key={card.title}
-              className={`flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)] ${
+              className={`flex flex-col items-center gap-4 rounded-2xl bg-cream p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)] ${
                 isVisible
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-8'

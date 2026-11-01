@@ -18,7 +18,7 @@ export default function ListToggleButton({ mode, count, isVenta, onClick, classN
       type="button"
       onClick={onClick}
       style={style}
-      className={`flex h-12 items-center gap-2.5 whitespace-nowrap rounded-full bg-[#1F2937] px-5 font-sans text-sm font-bold tracking-[0.5px] text-white shadow-large ${className}`}
+      className={`flex h-12 items-center gap-2.5 whitespace-nowrap rounded-full bg-ink px-5 font-sans text-sm font-bold tracking-[0.5px] text-white shadow-large ${className}`}
     >
       {mode === 'map' ? (
         <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">

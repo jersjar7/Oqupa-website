@@ -100,7 +100,7 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     <div>
       <div ref={containerRef} className="h-[300px] overflow-hidden rounded-xl border border-border" />
       {outsideBoundary && (
-        <p className="mt-2 text-xs text-red-600">
+        <p className="mt-2 text-xs text-error">
           Fuera de zona permitida — selecciona una ubicación dentro del departamento de Piura
         </p>
       )}

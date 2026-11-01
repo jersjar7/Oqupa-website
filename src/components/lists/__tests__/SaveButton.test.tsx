@@ -54,13 +54,13 @@ describe('SaveButton on the slim card', () => {
     const button = screen.getByRole('button', { name: /guardar propiedad/i })
     expect(button.className).not.toMatch(/bg-black/)
     const heart = button.querySelector('svg')!
-    expect(heart.getAttribute('class')).toMatch(/text-red-500\/60/)
+    expect(heart.getAttribute('class')).toMatch(/text-error\/60/)
     expect(heart.getAttribute('class')).toMatch(/fill-transparent/)
   })
   it('saved: a full red heart', () => {
     setup([list('d', 'Guardados', ['L1'], true)])
     const heart = screen.getByRole('button', { name: /administrar listas/i }).querySelector('svg')!
-    expect(heart.getAttribute('class')).toMatch(/fill-red-500/)
+    expect(heart.getAttribute('class')).toMatch(/fill-error/)
   })
   it('an empty heart saves at once to the default list, without a menu', async () => {
     const card = setup([list('other', 'Playa', []), list('d', 'Guardados', [], true)])
@@ -109,7 +109,7 @@ describe('SaveButton for a visitor', () => {
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
     expect(useDeviceSavesStore.getState().ids).toEqual(['L9'])
     const full = screen.getByRole('button', { name: /quitar de guardados/i })
-    expect(full.querySelector('svg')!.getAttribute('class')).toMatch(/fill-red-500/)
+    expect(full.querySelector('svg')!.getAttribute('class')).toMatch(/fill-error/)
     fireEvent.click(full)
     expect(useDeviceSavesStore.getState().ids).toEqual([])
   })

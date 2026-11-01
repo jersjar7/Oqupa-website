@@ -83,6 +83,39 @@ Semantic styles mapped to Tailwind classes (mirrors Flutter `AppTextStyles`):
 | **Legal** | `font-serif text-xs font-light` | Roboto Serif 300, Sentence case | Legal links (privacy, terms). |
 | **Button** | `font-sans text-base font-bold uppercase tracking-[1px]` | Gotham 700, UPPER CASE | All button / CTA labels. |
 
+Header 2 is **22 px** on both platforms (settled 2026-10-31; the deck gives no size). Roboto Serif is always
+**Regular** (`font-normal`) — never `font-bold`/`font-semibold` on a serif heading or price.
+
+### Colour tokens (`src/index.css`)
+
+Use the tokens, never stock Tailwind colour classes (`gray-*`, `red-*`, `green-*`, `amber-*`, `blue-*`) or
+hard-coded hex in components. Full palette and rules: `ui_guidance.md`.
+
+| Token | Value | Use |
+|---|---|---|
+| `cream` / `background` | `#FFF9F0` | Page background — the deck's cream, the **only** cream (founder, 2026-10-31). Use `bg-cream`, never a hex |
+| `white` | `#FFFFFF` | **Cards, sheets and panels sit white on the cream page** (border + soft shadow) |
+| `text-primary` → `ink` | `#1A1A1A` | Text; the label on amber |
+| `text-secondary` → `ink-secondary` | `#5C5C5C` | Secondary text |
+| `text-tertiary` → `ink-tertiary` | `#737373` | Captions, metadata |
+| `surface-muted` / `surface-strong` | `#F4F1EC` / `#E7E2DB` | Quiet fills / skeletons and tracks |
+| `border` / `separator` | `#E8E0D6` / `#D4CCC2` | Hairlines / stronger dividers |
+| `error` / `error-strong` | `#E63946` / `#C5303C` | Errors, destructive, saved heart / hover and small text on a red tint |
+| `success` (= `secondary`) | `#3A6A55` | Success — there is no second green |
+| `boost` | `#F59E0B` | Destacado only (same gold as boosted map pins) — always with `text-ink`, never white |
+
+Careful: `text-primary` is the **orange** brand colour; `text-text-primary` is ink.
+
+Orange buttons keep a **white** label, as the deck says (founder, 2026-10-31). The create-listing action
+says **"Publicar"** everywhere (header, hero, footer, Mis Propiedades, Mi Panel), as in the app.
+
+### Shared component specs (identical in the app)
+
+- **Status badge** (`PhotoOverlayBadge` + `src/lib/listingStatusTone.ts`): Gotham Medium uppercase; green dot Activo; neutral dot Desactivado / Vendido / Alquilado — never red.
+- **Destacado** (`DestacadoBadge`): ink on `boost`, uppercase "DESTACADO", everywhere. Boost purchase buttons: `bg-boost text-ink`.
+- **Price**: green. Property page `font-serif text-[28px] font-normal text-secondary`; owner/agent cards `font-serif text-xl font-normal text-secondary`; dense map-list cards `font-bold text-text-primary`. Never orange.
+- **Venta / Alquiler** selected: `bg-secondary text-white`, phone and computer.
+
 **Brand rule (per Oqupa Brand Deck typography slide):** Roboto Serif is the **primary heading font** for titles and hero display values. Gotham handles labels, body, and buttons. Do NOT default new headings to Gotham — Header 1 (Roboto Serif, Title Case) is the correct choice for page titles and any hero/display element.
 
 ### Language

@@ -5,7 +5,7 @@ The public site as a visitor, at three sizes: computer (1440×900), tablet
 promises: the map (dots far out, pins close in, a tapped dot raising its pin
 without moving the map), the card and the listing page, VER LISTA and every
 sort, Venta / Alquiler, the hearts and the card after the third save
-(ADR-034), /guardados, the doors (Anuncia tu propiedad, WhatsApp) — plus no
+(ADR-034), /guardados, the doors (Publicar, WhatsApp) — plus no
 page errors, no sideways scrolling, no words cut short, header buttons on one
 line.
 

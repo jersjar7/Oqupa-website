@@ -59,7 +59,7 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
                 onClick={stashPublishReturn}
                 className="inline-flex items-center justify-center rounded-xl bg-primary px-[clamp(32px,2.5vw,48px)] py-[clamp(12px,1vw,16px)] text-[clamp(14px,1.2vw,20px)] font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover hover:shadow-large hover:-translate-y-0.5"
               >
-                Publicar mi propiedad
+                Publicar
               </Link>
               <Link
                 to="/explorar"
@@ -73,13 +73,13 @@ export default function HeroSection({ heroRef }: HeroSectionProps) {
       </div>
 
       {/* CTAs — mobile + tablet, below the image */}
-      <div className="flex flex-col items-center gap-3 bg-[#FFFAF5] px-4 py-10 sm:flex-row sm:justify-center sm:gap-4 lg:hidden">
+      <div className="flex flex-col items-center gap-3 bg-cream px-4 py-10 sm:flex-row sm:justify-center sm:gap-4 lg:hidden">
         <Link
           to="/app/listings/new"
           onClick={stashPublishReturn}
           className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-8 py-3.5 text-base font-bold uppercase tracking-wider text-white shadow-medium transition-all duration-200 hover:bg-primary-hover sm:w-auto"
         >
-          Publicar mi propiedad
+          Publicar
         </Link>
         <Link
           to="/explorar"

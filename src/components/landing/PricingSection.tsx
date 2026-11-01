@@ -79,7 +79,7 @@ export default function PricingSection() {
   return (
     <section
       id="precios"
-      className="bg-[#FFFAF5] py-8 lg:py-14"
+      className="bg-cream py-8 lg:py-14"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -120,7 +120,7 @@ export default function PricingSection() {
             {FREE_BENEFITS.map((feature) => (
               <div
                 key={feature.title}
-                className="flex flex-col items-center gap-4 rounded-2xl bg-[#FFFAF5] p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)]"
+                className="flex flex-col items-center gap-4 rounded-2xl bg-cream p-8 text-center shadow-[0_4px_24px_rgba(0,0,0,0.28)] transition-all duration-700 ease-out hover:shadow-[0_8px_32px_rgba(0,0,0,0.38)]"
               >
                 {feature.icon}
                 <h3 className="font-sans font-medium uppercase text-lg text-secondary">

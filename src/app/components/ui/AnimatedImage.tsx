@@ -24,7 +24,7 @@ export default function AnimatedImage({
   if (errored) {
     return (
       <div
-        className={`${className} flex flex-col items-center justify-center gap-2 bg-gray-100 text-gray-500`}
+        className={`${className} flex flex-col items-center justify-center gap-2 bg-surface-muted text-text-secondary`}
         style={style}
         role="img"
         aria-label={typeof props.alt === 'string' ? props.alt : 'Imagen no disponible'}

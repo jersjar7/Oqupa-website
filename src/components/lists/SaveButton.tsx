@@ -118,7 +118,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
         className={
           variant === 'page'
             ? `inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-sm font-medium uppercase tracking-wide transition-colors hover:bg-black/5 ${
-                saved ? 'border-red-300 text-red-500' : 'border-border text-text-secondary'
+                saved ? 'border-error/30 text-error' : 'border-border text-text-secondary'
               } ${className}`
             : variant === 'plain'
               ? `flex h-8 w-8 items-center justify-center rounded-full transition-transform active:scale-90 ${className}`
@@ -129,20 +129,20 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
           <Spinner size="sm" />
         ) : variant === 'page' ? (
           <>
-            <Heart className={`h-4 w-4 ${saved ? 'fill-red-500 text-red-500' : ''}`} />
+            <Heart className={`h-4 w-4 ${saved ? 'fill-error text-error' : ''}`} />
             {saved ? 'Guardado' : 'Guardar'}
           </>
         ) : variant === 'plain' ? (
           <Heart
             strokeWidth={2.25}
             className={`h-5 w-5 transition-colors ${
-              saved ? 'fill-red-500 text-red-500' : 'fill-transparent text-red-500/60'
+              saved ? 'fill-error text-error' : 'fill-transparent text-error/60'
             }`}
           />
         ) : (
           <Heart
             className={`h-4 w-4 transition-colors ${
-              saved ? 'fill-red-500 text-red-500' : 'fill-transparent text-white'
+              saved ? 'fill-error text-error' : 'fill-transparent text-white'
             }`}
           />
         )}

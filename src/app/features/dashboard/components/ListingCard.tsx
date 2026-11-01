@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Badge, Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
-import type { PhotoOverlayTone } from '@/app/components/ui/PhotoOverlayBadge'
+import { LISTING_STATUS_TONE } from '@/lib/listingStatusTone'
 import { useToggleListingStatus, useDeleteListing, useMarkListingClosed } from '@/hooks/useListings'
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
@@ -18,23 +18,12 @@ import {
   PROPERTY_TYPE_LABELS,
   LISTING_STATUS_LABELS,
   CURRENCY_SYMBOLS,
-  type ListingStatus,
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 
 interface ListingCardProps {
   listing: Listing
   property: Property
-}
-
-const STATUS_OVERLAY_TONE: Record<ListingStatus, PhotoOverlayTone> = {
-  draft: 'neutral',
-  paymentPending: 'warning',
-  active: 'success',
-  expired: 'warning',
-  deactivated: 'error',
-  sold: 'info',
-  rented: 'info',
 }
 
 function formatPrice(amount: number, currency: string): string {
@@ -113,7 +102,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           className="h-48"
         />
         <PhotoOverlayBadge
-          tone={STATUS_OVERLAY_TONE[listing.status]}
+          tone={LISTING_STATUS_TONE[listing.status]}
           className="absolute top-3 left-3"
         >
           {LISTING_STATUS_LABELS[listing.status]}
@@ -123,11 +112,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
       {/* Content — grows to fill so footers pin to bottom */}
       <div className="flex flex-1 flex-col p-4">
         {/* Price */}
-        <p className="font-sans text-lg font-bold text-primary line-clamp-1">
+        <p className="font-serif text-xl font-normal text-secondary line-clamp-1">
           {formatPrice(listing.price.amount, listing.price.currency)}
           {(() => {
             const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
-            return suffix ? <span className="text-sm font-normal text-text-secondary"> {suffix}</span> : null
+            return suffix ? <span className="font-sans text-sm font-normal text-text-secondary"> {suffix}</span> : null
           })()}
         </p>
 
@@ -177,7 +166,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             {(openFlow) => (
               <button
                 onClick={openFlow}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-boost/20 px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-boost/30"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Destacar mi propiedad
@@ -260,7 +249,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           {listing.status === 'deactivated' && (
             <Button
               variant="text"
-              className="text-red-600 hover:text-red-700"
+              className="text-error hover:text-error-strong"
               onClick={() => setShowDeleteConfirm(true)}
             >
               <Trash2 className="h-4 w-4" />
@@ -271,14 +260,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
 
         {/* Delete confirmation */}
         {showDeleteConfirm && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-            <p className="text-sm font-medium text-red-800">
+          <div className="mt-3 rounded-lg border border-error/20 bg-error/5 p-3">
+            <p className="text-sm font-medium text-error-strong">
               ¿Eliminar esta publicación? Esta acción no se puede deshacer.
             </p>
             <div className="mt-2 flex gap-2">
               <Button
                 variant="text"
-                className="text-red-600 hover:text-red-700"
+                className="text-error hover:text-error-strong"
                 isLoading={deleteListing.isPending}
                 onClick={() =>
                   deleteListing.mutate(

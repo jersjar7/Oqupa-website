@@ -15,7 +15,7 @@ interface PhoneMapBarProps {
 
 export default function PhoneMapBar({ mode, count, isVenta, activeFilters, onToggleList, onOpenFilters }: PhoneMapBarProps) {
   return (
-    <div data-testid="phone-map-bar" className="flex h-12 items-center whitespace-nowrap rounded-full bg-[#1F2937] font-sans text-sm font-bold tracking-[0.5px] text-white shadow-large">
+    <div data-testid="phone-map-bar" className="flex h-12 items-center whitespace-nowrap rounded-full bg-ink font-sans text-sm font-bold tracking-[0.5px] text-white shadow-large">
       <button type="button" onClick={onToggleList} className="flex h-full items-center gap-2.5 pl-5 pr-4">
         {mode === 'map' ? (
           <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">

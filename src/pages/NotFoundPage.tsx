@@ -8,10 +8,12 @@ export default function NotFoundPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-6xl font-bold text-primary">404</h1>
-      <h2 className="font-serif mt-4 text-2xl font-bold text-text-primary">
+      {/* No giant orange "404": orange text on cream is 2.66:1 (brand audit
+          C7). The code is a green Subhead label; the title is Header 1. */}
+      <p className="font-sans text-sm font-medium uppercase tracking-wide text-secondary">Error 404</p>
+      <h1 className="mt-3 font-serif text-[28px] font-normal text-text-primary">
         Página no encontrada
-      </h2>
+      </h1>
       <p className="mt-3 max-w-md text-text-secondary leading-relaxed">
         La página que buscas no existe o ha sido movida. Verifica la dirección o
         regresa a la página principal.

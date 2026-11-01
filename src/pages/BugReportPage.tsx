@@ -22,10 +22,10 @@ export default function BugReportPage() {
   if (isSuccess) {
     return (
       <div className="mx-auto max-w-2xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
-        <h1 className="font-serif text-2xl font-bold text-text-primary">
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">
           ¡Gracias por avisarnos!
         </h1>
-        <p className="mt-3 text-gray-600 leading-relaxed">
+        <p className="mt-3 text-text-secondary leading-relaxed">
           Recibimos tu reporte y nuestro equipo lo revisará pronto. Si dejaste
           un correo o teléfono, te contactaremos si necesitamos más detalles.
         </p>
@@ -41,10 +41,10 @@ export default function BugReportPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-2xl font-bold text-text-primary">
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Reportar un problema
       </h1>
-      <p className="mt-3 text-gray-600 leading-relaxed">
+      <p className="mt-3 text-text-secondary leading-relaxed">
         ¿Encontraste un error en la web? Cuéntanos qué pasó y lo
         solucionaremos. Solo toma un minuto.
       </p>
@@ -94,7 +94,7 @@ export default function BugReportPage() {
         </div>
 
         {/* Optional technical details */}
-        <details className="rounded-xl border border-border bg-gray-50/50 px-4 py-3">
+        <details className="rounded-xl border border-border bg-surface-muted/50 px-4 py-3">
           <summary className="cursor-pointer select-none text-sm font-medium text-text-secondary">
             Detalles técnicos (opcional)
           </summary>
