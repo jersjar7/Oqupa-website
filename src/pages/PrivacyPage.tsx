@@ -20,10 +20,93 @@ export default function PrivacyPage() {
       </p>
 
       <div className="mt-8 space-y-8">
-        {/* 1 */}
+        {/* 1 — identity of the controller and its representative for Peru
+            (DS 016-2024-JUS, art. 6.1 items 1 and 4, art. VII 7.1–7.2.1) */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            1. Información que Recopilamos
+            1. Quién es Responsable de tus Datos
+          </h2>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            El responsable del tratamiento de tus datos personales y titular
+            de los bancos de datos donde se guardan es{' '}
+            <strong>Oqupa LLC</strong>, una empresa registrada en Utah,
+            Estados Unidos. Oqupa LLC no tiene establecimiento en el Perú, pero
+            ofrece Oqupa a personas que están en el Perú; por eso cumple la{' '}
+            <strong>Ley N° 29733</strong>, Ley de Protección de Datos
+            Personales, y su Reglamento (Decreto Supremo N° 016-2024-JUS).
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Para cualquier asunto sobre tus datos — revocar tu consentimiento,
+            ejercer tus derechos o hacer una consulta — escríbenos a{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>
+            .
+          </p>
+
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Representante en el Perú
+          </h3>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Conforme al artículo VII del Reglamento de la Ley N° 29733, Oqupa
+            LLC designa como su representante para el territorio peruano a{' '}
+            <strong>Jerson Garcia</strong>, quien actúa en nombre de Oqupa LLC.
+            El representante es el punto de contacto con la{' '}
+            <strong>
+              Autoridad Nacional de Protección de Datos Personales
+            </strong>{' '}
+            y atiende las solicitudes de los titulares de datos personales —
+            incluido el ejercicio de los derechos de acceso, rectificación,
+            cancelación y oposición (derechos ARCO) — así como cualquier
+            reclamación, denuncia o comunicación relacionada con el tratamiento
+            de tus datos.
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Correo para comunicaciones y contacto con el representante:{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>
+            .
+          </p>
+
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Bancos de datos personales
+          </h3>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Tus datos se guardan en los siguientes bancos de datos personales
+            de Oqupa LLC:
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
+            <li>
+              <strong>Usuarios:</strong> cuentas, perfiles, anuncios, guardados
+              y actividad dentro de Oqupa.
+            </li>
+            <li>
+              <strong>Asesores inmobiliarios:</strong> solicitudes para ser
+              asesor y los anuncios que cada asesor reclama.
+            </li>
+            <li>
+              <strong>Pagos:</strong> registros de las compras de boosts (sin
+              datos de tarjetas).
+            </li>
+          </ul>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Estamos inscribiendo estos bancos de datos en el Registro Nacional
+            de Protección de Datos Personales. Cuando la inscripción esté
+            lista, publicaremos aquí sus códigos de inscripción.
+          </p>
+        </section>
+
+        {/* 2 */}
+        <section>
+          <h2 className="font-serif text-xl font-normal text-text-primary">
+            2. Información que Recopilamos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Recopilamos la siguiente información cuando utilizas Oqupa:
@@ -79,12 +162,30 @@ export default function PrivacyPage() {
               luego se elimina automáticamente.
             </li>
           </ul>
+
+          {/* DS 016-2024-JUS art. 6.1 items 5 and 6: which answers are
+              required, and what happens if you don't give them */}
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Qué datos son obligatorios
+          </h3>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Puedes explorar el mapa y ver anuncios sin crear una cuenta y sin
+            darnos ningún dato personal. Para crear una cuenta necesitas un
+            correo electrónico y una contraseña, o iniciar sesión con Google o
+            Apple; sin ellos no podemos crearla. Para publicar un anuncio o ver
+            el contacto de un anunciante también debes confirmar tu correo y
+            verificar tu número de teléfono; si no lo haces, puedes seguir
+            explorando, pero no podrás publicar ni contactar. La foto de perfil
+            y el acceso a tu ubicación son opcionales: si no los das, Oqupa
+            funciona igual, solo que tu perfil no tendrá foto y el mapa no se
+            centrará en tu ubicación.
+          </p>
         </section>
 
-        {/* 2 */}
+        {/* 3 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            2. Uso de la Cámara
+            3. Uso de la Cámara
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa solicita acceso a la cámara de tu dispositivo{' '}
@@ -94,10 +195,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 3 */}
+        {/* 4 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            3. Uso de la Ubicación
+            4. Uso de la Ubicación
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa solicita acceso a tu ubicación{' '}
@@ -107,10 +208,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 4 */}
+        {/* 5 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            4. Notificaciones Push
+            5. Notificaciones Push
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa utiliza Firebase Cloud Messaging (FCM) para enviarte
@@ -131,10 +232,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 5 */}
+        {/* 6 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            5. Procesamiento de Pagos
+            6. Procesamiento de Pagos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa ofrece funciones de pago opcionales (como boosts para destacar
@@ -165,10 +266,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 6 */}
+        {/* 7 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            6. Cómo Usamos tu Información
+            7. Cómo Usamos tu Información
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Utilizamos la información recopilada para:
@@ -188,10 +289,10 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        {/* 7 */}
+        {/* 8 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            7. Almacenamiento y Seguridad
+            8. Almacenamiento y Seguridad
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Tus datos de cuenta y de anuncios se almacenan en{' '}
@@ -203,14 +304,15 @@ export default function PrivacyPage() {
             proteger tus datos contra acceso no autorizado, alteración o
             destrucción, incluyendo cifrado en tránsito (TLS) y reglas de
             seguridad servidor a nivel de Firestore que restringen el acceso
-            según la propiedad del recurso.
+            según la propiedad del recurso. La sección 11 detalla en qué países
+            se tratan tus datos.
           </p>
         </section>
 
-        {/* 8 */}
+        {/* 9 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            8. Servicios de Terceros
+            9. Servicios de Terceros
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa utiliza los siguientes servicios de terceros:
@@ -249,8 +351,22 @@ export default function PrivacyPage() {
               notificaciones push.
             </li>
             <li>
-              <strong>Google Maps:</strong> visualización y selección de
-              ubicaciones de propiedades.
+              <strong>Mapbox:</strong> los mapas de la app y del sitio web.
+              Recibe la zona del mapa que estás viendo y la dirección IP de tu
+              dispositivo; no recibe tu nombre ni tu cuenta.{' '}
+              <a
+                href="https://www.mapbox.com/legal/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-hover hover:underline"
+              >
+                Política de privacidad de Mapbox
+              </a>
+            </li>
+            <li>
+              <strong>Google Maps (direcciones):</strong> cuando marcas la
+              ubicación de una propiedad, nuestro servidor envía a Google solo
+              las coordenadas de ese punto para obtener la dirección.
             </li>
             <li>
               <strong>Stripe, Inc.:</strong> procesamiento de pagos por
@@ -350,6 +466,19 @@ export default function PrivacyPage() {
                 Política de privacidad de TikTok
               </a>
             </li>
+            <li>
+              <strong>Metricool:</strong> medición de visitas al sitio web
+              (qué páginas se ven y de dónde llegan las visitas). No le
+              enviamos tu nombre, correo ni teléfono.{' '}
+              <a
+                href="https://metricool.com/es/politica-privacidad/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-hover hover:underline"
+              >
+                Política de privacidad de Metricool
+              </a>
+            </li>
           </ul>
 
           <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
@@ -367,10 +496,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 9 */}
+        {/* 10 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            9. Compartición de Datos
+            10. Compartición de Datos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             No vendemos ni intercambiamos tu información personal con terceros.
@@ -379,18 +508,120 @@ export default function PrivacyPage() {
             plataforma como parte del funcionamiento del servicio.
           </p>
           <p className="mt-3 text-text-secondary leading-relaxed">
+            Tu número de teléfono no aparece en los anuncios públicos: solo lo
+            ven los usuarios con cuenta que confirmaron su correo y verificaron
+            su teléfono, cuando piden el contacto de tu anuncio, y queda
+            registrado quién lo pidió. Si un asesor inmobiliario verificado
+            reclama tu anuncio, también puede ver tu número de WhatsApp, y tú
+            ves su nombre y su teléfono.
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
             Compartimos información mínima e indispensable con los proveedores
-            indicados en la sección 8 únicamente para que la aplicación funcione
+            indicados en la sección 9 únicamente para que la aplicación funcione
             (por ejemplo, identificadores de pago con Stripe, claves de imagen
             con Cloudflare R2). Estos proveedores actúan como procesadores y
             están sujetos a sus propias políticas de privacidad.
           </p>
         </section>
 
-        {/* 10 */}
+        {/* 11 — cross-border flow (DS 016-2024-JUS art. 6.1 item 7,
+            arts. 18–20). Every location below was checked against code and
+            live config on 2026-10-31. */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            10. Eliminación de Cuenta y Datos
+            11. Transferencia Internacional (Flujo Transfronterizo)
+          </h2>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Oqupa no guarda tus datos en servidores ubicados en el Perú. Para
+            que el servicio funcione, tus datos personales se envían y se
+            tratan en otros países (flujo transfronterizo de datos personales):
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
+            <li>
+              <strong>Brasil (São Paulo):</strong> la base de datos principal
+              (Cloud Firestore de Google Cloud, región{' '}
+              <code>southamerica-east1</code>), donde están tu cuenta, tus
+              anuncios y los registros de tus pagos, y la mayoría de nuestras
+              funciones de servidor, incluido el envío de correos.
+            </li>
+            <li>
+              <strong>Estados Unidos y otros países donde operan estos
+              proveedores:</strong>
+              <ul className="mt-2 list-[circle] space-y-2 pl-6">
+                <li>
+                  <strong>Google:</strong> inicio de sesión y verificación por
+                  SMS (Firebase Authentication), notificaciones push (Firebase
+                  Cloud Messaging), medición de uso (Google Analytics),
+                  informes de errores de la app (Crashlytics), envío de correos
+                  (Gmail) y obtención de direcciones (Google Maps).
+                </li>
+                <li>
+                  <strong>Google Cloud, región Estados Unidos</strong> (
+                  <code>us-central1</code>): algunas fotos de propiedades
+                  antiguas guardadas en Firebase Storage, y el procesamiento
+                  de las solicitudes para ser asesor inmobiliario, que se
+                  envían por correo a nuestro equipo.
+                </li>
+                <li>
+                  <strong>Cloudflare:</strong> almacenamiento y entrega de las
+                  fotos (Cloudflare R2) y la red que sirve el sitio web.
+                </li>
+                <li>
+                  <strong>Stripe:</strong> procesamiento de pagos.
+                </li>
+                <li>
+                  <strong>Meta y TikTok:</strong> medición de anuncios, sin tu
+                  nombre, correo ni teléfono.
+                </li>
+                <li>
+                  <strong>Mapbox:</strong> mapas.
+                </li>
+                <li>
+                  <strong>Apple:</strong> si inicias sesión con Apple, y para
+                  entregar notificaciones en iPhone.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>España:</strong> Metricool, medición de visitas al sitio
+              web.
+            </li>
+          </ul>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Para proteger tus datos fuera del Perú aplicamos estas garantías:
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
+            <li>
+              Cada proveedor trata los datos según los términos de protección
+              de datos que forman parte de sus condiciones de servicio, y solo
+              para prestarnos su servicio.
+            </li>
+            <li>
+              Todo el tráfico entre tu dispositivo, nuestros servidores y los
+              proveedores viaja cifrado (HTTPS/TLS).
+            </li>
+            <li>
+              Enviamos a cada proveedor solo lo necesario para su función.
+              Stripe recibe el monto y un identificador interno de tu cuenta,
+              no tu nombre ni tu correo. Google Analytics, Meta, TikTok y
+              Metricool no reciben tu nombre, correo, teléfono ni la dirección
+              exacta de una propiedad.
+            </li>
+            <li>
+              No guardamos datos de tarjetas: los ingresas directamente en el
+              formulario de Stripe.
+            </li>
+            <li>
+              Las reglas de seguridad de nuestra base de datos limitan quién
+              puede leer cada dato.
+            </li>
+          </ul>
+        </section>
+
+        {/* 12 */}
+        <section>
+          <h2 className="font-serif text-xl font-normal text-text-primary">
+            12. Eliminación de Cuenta y Datos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Tienes dos formas de eliminar tu cuenta y todos los datos asociados:
@@ -417,14 +648,115 @@ export default function PrivacyPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             Algunos registros pueden conservarse por períodos limitados cuando
             la ley lo exija (por ejemplo, registros contables de transacciones
-            de pago).
+            de pago). La sección 13 explica qué se conserva después de eliminar
+            tu cuenta y por cuánto tiempo.
           </p>
         </section>
 
-        {/* 11 */}
+        {/* 13 — retention (DS 016-2024-JUS art. 6.1 item 9). Periods are the
+            TTLs and cleanup jobs actually running on 2026-10-31; records with
+            no TTL say so instead of inventing a period. */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            11. Tus Derechos (Ley 29733 - Perú)
+            13. Plazo de Conservación
+          </h2>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
+            <li>
+              <strong>Tu cuenta y tu perfil:</strong> mientras tu cuenta exista.
+            </li>
+            <li>
+              <strong>Cuentas sin terminar:</strong> las cuentas creadas con
+              correo que nunca confirmaron el correo y no tienen anuncios se
+              eliminan automáticamente a los 30 días.
+            </li>
+            <li>
+              <strong>Anuncios que ya viste:</strong> 45 días.
+            </li>
+            <li>
+              <strong>Registro de vistas de anuncios y de quién pidió cada
+              contacto:</strong> 365 días.
+            </li>
+            <li>
+              <strong>Nota de cómo llegaste a Oqupa</strong> (en tu navegador o
+              teléfono): 90 días. Si se guardó en tu cuenta al registrarte, se
+              conserva mientras tu cuenta exista.
+            </li>
+            <li>
+              <strong>Registros de pagos:</strong> se conservan como registro
+              contable y de auditoría, también después de eliminar tu cuenta.
+            </li>
+          </ul>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Cuando eliminas tu cuenta guardamos una constancia de la
+            eliminación con tu nombre, correo, teléfono y una copia de tu
+            perfil. También quedan los correos que te enviamos, tu solicitud
+            para ser asesor inmobiliario si la hiciste, las respuestas a
+            encuestas, los reportes que enviaste, los datos de las propiedades
+            que publicaste y tus anuncios, que quedan desactivados. Hoy estos
+            registros no tienen un plazo fijo de borrado: puedes pedir su
+            supresión en cualquier momento escribiendo a{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>
+            .
+          </p>
+        </section>
+
+        {/* 14 — automated decisions and profiling (DS 016-2024-JUS art. 6.1
+            item 8, art. 87) */}
+        <section>
+          <h2 className="font-serif text-xl font-normal text-text-primary">
+            14. Decisiones Automatizadas
+          </h2>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Oqupa no toma decisiones automatizadas que produzcan efectos
+            jurídicos sobre ti ni que te afecten de manera significativa. Estos
+            son los procesos automáticos que existen:
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
+            <li>
+              Cada noche agrupamos a los usuarios con cuenta según lo que hacen
+              en Oqupa (por ejemplo, si publican, si buscan para comprar o
+              alquilar, y su distrito) para medir cómo se usa el servicio. Estos
+              grupos no se usan para negarte nada.
+            </li>
+            <li>
+              Hay un límite automático de cuántos contactos de anunciantes
+              puedes ver por día, para proteger sus números de teléfono.
+            </li>
+            <li>
+              Las cuentas sin terminar se eliminan automáticamente a los 30
+              días (sección 13).
+            </li>
+            <li>
+              Google reCAPTCHA evalúa automáticamente el riesgo de abuso en
+              algunas acciones del sitio web y en la verificación por teléfono.
+            </li>
+            <li>
+              Los anuncios destacados con un boost aparecen antes que los demás.
+            </li>
+          </ul>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            La aprobación como asesor inmobiliario la decide una persona de
+            nuestro equipo, no un sistema automático. Si crees que alguno de
+            estos procesos te afectó, escríbenos a{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>{' '}
+            y una persona lo revisará.
+          </p>
+        </section>
+
+        {/* 15 */}
+        <section>
+          <h2 className="font-serif text-xl font-normal text-text-primary">
+            15. Tus Derechos (Ley 29733 - Perú)
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             En cumplimiento de la <strong>Ley N° 29733</strong> de Protección de
@@ -449,29 +781,71 @@ export default function PrivacyPage() {
               <strong>Oposición:</strong> oponerte al tratamiento de tus datos
               en supuestos previstos por la ley.
             </li>
+            <li>
+              <strong>Información:</strong> saber para qué usamos tus datos, a
+              quién se envían y por cuánto tiempo se conservan.
+            </li>
+            <li>
+              <strong>Portabilidad:</strong> recibir los datos que nos diste en
+              un formato estructurado y de uso común, para llevarlos a otro
+              servicio.
+            </li>
+            <li>
+              <strong>Tratamiento objetivo:</strong> no ser objeto de decisiones
+              basadas solo en un tratamiento automatizado que te afecten de
+              manera significativa (sección 14).
+            </li>
+            <li>
+              <strong>Revocar tu consentimiento:</strong> en cualquier momento,
+              sin dar explicaciones. Revocarlo no afecta lo que hicimos antes
+              con tus datos.
+            </li>
           </ul>
+
+          {/* DS 016-2024-JUS art. 6.1 item 10; arts. 63–65 (request and
+              identity), 69 (response times), 88–89 and the Fourth Final
+              Complementary Provision (complaint to the ANPD) */}
+          <h3 className="mt-6 font-sans text-sm font-medium uppercase tracking-wide text-text-primary">
+            Cómo ejercer tus derechos
+          </h3>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Para ejercer cualquiera de estos derechos, contáctanos a{' '}
+            Escríbenos a{' '}
             <a
               href="mailto:admin@oqupa.com"
               className="text-primary hover:text-primary-hover hover:underline"
             >
               admin@oqupa.com
             </a>
-            . Si consideras que no hemos atendido adecuadamente tu solicitud,
-            puedes presentar una reclamación ante la{' '}
+            , el correo que atiende nuestro representante en el Perú. Es
+            gratuito. Indica tu nombre completo, qué derecho quieres ejercer y
+            un correo o dirección para responderte. Si escribes desde el correo
+            de tu cuenta de Oqupa, eso basta para identificarte; si no, podemos
+            pedirte una copia de tu documento de identidad.
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Te responderemos dentro de los plazos del Reglamento de la Ley N°
+            29733, contados desde el día siguiente a tu solicitud: 8 días para
+            el derecho de información, 20 días para el derecho de acceso y 10
+            días para rectificación, cancelación u oposición.
+          </p>
+          <p className="mt-3 text-text-secondary leading-relaxed">
+            Si no te respondemos a tiempo o la respuesta no te satisface, puedes
+            presentar una reclamación ante la{' '}
             <strong>
               Autoridad Nacional de Protección de Datos Personales (Ministerio
               de Justicia y Derechos Humanos del Perú)
             </strong>
-            .
+            , también a través de su plataforma digital &quot;Yo cuido mis
+            datos personales&quot;. Guarda una copia de tu solicitud y de
+            nuestra respuesta: la Autoridad las pide para tramitar la
+            reclamación.
           </p>
         </section>
 
-        {/* 12 */}
+        {/* 16 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            12. Privacidad de los Niños
+            16. Privacidad de los Niños
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa no está dirigida a menores de 18 años. No recopilamos
@@ -481,10 +855,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 13 */}
+        {/* 17 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            13. Cambios a esta Política
+            17. Cambios a esta Política
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Podemos actualizar esta Política de Privacidad periódicamente. Te
@@ -494,10 +868,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 14 */}
+        {/* 18 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            14. Contáctanos
+            18. Contáctanos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Si tienes preguntas o inquietudes sobre esta Política de Privacidad,
@@ -511,7 +885,15 @@ export default function PrivacyPage() {
             .
           </p>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            <strong>Oqupa LLC</strong>
+            <strong>Oqupa LLC</strong> — Utah, Estados Unidos
+            <br />
+            Representante en el Perú: Jerson Garcia —{' '}
+            <a
+              href="mailto:admin@oqupa.com"
+              className="text-primary hover:text-primary-hover hover:underline"
+            >
+              admin@oqupa.com
+            </a>
           </p>
         </section>
       </div>
