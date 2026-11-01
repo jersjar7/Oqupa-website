@@ -32,12 +32,19 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     expect(text).toMatch(/admin@oqupa\.com/)
   })
 
-  it('names the bancos de datos (art. 6.1 item 4)', () => {
+  it('names the bases de datos (art. 6.1 item 4)', () => {
     const text = sectionText(/Quién es Responsable de tus Datos/)
-    for (const banco of ['Usuarios:', 'Asesores inmobiliarios:', 'Pagos:']) {
-      expect(text).toContain(banco)
+    for (const base of ['Usuarios:', 'Asesores inmobiliarios:', 'Pagos:']) {
+      expect(text).toContain(base)
     }
     expect(text).toMatch(/Registro Nacional de Protección de Datos Personales/)
+  })
+
+  it('says "base de datos", never "banco de datos" (Jerson, 2026-11-01)', () => {
+    render(<MemoryRouter><PrivacyPage /></MemoryRouter>)
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/Bases de datos personales/)
+    expect(text).not.toMatch(/bancos? de datos/i)
   })
 
   it('says which data is required and what happens without it (art. 6.1 items 5–6)', () => {
