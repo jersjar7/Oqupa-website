@@ -689,11 +689,13 @@ export default function PrivacyPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             Cuando eliminas tu cuenta guardamos una constancia de la
             eliminación con tu nombre, correo, teléfono y una copia de tu
-            perfil. También quedan los correos que te enviamos, tu solicitud
-            para ser asesor inmobiliario si la hiciste, las respuestas a
-            encuestas, los reportes que enviaste, los datos de las propiedades
+            perfil. La constancia se borra automáticamente 2 años después de
+            eliminada tu cuenta, y cada correo que te enviamos se borra
+            automáticamente 2 años después de enviado. También quedan tu
+            solicitud para ser asesor inmobiliario si la hiciste, las respuestas
+            a encuestas, los reportes que enviaste, los datos de las propiedades
             que publicaste y tus anuncios, que quedan desactivados. Hoy estos
-            registros no tienen un plazo fijo de borrado: puedes pedir su
+            otros registros no tienen un plazo fijo de borrado: puedes pedir su
             supresión en cualquier momento escribiendo a{' '}
             <a
               href="mailto:admin@oqupa.com"

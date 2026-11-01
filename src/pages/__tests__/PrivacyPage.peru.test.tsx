@@ -83,6 +83,18 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     expect(text).toMatch(/puedes pedir su supresión/)
   })
 
+  it('says the deletion record and sent emails are erased after 2 years (ADR-039, art. 82, art. III.2)', () => {
+    const text = sectionText(/Plazo de Conservación/).replace(/\s+/g, ' ')
+    expect(text).toMatch(
+      /La constancia se borra automáticamente 2 años después de eliminada tu cuenta/,
+    )
+    expect(text).toMatch(/cada correo que te enviamos se borra automáticamente 2 años después de enviado/)
+    // Everything else in the paragraph keeps no fixed period and stays deletable on request.
+    expect(text).toMatch(/los datos de las propiedades que publicaste y tus anuncios, que quedan desactivados/)
+    expect(text).toMatch(/Hoy estos otros registros no tienen un plazo fijo de borrado/)
+    expect(text).toMatch(/puedes pedir su supresión en cualquier momento/)
+  })
+
   it('describes automated processing (art. 6.1 item 8, art. 87)', () => {
     const text = sectionText(/Decisiones Automatizadas/)
     expect(text).toMatch(/no toma decisiones automatizadas que produzcan efectos jurídicos/)
