@@ -49,6 +49,7 @@ import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
 import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
 import AnalyticsLabelsInitializer from '@/components/analytics/AnalyticsLabelsInitializer'
 import SaveNudge from '@/components/lists/SaveNudge'
+import ContactFollowUpHost from '@/components/followUp/ContactFollowUpHost'
 import GuardadosPage from '@/pages/GuardadosPage'
 
 export default function App() {
@@ -60,6 +61,8 @@ export default function App() {
       <ListStoreInitializer />
       <AnalyticsLabelsInitializer />
       <SaveNudge />
+      {/* A11b: "¿Pudiste contactar al dueño?" on coming back from WhatsApp. */}
+      <ContactFollowUpHost />
       {import.meta.env.DEV && (
         <div style={{
           position: 'fixed', bottom: 8, right: 8, zIndex: 9999,

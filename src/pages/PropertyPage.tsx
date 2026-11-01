@@ -31,6 +31,7 @@ import SaveButton from '@/components/lists/SaveButton'
 import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
+import { contactFollowUpCoordinator } from '@/lib/contactFollowUpCoordinator'
 import { contactService, ContactDenied } from '@/services/contactService'
 import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
@@ -397,6 +398,10 @@ export default function PropertyPage() {
     // A real tap only: the automatic retry after the pipeline is `returned`.
     if (!auto) logContactTapped(listingIdForContact, contactAuthState(firebaseUser, user))
     setContactLoading(true)
+    // The follow-up card (A11b) holds off while the number is fetched, and
+    // asks on the next return to this tab once WhatsApp was opened.
+    contactFollowUpCoordinator.contactStarted()
+    let handedOff = false
     // Set once the server has handed the number over: a failure after that
     // (the redirect) is not a refusal and must not be reported as one.
     let revealed = false
@@ -408,6 +413,10 @@ export default function PropertyPage() {
       // counted as interest.
       AnalyticsLogger.contactRevealed(listingIdForContact, segmentParams)
       const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`
+      // The server has already recorded the contact, so the card is due
+      // either way; it waits for the person to come back from WhatsApp.
+      handedOff = true
+      contactFollowUpCoordinator.contactHandedOff()
       if (auto) {
         // Returning from the pipeline: no user gesture, so a new tab would be
         // blocked by the browser — go there directly instead.
@@ -448,6 +457,7 @@ export default function PropertyPage() {
         toast.error('No se pudo obtener el contacto. Intenta de nuevo.')
       }
     } finally {
+      if (!handedOff) contactFollowUpCoordinator.contactEndedWithoutHandOff()
       setContactLoading(false)
     }
   }
@@ -733,6 +743,9 @@ export default function PropertyPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={gate.title}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
