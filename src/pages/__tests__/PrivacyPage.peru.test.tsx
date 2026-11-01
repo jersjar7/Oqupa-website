@@ -25,7 +25,7 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
   it('designates a representative for Peru, with an email (art. VII 7.1–7.2.1)', () => {
     const text = sectionText(/Quién es Responsable de tus Datos/)
     expect(text).toMatch(/Representante en el Perú/)
-    expect(text).toMatch(/representante para el territorio peruano a Jerson Garcia/)
+    expect(text).toMatch(/representante para el territorio peruano a Jerson Jaramillo Garcia/)
     expect(text).toMatch(/en nombre de Oqupa LLC/)
     expect(text).toMatch(/Autoridad Nacional de Protección de Datos Personales/)
     expect(text).toMatch(/derechos ARCO/)
@@ -45,6 +45,13 @@ describe('PrivacyPage — Peru (Ley 29733, DS 016-2024-JUS)', () => {
     const text = document.body.textContent ?? ''
     expect(text).toMatch(/Bases de datos personales/)
     expect(text).not.toMatch(/bancos? de datos/i)
+  })
+
+  it('names the representative by full legal name in both places (Jerson, 2026-11-01)', () => {
+    render(<MemoryRouter><PrivacyPage /></MemoryRouter>)
+    const text = document.body.textContent ?? ''
+    expect(text.match(/Jerson Jaramillo Garcia/g)?.length).toBe(2)
+    expect(text).not.toMatch(/Jerson Garcia/)
   })
 
   it('says which data is required and what happens without it (art. 6.1 items 5–6)', () => {
