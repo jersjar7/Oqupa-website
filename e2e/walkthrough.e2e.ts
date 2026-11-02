@@ -170,12 +170,28 @@ test.describe('the list', () => {
     const phone = isPhone(info)
     let promised: number | null = null
     if (phone) {
-      const label = await page.getByRole('button', { name: /VER LISTA · \d+/ }).innerText()
-      promised = Number(/(\d+)/.exec(label)![1])
+      // Listings keep arriving for a moment (production has more): read the
+      // promise once it has stopped changing.
+      const btn = page.getByRole('button', { name: /VER LISTA · \d+/ })
+      let last = ''
+      await expect(async () => {
+        const now = await btn.innerText()
+        const same = now === last
+        last = now
+        expect(same).toBe(true)
+      }).toPass({ intervals: [1000], timeout: 15000 })
+      promised = Number(/(\d+)/.exec(last)![1])
     }
     await openList(page, phone)
     const header = listHeader(page)
-    const count = Number(/(\d+)/.exec(await header.innerText())![1])
+    let headerText = ''
+    await expect(async () => {
+      const now = await header.innerText()
+      const same = now === headerText
+      headerText = now
+      expect(same).toBe(true)
+    }).toPass({ intervals: [1000], timeout: 15000 })
+    const count = Number(/(\d+)/.exec(headerText)![1])
     if (promised != null) expect(count, 'the button promised this many').toBe(promised)
     const cards = listCards(page)
     await expect(cards).toHaveCount(count)
@@ -306,7 +322,7 @@ test.describe('the listing page', () => {
     await noHorizontalOverflow(page)
     await shot(page, info, '10-listing-page')
     await wa.click()
-    await expect(page.getByText('Escríbele al propietario')).toBeVisible()
+    await expect(page.getByText('Escríbele al dueño')).toBeVisible()
     await expect(page.getByText(/crea tu cuenta y verifica tu número/)).toBeVisible()
     await expect(page.getByRole('link', { name: 'CREA TU CUENTA' }).or(page.getByRole('button', { name: 'CREA TU CUENTA' }))).toBeVisible()
     await shot(page, info, '11-whatsapp-gate')
