@@ -5,7 +5,8 @@ export type PhotoItem = { id: string } & (
   | { type: 'new'; file: File }
 )
 
-export const MAX_PHOTOS = 25
+/** The same on the app and the website (ADR-043 D8). */
+export const MAX_PHOTOS = 20
 
 export interface SubmitData {
   photos: File[]

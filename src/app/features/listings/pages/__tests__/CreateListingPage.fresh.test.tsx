@@ -19,6 +19,7 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 describe('CreateListingPage starts fresh without showing the old page', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     painted.length = 0
     useListingFormStore.getState().reset()
   })

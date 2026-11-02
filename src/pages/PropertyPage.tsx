@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { bathroomsLabel } from '@/lib/roomCounts'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Sparkles } from 'lucide-react'
@@ -637,7 +637,7 @@ export default function PropertyPage() {
               {property.specs?.bedroomCount != null && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
                   <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
-                  {property.specs.bedroomCount} hab.
+                  {bedroomsLabel(property.specs.bedroomCount)}
                 </span>
               )}
               {(property.specs?.bathroomCount ?? 0) > 0 && (

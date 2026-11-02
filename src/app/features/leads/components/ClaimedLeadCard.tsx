@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { bathroomsLabel } from '@/lib/roomCounts'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 /**
  * ClaimedLeadCard — vertical property card used on Oportunidades → En Espera
  * for claims the agent is still waiting on the owner to decide. Shares its
@@ -131,7 +131,7 @@ export default function ClaimedLeadCard({
         {/* Specs — single line, wraps if needed but clamped to 1 line on narrow */}
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{property.specs.bedroomCount} hab.</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount)}</span>
           )}
           {bathroomsLabel(property.specs.bathroomCount) && (
             <span>{bathroomsLabel(property.specs.bathroomCount)}</span>

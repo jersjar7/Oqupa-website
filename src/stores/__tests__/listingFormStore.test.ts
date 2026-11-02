@@ -16,6 +16,7 @@ function store() {
 describe('listingFormStore', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     useListingFormStore.getState().reset()
   })
 
@@ -147,9 +148,9 @@ describe('listingFormStore', () => {
       expect(store().data.propertyAmenities).toEqual(['Piscina', 'Jardín'])
     })
 
-    it('persists partial updates to sessionStorage', () => {
+    it('persists partial updates to the browser storage (D11: localStorage)', () => {
       store().updateData({ description: 'persisted' })
-      const raw = sessionStorage.getItem('oqupa-listing-form')
+      const raw = localStorage.getItem('oqupa-listing-form')
       expect(raw).not.toBeNull()
       const parsed = JSON.parse(raw!)
       expect(parsed.description).toBe('persisted')
@@ -178,7 +179,7 @@ describe('listingFormStore', () => {
     it('clears sessionStorage', () => {
       sessionStorage.setItem('oqupa-listing-form', '{"step":3}')
       store().setEditMode('listing-123', 'property-456')
-      expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+      expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     })
   })
 
@@ -221,7 +222,7 @@ describe('listingFormStore', () => {
     it('clears sessionStorage', () => {
       store().updateData({ description: 'test' }) // writes to session
       store().reset()
-      expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+      expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     })
   })
 
@@ -229,29 +230,29 @@ describe('listingFormStore', () => {
   // sessionStorage persistence
   // -------------------------------------------------------------------------
   describe('sessionStorage persistence', () => {
-    it('nextStep writes step to sessionStorage', () => {
+    it('nextStep writes step to storage', () => {
       store().nextStep()
-      const raw = sessionStorage.getItem('oqupa-listing-form')
+      const raw = localStorage.getItem('oqupa-listing-form')
       expect(raw).not.toBeNull()
       expect(JSON.parse(raw!).step).toBe(2)
     })
 
-    it('prevStep writes step to sessionStorage', () => {
+    it('prevStep writes step to storage', () => {
       store().nextStep()
       store().nextStep()
       store().prevStep()
-      const raw = sessionStorage.getItem('oqupa-listing-form')
+      const raw = localStorage.getItem('oqupa-listing-form')
       expect(JSON.parse(raw!).step).toBe(2)
     })
 
-    it('does not store File objects in sessionStorage', () => {
+    it('does not store File objects in storage', () => {
       store().updateData({ photos: [new File([''], 'photo.jpg')] })
-      const raw = sessionStorage.getItem('oqupa-listing-form')
+      const raw = localStorage.getItem('oqupa-listing-form')
       expect(raw).not.toContain('photo.jpg')
       expect(raw).not.toContain('"photos"')
     })
 
-    it('survives sessionStorage throwing QuotaExceededError without throwing', () => {
+    it('survives storage throwing QuotaExceededError without throwing', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         const err = new DOMException('quota exceeded', 'QuotaExceededError')
@@ -283,6 +284,7 @@ describe('listingFormStore', () => {
     afterEach(() => {
       vi.resetModules()
       sessionStorage.clear()
+      localStorage.clear()
     })
 
     it('rehydrates step from sessionStorage when the module loads', async () => {

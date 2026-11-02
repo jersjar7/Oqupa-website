@@ -19,7 +19,8 @@ function choose(files: File[]) {
   fireEvent.change(input, { target: { files } })
 }
 
-const tiles = () => screen.queryAllByRole('button', { name: /^Reordenar foto/ })
+// ADR-043 D8: no drag handles any more; a photo is its picture.
+const tiles = () => screen.queryAllByRole('img', { name: /^Foto \d+$/ })
 
 beforeEach(() => {
   urlCounter = 0
@@ -30,6 +31,7 @@ beforeEach(() => {
     revokeObjectURL: vi.fn((u: string) => { revoked.push(u) }),
   }))
   window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
+  localStorage.clear()
   sessionStorage.clear()
   useListingFormStore.getState().reset()
   useListingFormStore.getState().setStep(4)
@@ -37,6 +39,26 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('PhotoStep — tap to make the cover (D8)', () => {
+  it('tapping the third photo makes it the cover, and the order is kept in the draft', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(3))
+    fireEvent.click(screen.getByRole('button', { name: 'Hacer portada la foto 3' }))
+    await waitFor(() =>
+      expect(useListingFormStore.getState().data.photos.map((f) => f.name)).toEqual(['c.jpg', 'a.jpg', 'b.jpg']),
+    )
+  })
+
+  it('SIGUIENTE with too few photos stays and says so', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg')]))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('Sube al menos 3 fotos')).toBeTruthy()
+    expect(useListingFormStore.getState().step).toBe(4)
+  })
 })
 
 describe('PhotoStep — ATRÁS', () => {

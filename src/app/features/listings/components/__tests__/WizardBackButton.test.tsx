@@ -52,6 +52,7 @@ const path = () => screen.getByTestId('path').textContent
 describe('WizardBackButton', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     useListingFormStore.getState().reset()
   })
 
@@ -139,6 +140,7 @@ describe('WizardBackButton on the edit page', () => {
 
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     useListingFormStore.getState().reset()
   })
 

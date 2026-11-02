@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { PropertyType, OperationType, ListingRole, Currency, RentalDurationType } from '@/types/enums'
 import type { PhotoUploadResult } from '@/services/storageService'
 import { newPublishId } from '@/lib/publishIdentity'
+import { clearDraftPhotos, loadDraftPhotos, saveDraftPhotos } from './draftPhotos'
 
 export interface ListingFormData {
   // Step 1: Basics
@@ -118,6 +119,11 @@ interface ListingFormState {
   /** A fresh identity for `uid` (the old ids turned out to belong to someone else). */
   renewPublishIdentity: (uid: string) => string
   markPublished: (listingId: string) => void
+  /**
+   * Changes when photos kept from an earlier visit arrive (they load after
+   * the page): the photo page starts again with them.
+   */
+  photosRestoredAt: number
 }
 
 const INITIAL_DATA: ListingFormData = {
@@ -163,24 +169,32 @@ interface SavedDraft extends Partial<ListingFormData> {
   publishOwnerId?: string | null
 }
 
+// ADR-043 D11: the draft is kept across a closed tab (localStorage), and
+// still read from this tab's storage, where drafts lived before. It belongs
+// to one account (draftOwnerId); another account opening the wizard drops it.
+//
 // Storage can be blocked (private mode, site data off) and then THROWS.
 // Nothing about publishing may fail because of that.
 function removeSession() {
-  try {
-    sessionStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // Nothing stored, nothing to remove.
+  for (const store of [() => localStorage, () => sessionStorage]) {
+    try {
+      store().removeItem(STORAGE_KEY)
+    } catch {
+      // Nothing stored, nothing to remove.
+    }
   }
 }
 
 function loadFromSession(): SavedDraft {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return {}
-    return JSON.parse(raw)
-  } catch {
-    return {}
+  for (const store of [() => localStorage, () => sessionStorage]) {
+    try {
+      const raw = store().getItem(STORAGE_KEY)
+      if (raw) return JSON.parse(raw)
+    } catch {
+      // Unreadable here: try the other one, else start clean.
+    }
   }
+  return {}
 }
 
 function saveToSession(
@@ -195,12 +209,19 @@ function saveToSession(
 ): boolean {
   try {
     // Don't save File objects to sessionStorage
+    // Photos are files: they are kept in IndexedDB (draftPhotos), not here.
     const { photos: _photos, ...serializable } = data
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable, ...identity }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable, ...identity }))
+    // An older copy in this tab's storage must not outlive this one.
+    try {
+      sessionStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // Nothing there.
+    }
     return true
   } catch (e) {
     if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-      console.warn('Session storage quota exceeded — form progress not saved')
+      console.warn('Storage quota exceeded — form progress not saved')
     }
     return false
   }
@@ -268,6 +289,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     publishedListingId: null,
     navigationLocked: false,
     draftOwnerId: savedDraftOwner ?? null,
+    photosRestoredAt: 0,
 
     adoptDraftFor: (uid) => {
       currentAccount = uid
@@ -283,6 +305,21 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         return
       }
       if (s.draftOwnerId !== uid) set({ draftOwnerId: uid })
+      // The photos of this account's draft, kept from an earlier visit (D11).
+      if (s.data.photos.length === 0 && !isEmptyDraft(s.step, s.data, s.uploadedPhotos)) {
+        const draft = s.publishId
+        void loadDraftPhotos(uid).then((files) => {
+          const now = get()
+          if (
+            files.length === 0 || now.publishId !== draft || now.draftOwnerId !== uid ||
+            now.isEditMode || now.publishedListingId || now.data.photos.length > 0
+          ) return
+          set({
+            data: { ...now.data, photos: files, photoOrder: files.map((_, index) => ({ type: 'new' as const, index })) },
+            photosRestoredAt: Date.now(),
+          })
+        })
+      }
     },
 
     discardDraft: () => {
@@ -321,6 +358,12 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
       const stamp = !s.isEditMode && s.draftOwnerId == null && currentAccount ? { draftOwnerId: currentAccount } : {}
       set({ data: updated, ...stamp })
       save(get().step, updated)
+      // The photos go to IndexedDB under the draft's account (D11).
+      const now = get()
+      const owner = now.draftOwnerId
+      if ('photos' in partial && owner && !now.isEditMode && !now.publishedListingId) {
+        void saveDraftPhotos(owner, updated.photos)
+      }
     },
 
     setEditMode: (listingId, propertyId) => {
@@ -330,6 +373,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
 
     reset: () => {
       removeSession()
+      void clearDraftPhotos()
       set({
         step: 1,
         direction: 1,
@@ -375,6 +419,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
 
     markPublished: (listingId) => {
       removeSession()
+      void clearDraftPhotos()
       set({ publishedListingId: listingId })
     },
   }

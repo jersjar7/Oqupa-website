@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { Button } from '@/app/components/ui'
 import { usePhotoQueue } from './usePhotoQueue'
 import PhotoGrid from './PhotoGrid'
 import { minPhotosFor } from './minPhotos'
 import { MAX_PHOTOS } from './usePhotoQueue'
 import { photoIntakeNotice, sortChosenPhotos } from './photoIntake'
+import WizardNav from '../WizardNav'
+import { WIZARD_HEADING } from '../wizardStyles'
 
 export default function PhotoStep() {
   const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
@@ -36,8 +37,6 @@ export default function PhotoStep() {
     updateData(toSubmitData())
   }, [items, toSubmitData, updateData])
 
-  const canContinue = queue.items.length >= MIN_PHOTOS
-
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (queue.items.length < MIN_PHOTOS) {
@@ -50,14 +49,7 @@ export default function PhotoStep() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h2 className="font-serif text-[28px] font-normal text-text-primary">
-          Fotos de tu propiedad
-        </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Sube las fotos que mejor representen tu propiedad
-        </p>
-      </div>
+      <h2 className={WIZARD_HEADING}>Fotos de tu propiedad</h2>
 
       <PhotoGrid
         items={queue.items}
@@ -66,18 +58,10 @@ export default function PhotoStep() {
         onRemove={queue.remove}
         onReorder={queue.reorder}
         photoError={photoError ?? intakeNotice}
-        canContinue={canContinue}
         minPhotos={MIN_PHOTOS}
       />
 
-      <div className="flex gap-3">
-        <Button type="button" variant="text" onClick={prevStep} className="flex-1">
-          Atrás
-        </Button>
-        <Button type="submit" disabled={!canContinue} className="flex-1">
-          Continuar
-        </Button>
-      </div>
+      <WizardNav onBack={prevStep} />
     </form>
   )
 }

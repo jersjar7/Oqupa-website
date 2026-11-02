@@ -19,6 +19,11 @@ interface FillingButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   errorAnnouncement?: string
   /** Called once the full bar has shown its done label. */
   onDone?: () => void
+  /**
+   * At rest (and as REINTENTAR) a filled green button instead of an outlined
+   * one — for a page's single main action, beside an outlined ATRÁS.
+   */
+  solid?: boolean
 }
 
 /**
@@ -46,6 +51,7 @@ export default function FillingButton({
   doneAnnouncement = 'Publicado',
   errorAnnouncement = 'No pudimos publicar',
   onDone,
+  solid = false,
   className = '',
   disabled,
   onClick,
@@ -64,7 +70,9 @@ export default function FillingButton({
     ? 'cursor-default border-secondary bg-secondary-pale text-secondary'
     : off
       ? 'pointer-events-none border-black/20 text-black/20'
-      : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover active:scale-[0.97]'
+      : solid
+        ? 'border-secondary bg-secondary text-white hover:border-secondary-hover hover:bg-secondary-hover active:scale-[0.97]'
+        : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover active:scale-[0.97]'
 
   const label = showDone ? (
     <>

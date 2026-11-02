@@ -24,6 +24,19 @@ interface LocationPickerProps {
   latitude: number | null
   longitude: number | null
   onChange: (lat: number, lng: number) => void
+  /** Where the person is, shown while the page asks "¿Ubicación es correcta?" (D6). */
+  provisional?: { lat: number; lng: number } | null
+  /** Move the map here (the person, a search result); a new key moves it again. */
+  focus?: { lat: number; lng: number; key: number } | null
+}
+
+/** The brand green, read from the page's tokens (no hard-coded colour). */
+function brandGreen(): string {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || 'currentColor'
+  } catch {
+    return 'currentColor'
+  }
 }
 
 export default function LocationPicker(props: LocationPickerProps) {
@@ -31,10 +44,11 @@ export default function LocationPicker(props: LocationPickerProps) {
 }
 
 /** Exported with an explicit token so it can be tested without env vars. */
-export function LocationPickerMap({ token, latitude, longitude, onChange }: LocationPickerProps & { token: string }) {
+export function LocationPickerMap({ token, latitude, longitude, onChange, provisional = null, focus = null }: LocationPickerProps & { token: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
+  const provisionalRef = useRef<mapboxgl.Marker | null>(null)
   const [outsideBoundary, setOutsideBoundary] = useState(false)
   const pointer = usePointerKind()
   const latest = useRef(onChange)
@@ -90,6 +104,8 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     return () => {
       markerRef.current?.remove()
       markerRef.current = null
+      provisionalRef.current?.remove()
+      provisionalRef.current = null
       map.remove()
       mapRef.current = null
     }
@@ -110,6 +126,30 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
       markerRef.current.setLngLat([longitude!, latitude!])
     }
   }, [latitude, longitude, hasPosition])
+
+  // The person's own place, while asked about: a green marker, not the pin.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (!provisional || hasPosition) {
+      provisionalRef.current?.remove()
+      provisionalRef.current = null
+      return
+    }
+    if (!provisionalRef.current) {
+      provisionalRef.current = new mapboxgl.Marker({ color: brandGreen() }).setLngLat([provisional.lng, provisional.lat]).addTo(map)
+    } else {
+      provisionalRef.current.setLngLat([provisional.lng, provisional.lat])
+    }
+  }, [provisional, hasPosition])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !focus) return
+    map.easeTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.getZoom?.() ?? 0, 16) })
+    // A new key is a new request, even to the same place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.key])
 
   if (!token) {
     return (

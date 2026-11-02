@@ -23,12 +23,13 @@ function renderStep() {
 }
 
 const priceBox = () => screen.getByPlaceholderText(/^Ej:/) as HTMLInputElement
-const savedDraft = () => JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
+const savedDraft = () => JSON.parse(localStorage.getItem('oqupa-listing-form') ?? '{}')
 
 describe('WizardStep5 — Precio', () => {
   beforeEach(() => {
     window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
     Element.prototype.scrollIntoView = vi.fn()
+    localStorage.clear()
     sessionStorage.clear()
     useListingFormStore.getState().reset()
     useListingFormStore.getState().updateData({ propertyType: 'casa', operationType: 'venta', role: 'owner' })
@@ -87,19 +88,9 @@ describe('WizardStep5 — Precio', () => {
     expect(await screen.findByText('Revisa el precio: es demasiado alto.')).toBeTruthy()
   })
 
-  it('agent help says "vender" for a sale', () => {
-    renderStep()
-    fireEvent.change(priceBox(), { target: { value: '1500' } })
-    expect(screen.getByText(/ayudar a vender tu propiedad/)).toBeTruthy()
-  })
-
-  it('agent help says "alquilar" for a rental', () => {
-    useListingFormStore.getState().updateData({ operationType: 'alquiler', rentalDurationType: 'longTerm' })
-    renderStep()
-    fireEvent.change(priceBox(), { target: { value: '1500' } })
-    expect(screen.getByText(/ayudar a alquilar tu propiedad/)).toBeTruthy()
-    expect(screen.queryByText(/vender/)).toBeNull()
-  })
+  // ADR-043 D10 (approved): agent help left the wizard; its "vender" /
+  // "alquilar" wording is checked on the Mis Propiedades card instead
+  // (ListingCard.realtorHelp.test.tsx).
 
   it('review #2: "S/. 800" typed with the currency is 800', () => {
     renderStep()

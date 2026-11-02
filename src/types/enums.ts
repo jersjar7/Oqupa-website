@@ -192,9 +192,9 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
 }
 
 export const LISTING_ROLE_LABELS: Record<ListingRole, string> = {
-  owner: 'Soy el propietario',
+  owner: 'Soy el dueño',
   realtor: 'Soy agente inmobiliario',
-  relative: 'Represento al propietario',
+  relative: 'Represento al dueño',
 }
 
 export const CONTACT_TIME_SLOT_LABELS: Record<ContactTimeSlot, string> = {

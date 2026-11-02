@@ -12,7 +12,7 @@ import { useAuthStore } from '../authStore'
 import { watchDraftOwner } from '../draftOwnerWatch'
 
 const store = () => useListingFormStore.getState()
-const saved = () => JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
+const saved = () => JSON.parse(localStorage.getItem('oqupa-listing-form') ?? '{}')
 const signedIn = (uid: string | null) =>
   useAuthStore.setState({ firebaseUser: uid ? ({ uid } as never) : null })
 
@@ -28,6 +28,7 @@ function draftFor(uid: string) {
 describe('the draft belongs to one account', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     signedIn(null)
     setDraftAccount(null)
     store().reset()
@@ -80,7 +81,7 @@ describe('the draft belongs to one account', () => {
     store().discardDraft()
     expect(store().data.description).toBe('')
     expect(store().draftOwnerId).toBeNull()
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
   })
 })
 
@@ -88,6 +89,7 @@ describe('watchDraftOwner: the signed-in account changes', () => {
   let stop: () => void = () => {}
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     signedIn(null)
     setDraftAccount(null)
     store().reset()
@@ -111,7 +113,7 @@ describe('watchDraftOwner: the signed-in account changes', () => {
     signedIn(null)
     signedIn('beto')
     expect(store().data.description).toBe('')
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     expect(store().draftOwnerId).toBe('beto')
   })
 })
@@ -119,6 +121,7 @@ describe('watchDraftOwner: the signed-in account changes', () => {
 describe('watchDraftOwner: opening the site over a stored draft', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     signedIn(null)
     setDraftAccount(null)
     store().reset()
@@ -169,6 +172,7 @@ describe('watchDraftOwner: opening the site over a stored draft', () => {
 describe('second hostile review #1: a draft is never left without an owner', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     signedIn(null)
     setDraftAccount(null)
     store().reset()
@@ -201,6 +205,7 @@ describe('second hostile review #1: a draft is never left without an owner', () 
 describe('second hostile review #2: editing is never stored as a draft', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     setDraftAccount('ana')
     store().reset()
   })
@@ -210,7 +215,7 @@ describe('second hostile review #2: editing is never stored as a draft', () => {
     store().updateData({ calle: 'Calle Secreta 742', latitude: -5.1, longitude: -80.6, description: 'Mi casa' })
     store().setStep(3)
     store().markEditBaseline()
-    const raw = sessionStorage.getItem('oqupa-listing-form') ?? ''
+    const raw = localStorage.getItem('oqupa-listing-form') ?? ''
     expect(raw).not.toContain('Calle Secreta')
     expect(raw).not.toContain('Mi casa')
   })

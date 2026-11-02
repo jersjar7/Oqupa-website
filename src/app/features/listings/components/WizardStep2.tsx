@@ -1,45 +1,43 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { step2Schema, type Step2Data } from '@/schemas/listingSchema'
+import { step2Schema, type Step2Data, MAX_COUNT, minBedrooms, descriptionHint } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { useRevealedFields } from '@/hooks/useRevealedFields'
-import { Button, Input } from '@/app/components/ui'
-import RevealField from './RevealField'
+import { Input } from '@/app/components/ui'
 import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
-import { parseCount, parseLocaleNumber } from '@/lib/localeNumber'
+import { parseLocaleNumber } from '@/lib/localeNumber'
+import { bedroomsLabel } from '@/lib/roomCounts'
 import { editAwareResolver } from '../editLimits'
+import WizardNav from './WizardNav'
+import WizardStepper from './WizardStepper'
+import WizardAmenities from './WizardAmenities'
+import { WIZARD_HEADING, choiceClass } from './wizardStyles'
 
 /** A finite number, or null — what the draft can keep of a half-typed box. */
 const kept = (n: number | null | undefined): number | null =>
   typeof n === 'number' && Number.isFinite(n) ? n : null
 
-// The boxes are text so "120,5" can be typed; a default value arrives as a number.
+// The area box is text so "120,5" can be typed; a default value arrives as a number.
 const readArea = (v: unknown) => (typeof v === 'number' ? v : parseLocaleNumber(String(v ?? '')))
-const readCount = (v: unknown) => (typeof v === 'number' ? v : parseCount(String(v ?? '')))
 
-/** What the draft keeps of the page as it stands, checked or not. */
-const asDraft = (v: Partial<Step2Data>) => ({
-  description: v.description ?? '',
-  totalAreaInSquareMeters: kept(v.totalAreaInSquareMeters),
-  bedroomCount: kept(v.bedroomCount),
-  bathroomCount: kept(v.bathroomCount),
-  availableParkingSpaces: kept(v.availableParkingSpaces) ?? 0,
-  hasPrivateBathroom: v.hasPrivateBathroom ?? false,
-})
+/** Oficina and Local: baños optional, from 0 (as the app). */
+const hasOptionalBathrooms = (t: string) => t === 'oficina' || t === 'local'
 
 export default function WizardStep2() {
-  const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
+  const { data, updateData, nextStep, prevStep } = useListingFormStore()
 
-  const hasRooms = data.propertyType ? propertyTypeHasRooms(data.propertyType as PropertyType) : false
-  const isRoom = data.propertyType ? propertyTypeIsRoom(data.propertyType as PropertyType) : false
+  const type = (data.propertyType || '') as PropertyType | ''
+  const hasRooms = type ? propertyTypeHasRooms(type) : false
+  const isRoom = type ? propertyTypeIsRoom(type) : false
+  const optionalBaths = hasOptionalBathrooms(type)
+  const bedMin = hasRooms ? minBedrooms(type) : 0
+  const bathMin = hasRooms ? 1 : 0
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    getValues,
     formState: { errors },
   } = useForm<Step2Data>({
     resolver: editAwareResolver(zodResolver(step2Schema)),
@@ -47,58 +45,52 @@ export default function WizardStep2() {
       propertyType: data.propertyType,
       description: data.description,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
-      bedroomCount: data.bedroomCount,
-      bathroomCount: data.bathroomCount,
-      availableParkingSpaces: data.availableParkingSpaces,
-      propertyAmenities: data.propertyAmenities,
+      // − / + start from a sensible count instead of an empty box (D4).
+      // An older listing's count is shown as it is, even below today's
+      // minimum, so an edit that leaves it alone does not change it.
+      bedroomCount: hasRooms ? data.bedroomCount ?? 1 : null,
+      bathroomCount: hasRooms ? data.bathroomCount ?? 1 : optionalBaths ? data.bathroomCount ?? 0 : null,
+      availableParkingSpaces: data.availableParkingSpaces ?? 0,
+      propertyAmenities: data.propertyAmenities ?? [],
       hasPrivateBathroom: data.hasPrivateBathroom ?? false,
     },
   })
 
-  const description = watch('description')
-  const area = watch('totalAreaInSquareMeters')
-  const bedrooms = watch('bedroomCount')
-  const bathrooms = watch('bathroomCount')
+  const description = watch('description') ?? ''
+  const bedrooms = watch('bedroomCount') ?? 0
+  const bathrooms = watch('bathroomCount') ?? 0
+  const parking = watch('availableParkingSpaces') ?? 0
+  const amenities = watch('propertyAmenities') ?? []
   const hasPrivateBathroom = watch('hasPrivateBathroom')
 
-  // "Filled" means something was typed. Whether it is right is for the check
-  // on CONTINUAR, which explains in Spanish — a box that silently keeps the
-  // next field hidden explains nothing (0 dormitorios used to do exactly that).
-  const typed = (v: unknown) => v !== null && v !== undefined
-  const areaFilled = typed(area)
-  const roomsFilled = !hasRooms || (typed(bedrooms) && typed(bathrooms))
-
-  // Everything typed goes into the draft as it is typed, so ATRÁS (or the
-  // browser's back button) and coming back find it all still there.
+  // Everything on the page goes into the draft as it changes, so ATRÁS (or
+  // the browser's back button), a refresh and coming back find it there.
   useEffect(() => {
-    const sub = watch((v) => updateData(asDraft(v as Partial<Step2Data>)))
+    const sub = watch((v) =>
+      updateData({
+        description: v.description ?? '',
+        totalAreaInSquareMeters: kept(v.totalAreaInSquareMeters),
+        bedroomCount: kept(v.bedroomCount),
+        bathroomCount: kept(v.bathroomCount),
+        availableParkingSpaces: kept(v.availableParkingSpaces) ?? 0,
+        propertyAmenities: (v.propertyAmenities ?? []).filter((a): a is string => typeof a === 'string'),
+        hasPrivateBathroom: v.hasPrivateBathroom ?? false,
+      }),
+    )
     return () => sub.unsubscribe()
   }, [watch, updateData])
 
-  const { isRevealed, wasInitial } = useRevealedFields(
-    {
-      description: true, // always visible
-      totalArea: (description ?? '').length > 0,
-      roomCounts: areaFilled && hasRooms,
-      privateBathroom: areaFilled && isRoom,
-      parkingAndSubmit: areaFilled && roomsFilled,
-    },
-    isEditMode
-  )
-
-  function goBack() {
-    // What is on screen, checked or not, stays in the draft.
-    updateData(asDraft(getValues()))
-    prevStep()
-  }
+  const setCount = (field: 'bedroomCount' | 'bathroomCount' | 'availableParkingSpaces') => (n: number) =>
+    setValue(field, n, { shouldValidate: Boolean(errors[field]) })
 
   function onSubmit(formData: Step2Data) {
+    const baths = formData.bathroomCount ?? null
     updateData({
       description: formData.description,
       totalAreaInSquareMeters: formData.totalAreaInSquareMeters,
-      bedroomCount: hasRooms ? formData.bedroomCount : null,
-      bathroomCount: hasRooms ? formData.bathroomCount : null,
-      // An empty box means no parking.
+      bedroomCount: hasRooms ? formData.bedroomCount ?? null : null,
+      // Oficina / Local: 0 baños is "not said", as the app keeps it.
+      bathroomCount: hasRooms ? baths : optionalBaths && baths ? baths : null,
       availableParkingSpaces: formData.availableParkingSpaces ?? 0,
       propertyAmenities: formData.propertyAmenities,
       hasPrivateBathroom: isRoom ? (formData.hasPrivateBathroom ?? false) : false,
@@ -106,120 +98,107 @@ export default function WizardStep2() {
     nextStep()
   }
 
+  const hint = descriptionHint(description)
+  const descriptionError = errors.description
+    ? (hint ?? errors.description.message)
+    : null
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Description — always visible */}
-      <RevealField visible={isRevealed('description')} animate={!wasInitial('description')}>
-        <div>
-          <label
-            htmlFor="description"
-            className="mb-1.5 block font-sans font-medium uppercase text-xs text-secondary"
-          >
-            Descripción
-          </label>
-          <textarea
-            id="description"
-            rows={5}
-            placeholder="Describe tu propiedad. Incluye detalles sobre amenidades y características especiales. (Mínimo 20 caracteres)"
-            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-              errors.description ? 'border-error' : 'border-border'
-            }`}
-            {...register('description')}
-          />
-          {errors.description && (
-            <p className="mt-1.5 text-sm text-error">{errors.description.message}</p>
-          )}
-        </div>
-      </RevealField>
-
-      {/* Area */}
-      <RevealField
-        visible={isRevealed('totalArea')}
-        animate={!wasInitial('totalArea')}
-        tooltip="Incluye toda la superficie construida o del lote."
-      >
-        <Input
-          label="Área total (m²)"
-          type="text"
-          inputMode="decimal"
-          placeholder="Ej: 120"
-          hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
-          error={errors.totalAreaInSquareMeters?.message}
-          {...register('totalAreaInSquareMeters', { setValueAs: readArea })}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <section>
+        <label htmlFor="description" className={`${WIZARD_HEADING} block`}>
+          Descripción
+        </label>
+        <textarea
+          id="description"
+          rows={5}
+          placeholder="Cuenta cómo es tu propiedad: lo que más te gusta, qué hay cerca."
+          className={`mt-3 w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 ${
+            descriptionError ? 'border-error' : 'border-border'
+          }`}
+          {...register('description')}
         />
-      </RevealField>
+        {descriptionError ? (
+          <p className="mt-1.5 text-sm text-error">{descriptionError}</p>
+        ) : (
+          hint && <p className="mt-1.5 text-sm text-text-secondary">{hint}</p>
+        )}
+      </section>
 
-      {/* Conditional: Bedrooms & Bathrooms */}
-      {hasRooms && (
-        <RevealField visible={isRevealed('roomCounts')} animate={!wasInitial('roomCounts')}>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
+      <section>
+        <h2 className={WIZARD_HEADING}>Medidas</h2>
+        <div className="mt-3">
+          <Input
+            label="Área total (m²)"
+            type="text"
+            inputMode="decimal"
+            placeholder="Ej: 120"
+            hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
+            error={errors.totalAreaInSquareMeters?.message}
+            {...register('totalAreaInSquareMeters', { setValueAs: readArea })}
+          />
+        </div>
+        <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-white px-4">
+          {hasRooms && (
+            <WizardStepper
               label="Dormitorios"
-              type="text"
-              inputMode="numeric"
-              placeholder="Ej: 3"
-              error={errors.bedroomCount?.message}
-              {...register('bedroomCount', { setValueAs: readCount })}
+              value={bedrooms}
+              min={bedMin}
+              max={MAX_COUNT}
+              onChange={setCount('bedroomCount')}
+              display={(n) => bedroomsLabel(n, { bare: true })}
             />
-            <Input
-              label="Baños"
-              type="text"
-              inputMode="numeric"
-              placeholder="Ej: 2"
-              error={errors.bathroomCount?.message}
-              {...register('bathroomCount', { setValueAs: readCount })}
-            />
-          </div>
-        </RevealField>
-      )}
+          )}
+          {(hasRooms || optionalBaths) && (
+            <WizardStepper label="Baños" value={bathrooms} min={bathMin} max={MAX_COUNT} onChange={setCount('bathroomCount')} />
+          )}
+          <WizardStepper
+            label="Estacionamientos"
+            value={parking}
+            min={0}
+            max={MAX_COUNT}
+            onChange={setCount('availableParkingSpaces')}
+          />
+        </div>
+        {(errors.bedroomCount || errors.bathroomCount || errors.availableParkingSpaces) && (
+          <p className="mt-1.5 text-sm text-error">
+            {errors.bedroomCount?.message ?? errors.bathroomCount?.message ?? errors.availableParkingSpaces?.message}
+          </p>
+        )}
 
-      {/* Private Bathroom (only for habitacion) */}
-      {isRoom && (
-        <RevealField visible={isRevealed('privateBathroom')} animate={!wasInitial('privateBathroom')}>
-          <div>
-            <h3 className="text-sm font-medium uppercase text-text-primary">Baño privado</h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {[true, false].map((value) => (
+        {isRoom && (
+          <div className="mt-4">
+            <p className="text-base text-text-primary">Baño privado</p>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              {[true, false].map((v) => (
                 <button
-                  key={String(value)}
+                  key={String(v)}
                   type="button"
-                  onClick={() => setValue('hasPrivateBathroom', value)}
-                  className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                    hasPrivateBathroom === value
-                      ? 'border-secondary bg-secondary-pale text-secondary'
-                      : 'border-border text-text-secondary hover:border-secondary/30'
-                  }`}
+                  aria-pressed={hasPrivateBathroom === v}
+                  onClick={() => setValue('hasPrivateBathroom', v)}
+                  className={choiceClass(hasPrivateBathroom === v)}
                 >
-                  {value ? 'Sí' : 'No'}
+                  {v ? 'Sí' : 'No'}
                 </button>
               ))}
             </div>
           </div>
-        </RevealField>
-      )}
+        )}
+      </section>
 
-      {/* Parking + Navigation */}
-      <RevealField visible={isRevealed('parkingAndSubmit')} animate={!wasInitial('parkingAndSubmit')}>
-        <div className="space-y-6">
-          <Input
-            label="Estacionamientos (opcional)"
-            type="text"
-            inputMode="numeric"
-            placeholder="0"
-            error={errors.availableParkingSpaces?.message}
-            {...register('availableParkingSpaces', { setValueAs: readCount })}
+      <section>
+        <h2 className={WIZARD_HEADING}>¿Qué tiene?</h2>
+        <div className="mt-3">
+          <WizardAmenities
+            chosen={amenities}
+            isShortStay={data.rentalDurationType === 'shortTerm'}
+            onChange={(next) => setValue('propertyAmenities', next, { shouldValidate: Boolean(errors.propertyAmenities) })}
           />
-
-          <div className="flex gap-3">
-            <Button type="button" variant="text" onClick={goBack} className="flex-1">
-              Atrás
-            </Button>
-            <Button type="submit" className="flex-1">
-              Continuar
-            </Button>
-          </div>
         </div>
-      </RevealField>
+        {errors.propertyAmenities && <p className="mt-1.5 text-sm text-error">{errors.propertyAmenities.message}</p>}
+      </section>
+
+      <WizardNav onBack={prevStep} />
     </form>
   )
 }

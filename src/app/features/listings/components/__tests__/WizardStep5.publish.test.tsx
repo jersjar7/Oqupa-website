@@ -190,7 +190,8 @@ function fillDraft() {
 
 function Where() {
   const loc = useLocation()
-  return <div data-testid="where">{loc.pathname}</div>
+  const just = (loc.state as { justPublished?: boolean } | null)?.justPublished === true
+  return <div data-testid="where" data-just-published={String(just)}>{loc.pathname}</div>
 }
 
 function renderStep() {
@@ -228,6 +229,7 @@ beforeEach(() => {
   toastMock.mockClear()
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
+  localStorage.clear()
   sessionStorage.clear()
   useAuthStore.setState({
     user: {
@@ -247,6 +249,16 @@ afterEach(() => {
 })
 
 describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
+  it('D10: a new listing is published without agent help, even over an old draft that asked for it', async () => {
+    useListingFormStore.getState().updateData({ wantsRealtorHelp: true, maxRealtors: 5 })
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    const listing = [...net.docs.entries()].find(([p]) => p.startsWith('listings/'))![1]
+    expect(listing.wantsRealtorHelp).toBe(false)
+    expect(listing.maxRealtors).toBe(3)
+  })
+
   it('a double click writes one property and one listing, together in one commit', async () => {
     renderStep()
     const btn = publishButton()
@@ -340,11 +352,13 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     fireEvent.click(publishButton())
     await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
     // Cleared the moment the write succeeded — not when a dialog closes.
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     expect((await screen.findAllByText('¡PUBLICADO!', {}, { timeout: 2000 })).length).toBeGreaterThan(0)
     await waitFor(() =>
       expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`), { timeout: 3000 })
     expect(ids('listings').size).toBe(1)
+    // D13: it opens with the share prompt.
+    expect(screen.getByTestId('where').getAttribute('data-just-published')).toBe('true')
   })
 
   it('once saved, the button cannot be clicked again', async () => {

@@ -1,4 +1,4 @@
-import { bathroomsLabel } from '@/lib/roomCounts'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import {
   PROPERTY_TYPE_LABELS,
   OPERATION_TYPE_LABELS,
@@ -45,7 +45,7 @@ export function generateShareText(params: ShareListingParams): string {
   // Line 3: Specs (conditional)
   const specs: string[] = []
   if (params.bedroomCount != null) {
-    specs.push(`${params.bedroomCount} hab.`)
+    specs.push(bedroomsLabel(params.bedroomCount))
   }
   const baths = bathroomsLabel(params.bathroomCount)
   if (baths) {
