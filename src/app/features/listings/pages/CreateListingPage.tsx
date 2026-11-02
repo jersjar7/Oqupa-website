@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import WizardProgress from '../components/WizardProgress'
 import WizardStep1 from '../components/WizardStep1'
@@ -30,6 +31,14 @@ export default function CreateListingPage() {
     subtitle: 'Completa los datos de tu propiedad',
   })
   const { step, direction, isEditMode, reset } = useListingFormStore()
+
+  // A draft belongs to the account that started it: one left by another
+  // account on this computer is dropped, ids included (hostile review #1).
+  // Runs before the first paint, so their draft is never shown.
+  const uid = useAuthStore((s) => s.firebaseUser?.uid ?? null)
+  useLayoutEffect(() => {
+    if (uid) useListingFormStore.getState().adoptDraftFor(uid)
+  }, [uid])
 
   // Reset if coming from edit mode (only on mount)
   useEffect(() => {

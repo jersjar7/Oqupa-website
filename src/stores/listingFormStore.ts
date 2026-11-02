@@ -87,6 +87,16 @@ interface ListingFormState {
    */
   navigationLocked: boolean
   setNavigationLocked: (locked: boolean) => void
+  /**
+   * The account this draft belongs to (hostile review #1). Another account
+   * opening the wizard on the same computer gets a clean draft and a fresh
+   * identity — never someone else's photos, address or ids.
+   */
+  draftOwnerId: string | null
+  /** Opening the wizard as `uid`: keep the draft if it is theirs, else drop it. */
+  adoptDraftFor: (uid: string) => void
+  /** Drops the draft from memory and from this tab's storage (Salir). */
+  discardDraft: () => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
@@ -140,6 +150,7 @@ const STORAGE_KEY = 'oqupa-listing-form'
 
 interface SavedDraft extends Partial<ListingFormData> {
   step?: number
+  draftOwnerId?: string | null
   publishId?: string
   uploadedPhotos?: Record<string, PhotoUploadResult>
   publishOwnerId?: string | null
@@ -172,6 +183,7 @@ function saveToSession(
     publishId: string
     uploadedPhotos: Record<string, PhotoUploadResult>
     publishOwnerId: string | null
+    draftOwnerId: string | null
   },
 ): boolean {
   try {
@@ -192,6 +204,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     publishId: savedPublishId,
     uploadedPhotos: savedUploads,
     publishOwnerId: savedOwner,
+    draftOwnerId: savedDraftOwner,
     ...saved
   } = loadFromSession()
 
@@ -204,6 +217,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
       publishId: s.publishId,
       uploadedPhotos: s.uploadedPhotos,
       publishOwnerId: s.publishOwnerId,
+      draftOwnerId: s.draftOwnerId,
     })
   }
 
@@ -219,6 +233,21 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     publishOwnerId: savedOwner ?? null,
     publishedListingId: null,
     navigationLocked: false,
+    draftOwnerId: savedDraftOwner ?? null,
+
+    adoptDraftFor: (uid) => {
+      const s = get()
+      if (s.isEditMode) return
+      // A draft saved before owners were recorded goes by who claimed its ids.
+      const owner = s.draftOwnerId ?? s.publishOwnerId
+      if (owner && owner !== uid) get().reset()
+      if (get().draftOwnerId !== uid) {
+        set({ draftOwnerId: uid })
+        save(get().step, get().data)
+      }
+    },
+
+    discardDraft: () => get().reset(),
 
     setNavigationLocked: (locked) => set({ navigationLocked: locked }),
 
@@ -265,6 +294,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         publishOwnerId: null,
         publishedListingId: null,
         navigationLocked: false,
+        draftOwnerId: null,
       })
     },
 

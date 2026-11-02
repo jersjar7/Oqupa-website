@@ -906,3 +906,18 @@ describe('authService', () => {
     })
   })
 })
+
+// Hostile review of fix/wizard-bugs-web, #1: Salir clears the publishing
+// draft, so the next person on this computer does not inherit it.
+describe('logout clears the publishing draft', () => {
+  it('memory and this tab\'s storage', async () => {
+    const { useListingFormStore } = await import('@/stores/listingFormStore')
+    useListingFormStore.getState().reset()
+    useListingFormStore.getState().adoptDraftFor('ana')
+    useListingFormStore.getState().updateData({ description: 'Casa de Ana en Castilla' })
+    expect(sessionStorage.getItem('oqupa-listing-form')).not.toBeNull()
+    await authService.logout()
+    expect(useListingFormStore.getState().data.description).toBe('')
+    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+  })
+})
