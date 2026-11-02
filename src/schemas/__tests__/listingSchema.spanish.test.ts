@@ -141,3 +141,20 @@ describe('Precio', () => {
     expect(msgFor(issues, 'amount')).toBe('Revisa el precio: es demasiado alto.')
   })
 })
+
+describe('review #5: a separator too many, and the price minimum', () => {
+  it('a malformed number says so', async () => {
+    const { MALFORMED_NUMBER } = await import('@/lib/localeNumber')
+    expect(msgFor(messages(step2Schema, { ...room, totalAreaInSquareMeters: MALFORMED_NUMBER }), 'totalAreaInSquareMeters'))
+      .toBe('Revisa el número: tiene un punto o una coma de más.')
+    expect(msgFor(messages(step2Schema, { ...room, bedroomCount: MALFORMED_NUMBER }), 'bedroomCount'))
+      .toBe('Revisa el número: tiene un punto o una coma de más.')
+    expect(msgFor(messages(step4Schema, { ...step4, amount: MALFORMED_NUMBER }), 'amount'))
+      .toBe('Revisa el número: tiene un punto o una coma de más.')
+  })
+  it('a price below 1 is refused with the app\'s words', () => {
+    expect(msgFor(messages(step4Schema, { ...step4, amount: 0.5 }), 'amount')).toBe('El precio debe ser mayor a 0.')
+    expect(msgFor(messages(step4Schema, { ...step4, amount: 0 }), 'amount')).toBe('El precio debe ser mayor a 0.')
+    expect(messages(step4Schema, { ...step4, amount: 1 })).toEqual([])
+  })
+})

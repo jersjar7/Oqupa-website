@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLocaleNumber, parseCount } from '../localeNumber'
+import { parseLocaleNumber, parseCount, MALFORMED_NUMBER } from '../localeNumber'
 
 // What people type into the area and price boxes (ADR-043 wizard bugs, step 3).
 // A comma is a decimal point ("120,5" = 120.5), as in the app — but a comma
@@ -68,5 +68,34 @@ describe('parseCount (dormitorios, baños, estacionamientos)', () => {
   })
   it('letters are not a number', () => {
     expect(parseCount('dos')).toBeNaN()
+  })
+})
+
+// Hostile review of fix/wizard-bugs-web (2026-11-02).
+describe('the currency prefix, dot included (review #2)', () => {
+  it('"S/. 800" is 800, not 0.80', () => {
+    expect(parseLocaleNumber('S/. 800')).toBe(800)
+    expect(parseLocaleNumber('S/.800')).toBe(800)
+    expect(parseLocaleNumber('S/. 1,500')).toBe(1500)
+    expect(parseLocaleNumber('s/. 800')).toBe(800)
+  })
+})
+
+describe('strict reading, the same rule as the app (review #5)', () => {
+  it('properly grouped thousands', () => {
+    expect(parseLocaleNumber('1,500')).toBe(1500)
+    expect(parseLocaleNumber('1.500')).toBe(1500)
+    expect(parseLocaleNumber('1,500,000')).toBe(1500000)
+    expect(parseLocaleNumber('250.000')).toBe(250000)
+  })
+  it('one or two digits after the last separator are decimals', () => {
+    expect(parseLocaleNumber('120,5')).toBe(120.5)
+    expect(parseLocaleNumber('120.75')).toBe(120.75)
+    expect(parseLocaleNumber('1,500.50')).toBe(1500.5)
+  })
+  it('anything else is a separator too many', () => {
+    for (const bad of ['12,345,6', '1,2,3', '1.5.0', '1,0000', '1.500.50', '12,34,567', '1,50,000']) {
+      expect(parseLocaleNumber(bad), bad).toBe(MALFORMED_NUMBER)
+    }
   })
 })

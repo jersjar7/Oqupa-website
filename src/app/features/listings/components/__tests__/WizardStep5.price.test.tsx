@@ -100,4 +100,16 @@ describe('WizardStep5 — Precio', () => {
     expect(screen.getByText(/ayudar a alquilar tu propiedad/)).toBeTruthy()
     expect(screen.queryByText(/vender/)).toBeNull()
   })
+
+  it('review #2: "S/. 800" typed with the currency is 800', () => {
+    renderStep()
+    fireEvent.change(priceBox(), { target: { value: 'S/. 800' } })
+    expect(useListingFormStore.getState().data.amount).toBe(800)
+  })
+
+  it('review #5: a separator too many is explained', async () => {
+    renderStep()
+    fireEvent.change(priceBox(), { target: { value: '1.5.00' } })
+    expect(await screen.findByText('Revisa el número: tiene un punto o una coma de más.')).toBeTruthy()
+  })
 })

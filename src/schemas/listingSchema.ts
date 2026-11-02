@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { PropertyType } from '@/types/enums'
 import { propertyTypeHasRooms } from '@/types/enums'
+import { MALFORMED_NUMBER } from '@/lib/localeNumber'
 
 // Every message here is shown to the person filling in the wizard, so every
 // one is Spanish — including the ones zod would otherwise write in English
@@ -17,28 +18,38 @@ export const LIMIT_MESSAGES = {
   price: 'Revisa el precio: es demasiado alto.',
   wholeNumber: 'Escribe un número entero, sin decimales.',
   onlyNumbers: 'Escribe solo números.',
+  malformed: 'Revisa el número: tiene un punto o una coma de más.',
 } as const
+
+/** What a number box says when it holds no usable number. */
+const notANumber = (emptyMessage: string) => (iss: { input?: unknown }) =>
+  iss.input == null
+    ? emptyMessage
+    : iss.input === MALFORMED_NUMBER
+      ? LIMIT_MESSAGES.malformed
+      : LIMIT_MESSAGES.onlyNumbers
 
 const LOCATION_MESSAGE = 'Selecciona una ubicación en el mapa'
 
 /** A box for dormitorios, baños or estacionamientos: 0 to 50, whole numbers. */
 const countSchema = (emptyMessage: string) =>
   z
-    .number({ error: (iss) => (iss.input == null ? emptyMessage : LIMIT_MESSAGES.onlyNumbers) })
+    .number({ error: notANumber(emptyMessage) })
     .int(LIMIT_MESSAGES.wholeNumber)
     .min(0, 'No puede ser negativo.')
     .max(MAX_COUNT, LIMIT_MESSAGES.count)
 
 const areaSchema = (emptyMessage: string, notPositive: string) =>
   z
-    .number({ error: (iss) => (iss.input == null ? emptyMessage : LIMIT_MESSAGES.onlyNumbers) })
+    .number({ error: notANumber(emptyMessage) })
     .positive(notPositive)
     .max(MAX_AREA_M2, LIMIT_MESSAGES.area)
 
-const priceSchema = (invalid: string, notPositive: string) =>
+// A price below 1 is refused (the app's wording).
+const priceSchema = (invalid: string, belowOne: string) =>
   z
-    .number({ error: invalid })
-    .positive(notPositive)
+    .number({ error: (iss) => (iss.input === MALFORMED_NUMBER ? LIMIT_MESSAGES.malformed : invalid) })
+    .min(1, belowOne)
     .max(MAX_PRICE, LIMIT_MESSAGES.price)
 
 const latitudeSchema = (message: string) =>
@@ -151,7 +162,7 @@ export const step4Schema = z
     operationType: z.string({ error: 'Selecciona el tipo de operación' }), // passed through for price validation
     rentalDurationType: z.string({ error: 'Selecciona la duración del alquiler' }).optional(), // passed through for price validation
     propertyType: z.string({ error: 'Selecciona el tipo de propiedad' }).optional(), // passed through for price validation
-    amount: priceSchema('Ingresa un precio válido', 'El precio debe ser mayor a 0'),
+    amount: priceSchema('Ingresa un precio válido', 'El precio debe ser mayor a 0.'),
     currency: z.enum(['PEN', 'USD'], { error: 'Elige la moneda' }),
     wantsRealtorHelp: z.boolean({ error: 'Elige si quieres ayuda de agentes' }),
     maxRealtors: z
