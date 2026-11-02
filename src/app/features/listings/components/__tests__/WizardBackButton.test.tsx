@@ -104,3 +104,56 @@ describe('WizardBackButton', () => {
     expect(step()).toBe('4')
   })
 })
+
+// Hostile review #4: on the edit page, the button must wait until the page
+// has loaded ITS listing — never act on a leftover create draft's step.
+describe('WizardBackButton on the edit page', () => {
+  function renderEdit() {
+    return render(
+      <MemoryRouter initialEntries={['/app/listings', '/app/listings/L1/edit']} initialIndex={1}>
+        <Probe />
+        <Routes>
+          <Route path="/app/listings/:id/edit" element={<div><WizardBackButton forEdit /><p data-testid="step">{useListingFormStore.getState().step}</p></div>} />
+          <Route path="*" element={<p>fuera</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  beforeEach(() => {
+    sessionStorage.clear()
+    useListingFormStore.getState().reset()
+  })
+
+  it('a leftover create draft on page 4: back leaves the edit page at once, draft untouched', async () => {
+    useListingFormStore.getState().updateData({ description: 'Borrador de creación' })
+    useListingFormStore.getState().setStep(4)
+    renderEdit()
+    await back()
+    expect(path()).toBe('/app/listings')
+    expect(useListingFormStore.getState().step).toBe(4)
+    expect(useListingFormStore.getState().data.description).toBe('Borrador de creación')
+  })
+
+  it('once the listing is loaded, back moves one page', async () => {
+    renderEdit()
+    await act(async () => {
+      useListingFormStore.getState().setEditMode('L1', 'P1')
+      useListingFormStore.getState().setStep(1)
+    })
+    await act(async () => useListingFormStore.getState().nextStep())
+    await back()
+    expect(path()).toBe('/app/listings/L1/edit')
+    expect(useListingFormStore.getState().step).toBe(1)
+    await back()
+    expect(path()).toBe('/app/listings')
+  })
+
+  it('the create page ignores an edit in progress', async () => {
+    useListingFormStore.getState().setEditMode('L1', 'P1')
+    useListingFormStore.getState().setStep(3)
+    renderWizard()
+    await back()
+    expect(path()).toBe('/app')
+  })
+})

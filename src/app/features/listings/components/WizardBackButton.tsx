@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useLocation, useNavigate, useNavigationType } from 'react-router-dom'
+import { useLocation, useNavigate, useNavigationType, useParams } from 'react-router-dom'
 import { useListingFormStore } from '@/stores/listingFormStore'
 
 interface GuardState {
@@ -17,11 +17,19 @@ interface GuardState {
  * so back leaves. While publishing, back is held on the page.
  *
  * Renders nothing. Must be inside a router.
+ *
+ * `forEdit`: on the edit page it waits until the page has loaded ITS listing
+ * (edit mode, same id) and never acts on a leftover create draft; on the
+ * create page it ignores an edit in progress (hostile review #4).
  */
-export default function WizardBackButton() {
+export default function WizardBackButton({ forEdit = false }: { forEdit?: boolean }) {
   const location = useLocation()
   const navigationType = useNavigationType()
   const navigate = useNavigate()
+  const { id } = useParams()
+  const engaged = useListingFormStore((s) =>
+    forEdit ? s.isEditMode && s.editListingId === id : !s.isEditMode,
+  )
   const step = useListingFormStore((s) => s.step)
   const onGuard = (location.state as GuardState | null)?.wizardGuard === true
 
@@ -31,6 +39,7 @@ export default function WizardBackButton() {
   const pushedFrom = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!engaged) return
     const firstRun = lastKey.current === null
     const arrived = lastKey.current !== location.key
     lastKey.current = location.key
@@ -61,7 +70,7 @@ export default function WizardBackButton() {
       // back press leaves.
       navigate(-1)
     }
-  }, [location.key, location.pathname, location.search, location.hash, navigationType, onGuard, step, navigate])
+  }, [engaged, location.key, location.pathname, location.search, location.hash, navigationType, onGuard, step, navigate])
 
   return null
 }
