@@ -6,3 +6,12 @@ export function bathroomsLabel(count: number | null | undefined): string | null 
   if (count == null || !(count > 0)) return null
   return `${count} ${count === 1 ? 'baño' : 'baños'}`
 }
+
+/**
+ * 0 dormitorios reads "Monoambiente" everywhere (ADR-043 D4); otherwise
+ * "3 hab." — or just "3" with `bare`, where the label sits beside it.
+ */
+export function bedroomsLabel(count: number, { bare = false }: { bare?: boolean } = {}): string {
+  if (count === 0) return 'Monoambiente'
+  return bare ? String(count) : `${count} hab.`
+}

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { bathroomsLabel } from '@/lib/roomCounts'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
@@ -138,7 +138,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{property.specs.bedroomCount} hab.</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount)}</span>
           )}
           {bathroomsLabel(property.specs.bathroomCount) && (
             <span>{bathroomsLabel(property.specs.bathroomCount)}</span>

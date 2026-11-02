@@ -10,8 +10,6 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { fullListingSchema } from '@/schemas/listingSchema'
 import { issuesThatCount } from '../editLimits'
 
-const box = (label: RegExp) => screen.getByLabelText(label, { selector: 'input' }) as HTMLInputElement
-
 function openEdit() {
   const s = useListingFormStore.getState()
   s.reset()
@@ -30,20 +28,22 @@ describe('editing an older listing over the new limits', () => {
   beforeEach(() => {
     window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
     Element.prototype.scrollIntoView = vi.fn()
+    localStorage.clear()
     sessionStorage.clear()
     openEdit()
   })
 
-  it('unchanged fields do not block CONTINUAR', async () => {
+  it('unchanged fields do not block SIGUIENTE', async () => {
     render(<WizardStep2 />)
-    fireEvent.click(screen.getByRole('button', { name: /continuar/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
     await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
   })
 
   it('a field the owner changes gets the limit', async () => {
     render(<WizardStep2 />)
-    fireEvent.change(box(/dormitorios/i), { target: { value: '61' } })
-    fireEvent.click(screen.getByRole('button', { name: /continuar/i }))
+    // ADR-043 D4: dormitorios is a − / + now; one tap is a change.
+    fireEvent.click(screen.getByRole('button', { name: 'Menos dormitorios' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
     expect(await screen.findByText('Máximo 50.')).toBeTruthy()
     expect(useListingFormStore.getState().step).toBe(2)
   })

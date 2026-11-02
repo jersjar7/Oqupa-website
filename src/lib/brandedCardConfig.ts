@@ -1,4 +1,4 @@
-import { bathroomsLabel } from '@/lib/roomCounts'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 // Config builder for branded listing card images.
 //
 // Extracts all display strings from listing + property data so the
@@ -49,7 +49,7 @@ export function buildBrandedCardConfig(
   // Specs line (conditional bedrooms/bathrooms)
   const specs: string[] = []
   if (property.specs.bedroomCount != null) {
-    specs.push(`${property.specs.bedroomCount} hab.`)
+    specs.push(bedroomsLabel(property.specs.bedroomCount))
   }
   const baths = bathroomsLabel(property.specs.bathroomCount)
   if (baths) {

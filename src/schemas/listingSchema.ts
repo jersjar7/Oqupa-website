@@ -84,15 +84,30 @@ export const step1Schema = z.object({
 export type Step1Data = z.infer<typeof step1Schema>
 
 /**
- * Casa, departamento and alojamiento need at least one bedroom and one
- * bathroom — the app's sentences, with the type as this website names it
- * ("Alojamiento" for hospedaje). 0 dormitorios (Monoambiente) arrives on
- * both platforms together in ADR-043 step 4.
+ * Casa, departamento and alojamiento need at least one bathroom, and casa and
+ * alojamiento at least one bedroom — the app's sentences, with the type as
+ * this website names it ("Alojamiento" for hospedaje). A departamento with 0
+ * dormitorios is a Monoambiente (ADR-043 D4, both platforms).
  */
-export const AT_LEAST_ONE: Record<string, { bedroom: string; bathroom: string }> = {
+export const AT_LEAST_ONE: Record<string, { bedroom: string | null; bathroom: string }> = {
   casa: { bedroom: 'Una casa necesita al menos 1 dormitorio.', bathroom: 'Una casa necesita al menos 1 baño.' },
-  departamento: { bedroom: 'Un departamento necesita al menos 1 dormitorio.', bathroom: 'Un departamento necesita al menos 1 baño.' },
+  departamento: { bedroom: null, bathroom: 'Un departamento necesita al menos 1 baño.' },
   hospedaje: { bedroom: 'Un alojamiento necesita al menos 1 dormitorio.', bathroom: 'Un alojamiento necesita al menos 1 baño.' },
+}
+
+/** The fewest dormitorios a type can have: 0 (Monoambiente) for a departamento, else 1. */
+export function minBedrooms(propertyType: string): number {
+  return AT_LEAST_ONE[propertyType]?.bedroom ? 1 : 0
+}
+
+/** The description's minimum, in letters (D5). */
+export const MIN_DESCRIPTION = 20
+
+/** "Escribe un poco más (faltan 8 letras)" — null once the description is long enough. */
+export function descriptionHint(text: string): string | null {
+  const missing = MIN_DESCRIPTION - text.length
+  if (missing <= 0) return null
+  return `Escribe un poco más (${missing === 1 ? 'falta 1 letra' : `faltan ${missing} letras`})`
 }
 
 // Step 2: Details — conditional bedrooms/bathrooms
@@ -101,7 +116,7 @@ export const step2Schema = z
     propertyType: z.string({ error: 'Selecciona el tipo de propiedad' }), // passed through for conditional validation
     description: z
       .string({ error: 'Escribe una descripción' })
-      .min(20, 'La descripción debe tener al menos 20 caracteres')
+      .min(MIN_DESCRIPTION, 'Escribe un poco más.')
       .max(2000, 'La descripción no puede exceder 2000 caracteres'),
     totalAreaInSquareMeters: areaSchema('Ingresa el área.', 'El área debe ser mayor a 0'),
     // 0 is refused for casa / departamento / alojamiento below, with the reason.
@@ -128,7 +143,7 @@ export const step2Schema = z
           path: ['bedroomCount'],
           message: 'Ingresa cantidad de dormitorios',
         })
-      } else if (data.bedroomCount === 0 && needs) {
+      } else if (data.bedroomCount === 0 && needs?.bedroom) {
         ctx.addIssue({ code: 'custom', path: ['bedroomCount'], message: needs.bedroom })
       }
       if (data.bathroomCount == null) {
