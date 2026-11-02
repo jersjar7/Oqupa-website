@@ -90,7 +90,7 @@ function AuthBlock() {
         userName={userName}
         items={[
           {
-            label: 'Mi Panel',
+            label: 'Mi panel',
             icon: <Home className="h-4 w-4" />,
             to: '/app',
           },
@@ -148,7 +148,7 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
       >
         <Home className="h-4 w-4" />
-        Mi Panel
+        Mi panel
       </Link>
       <Link
         to="/app/ayuda"

@@ -99,7 +99,7 @@ export default function RecentActivity({ userId, isRealtor }: Props) {
     activities.push({
       id: `asg-${listing.id}`,
       at,
-      icon: <Briefcase className="h-4 w-4 text-blue-600" />,
+      icon: <Briefcase className="h-4 w-4 text-secondary" />,
       text: (
         <>
           Aceptaste la asignación en{' '}

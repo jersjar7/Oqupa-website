@@ -55,7 +55,7 @@ export default function ListingsPage() {
   }, [searchParams, navigate])
 
   useSetPageMeta({
-    title: 'Mis Propiedades',
+    title: 'Mis propiedades',
     subtitle: isVerifiedRealtor
       ? 'Gestiona tus propias propiedades y las que administras como agente.'
       : 'Gestiona tus propiedades publicadas.',

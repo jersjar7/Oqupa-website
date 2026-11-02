@@ -12,8 +12,8 @@ import { PageMetaProvider, usePageMeta } from './pageMetaContext'
 
 // Default title/subtitle per route — pages can override via useSetPageMeta().
 function defaultMetaForPath(pathname: string): { title: string; subtitle?: string } {
-  if (pathname === '/app')                              return { title: 'Dashboard' }
-  if (pathname.startsWith('/app/listings'))             return { title: 'Mis anuncios',  subtitle: 'Gestiona tus propiedades publicadas.' }
+  if (pathname === '/app')                              return { title: 'Mi panel' }
+  if (pathname.startsWith('/app/listings'))             return { title: 'Mis propiedades', subtitle: 'Gestiona tus propiedades publicadas.' }
   if (pathname === '/app/payments')                     return { title: 'Pagos',         subtitle: 'Historial de compras y reembolsos.' }
   if (pathname === '/app/profile')                      return { title: 'Mi perfil',     subtitle: 'Información personal y configuración de cuenta.' }
   if (pathname === '/app/leads')                        return { title: 'Oportunidades', subtitle: 'Propiedades que buscan un agente.' }
