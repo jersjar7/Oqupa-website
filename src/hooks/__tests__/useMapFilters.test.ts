@@ -385,4 +385,23 @@ describe('useMapFilters', () => {
       expect(result.current.filtered).toEqual([])
     })
   })
+
+  // Review 2026-11-02: an impossible range does not filter; a listing with no
+  // or an unknown currency counts as soles, the app's default.
+  describe('filtered — price edge cases', () => {
+    it('min above max: no price filtering', () => {
+      const a = item({ price: 50, currency: 'PEN' })
+      const filters: MapFilters = { ...NO_FILTERS, priceMin: 900, priceMax: 100, priceCurrency: 'PEN' }
+      const { result } = renderHook(() => useMapFilters([a], filters))
+      expect(result.current.filtered).toEqual([a])
+    })
+    it('a listing with no currency is soles', () => {
+      const noCurrency = item({ price: 150_000, currency: undefined as unknown as 'PEN' })
+      ;(noCurrency.listing.price as { currency?: string }).currency = undefined
+      // US$ 41,000 at 3.75 = S/ 153,750 > 150,000 → excluded as soles
+      const filters: MapFilters = { ...NO_FILTERS, priceMin: 41_000, priceCurrency: 'USD' }
+      const { result } = renderHook(() => useMapFilters([noCurrency], filters))
+      expect(result.current.filtered).toEqual([])
+    })
+  })
 })

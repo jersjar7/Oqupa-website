@@ -1,7 +1,7 @@
 // How many filters are on, for the Filtros buttons (UX review 2026-10-25).
 // Venta/Alquiler is not a filter here: it always has a value and is shown.
 import { describe, it, expect } from 'vitest'
-import { activeFilterCount, clearedFilters } from '../filterCount'
+import { activeFilterCount, clearedFilters, priceRangeInvalid } from '../filterCount'
 
 const base = { operationType: 'venta' as const, rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'USD' as const }
 
@@ -33,5 +33,13 @@ describe('clearedFilters', () => {
     const out = clearedFilters(busy)
     expect(out).toEqual({ operationType: 'alquiler', rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'PEN' })
     expect(activeFilterCount(out)).toBe(0)
+  })
+})
+
+describe('priceRangeInvalid', () => {
+  it('only when both are set and min > max', () => {
+    expect(priceRangeInvalid({ ...base, priceMin: 900, priceMax: 100 })).toBe(true)
+    expect(priceRangeInvalid({ ...base, priceMin: 100, priceMax: 100 })).toBe(false)
+    expect(priceRangeInvalid({ ...base, priceMin: 900 })).toBe(false)
   })
 })

@@ -11,6 +11,7 @@ import {
   type RentalDurationType,
 } from '@/types/enums'
 import type { MapFilters } from '@/types/explore'
+import { priceRangeInvalid } from '@/lib/map/filterCount'
 
 interface ExploreFiltersProps {
   filters: MapFilters
@@ -229,6 +230,9 @@ export default function ExploreFilters({
             className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
           />
         </div>
+        {priceRangeInvalid(filters) && (
+          <p role="alert" className="text-xs text-error-strong">El precio mínimo es mayor que el máximo.</p>
+        )}
       </div>
 
       {/* Result count */}

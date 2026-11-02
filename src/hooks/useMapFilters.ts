@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { ListingWithProperty, MapFilters } from '@/types/explore'
 import type { Bounds } from '@/lib/map/mapPoint'
 import { DEFAULT_PEN_PER_USD } from '@/lib/map/exchangeRates'
+import { priceRangeInvalid } from '@/lib/map/filterCount'
 
 /** A typed amount, converted into the listing's own currency (the app's
  *  displayListings rule: the range is held in both currencies and each
@@ -9,13 +10,14 @@ import { DEFAULT_PEN_PER_USD } from '@/lib/map/exchangeRates'
 function inListingCurrency(
   amount: number,
   typedIn: 'USD' | 'PEN',
-  listingCurrency: string,
+  rawListingCurrency: string | undefined,
   penPerUsd: number,
 ): number {
+  // No or an unknown currency counts as soles, the app's default.
+  const listingCurrency = rawListingCurrency === 'USD' ? 'USD' : 'PEN'
   if (listingCurrency === typedIn) return amount
   if (typedIn === 'USD' && listingCurrency === 'PEN') return amount * penPerUsd
-  if (typedIn === 'PEN' && listingCurrency === 'USD') return amount / penPerUsd
-  return amount
+  return amount / penPerUsd
 }
 
 export function useMapFilters(
@@ -35,6 +37,8 @@ export function useMapFilters(
       }
       const { amount, currency } = listing.price
       const typedIn = filters.priceCurrency
+      // An impossible range (min above max) does not filter; the panel says so.
+      if (priceRangeInvalid(filters)) return true
       if (filters.priceMin != null && amount < inListingCurrency(filters.priceMin, typedIn, currency, penPerUsd)) {
         return false
       }

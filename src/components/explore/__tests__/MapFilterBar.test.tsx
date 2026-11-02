@@ -48,6 +48,11 @@ describe('MapFilterBar', () => {
     expect(screen.getByRole('button', { name: 'Filtros' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Limpiar' })).toBeNull()
   })
+  it('a minimum above the maximum says so (review 2026-11-02)', () => {
+    render(<Harness start={{ priceMin: 900, priceMax: 100 }} />)
+    fireEvent.click(screen.getByRole('button', { name: /filtros/i }))
+    expect(screen.getByText('El precio mínimo es mayor que el máximo.')).toBeTruthy()
+  })
   it('the open panel does not repeat Venta / Alquiler or the count', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: /filtros/i }))

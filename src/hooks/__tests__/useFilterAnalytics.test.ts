@@ -151,6 +151,10 @@ describe('useFilterAnalytics', () => {
         operationType: 'alquiler',
         propertyTypes: ['terreno', 'casa'],
         rentalDuration: 'shortTerm',
+        // Bounds and currency now sent, as the app does (review 2026-11-02).
+        minPricePen: 500,
+        maxPricePen: null,
+        priceInputCurrency: 'PEN',
         resultCount: 3,
       })
     })
@@ -169,21 +173,32 @@ describe('useFilterAnalytics', () => {
       expect(sentParams().filterType).toBe(filterType)
     })
 
-    it('sends a price filter with no bounds and no currency', () => {
+    // The website's price filter has a currency now (review 2026-11-02): the
+    // bounds go out in it, as the app's do. Was "no bounds and no currency".
+    it('sends the price bounds in the currency they were typed in', () => {
       const h = setup()
-      h.rerender({ filters: { ...NO_FILTERS, priceMin: 100, priceMax: 900 } })
+      h.rerender({ filters: { ...NO_FILTERS, priceMin: 100, priceMax: 900, priceCurrency: 'USD' } })
       settle()
       const params = sentParams()
       expect(params.filterType).toBe('price')
-      for (const key of [
-        'minPricePen',
-        'maxPricePen',
-        'minPriceUsd',
-        'maxPriceUsd',
-        'priceInputCurrency',
-      ]) {
-        expect(params).not.toHaveProperty(key)
-      }
+      expect(params).toMatchObject({ minPriceUsd: 100, maxPriceUsd: 900, priceInputCurrency: 'USD' })
+      expect(params).not.toHaveProperty('minPricePen')
+    })
+
+    it('sends again when only the currency changes', () => {
+      const h = setup()
+      h.rerender({ filters: { ...NO_FILTERS, priceMax: 900, priceCurrency: 'USD' } })
+      settle()
+      h.rerender({ filters: { ...NO_FILTERS, priceMax: 900, priceCurrency: 'PEN' } })
+      settle()
+      expect(filterAppliedMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('a minimum above the maximum is not a price filter', () => {
+      const h = setup()
+      h.rerender({ filters: { ...NO_FILTERS, priceMin: 900, priceMax: 100, propertyTypes: ['casa'] } })
+      settle()
+      expect(sentParams().filterType).toBe('property_type')
     })
 
     it('omits property types and rental duration when not set', () => {
@@ -195,6 +210,10 @@ describe('useFilterAnalytics', () => {
         operationType: 'venta',
         propertyTypes: null,
         rentalDuration: null,
+        // Price bounds now go out with their currency (review 2026-11-02).
+        minPriceUsd: null,
+        maxPriceUsd: 900,
+        priceInputCurrency: 'USD',
         resultCount: 5,
       })
     })
