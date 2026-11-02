@@ -53,7 +53,9 @@ export default function WizardAddressSearch({ near, onChoose }: WizardAddressSea
       </label>
       <input
         id="address-search"
-        type="search"
+        type="text"
+        inputMode="search"
+        enterKeyHint="search"
         autoComplete="off"
         value={text}
         placeholder="Ej: Av. Grau 123, Castilla"

@@ -9,6 +9,7 @@ import WizardBackButton from '../WizardBackButton'
 import { useListingFormStore } from '@/stores/listingFormStore'
 
 let goBack: () => void = () => {}
+const seen: string[] = []
 
 function Wizard() {
   const step = useListingFormStore((s) => s.step)
@@ -26,6 +27,9 @@ function Probe() {
   useEffect(() => {
     goBack = () => navigate(-1)
   }, [navigate])
+  useEffect(() => {
+    seen.push(location.key)
+  }, [location.key])
   return <p data-testid="path">{location.pathname}</p>
 }
 
@@ -68,6 +72,19 @@ describe('WizardBackButton', () => {
 
     await back()
     expect(path()).toBe('/app')
+  })
+
+  // Found on staging 2026-11-02 (ADR-043 D13): after ¡PUBLICADO! the wizard
+  // goes to the new listing and clears the draft. The clearing (step back to
+  // 1) rendered before the router's move, and this took it for ATRÁS to page
+  // 1 and went back in history — to the wizard, away from the new listing.
+  it('the draft being cleared (not ATRÁS) never moves the browser', async () => {
+    useListingFormStore.getState().setStep(5)
+    renderWizard()
+    const before = seen.length
+    await act(async () => useListingFormStore.getState().reset())
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
+    expect(seen.length).toBe(before)
   })
 
   it('on page 1, back leaves at once', async () => {
