@@ -120,7 +120,8 @@ export const MIN_DESCRIPTION = 20
 
 /** "Escribe un poco más (faltan 8 letras)" — null once the description is long enough. */
 export function descriptionHint(text: string): string | null {
-  const missing = MIN_DESCRIPTION - text.length
+  // Spaces at the ends do not count, as in the app (it trims).
+  const missing = MIN_DESCRIPTION - text.trim().length
   if (missing <= 0) return null
   return `Escribe un poco más (${missing === 1 ? 'falta 1 letra' : `faltan ${missing} letras`})`
 }
@@ -131,7 +132,7 @@ export const step2Schema = z
     propertyType: z.string({ error: 'Selecciona el tipo de propiedad' }), // passed through for conditional validation
     description: z
       .string({ error: 'Escribe una descripción' })
-      .min(MIN_DESCRIPTION, 'Escribe un poco más.')
+      .refine((t) => t.trim().length >= MIN_DESCRIPTION, 'Escribe un poco más.')
       .max(2000, 'La descripción no puede exceder 2000 caracteres'),
     totalAreaInSquareMeters: areaSchema('Ingresa el área.', 'El área debe ser mayor a 0'),
     // 0 is refused for casa / departamento / alojamiento below, with the reason.
@@ -206,7 +207,9 @@ export const fullListingSchema = z.object({
   rentalDurationType: z.string({ error: 'Duración del alquiler no seleccionada (Paso 1)' }).optional(),
   role: z.string({ error: 'Relación con la propiedad no seleccionada (Paso 1)' }).min(1, 'Relación con la propiedad no seleccionada (Paso 1)'),
   // Step 2
-  description: z.string({ error: 'La descripción es muy corta (Paso 2)' }).min(20, 'La descripción es muy corta (Paso 2)'),
+  description: z
+    .string({ error: 'La descripción es muy corta (Paso 2)' })
+    .refine((t) => t.trim().length >= MIN_DESCRIPTION, 'La descripción es muy corta (Paso 2)'),
   totalAreaInSquareMeters: areaSchema('Área total no ingresada (Paso 2)', 'Área total no ingresada (Paso 2)'),
   // Step 3
   latitude: latitudeSchema('Ubicación no seleccionada en el mapa (Paso 3)'),
