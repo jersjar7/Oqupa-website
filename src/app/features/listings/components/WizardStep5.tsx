@@ -22,6 +22,7 @@ import { Button, Input, InfoTip, FillingButton } from '@/app/components/ui'
 import type { FillStatus } from '@/app/components/ui/FillingButton'
 import RevealField from './RevealField'
 import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
+import { parseLocaleNumber } from '@/lib/localeNumber'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { publishRealProgress } from '@/lib/fillProgress'
 import type { Listing } from '@/types/listing'
@@ -33,10 +34,10 @@ import { coverMicroThumbOnEdit } from '../editMedia'
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
 
-function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
-  if (amount == null || isNaN(amount)) return ''
-  const formatted = amount.toLocaleString('en-US')
-  return `${CURRENCY_SYMBOLS[currency]} ${formatted}`
+/** The price as shown once the person leaves the box: "250,000", "1,500.5". */
+function formatAmount(amount: number | null | undefined): string {
+  if (amount == null || !Number.isFinite(amount)) return ''
+  return amount.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
 export default function WizardStep5() {
@@ -44,7 +45,7 @@ export default function WizardStep5() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const {
-    data, prevStep, isEditMode, editListingId, editPropertyId, reset,
+    data, prevStep, updateData, isEditMode, editListingId, editPropertyId, reset,
     recordUploadedPhoto, persistDraft, markPublished, claimPublishIdentity, renewPublishIdentity,
   } = useListingFormStore()
 
@@ -86,6 +87,7 @@ export default function WizardStep5() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<Step4Data>({
     resolver: zodResolver(step4Schema),
@@ -102,6 +104,24 @@ export default function WizardStep5() {
 
   const currency = watch('currency')
   const amount = watch('amount')
+  // The box shows exactly what is typed. Reformatting it on every keystroke
+  // ("S/. 15,000") threw the cursor to the end; the thousands are shown when
+  // the person leaves the box.
+  const [priceText, setPriceText] = useState(() => formatAmount(data.amount))
+
+  // The price, currency and agent choice go into the draft as they change, so
+  // a refresh in this tab, ATRÁS or the back button keep them.
+  useEffect(() => {
+    const sub = watch((v) => {
+      updateData({
+        amount: typeof v.amount === 'number' && Number.isFinite(v.amount) ? v.amount : null,
+        currency: (v.currency ?? 'PEN') as Currency,
+        wantsRealtorHelp: v.wantsRealtorHelp ?? false,
+        maxRealtors: v.maxRealtors ?? 3,
+      })
+    })
+    return () => sub.unsubscribe()
+  }, [watch, updateData])
   const wantsRealtorHelp = watch('wantsRealtorHelp')
   const isAlquiler = data.operationType === 'alquiler'
   const isShortTerm = data.rentalDurationType === 'shortTerm'
@@ -493,18 +513,27 @@ export default function WizardStep5() {
           </div>
 
           <div className="mt-3">
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder={`Ej: ${CURRENCY_SYMBOLS[currency]} ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
-              error={errors.amount?.message}
-              value={formatPriceDisplay(amount, currency)}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^\d]/g, '')
-                const num = raw === '' ? undefined : Number(raw)
-                setValue('amount', num as number, { shouldValidate: true })
-              }}
-            />
+            <div className="flex items-start gap-2">
+              <span className="pt-2.5 text-sm font-medium text-text-primary" aria-hidden="true">
+                {CURRENCY_SYMBOLS[currency]}
+              </span>
+              <Input
+                type="text"
+                inputMode="decimal"
+                aria-label={`Precio en ${CURRENCY_SYMBOLS[currency]}`}
+                placeholder={`Ej: ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
+                error={errors.amount?.message}
+                value={priceText}
+                onChange={(e) => {
+                  setPriceText(e.target.value)
+                  setValue('amount', parseLocaleNumber(e.target.value) as number, { shouldValidate: true })
+                }}
+                onBlur={() => {
+                  const n = getValues('amount')
+                  if (typeof n === 'number' && Number.isFinite(n)) setPriceText(formatAmount(n))
+                }}
+              />
+            </div>
             {isAlquiler && (
               <p className="mt-1 text-xs text-text-tertiary">
                 {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
@@ -528,7 +557,7 @@ export default function WizardStep5() {
                 Quiero ayuda de agentes
               </span>
               <p className="text-xs text-text-secondary">
-                Agentes verificados podrán contactarte para ayudar a vender tu propiedad
+                Agentes verificados podrán contactarte para ayudar a {isAlquiler ? 'alquilar' : 'vender'} tu propiedad
               </p>
             </div>
           </label>

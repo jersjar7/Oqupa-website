@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { Button } from '@/app/components/ui'
 import { usePhotoQueue } from './usePhotoQueue'
@@ -14,6 +14,14 @@ export default function PhotoStep() {
     photos: data.photos,
   })
   const [photoError, setPhotoError] = useState<string | null>(null)
+
+  // The photos and their order go into the draft as they change, so ATRÁS
+  // (or the browser's back button) and coming back find every photo still
+  // there. Before, leaving this page threw them all away.
+  const { items, toSubmitData } = queue
+  useEffect(() => {
+    updateData(toSubmitData())
+  }, [items, toSubmitData, updateData])
 
   const canContinue = queue.items.length >= MIN_PHOTOS
 

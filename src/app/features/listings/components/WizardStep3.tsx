@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
@@ -66,6 +66,33 @@ export default function WizardStep3() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Everything on this page goes into the draft as it changes, so ATRÁS (or
+  // the browser's back button) and coming back find it all still there. The
+  // pin only once the person placed it: the map's starting point is not
+  // their address.
+  const pinPlacedRef = useRef(hasPinPlaced)
+  pinPlacedRef.current = hasPinPlaced
+  useEffect(() => {
+    const sub = watch((v) => {
+      updateData({
+        calle: v.calle ?? '',
+        urbanizacion: v.urbanizacion ?? '',
+        distrito: v.distrito ?? '',
+        provincia: v.provincia ?? '',
+        departamento: v.departamento ?? '',
+        ...(pinPlacedRef.current && typeof v.latitude === 'number' && typeof v.longitude === 'number'
+          ? { latitude: v.latitude, longitude: v.longitude }
+          : {}),
+      })
+    })
+    return () => sub.unsubscribe()
+  }, [watch, updateData])
+
+  function changeShowExactLocation(value: boolean) {
+    setShowExactLocation(value)
+    updateData({ showExactLocation: value })
+  }
+
   const { isRevealed, wasInitial } = useRevealedFields(
     {
       map: true,
@@ -86,6 +113,7 @@ export default function WizardStep3() {
 
   const handleLocationChange = useCallback(
     (lat: number, lng: number) => {
+      pinPlacedRef.current = true
       setValue('latitude', lat, { shouldValidate: true })
       setValue('longitude', lng, { shouldValidate: true })
       setHasPinPlaced(true)
@@ -181,7 +209,7 @@ export default function WizardStep3() {
             <input
               type="checkbox"
               checked={showExactLocation}
-              onChange={(e) => setShowExactLocation(e.target.checked)}
+              onChange={(e) => changeShowExactLocation(e.target.checked)}
               className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
             />
             <div>
