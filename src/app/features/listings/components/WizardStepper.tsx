@@ -14,10 +14,11 @@ const STEP_BUTTON =
 /** − value + for a count (ADR-043 D4). No box to type into, so no typing mistakes. */
 export default function WizardStepper({ label, value, min, max, onChange, display }: WizardStepperProps) {
   const word = label.toLowerCase()
+  const shown = display ? display(value) : String(value)
   return (
     <div className="flex items-center justify-between gap-3 py-2">
-      <span className="text-base text-text-primary">{label}</span>
-      <div className="flex items-center gap-3">
+      <span className="min-w-0 text-base text-text-primary">{label}</span>
+      <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
           aria-label={`Menos ${word}`}
@@ -30,9 +31,9 @@ export default function WizardStepper({ label, value, min, max, onChange, displa
         <span
           data-testid={`stepper-${label}`}
           aria-live="polite"
-          className="min-w-[7.5rem] text-center font-serif text-[22px] font-normal text-text-primary"
+          className={`min-w-[3rem] text-center font-serif font-normal text-text-primary ${shown.length > 3 ? 'text-base' : 'text-[22px]'}`}
         >
-          {display ? display(value) : String(value)}
+          {shown}
         </span>
         <button
           type="button"

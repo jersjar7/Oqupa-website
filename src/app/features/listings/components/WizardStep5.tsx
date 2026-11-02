@@ -603,6 +603,7 @@ export default function WizardStep5() {
               status={publishStatus}
               progress={publishProgress}
               onDone={handlePublishedShown}
+              solid
               className="h-14 flex-[2]"
             >
               Publicar

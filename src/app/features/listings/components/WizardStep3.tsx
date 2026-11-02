@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { PIURA_CENTER } from '@/lib/constants'
 import { Input } from '@/app/components/ui'
 // Mapbox is large: loaded only when this step is shown.
 const LocationPicker = lazy(() => import('./LocationPicker'))
@@ -181,7 +182,7 @@ export default function WizardStep3() {
       <section>
         <h2 className={WIZARD_HEADING}>Ubicación</h2>
         <div className="mt-3">
-          <WizardAddressSearch near={here ?? (pinned ? { lat: watchedLat, lng: watchedLng } : null)} onChoose={chooseResult} />
+          <WizardAddressSearch near={here ?? (pinned ? { lat: watchedLat, lng: watchedLng } : PIURA_CENTER)} onChoose={chooseResult} />
         </div>
         <div className="mt-3">
           <Suspense fallback={<div className="h-[300px] rounded-xl border border-border bg-cream" />}>
