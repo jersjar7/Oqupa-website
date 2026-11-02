@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { PropertyType, OperationType, ListingRole, Currency, RentalDurationType } from '@/types/enums'
+import type { PhotoUploadResult } from '@/services/storageService'
+import { newPublishId } from '@/lib/publishIdentity'
 
 export interface ListingFormData {
   // Step 1: Basics
@@ -61,12 +63,29 @@ interface ListingFormState {
   isEditMode: boolean
   editListingId: string | null
   editPropertyId: string | null
+  /**
+   * The draft's publish identity (ADR-043): the new property and listing are
+   * named from it, so every attempt to publish this draft writes the same two
+   * documents. Created with the draft and stored with it.
+   */
+  publishId: string
+  /** Photos that already reached the server, by photo fingerprint — a retry skips them. */
+  uploadedPhotos: Record<string, PhotoUploadResult>
+  /**
+   * Set the moment the listing is saved. From then on the draft is gone from
+   * storage, nothing re-saves it, and the wizard cannot publish again.
+   */
+  publishedListingId: string | null
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
   updateData: (partial: Partial<ListingFormData>) => void
   setEditMode: (listingId: string, propertyId: string) => void
   reset: () => void
+  recordUploadedPhoto: (fingerprint: string, result: PhotoUploadResult) => void
+  /** Writes the draft (and its identity) to storage now. */
+  persistDraft: () => void
+  markPublished: (listingId: string) => void
 }
 
 const INITIAL_DATA: ListingFormData = {
@@ -104,7 +123,13 @@ const INITIAL_DATA: ListingFormData = {
 
 const STORAGE_KEY = 'oqupa-listing-form'
 
-function loadFromSession(): Partial<ListingFormData> & { step?: number } {
+interface SavedDraft extends Partial<ListingFormData> {
+  step?: number
+  publishId?: string
+  uploadedPhotos?: Record<string, PhotoUploadResult>
+}
+
+function loadFromSession(): SavedDraft {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
@@ -114,11 +139,15 @@ function loadFromSession(): Partial<ListingFormData> & { step?: number } {
   }
 }
 
-function saveToSession(step: number, data: ListingFormData) {
+function saveToSession(
+  step: number,
+  data: ListingFormData,
+  identity: { publishId: string; uploadedPhotos: Record<string, PhotoUploadResult> },
+) {
   try {
     // Don't save File objects to sessionStorage
     const { photos: _photos, ...serializable } = data
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable }))
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable, ...identity }))
   } catch (e) {
     if (e instanceof DOMException && e.name === 'QuotaExceededError') {
       console.warn('Session storage quota exceeded — form progress not saved')
@@ -127,7 +156,15 @@ function saveToSession(step: number, data: ListingFormData) {
 }
 
 export const useListingFormStore = create<ListingFormState>((set, get) => {
-  const saved = loadFromSession()
+  const { publishId: savedPublishId, uploadedPhotos: savedUploads, ...saved } = loadFromSession()
+
+  // Every save goes through here. After a successful publish it does nothing,
+  // so a late keystroke or step change cannot bring the published draft back.
+  const save = (step: number, data: ListingFormData) => {
+    const s = get()
+    if (s.publishedListingId) return
+    saveToSession(step, data, { publishId: s.publishId, uploadedPhotos: s.uploadedPhotos })
+  }
 
   return {
     step: saved.step ?? 1,
@@ -136,29 +173,32 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     isEditMode: false,
     editListingId: null,
     editPropertyId: null,
+    publishId: savedPublishId || newPublishId(),
+    uploadedPhotos: savedUploads ?? {},
+    publishedListingId: null,
 
     setStep: (step) => {
       const dir = step >= get().step ? 1 : -1
       set({ step, direction: dir })
-      saveToSession(step, get().data)
+      save(step, get().data)
     },
 
     nextStep: () => {
       const next = Math.min(get().step + 1, 5)
       set({ step: next, direction: 1 })
-      saveToSession(next, get().data)
+      save(next, get().data)
     },
 
     prevStep: () => {
       const prev = Math.max(get().step - 1, 1)
       set({ step: prev, direction: -1 })
-      saveToSession(prev, get().data)
+      save(prev, get().data)
     },
 
     updateData: (partial) => {
       const updated = { ...get().data, ...partial }
       set({ data: updated })
-      saveToSession(get().step, updated)
+      save(get().step, updated)
     },
 
     setEditMode: (listingId, propertyId) => {
@@ -175,7 +215,22 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         isEditMode: false,
         editListingId: null,
         editPropertyId: null,
+        publishId: newPublishId(),
+        uploadedPhotos: {},
+        publishedListingId: null,
       })
+    },
+
+    recordUploadedPhoto: (fingerprint, result) => {
+      set({ uploadedPhotos: { ...get().uploadedPhotos, [fingerprint]: result } })
+      save(get().step, get().data)
+    },
+
+    persistDraft: () => save(get().step, get().data),
+
+    markPublished: (listingId) => {
+      sessionStorage.removeItem(STORAGE_KEY)
+      set({ publishedListingId: listingId })
     },
   }
 })
