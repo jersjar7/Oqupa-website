@@ -184,7 +184,8 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   draft: 'Borrador',
   paymentPending: 'Pago Pendiente',
   active: 'Activo',
-  expired: 'Vencido',
+  // ADR-014: listings never expire; an old `expired` reads as Desactivado.
+  expired: 'Desactivado',
   deactivated: 'Desactivado',
   sold: 'Vendido',
   rented: 'Alquilado',

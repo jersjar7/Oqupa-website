@@ -8,11 +8,11 @@ export default function EmptyState() {
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
         <Plus className="h-10 w-10 text-primary" />
       </div>
-      <h2 className="mt-6 text-[28px] font-medium text-text-primary">
+      <h2 className="mt-6 font-serif text-[28px] font-normal text-text-primary">
         No tienes publicaciones
       </h2>
       <p className="mt-2 max-w-sm text-base text-text-secondary">
-        Crea tu primera publicación para que miles de personas vean tu propiedad.
+        Publica gratis tu propiedad en el mapa de Piura.
       </p>
       <Link to="/app/listings/new" className="mt-6">
         <Button>

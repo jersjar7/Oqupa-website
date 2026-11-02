@@ -107,7 +107,8 @@ describe('ListingCard — Vendido / Alquilado', () => {
     // Asks first, with the app's words — one click used to put it live.
     expect(toggleMutate).not.toHaveBeenCalled()
     expect(screen.getByText('¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, re-publicar' }))
+    // One label everywhere (audit 2026-11-02). Was 'Sí, re-publicar'.
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, volver a publicar' }))
     expect(toggleMutate).toHaveBeenCalledWith(
       { listingId: 'L1', currentStatus: status },
       expect.anything(),

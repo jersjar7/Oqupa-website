@@ -34,7 +34,7 @@ import { isValidTab, filterAsignadasAccepted, type Tab } from './listingsHelpers
 export type { Tab }
 
 const TAB_SUBTITLES: Record<Tab, string> = {
-  propias:   'Listings que publicaste. Gestiónalos, destácalos y compártelos.',
+  propias:   'Propiedades que publicaste. Gestiónalas, destácalas y compártelas.',
   asignadas: 'Propiedades donde aceptaste ser el agente. Trabaja con el propietario para cerrar la venta o alquiler.',
 }
 
@@ -61,7 +61,7 @@ export default function ListingsPage() {
       : 'Gestiona tus propiedades publicadas.',
   })
 
-  const { data: items, isLoading, error } = useUserListingsWithProperties(user?.id)
+  const { data: items, isLoading, error, refetch } = useUserListingsWithProperties(user?.id)
   const agentAssignments = useAgentAssignments(isVerifiedRealtor ? user?.id : undefined)
 
   const tab: Tab = (() => {
@@ -114,7 +114,7 @@ export default function ListingsPage() {
 
       {/* Panes */}
       {(!isVerifiedRealtor || tab === 'propias') && (
-        <PropiasPane items={items} isLoading={isLoading} error={!!error} />
+        <PropiasPane items={items} isLoading={isLoading} error={!!error} refetch={refetch} />
       )}
 
       {isVerifiedRealtor && tab === 'asignadas' && (
@@ -198,11 +198,12 @@ function CountChip({ n, active }: { n: number; active: boolean }) {
 // Panes
 // ---------------------------------------------------------------------------
 function PropiasPane({
-  items, isLoading, error,
+  items, isLoading, error, refetch,
 }: {
   items: ReturnType<typeof useUserListingsWithProperties>['data']
   isLoading: boolean
   error: boolean
+  refetch: () => unknown
 }) {
   return (
     <AnimatePresence mode="wait">
@@ -226,10 +227,10 @@ function PropiasPane({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <p className="text-error">Error al cargar tus publicaciones</p>
+          <p className="text-error-strong">No pudimos cargar tus publicaciones. Revisa tu internet y vuelve a intentarlo.</p>
           <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-base text-secondary hover:text-secondary-hover"
+            onClick={() => void refetch()}
+            className="mt-3 min-h-11 rounded-full border-[1.5px] border-secondary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-secondary hover:text-secondary-hover"
           >
             Reintentar
           </button>
