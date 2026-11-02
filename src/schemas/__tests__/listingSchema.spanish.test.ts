@@ -72,8 +72,26 @@ describe('every wizard message is Spanish', () => {
 })
 
 describe('Detalles', () => {
-  it('0 bedrooms is allowed (a studio)', () => {
-    expect(messages(step2Schema, { ...room, bedroomCount: 0 })).toEqual([])
+  // As the app: 0 dormitorios / 0 baños refused for these three types, with
+  // the app's sentences and the website's own type label (Monoambiente is
+  // ADR-043 step 4, on both platforms together).
+  const zeroCases: Array<[string, string, string]> = [
+    ['casa', 'Una casa necesita al menos 1 dormitorio.', 'Una casa necesita al menos 1 baño.'],
+    ['departamento', 'Un departamento necesita al menos 1 dormitorio.', 'Un departamento necesita al menos 1 baño.'],
+    ['hospedaje', 'Un alojamiento necesita al menos 1 dormitorio.', 'Un alojamiento necesita al menos 1 baño.'],
+  ]
+  for (const [propertyType, bedroom, bathroom] of zeroCases) {
+    it(`${propertyType}: 0 bedrooms and 0 bathrooms are refused, saying why`, () => {
+      const issues = messages(step2Schema, { ...room, propertyType, bedroomCount: 0, bathroomCount: 0 })
+      expect(msgFor(issues, 'bedroomCount')).toBe(bedroom)
+      expect(msgFor(issues, 'bathroomCount')).toBe(bathroom)
+    })
+  }
+
+  it('oficina and local: bathrooms are not asked, so 0 is fine', () => {
+    for (const propertyType of ['oficina', 'local']) {
+      expect(messages(step2Schema, { ...room, propertyType, bedroomCount: null, bathroomCount: 0 })).toEqual([])
+    }
   })
 
   it('an empty parking box is allowed', () => {

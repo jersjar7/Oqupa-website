@@ -37,13 +37,15 @@ describe('WizardStep2 — Detalles', () => {
     prepare()
   })
 
-  it('0 bedrooms keeps CONTINUAR on screen and moves on', async () => {
+  it('0 bedrooms keeps CONTINUAR on screen and explains why it is refused', async () => {
     render(<WizardStep2 />)
-    // Typed as the first value: before, a 0 never revealed CONTINUAR.
+    // Typed as the first value: before, a 0 hid CONTINUAR with no explanation.
     await fillValidCasa('0')
+    type(/baños/i, '0')
     fireEvent.click(continuar())
-    await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
-    expect(useListingFormStore.getState().data.bedroomCount).toBe(0)
+    expect(await screen.findByText('Una casa necesita al menos 1 dormitorio.')).toBeTruthy()
+    expect(screen.getByText('Una casa necesita al menos 1 baño.')).toBeTruthy()
+    expect(useListingFormStore.getState().step).toBe(2)
   })
 
   it('clearing the optional parking box is allowed (no parking)', async () => {

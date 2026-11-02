@@ -72,6 +72,18 @@ export const step1Schema = z.object({
 })
 export type Step1Data = z.infer<typeof step1Schema>
 
+/**
+ * Casa, departamento and alojamiento need at least one bedroom and one
+ * bathroom — the app's sentences, with the type as this website names it
+ * ("Alojamiento" for hospedaje). 0 dormitorios (Monoambiente) arrives on
+ * both platforms together in ADR-043 step 4.
+ */
+export const AT_LEAST_ONE: Record<string, { bedroom: string; bathroom: string }> = {
+  casa: { bedroom: 'Una casa necesita al menos 1 dormitorio.', bathroom: 'Una casa necesita al menos 1 baño.' },
+  departamento: { bedroom: 'Un departamento necesita al menos 1 dormitorio.', bathroom: 'Un departamento necesita al menos 1 baño.' },
+  hospedaje: { bedroom: 'Un alojamiento necesita al menos 1 dormitorio.', bathroom: 'Un alojamiento necesita al menos 1 baño.' },
+}
+
 // Step 2: Details — conditional bedrooms/bathrooms
 export const step2Schema = z
   .object({
@@ -81,7 +93,7 @@ export const step2Schema = z
       .min(20, 'La descripción debe tener al menos 20 caracteres')
       .max(2000, 'La descripción no puede exceder 2000 caracteres'),
     totalAreaInSquareMeters: areaSchema('Ingresa el área.', 'El área debe ser mayor a 0'),
-    // 0 dormitorios is a studio (Monoambiente).
+    // 0 is refused for casa / departamento / alojamiento below, with the reason.
     bedroomCount: countSchema('Ingresa cantidad de dormitorios').optional().nullable(),
     bathroomCount: countSchema('Ingresa cantidad de baños').optional().nullable(),
     // Optional: an empty box means no parking.
@@ -98,12 +110,15 @@ export const step2Schema = z
     const hasRooms = propertyTypeHasRooms(data.propertyType as PropertyType)
 
     if (hasRooms) {
+      const needs = AT_LEAST_ONE[data.propertyType]
       if (data.bedroomCount == null) {
         ctx.addIssue({
           code: 'custom',
           path: ['bedroomCount'],
           message: 'Ingresa cantidad de dormitorios',
         })
+      } else if (data.bedroomCount === 0 && needs) {
+        ctx.addIssue({ code: 'custom', path: ['bedroomCount'], message: needs.bedroom })
       }
       if (data.bathroomCount == null) {
         ctx.addIssue({
@@ -111,12 +126,8 @@ export const step2Schema = z
           path: ['bathroomCount'],
           message: 'Ingresa cantidad de baños',
         })
-      } else if (data.bathroomCount === 0) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['bathroomCount'],
-          message: 'Ingresa al menos 1 baño',
-        })
+      } else if (data.bathroomCount === 0 && needs) {
+        ctx.addIssue({ code: 'custom', path: ['bathroomCount'], message: needs.bathroom })
       }
     }
   })

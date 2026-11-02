@@ -201,16 +201,14 @@ describe('step2Schema', () => {
     ).not.toThrow()
   })
 
-  // Changed for ADR-043 step 3, bug 5: 0 dormitorios is a studio (Monoambiente)
-  // and is allowed; before, it hid SIGUIENTE with no explanation.
-  it('accepts zero bedroom count for casa (a studio)', () => {
+  it('rejects zero bedroom count for casa', () => {
     const result = step2Schema.safeParse({
       ...validStep2Base,
       propertyType: 'casa',
       bedroomCount: 0,
       bathroomCount: 1,
     })
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
   })
 
   it('accepts null bedroomCount for types without rooms (terreno)', () => {
