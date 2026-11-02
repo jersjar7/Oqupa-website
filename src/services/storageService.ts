@@ -7,6 +7,7 @@ import { httpsCallable } from 'firebase/functions'
 import imageCompression from 'browser-image-compression'
 import { storage, functions } from '@/lib/firebase'
 import { generateBlurHash } from '@/lib/blurhash'
+import { withTimeout } from '@/lib/withTimeout'
 
 // browser-image-compression spawns a Web Worker that calls
 // `self.importScripts(libURL)` to load the real implementation. The library's
@@ -44,18 +45,54 @@ export interface PhotoUploadResult {
   microThumb: string
 }
 
+/** Options for one photo upload. All optional; without them it behaves as before. */
+export interface PhotoUploadOptions {
+  /** Aborts the compression and the PUT. */
+  signal?: AbortSignal
+  /** 0..100 while the photo is being compressed. */
+  onCompressProgress?: (percent: number) => void
+}
+
+/** Publishing (ADR-043): at most this many photos travel at once. */
+export const PHOTO_UPLOAD_CONCURRENCY = 4
+/** Publishing (ADR-043): one photo — compress, upload, preview — gets this long. */
+export const PHOTO_UPLOAD_TIMEOUT_MS = 30_000
+
+// Share of one photo's progress spent compressing; the rest is the upload.
+const COMPRESS_SHARE = 0.25
+
+export interface PooledUploadOptions {
+  concurrency?: number
+  perPhotoTimeoutMs?: number
+  /** Overall progress by bytes of the original files: 0..1. */
+  onProgress?: (fraction: number) => void
+  /** Called as each photo finishes, so a retry can skip it. */
+  onPhotoUploaded?: (index: number, result: PhotoUploadResult) => void
+}
+
 export const storageService = {
-  async compressImage(file: File): Promise<File> {
-    return imageCompression(file, COMPRESSION_OPTIONS)
+  async compressImage(
+    file: File,
+    opts?: { signal?: AbortSignal; onProgress?: (percent: number) => void },
+  ): Promise<File> {
+    if (!opts?.signal && !opts?.onProgress) return imageCompression(file, COMPRESSION_OPTIONS)
+    return imageCompression(file, {
+      ...COMPRESSION_OPTIONS,
+      ...(opts.signal ? { signal: opts.signal } : {}),
+      ...(opts.onProgress ? { onProgress: opts.onProgress } : {}),
+    })
   },
 
   async uploadPropertyPhoto(
     propertyId: string,
     file: File,
     onProgress?: (progress: number) => void,
-    presignedUpload?: { uploadUrl: string; objectKey: string }
+    presignedUpload?: { uploadUrl: string; objectKey: string },
+    options?: PhotoUploadOptions,
   ): Promise<PhotoUploadResult> {
-    const compressed = await this.compressImage(file)
+    const compressed = options
+      ? await this.compressImage(file, { signal: options.signal, onProgress: options.onCompressProgress })
+      : await this.compressImage(file)
 
     // Generate BlurHash from compressed image (runs in parallel with upload)
     const blurHashPromise = generateBlurHash(compressed)
@@ -104,6 +141,15 @@ export const storageService = {
       }
 
       xhr.onerror = () => reject(new Error('Upload failed'))
+      const signal = options?.signal
+      if (signal) {
+        if (signal.aborted) {
+          reject(new Error('Upload aborted'))
+          return
+        }
+        xhr.onabort = () => reject(new Error('Upload aborted'))
+        signal.addEventListener('abort', () => xhr.abort(), { once: true })
+      }
       xhr.send(compressed)
     })
 
@@ -190,6 +236,105 @@ export const storageService = {
     )
 
     return Promise.all(uploads)
+  },
+
+  /**
+   * Publishing's upload (ADR-043): at most `concurrency` photos at once, each
+   * with its own time limit (the slow one is aborted), progress by bytes, and
+   * a callback per finished photo so a retry can skip it. On the first
+   * failure the photos still travelling are aborted and the error is thrown.
+   * Results come back in the order of `files`.
+   */
+  async uploadPropertyPhotosPooled(
+    propertyId: string,
+    files: File[],
+    {
+      concurrency = PHOTO_UPLOAD_CONCURRENCY,
+      perPhotoTimeoutMs = PHOTO_UPLOAD_TIMEOUT_MS,
+      onProgress,
+      onPhotoUploaded,
+    }: PooledUploadOptions = {},
+  ): Promise<PhotoUploadResult[]> {
+    if (files.length === 0) return []
+
+    const getUploadUrlFn = httpsCallable<
+      { category: string; entityId: string; fileCount: number; contentType: string },
+      { uploads: Array<{ uploadUrl: string; objectKey: string }> }
+    >(functions, 'getUploadUrl')
+    const { data: urlData } = await withTimeout(
+      getUploadUrlFn({
+        category: 'property',
+        entityId: propertyId,
+        fileCount: files.length,
+        contentType: 'image/webp',
+      }),
+      perPhotoTimeoutMs,
+      'getUploadUrl',
+    )
+
+    const totalBytes = files.reduce((sum, f) => sum + Math.max(f.size, 1), 0)
+    const done = new Array<number>(files.length).fill(0) // 0..1 per photo
+    const report = () => {
+      const loaded = files.reduce((sum, f, i) => sum + Math.max(f.size, 1) * done[i]!, 0)
+      onProgress?.(Math.min(1, loaded / totalBytes))
+    }
+
+    const results = new Array<PhotoUploadResult>(files.length)
+    const controllers = new Set<AbortController>()
+    let next = 0
+    let failed: unknown = null
+
+    const uploadOne = async (i: number) => {
+      const controller = new AbortController()
+      controllers.add(controller)
+      try {
+        const result = await withTimeout(
+          this.uploadPropertyPhoto(
+            propertyId,
+            files[i]!,
+            (percent) => {
+              done[i] = Math.max(done[i]!, COMPRESS_SHARE + (1 - COMPRESS_SHARE) * (percent / 100))
+              report()
+            },
+            urlData.uploads[i],
+            {
+              signal: controller.signal,
+              onCompressProgress: (percent) => {
+                done[i] = Math.max(done[i]!, COMPRESS_SHARE * (percent / 100))
+                report()
+              },
+            },
+          ),
+          perPhotoTimeoutMs,
+          'photo upload',
+          () => controller.abort(),
+        )
+        results[i] = result
+        done[i] = 1
+        report()
+        onPhotoUploaded?.(i, result)
+      } finally {
+        controllers.delete(controller)
+      }
+    }
+
+    const worker = async () => {
+      while (failed === null && next < files.length) {
+        const i = next++
+        try {
+          await uploadOne(i)
+        } catch (err) {
+          if (failed === null) failed = err
+          for (const c of controllers) c.abort()
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(Math.max(1, concurrency), files.length) }, worker),
+    )
+    if (failed !== null) throw failed
+    return results
   },
 
   async deleteR2Photos(objectKeys: string[]): Promise<void> {
