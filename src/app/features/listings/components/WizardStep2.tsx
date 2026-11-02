@@ -146,7 +146,7 @@ export default function WizardStep2() {
               min={bedMin}
               max={MAX_COUNT}
               onChange={setCount('bedroomCount')}
-              display={(n) => bedroomsLabel(n, { bare: true })}
+              display={(n) => bedroomsLabel(n, { bare: true, propertyType: type })}
             />
           )}
           {(hasRooms || optionalBaths) && (

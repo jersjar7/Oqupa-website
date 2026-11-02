@@ -159,7 +159,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{bedroomsLabel(property.specs.bedroomCount)}</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
           )}
           {bathroomsLabel(property.specs.bathroomCount) && (
             <span>{bathroomsLabel(property.specs.bathroomCount)}</span>

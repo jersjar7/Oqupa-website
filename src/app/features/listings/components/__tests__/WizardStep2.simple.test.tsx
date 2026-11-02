@@ -55,19 +55,19 @@ describe('WizardStep2 — steppers (D4)', () => {
     expect(btn('Más dormitorios').className).toMatch(/\bw-12\b/)
   })
 
-  it('Departamento can go to 0 dormitorios, shown "Monoambiente", and publishes as 0', async () => {
+  // Monoambiente is switched off until the app that reads 0 is on most phones
+  // (hostile review 2026-11-02, HIGH): a Departamento keeps at least 1 for now.
+  it('Departamento: at least 1 dormitorio while Monoambiente is off', async () => {
     prepare('departamento')
     render(<WizardStep2 />)
-    fireEvent.click(btn('Menos dormitorios'))
-    expect(value('Dormitorios')).toBe('Monoambiente')
+    expect(value('Dormitorios')).toBe('1')
     expect((btn('Menos dormitorios') as HTMLButtonElement).disabled).toBe(true)
-    expect((btn('Menos baños') as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByText('Monoambiente')).toBeNull()
     describeIt(DESCRIPTION)
     area('35')
     fireEvent.click(btn('Siguiente'))
     await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
-    expect(useListingFormStore.getState().data.bedroomCount).toBe(0)
-    expect(useListingFormStore.getState().data.bathroomCount).toBe(1)
+    expect(useListingFormStore.getState().data.bedroomCount).toBe(1)
   })
 
   it('Alojamiento keeps at least 1 dormitorio', () => {

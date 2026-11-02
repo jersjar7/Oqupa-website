@@ -14,7 +14,7 @@ const LIMITS = new Set<string>([
   LIMIT_MESSAGES.price,
   'El precio debe ser mayor a 0.',
   'El precio debe ser mayor a 0 (Paso 5)',
-  ...Object.values(AT_LEAST_ONE).flatMap((m) => (m.bedroom ? [m.bedroom, m.bathroom] : [m.bathroom])),
+  ...Object.values(AT_LEAST_ONE).flatMap((m) => [m.bedroom, m.bathroom]),
 ])
 
 /** True when editing and `field` still holds the value the listing was loaded with. */

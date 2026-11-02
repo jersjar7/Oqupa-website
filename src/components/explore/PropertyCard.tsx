@@ -74,7 +74,7 @@ export default function PropertyCard({ item, isHighlighted = false }: PropertyCa
           </p>
           <div className="mt-1 flex items-center gap-2 text-xs text-text-tertiary">
             {property.specs.bedroomCount != null && (
-              <span>{bedroomsLabel(property.specs.bedroomCount)}</span>
+              <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
             )}
             {bathroomsLabel(property.specs.bathroomCount) && (
               <span>{bathroomsLabel(property.specs.bathroomCount)}</span>

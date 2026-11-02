@@ -5,6 +5,9 @@ import {
   step3Schema,
   step4Schema,
   fullListingSchema,
+  MONOAMBIENTE_ENABLED,
+  minBedrooms,
+  zeroBedroomsMessage,
 } from '../listingSchema'
 
 // ADR-043 step 3 (wizard bugs). Every message the wizard can show is Spanish,
@@ -72,10 +75,13 @@ describe('every wizard message is Spanish', () => {
 })
 
 describe('Detalles', () => {
-  // As the app: 0 dormitorios / 0 baños refused for these types, with the
-  // app's sentences and the website's own type label.
+  // As the app: 0 dormitorios / 0 baños refused for these three types, with
+  // the app's sentences and the website's own type label. Monoambiente is
+  // switched off until the app that reads 0 is on most phones (hostile review
+  // 2026-11-02, HIGH): every installed app throws on 0 bedrooms.
   const zeroCases: Array<[string, string, string]> = [
     ['casa', 'Una casa necesita al menos 1 dormitorio.', 'Una casa necesita al menos 1 baño.'],
+    ['departamento', 'Un departamento necesita al menos 1 dormitorio.', 'Un departamento necesita al menos 1 baño.'],
     ['hospedaje', 'Un alojamiento necesita al menos 1 dormitorio.', 'Un alojamiento necesita al menos 1 baño.'],
   ]
   for (const [propertyType, bedroom, bathroom] of zeroCases) {
@@ -86,12 +92,13 @@ describe('Detalles', () => {
     })
   }
 
-  // ADR-043 D4 (approved 2026-11-01): a Departamento with 0 dormitorios is a
-  // Monoambiente; it still needs a bathroom.
-  it('departamento: 0 bedrooms is a Monoambiente; 0 bathrooms is still refused', () => {
-    const issues = messages(step2Schema, { ...room, propertyType: 'departamento', bedroomCount: 0, bathroomCount: 0 })
-    expect(msgFor(issues, 'bedroomCount')).toBeUndefined()
-    expect(msgFor(issues, 'bathroomCount')).toBe('Un departamento necesita al menos 1 baño.')
+  it('Monoambiente is off for now; when turned on, only a departamento may have 0', () => {
+    expect(MONOAMBIENTE_ENABLED).toBe(false)
+    expect(minBedrooms('departamento')).toBe(1)
+    expect(zeroBedroomsMessage('departamento', true)).toBeNull()
+    expect(minBedrooms('departamento', true)).toBe(0)
+    expect(minBedrooms('casa', true)).toBe(1)
+    expect(minBedrooms('hospedaje', true)).toBe(1)
   })
 
   it('oficina and local: bathrooms are not asked, so 0 is fine', () => {

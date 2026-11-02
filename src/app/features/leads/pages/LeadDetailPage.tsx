@@ -303,7 +303,7 @@ export default function LeadDetailPage() {
           {property.specs?.bedroomCount != null && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
-              {bedroomsLabel(property.specs.bedroomCount)}
+              {bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}
             </span>
           )}
           {(property.specs?.bathroomCount ?? 0) > 0 && (

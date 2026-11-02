@@ -45,7 +45,7 @@ export function generateShareText(params: ShareListingParams): string {
   // Line 3: Specs (conditional)
   const specs: string[] = []
   if (params.bedroomCount != null) {
-    specs.push(bedroomsLabel(params.bedroomCount))
+    specs.push(bedroomsLabel(params.bedroomCount, { propertyType: params.propertyType }))
   }
   const baths = bathroomsLabel(params.bathroomCount)
   if (baths) {
