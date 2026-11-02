@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   realtorApplicationSchema,
+  EXPERIENCE_RANGES,
   type RealtorApplicationFormData,
 } from '@/schemas/realtorApplicationSchema'
+import { POPULAR_PIURA_DISTRICTS } from '@/lib/map/piuraDistricts'
+import OfficialDistrictPicker from '@/app/features/listings/components/OfficialDistrictPicker'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
 import { AnalyticsLogger } from '@/lib/analytics'
-import { Button, Input, Card, Modal, Spinner } from '@/app/components/ui'
-import { CheckCircle, Clock, XCircle } from 'lucide-react'
+import { Button, Card, Modal, Spinner } from '@/app/components/ui'
+import { Check, CheckCircle, Clock, Search, X, XCircle } from 'lucide-react'
 
 type PageStatus = 'loading' | 'form' | 'already-verified' | 'pending' | 'incomplete-profile'
 
@@ -20,20 +23,21 @@ export default function RealtorRegistrationPage() {
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   // realtor_application_started goes out once per visit; the effect below
   // reruns whenever the user object changes.
   const startedSentRef = useRef(false)
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RealtorApplicationFormData>({
     resolver: zodResolver(realtorApplicationSchema),
     defaultValues: {
-      businessName: '',
-      yearsExperience: 0,
-      serviceZones: '',
+      yearsExperience: undefined,
+      serviceZones: [],
       motivation: '',
     },
   })
@@ -80,15 +84,7 @@ export default function RealtorRegistrationPage() {
     if (!user) return
     setSubmitError(null)
 
-    const serviceZones = data.serviceZones
-      .split(',')
-      .map((z) => z.trim())
-      .filter((z) => z.length > 0)
-
-    if (serviceZones.length === 0) {
-      setSubmitError('Ingresa al menos una zona de servicio')
-      return
-    }
+    const serviceZones = [...data.serviceZones].sort((a, b) => a.localeCompare(b, 'es'))
 
     try {
       // Re-check user state to prevent duplicate submission from multiple tabs
@@ -107,7 +103,8 @@ export default function RealtorRegistrationPage() {
         fullName: user.name!,
         phone: user.contactInfo!.whatsappPhoneNumber,
         email: user.email,
-        businessName: data.businessName ?? '',
+        // Independent by default, as in the app (the field left the form).
+        businessName: '',
         yearsExperience: data.yearsExperience,
         serviceZones,
         motivation: data.motivation,
@@ -119,7 +116,11 @@ export default function RealtorRegistrationPage() {
       await refreshUser()
       setShowSuccessModal(true)
     } catch {
-      setSubmitError('Error al enviar la solicitud. Intenta de nuevo.')
+      setSubmitError(
+        typeof navigator !== 'undefined' && navigator.onLine === false
+          ? 'Sin conexión. Revisa tu internet y vuelve a intentarlo.'
+          : 'Error al enviar la solicitud. Vuelve a intentarlo.',
+      )
     }
   }
 
@@ -135,8 +136,8 @@ export default function RealtorRegistrationPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="font-sans text-[28px] font-medium text-text-primary">
-        Regístrate como Agente
+      <h1 className="font-serif text-[28px] font-normal text-text-primary">
+        Regístrate como agente
       </h1>
 
       {/* Incomplete profile */}
@@ -188,7 +189,7 @@ export default function RealtorRegistrationPage() {
                 Solicitud en revisión
               </p>
               <p className="mt-1 text-sm text-text-secondary">
-                Tu solicitud está siendo revisada. Te contactaremos en 24-48 horas.
+                Tu solicitud está siendo revisada. Te verificamos en 24-48 h.
               </p>
               {user.realtorApplicationDate && (
                 <p className="mt-2 text-xs text-text-tertiary">
@@ -221,26 +222,37 @@ export default function RealtorRegistrationPage() {
             </Card>
           )}
 
-          {/* How it works */}
+          {/* How it works — the app's words (ADR-046 #19) */}
           <Card className="mt-6">
-            <h2 className="text-sm font-medium uppercase text-text-primary">
-              Cómo funciona
+            <p className="font-sans text-xs font-medium uppercase tracking-wide text-secondary">Antes de empezar</p>
+            <h2 className="mt-1 font-serif text-[22px] font-normal text-text-primary">
+              Así funciona ser agente en Oqupa
             </h2>
-            <ol className="mt-3 space-y-3">
+            <p className="mt-2 text-sm text-text-secondary">
+              Conectamos a dueños que quieren ayuda con agentes verificados como tú. En 4 pasos:
+            </p>
+            <ol className="mt-4 space-y-3">
               {[
-                'Completa el formulario con tu información profesional',
-                'Nuestro equipo revisará tu solicitud',
-                'Te contactaremos por teléfono para verificar tu identidad',
-                'Una vez aprobado, tendrás acceso a oportunidades inmobiliarias',
-              ].map((step, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                ['Postúlate', '3 preguntas rápidas. Te verificamos en 24-48 h.'],
+                ['Ve "Oportunidades"', 'Anuncios donde el dueño pidió ayuda de un agente.'],
+                ['Reclama (hasta 5 al mes)', 'Al reclamar, recibes el contacto del dueño.'],
+                ['El dueño elige', 'Si te elige, tu número aparece en el anuncio como contacto.'],
+              ].map(([title, body], i) => (
+                <li key={title} className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-xs font-bold text-secondary">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-text-secondary">{step}</span>
+                  <span>
+                    <span className="block text-sm font-medium text-text-primary">{title}</span>
+                    <span className="block text-sm text-text-secondary">{body}</span>
+                  </span>
                 </li>
               ))}
             </ol>
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-secondary">
+              <Check className="h-4 w-4" aria-hidden="true" />
+              <span className="normal-case">Sin comisiones — Oqupa no cobra por esto</span>
+            </p>
           </Card>
 
           {/* Profile info (read-only) */}
@@ -275,31 +287,113 @@ export default function RealtorRegistrationPage() {
               onSubmit={handleSubmit(onSubmit)}
               className="mt-4 space-y-4"
             >
-              <Input
-                label="Nombre del negocio (opcional)"
-                placeholder="Ej: Inmobiliaria Los Andes"
-                error={errors.businessName?.message}
-                {...register('businessName')}
-              />
+              {/* Experience: the app's ranges */}
+              <fieldset>
+                <legend className="mb-2 block font-sans text-xs font-medium uppercase text-secondary">
+                  ¿Cuántos años llevas trabajando como agente?
+                </legend>
+                <Controller
+                  control={control}
+                  name="yearsExperience"
+                  render={({ field }) => (
+                    <div role="radiogroup" className="flex flex-col gap-2">
+                      {EXPERIENCE_RANGES.map((r) => {
+                        const checked = field.value === r.years
+                        return (
+                          <button
+                            key={r.years}
+                            type="button"
+                            role="radio"
+                            aria-checked={checked}
+                            onClick={() => field.onChange(r.years)}
+                            className={`flex min-h-12 items-center justify-between rounded-xl border px-4 text-left text-base transition-colors ${
+                              checked
+                                ? 'border-secondary bg-secondary/10 text-text-primary'
+                                : 'border-border bg-white text-text-primary hover:bg-background-secondary'
+                            }`}
+                          >
+                            {r.label}
+                            {checked && <Check className="h-5 w-5 text-secondary" aria-hidden="true" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                />
+                {errors.yearsExperience && (
+                  <p className="mt-1.5 text-sm text-error">{errors.yearsExperience.message}</p>
+                )}
+              </fieldset>
 
-              <Input
-                label="Años de experiencia"
-                type="number"
-                min={0}
-                max={50}
-                error={errors.yearsExperience?.message}
-                {...register('yearsExperience', { valueAsNumber: true })}
-              />
-
-              <Input
-                label="Zonas de servicio"
-                placeholder="Ej: Piura, Castilla, Catacaos"
-                error={errors.serviceZones?.message}
-                {...register('serviceZones')}
-              />
-              <p className="-mt-2 text-xs text-text-tertiary">
-                Separar múltiples zonas con comas
-              </p>
+              {/* Districts: the official list, as in the app */}
+              <fieldset>
+                <legend className="mb-1 block font-sans text-xs font-medium uppercase text-secondary">
+                  ¿En qué distritos trabajas?
+                </legend>
+                <p className="mb-2 text-sm text-text-secondary">
+                  Oqupa cubre todo el departamento de Piura. Elige todos los que apliquen.
+                </p>
+                <Controller
+                  control={control}
+                  name="serviceZones"
+                  render={({ field }) => {
+                    const selected = [...field.value].sort((a, b) => a.localeCompare(b, 'es'))
+                    const add = (name: string) => {
+                      if (!field.value.includes(name)) field.onChange([...field.value, name])
+                    }
+                    return (
+                      <>
+                        <div className="flex flex-wrap gap-2">
+                          {selected.map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              aria-label={`Quitar ${name}`}
+                              onClick={() => field.onChange(field.value.filter((z) => z !== name))}
+                              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-medium text-white"
+                            >
+                              {name}
+                              <X className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                          ))}
+                          {POPULAR_PIURA_DISTRICTS.filter((d) => !field.value.includes(d)).map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => add(name)}
+                              className="inline-flex min-h-11 items-center rounded-full border border-border bg-white px-4 text-sm font-medium text-text-primary hover:bg-background-secondary"
+                            >
+                              {name}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setPickerOpen(true)}
+                            className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-secondary hover:text-secondary-hover"
+                          >
+                            <Search className="h-4 w-4" aria-hidden="true" />
+                            Buscar distrito
+                          </button>
+                        </div>
+                        {pickerOpen && (
+                          <OfficialDistrictPicker
+                            onPick={(d) => {
+                              add(d.distrito)
+                              setPickerOpen(false)
+                            }}
+                            onClose={() => setPickerOpen(false)}
+                          />
+                        )}
+                      </>
+                    )
+                  }}
+                />
+                {errors.serviceZones && (
+                  <p className="mt-1.5 text-sm text-error">
+                    {errors.serviceZones.message ?? errors.serviceZones.root?.message}
+                  </p>
+                )}
+              </fieldset>
 
               <div>
                 <label
@@ -350,8 +444,7 @@ export default function RealtorRegistrationPage() {
         <div className="flex flex-col items-center text-center">
           <CheckCircle className="h-12 w-12 text-success" />
           <p className="mt-4 text-sm text-text-secondary">
-            Tu solicitud ha sido enviada exitosamente. Te contactaremos en
-            24-48 horas para verificar tu identidad.
+            Te verificamos en 24-48 h. Mientras tanto, sigue explorando propiedades.
           </p>
           <div className="mt-6">
             <Button
