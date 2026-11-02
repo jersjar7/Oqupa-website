@@ -94,4 +94,60 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
       expect(store().publishId).not.toBe(id)
     })
   })
+
+  describe('blocked storage (private mode, quota)', () => {
+    function blockStorage() {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('no', 'SecurityError') })
+      vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new DOMException('no', 'SecurityError') })
+    }
+    afterEach(() => vi.restoreAllMocks())
+
+    it('markPublished still records the publish, without throwing', () => {
+      blockStorage()
+      expect(() => store().markPublished('listing_1')).not.toThrow()
+      expect(store().publishedListingId).toBe('listing_1')
+    })
+
+    it('reset and setEditMode do not throw', () => {
+      blockStorage()
+      expect(() => store().reset()).not.toThrow()
+      expect(() => store().setEditMode('L', 'P')).not.toThrow()
+    })
+
+    it('persistDraft says whether the identity was stored', () => {
+      expect(store().persistDraft()).toBe(true)
+      blockStorage()
+      expect(store().persistDraft()).toBe(false)
+    })
+  })
+
+  describe('the identity belongs to one account', () => {
+    it('the first publisher claims it, and it is stored', () => {
+      const id = store().publishId
+      expect(store().claimPublishIdentity('u1')).toBe(id)
+      expect(JSON.parse(sessionStorage.getItem(KEY)!).publishOwnerId).toBe('u1')
+    })
+
+    it('the same account keeps it', () => {
+      const id = store().claimPublishIdentity('u1')
+      expect(store().claimPublishIdentity('u1')).toBe(id)
+    })
+
+    it('another account over a leftover draft gets a fresh identity and no photos of the first', () => {
+      const id = store().claimPublishIdentity('u1')
+      store().recordUploadedPhoto('a', photo)
+      const next = store().claimPublishIdentity('u2')
+      expect(next).not.toBe(id)
+      expect(store().uploadedPhotos).toEqual({})
+    })
+
+    it('renewPublishIdentity mints a new one for the account', () => {
+      const id = store().claimPublishIdentity('u1')
+      store().recordUploadedPhoto('a', photo)
+      const next = store().renewPublishIdentity('u1')
+      expect(next).not.toBe(id)
+      expect(store().publishId).toBe(next)
+      expect(store().uploadedPhotos).toEqual({})
+    })
+  })
 })
