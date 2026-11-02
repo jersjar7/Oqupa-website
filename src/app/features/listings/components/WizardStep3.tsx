@@ -2,35 +2,46 @@ import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step3Schema, type Step3Data } from '@/schemas/listingSchema'
-import { PIURA_CENTER } from '@/lib/constants'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { useRevealedFields } from '@/hooks/useRevealedFields'
-import { Button, Input, InfoTip } from '@/app/components/ui'
-import RevealField from './RevealField'
+import { Input } from '@/app/components/ui'
 // Mapbox is large: loaded only when this step is shown.
 const LocationPicker = lazy(() => import('./LocationPicker'))
 import OfficialDistrictPicker from './OfficialDistrictPicker'
+import WizardNav from './WizardNav'
+import WizardAddressSearch from './WizardAddressSearch'
+import { WIZARD_HEADING, choiceClass } from './wizardStyles'
 import { DistrictResolver } from '@/lib/map/districtResolver'
+import { DepartamentoBorder } from '@/lib/map/departamentoBorder'
 import { findDistrict, type PeruDistrict } from '@/lib/map/peruGeography'
+import type { AddressResult } from '@/lib/map/addressSearch'
+
+type Point = { lat: number; lng: number }
+
+const TAP_HINT = 'Toca el mapa donde está tu propiedad o busca la dirección.'
 
 export default function WizardStep3() {
-  const { data, updateData, nextStep, prevStep, isEditMode } =
-    useListingFormStore()
+  const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
 
   const [showExactLocation, setShowExactLocation] = useState(data.showExactLocation)
   const [hasPinPlaced, setHasPinPlaced] = useState(() => data.latitude != null)
+  // Where the person is, while the page asks "¿Tu propiedad está aquí?" (D6).
+  const [here, setHere] = useState<Point | null>(null)
+  // Where the map should move to (the person, or a search result).
+  const [focus, setFocus] = useState<(Point & { key: number }) | null>(null)
 
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
-      latitude: data.latitude ?? PIURA_CENTER.lat,
-      longitude: data.longitude ?? PIURA_CENTER.lng,
+      // No pin until the person places one: never a silent city-centre pin.
+      latitude: (data.latitude ?? undefined) as number,
+      longitude: (data.longitude ?? undefined) as number,
       calle: data.calle,
       urbanizacion: data.urbanizacion,
       distrito: data.distrito,
@@ -69,12 +80,47 @@ export default function WizardStep3() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Everything on this page goes into the draft as it changes, so ATRÁS (or
-  // the browser's back button) and coming back find it all still there. The
-  // pin only once the person placed it: the map's starting point is not
-  // their address.
   const pinPlacedRef = useRef(hasPinPlaced)
   pinPlacedRef.current = hasPinPlaced
+
+  // D6: with no pin yet, the map opens where the person is — if they allow
+  // it and they are in Piura — and asks whether the property is there.
+  useEffect(() => {
+    if (hasPinPlaced || isEditMode) return
+    const geo = typeof navigator !== 'undefined' ? navigator.geolocation : undefined
+    if (!geo) return
+    let cancelled = false
+    try {
+      geo.getCurrentPosition(
+        (pos) => {
+          const p = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          DepartamentoBorder.load()
+            .then((b) => b.contains(p.lat, p.lng))
+            .catch(() => false)
+            .then((inside) => {
+              if (cancelled || !inside || pinPlacedRef.current) return
+              setHere(p)
+              setFocus({ ...p, key: Date.now() })
+            })
+        },
+        () => {
+          // Refused or unavailable: the map stays on Piura and says what to do.
+        },
+        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+      )
+    } catch {
+      // Some browsers throw instead of calling back.
+    }
+    return () => {
+      cancelled = true
+    }
+    // Asked once, when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Everything on this page goes into the draft as it changes, so ATRÁS (or
+  // the browser's back button) and coming back find it all still there. The
+  // pin only once the person placed it.
   useEffect(() => {
     const sub = watch((v) => {
       updateData({
@@ -96,16 +142,6 @@ export default function WizardStep3() {
     updateData({ showExactLocation: value })
   }
 
-  const { isRevealed, wasInitial } = useRevealedFields(
-    {
-      map: true,
-      address: hasPinPlaced,
-      exactLocation: (distrito ?? '').length > 0,
-      submit: (distrito ?? '').length > 0,
-    },
-    isEditMode
-  )
-
   function onSubmit(formData: Step3Data) {
     updateData({
       ...formData,
@@ -117,6 +153,7 @@ export default function WizardStep3() {
   const handleLocationChange = useCallback(
     (lat: number, lng: number) => {
       pinPlacedRef.current = true
+      setHere(null)
       setValue('latitude', lat, { shouldValidate: true })
       setValue('longitude', lng, { shouldValidate: true })
       setHasPinPlaced(true)
@@ -129,33 +166,56 @@ export default function WizardStep3() {
     [setValue, applyDistrict]
   )
 
+  function chooseResult(r: AddressResult) {
+    setFocus({ lat: r.latitude, lng: r.longitude, key: Date.now() })
+    handleLocationChange(r.latitude, r.longitude)
+    // A street from the search is a good start for "Dirección" — never over
+    // what the person already typed.
+    if (r.isStreet && !getValues('calle')) setValue('calle', r.name, { shouldValidate: true })
+  }
+
+  const pinned = typeof watchedLat === 'number' && typeof watchedLng === 'number'
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Location — always visible */}
-      <RevealField visible={isRevealed('map')} animate={!wasInitial('map')}>
-        <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Ubicación</h3>
-
-          <div className="mt-3">
-            <Suspense fallback={<div className="h-[300px] rounded-xl border border-border bg-cream" />}>
-              <LocationPicker
-                latitude={watchedLat ?? null}
-                longitude={watchedLng ?? null}
-                onChange={handleLocationChange}
-              />
-            </Suspense>
-          </div>
-          {(errors.latitude || errors.longitude) && (
-            <p className="mt-1.5 text-sm text-error">
-              Selecciona una ubicación en el mapa
-            </p>
-          )}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <section>
+        <h2 className={WIZARD_HEADING}>Ubicación</h2>
+        <div className="mt-3">
+          <WizardAddressSearch near={here ?? (pinned ? { lat: watchedLat, lng: watchedLng } : null)} onChoose={chooseResult} />
         </div>
-      </RevealField>
+        <div className="mt-3">
+          <Suspense fallback={<div className="h-[300px] rounded-xl border border-border bg-cream" />}>
+            <LocationPicker
+              latitude={pinned ? watchedLat : null}
+              longitude={pinned ? watchedLng : null}
+              provisional={here}
+              focus={focus}
+              onChange={handleLocationChange}
+            />
+          </Suspense>
+        </div>
+        {here && !pinned ? (
+          <div className="mt-3 rounded-xl border border-border bg-white p-4">
+            <p className={WIZARD_HEADING}>¿Tu propiedad está aquí?</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => handleLocationChange(here.lat, here.lng)} className={choiceClass(false)}>
+                Sí
+              </button>
+              <button type="button" onClick={() => setHere(null)} className={choiceClass(false)}>
+                No
+              </button>
+            </div>
+          </div>
+        ) : (
+          !pinned && <p className="mt-2 text-base text-text-secondary">{TAP_HINT}</p>
+        )}
+        {(errors.latitude || errors.longitude) && (
+          <p className="mt-1.5 text-sm text-error">Selecciona una ubicación en el mapa</p>
+        )}
+      </section>
 
-      {/* Address fields */}
-      <RevealField visible={isRevealed('address')} animate={!wasInitial('address')}>
-        <div className="space-y-6">
+      {hasPinPlaced && (
+        <section className="space-y-6">
           <Input
             label="Dirección"
             placeholder="Ej: Av. Grau 123-A"
@@ -171,7 +231,7 @@ export default function WizardStep3() {
           />
 
           {/* District — from the pin; corrected only from the official list. */}
-          <div className="rounded-xl border border-border p-4">
+          <div className="rounded-xl border border-border bg-white p-4">
             <p className="text-sm font-medium uppercase text-text-primary">Distrito</p>
             {findingDistrict ? (
               <p className="mt-1 text-sm text-text-tertiary">Buscando el distrito…</p>
@@ -185,7 +245,7 @@ export default function WizardStep3() {
             <button
               type="button"
               onClick={() => setPickerOpen(true)}
-              className="mt-2 text-sm font-medium text-secondary underline underline-offset-2"
+              className="mt-1 min-h-12 text-base font-medium text-secondary underline underline-offset-2"
             >
               Cambiar distrito
             </button>
@@ -202,54 +262,32 @@ export default function WizardStep3() {
               onClose={() => setPickerOpen(false)}
             />
           )}
-        </div>
-      </RevealField>
 
-      {/* Location privacy toggle */}
-      <RevealField
-        visible={isRevealed('exactLocation')}
-        animate={!wasInitial('exactLocation')}
-        tooltip="Desactiva para mostrar solo la zona aproximada."
-      >
-        <div className="rounded-xl border border-border p-4">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={showExactLocation}
-              onChange={(e) => changeShowExactLocation(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-secondary focus:ring-secondary"
-            />
-            <div>
-              <span className="text-sm font-medium text-text-primary">
-                Mostrar ubicación exacta
-                <InfoTip text="Si desactivas esta opción, los compradores solo verán un área aproximada en el mapa. Recomendado para mayor privacidad." />
-              </span>
-              <p className="text-xs text-text-secondary">
-                {showExactLocation
-                  ? 'Se mostrará tu dirección completa y ubicación exacta en el mapa'
-                  : 'Se mostrará solo el distrito y una ubicación aproximada en el mapa'}
-              </p>
+          <div>
+            <h2 className={WIZARD_HEADING}>¿Mostrar tu dirección exacta?</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {[true, false].map((v) => (
+                <button
+                  key={String(v)}
+                  type="button"
+                  aria-pressed={showExactLocation === v}
+                  onClick={() => changeShowExactLocation(v)}
+                  className={choiceClass(showExactLocation === v)}
+                >
+                  {v ? 'Sí' : 'No'}
+                </button>
+              ))}
             </div>
-          </label>
-        </div>
-      </RevealField>
+            <p className="mt-2 text-sm text-text-secondary">
+              {showExactLocation
+                ? 'Se mostrará tu dirección completa y ubicación exacta en el mapa'
+                : 'Se mostrará solo el distrito y una ubicación aproximada en el mapa'}
+            </p>
+          </div>
+        </section>
+      )}
 
-      {/* Navigation */}
-      <RevealField visible={isRevealed('submit')} animate={!wasInitial('submit')} delay={0.3}>
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="text"
-            onClick={prevStep}
-            className="flex-1"
-          >
-            Atrás
-          </Button>
-          <Button type="submit" className="flex-1">
-            Continuar
-          </Button>
-        </div>
-      </RevealField>
+      <WizardNav onBack={prevStep} />
     </form>
   )
 }

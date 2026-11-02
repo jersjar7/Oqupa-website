@@ -16,8 +16,11 @@ const mb = vi.hoisted(() => {
     getLngLat() { return { lng: this.entry.lngLat[0], lat: this.entry.lngLat[1] } }
     remove() {}
   }
+  const eased: unknown[] = []
   class FakeMap {
     constructor() {}
+    easeTo(o: unknown) { eased.push(o) }
+    getZoom() { return 12 }
     on(ev: string, cb: (e: unknown) => void) { handlers[ev] = cb; if (ev === 'load') cb({}) ; return this }
     addControl() {}
     getSource() { return undefined }
@@ -25,7 +28,7 @@ const mb = vi.hoisted(() => {
     addLayer() {}
     remove() {}
   }
-  return { handlers, markers, FakeMap, FakeMarker }
+  return { handlers, markers, eased, FakeMap, FakeMarker }
 })
 vi.mock('mapbox-gl', () => ({
   default: { Map: mb.FakeMap, Marker: mb.FakeMarker, NavigationControl: class {}, accessToken: '' },
@@ -72,5 +75,23 @@ describe('LocationPicker (Mapbox)', () => {
   it('without a map key it says the map is unavailable', () => {
     render(<LocationPickerMap token="" latitude={null} longitude={null} onChange={() => {}} />)
     expect(screen.getByText(/El mapa no está disponible/)).toBeDefined()
+  })
+
+  // ADR-043 D6: the person's place while asked, and moving to a search result.
+  it('shows where the person is as a separate marker, gone once the pin is placed', async () => {
+    const here = { lat: -5.18, lng: -80.62 }
+    const { rerender } = render(<LocationPickerMap token="pk.test" latitude={null} longitude={null} provisional={here} onChange={() => {}} />)
+    await waitFor(() => expect(mb.markers.some((m) => m.lngLat[0] === -80.62 && m.lngLat[1] === -5.18)).toBe(true))
+    const before = mb.markers.length
+    rerender(<LocationPickerMap token="pk.test" latitude={-5.18} longitude={-80.62} provisional={here} onChange={() => {}} />)
+    await waitFor(() => expect(mb.markers.length).toBe(before + 1))
+  })
+
+  it('a new focus moves the map there', async () => {
+    mb.eased.length = 0
+    const { rerender } = render(<LocationPickerMap token="pk.test" latitude={null} longitude={null} onChange={() => {}} />)
+    rerender(<LocationPickerMap token="pk.test" latitude={null} longitude={null} focus={{ lat: -5.21, lng: -80.63, key: 1 }} onChange={() => {}} />)
+    await waitFor(() => expect(mb.eased).toHaveLength(1))
+    expect(mb.eased[0]).toMatchObject({ center: [-80.63, -5.21], zoom: 16 })
   })
 })
