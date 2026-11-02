@@ -179,32 +179,32 @@ describe('"Usar otra cuenta" on the contact window', () => {
 
 // Feature audit 2026-11-02, "Perfil no está completo": signed in, no saved
 // profile. It used to open "verifica tu número", whose phone step cannot save
-// into a missing profile. Now the window names what is missing; COMPLETAR MI
-// PERFIL signs out to the sign-in door (which repairs the profile) and keeps
-// this listing as the errand.
+// into a missing profile. Now "No encontramos tu perfil" with Ayuda's
+// WhatsApp and Cerrar — no sign-out, no errand (signing in again loops when
+// the account was deleted elsewhere).
 describe('a signed-in account with no saved profile', () => {
-  async function openProfileWindow() {
+  async function openWindow() {
     mockAuth.user = null
     getListingContactMock.mockRejectedValue(new ContactDenied('profile-incomplete'))
     renderPage()
     fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
-    await screen.findByText('Completa tu perfil', { selector: 'h3' })
+    await screen.findByRole('dialog', { name: 'No encontramos tu perfil' })
   }
 
-  it('names what is missing, with COMPLETAR MI PERFIL — no "verifica tu número"', async () => {
-    await openProfileWindow()
-    expect(screen.getByText(/A tu cuenta le falta tu perfil: tu nombre y tu número\./)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'COMPLETAR MI PERFIL' })).toBeTruthy()
+  it('says so, with Ayuda\'s WhatsApp — no gate, no verification step', async () => {
+    await openWindow()
+    expect(screen.getByText('Escríbenos y lo arreglamos.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'ESCRIBIR POR WHATSAPP' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/51936287377/)
     expect(screen.queryByText(/verifica tu número/i)).toBeNull()
     expect(screen.queryByRole('button', { name: /usar otra cuenta/i })).toBeNull()
   })
 
-  it('COMPLETAR MI PERFIL signs out and opens the sign-in door, keeping this listing', async () => {
-    await openProfileWindow()
-    fireEvent.click(screen.getByRole('button', { name: 'COMPLETAR MI PERFIL' }))
-    await screen.findByText('PANTALLA DE INGRESO')
-    expect(logoutMock).toHaveBeenCalledOnce()
-    expect(peekReturnUrl()?.url).toBe('/property/listing_1#contactar')
+  it('Cerrar closes; nothing signs out and no errand is kept', async () => {
+    await openWindow()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.queryByRole('dialog', { name: 'No encontramos tu perfil' })).toBeNull()
+    expect(logoutMock).not.toHaveBeenCalled()
+    expect(peekReturnUrl()).toBeNull()
   })
 })
 

@@ -65,4 +65,18 @@ describe('ClaimedLeadCard — contacting the owner', () => {
     fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('No se pudo obtener el contacto del dueño.'))
   })
+
+  // Feature audit 2026-11-02: no saved profile — the same window as the
+  // listing page, with Ayuda's WhatsApp; no toast.
+  it('no saved profile: "No encontramos tu perfil" with Ayuda\'s WhatsApp', async () => {
+    getListingContactMock.mockRejectedValue(new ContactDenied('profile-incomplete' as never))
+    setup()
+    fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
+    await screen.findByRole('dialog', { name: 'No encontramos tu perfil' })
+    expect(screen.getByText('Escríbenos y lo arreglamos.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'ESCRIBIR POR WHATSAPP' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/51936287377/)
+    expect(toastError).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })

@@ -9,8 +9,6 @@
 export interface GateAction {
   label: string
   to: string
-  /** Sign out before going to `to`, keeping the listing as the errand. */
-  signOutFirst?: boolean
 }
 
 export interface ContactGateCopy {
@@ -25,7 +23,6 @@ export function contactGateCopy({
   signedIn,
   emailVerified,
   phoneNeedsReverification = false,
-  profileIncomplete = false,
 }: {
   signedIn: boolean
   emailVerified: boolean
@@ -34,23 +31,7 @@ export function contactGateCopy({
    *  refused on, and the person is looking at a profile page that tells them
    *  their number is verified. */
   phoneNeedsReverification?: boolean
-  /** Signed in, but the server found no saved profile for this account.
-   *  Checked before everything else: the email and phone steps save into the
-   *  profile, so they cannot help until it exists. Signing in again repairs a
-   *  missing profile (email, Google, Apple; app and website), so the one door
-   *  signs out to the sign-in screen with this listing kept as the errand.
-   *  Same words as the app's ContactGateCopy (feature audit 2026-11-02). */
-  profileIncomplete?: boolean
 }): ContactGateCopy {
-  if (signedIn && profileIncomplete) {
-    return {
-      title: 'Completa tu perfil',
-      body:
-        'A tu cuenta le falta tu perfil: tu nombre y tu número. Vuelve a entrar con tu cuenta para completarlo y te traemos de vuelta aquí.',
-      primary: { label: 'COMPLETAR MI PERFIL', to: '/app/login', signOutFirst: true },
-      secondary: null,
-    }
-  }
   if (signedIn && phoneNeedsReverification) {
     // "Otra vez" is doing real work here. Without it the sentence contradicts
     // the screen they just came from, which says the number IS verified.

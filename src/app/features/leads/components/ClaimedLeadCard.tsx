@@ -27,6 +27,7 @@ import {
 } from '@/types/enums'
 import { toast } from 'sonner'
 import { contactService, ContactDenied } from '@/services/contactService'
+import ProfileNotFoundDialog from '@/app/features/listings/components/ProfileNotFoundDialog'
 
 interface ClaimedLeadCardProps {
   claim: RealtorClaim
@@ -68,6 +69,9 @@ export default function ClaimedLeadCard({
   // The agent asks the server, which checks they actually hold a claim on THIS
   // listing before disclosing it, and records that it did.
   const [opening, setOpening] = useState(false)
+  // Signed in, no saved profile (feature audit 2026-11-02): same window as
+  // the listing page.
+  const [showProfileNotFound, setShowProfileNotFound] = useState(false)
 
   async function openWhatsApp() {
     if (opening) return
@@ -80,6 +84,10 @@ export default function ClaimedLeadCard({
         'noopener,noreferrer',
       )
     } catch (error) {
+      if (error instanceof ContactDenied && error.reason === 'profile-incomplete') {
+        setShowProfileNotFound(true)
+        return
+      }
       // Sold, rented or deactivated since the claim: the server refuses it.
       // Saying "could not" would invite a retry that can never work.
       toast.error(
@@ -159,6 +167,7 @@ export default function ClaimedLeadCard({
           </button>
         </div>
       </div>
+      {showProfileNotFound && <ProfileNotFoundDialog onClose={() => setShowProfileNotFound(false)} />}
     </div>
   )
 }

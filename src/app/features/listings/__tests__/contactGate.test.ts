@@ -126,26 +126,3 @@ describe('both doors lead to the same place, so neither can forget the errand', 
     }
   })
 })
-
-// Feature audit 2026-11-02: signed in, no saved profile. Same words as the
-// app's ContactGateCopy (contact_gate_modal.dart); the one door signs out to
-// the sign-in screen, where signing in repairs the profile.
-describe('profile incomplete', () => {
-  it('names what is missing and signs out to the sign-in door', () => {
-    const c = contactGateCopy({ signedIn: true, emailVerified: true, profileIncomplete: true })
-    expect(c.title).toBe('Completa tu perfil')
-    expect(c.body).toBe(
-      'A tu cuenta le falta tu perfil: tu nombre y tu número. Vuelve a entrar con tu cuenta para completarlo y te traemos de vuelta aquí.',
-    )
-    expect(c.primary).toEqual({ label: 'COMPLETAR MI PERFIL', to: '/app/login', signOutFirst: true })
-    expect(c.secondary).toBeNull()
-  })
-
-  it('wins over the email and phone steps — those cannot save without a profile', () => {
-    const c = contactGateCopy({
-      signedIn: true, emailVerified: false, phoneNeedsReverification: true, profileIncomplete: true,
-    })
-    expect(c.title).toBe('Completa tu perfil')
-  })
-})
-

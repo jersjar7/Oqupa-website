@@ -34,6 +34,7 @@ import SaveButton from '@/components/lists/SaveButton'
 import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
+import ProfileNotFoundDialog from '@/app/features/listings/components/ProfileNotFoundDialog'
 import { contactFollowUpCoordinator } from '@/lib/contactFollowUpCoordinator'
 import { contactService, ContactDenied } from '@/services/contactService'
 import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
@@ -251,12 +252,12 @@ export default function PropertyPage() {
     authReady: isInitialized,
   })
   const [showAuthModal, setShowAuthModal] = useState(false)
+  // Signed in, no saved profile (feature audit 2026-11-02).
+  const [showProfileNotFound, setShowProfileNotFound] = useState(false)
   // Set only when the server says no phone is attached to this account,
   // so the gate can say "otra vez" instead of contradicting the profile
   // page, which shows the number as verified.
   const [phoneNeedsReverification, setPhoneNeedsReverification] = useState(false)
-  // Signed in, no saved profile (feature audit 2026-11-02).
-  const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   // Arrived straight from publishing (ADR-043): offer to share, once.
   const { justPublished, dismiss: dismissPublished } = useJustPublished()
@@ -426,7 +427,6 @@ export default function PropertyPage() {
     signedIn: Boolean(firebaseUser),
     emailVerified: firebaseUser?.emailVerified ?? false,
     phoneNeedsReverification,
-    profileIncomplete,
   })
   const showExact = listing.showExactLocation !== false
   const location = showExact
@@ -500,7 +500,6 @@ export default function PropertyPage() {
       const reason = error instanceof ContactDenied ? error.reason : 'unavailable'
       const opensGate =
         reason === 'needs-login' ||
-        reason === 'profile-incomplete' ||
         reason === 'needs-phone-verification' ||
         reason === 'needs-phone-reverification' ||
         reason === 'needs-email-verification'
@@ -518,9 +517,11 @@ export default function PropertyPage() {
         setPhoneNeedsReverification(
           reason === 'needs-phone-reverification' && user?.isPhoneVerified === true,
         )
-        setProfileIncomplete(reason === 'profile-incomplete')
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
+      } else if (reason === 'profile-incomplete') {
+        // No saved profile: a person fixes it — Ayuda's WhatsApp, no gate.
+        setShowProfileNotFound(true)
       } else {
         toast.error(contactFailureMessage(reason, navigator.onLine !== false))
       }
@@ -808,6 +809,8 @@ export default function PropertyPage() {
         />
       )}
 
+      {showProfileNotFound && <ProfileNotFoundDialog onClose={() => setShowProfileNotFound(false)} />}
+
       {/* Auth required modal */}
       <AnimatePresence>
         {showAuthModal && (
@@ -842,25 +845,10 @@ export default function PropertyPage() {
               </p>
               <div className="mt-6 flex flex-col gap-3">
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     logContactGateStep(
                       firebaseUser ? CONTACT_GATE_STEPS.gateVerify : CONTACT_GATE_STEPS.gateCreateAccount,
                     )
-                    if (gate.primary.signOutFirst) {
-                      // No saved profile: signing in again repairs it, so sign
-                      // out to the sign-in door with this listing kept.
-                      setShowAuthModal(false)
-                      try {
-                        await switchAccount({
-                          logout: () => authService.logout(),
-                          navigate,
-                          returnTo: contactReturnUrl(pathname),
-                        })
-                      } catch {
-                        toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
-                      }
-                      return
-                    }
                     setShowAuthModal(false)
                     setReturnUrl(contactReturnUrl(window.location.pathname))
                     navigate(gate.primary.to)
@@ -891,7 +879,7 @@ export default function PropertyPage() {
                 >
                   Ahora no
                 </button>
-                {firebaseUser && !gate.primary.signOutFirst && (
+                {firebaseUser && (
                   <button
                     onClick={async () => {
                       // Counted as a way out of the gate, so gate_shown still
