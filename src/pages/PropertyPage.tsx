@@ -837,7 +837,7 @@ export default function PropertyPage() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="w-full max-w-sm rounded-2xl bg-white p-4 sm:p-6 shadow-xl"
             >
-              <h3 className="font-serif text-lg font-normal text-text-primary">
+              <h3 className="font-serif text-[22px] font-normal leading-snug text-text-primary">
                 {gate.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">
@@ -875,7 +875,7 @@ export default function PropertyPage() {
                     logContactGateStep(CONTACT_GATE_STEPS.gateDismissed)
                     setShowAuthModal(false)
                   }}
-                  className="flex min-h-11 w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
+                  className="flex min-h-12 w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
                 >
                   Ahora no
                 </button>
@@ -895,7 +895,7 @@ export default function PropertyPage() {
                         toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
                       }
                     }}
-                    className="mx-auto min-h-11 px-4 font-sans text-xs font-bold uppercase tracking-[1px] text-text-secondary hover:text-text-primary"
+                    className="mx-auto min-h-12 px-4 font-sans text-xs font-bold uppercase tracking-[1px] text-text-secondary hover:text-text-primary"
                   >
                     Usar otra cuenta
                   </button>

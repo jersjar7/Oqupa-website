@@ -12,6 +12,7 @@ import RealtorClaimCard from '../components/RealtorClaimCard'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import type { RealtorClaim } from '@/types/realtorClaim'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 export default function InterestedAgentsPage() {
   const { id: listingId } = useParams<{ id: string }>()
@@ -290,23 +291,18 @@ export default function InterestedAgentsPage() {
               Oqupa solo los pone en contacto. El acuerdo con el agente es entre ustedes; Oqupa no es responsable del trato.
             </p>
 
-            <div className="mt-6 flex gap-3">
-              <Button
-                className="flex-1"
-                onClick={handleAssignConfirm}
-                isLoading={assignRealtor.isPending}
-              >
-                Enviar invitación
-              </Button>
+            <DialogActions>
               <Button
                 variant="text"
-                className="flex-1"
                 onClick={() => setConfirmAssign(null)}
                 disabled={assignRealtor.isPending}
               >
                 Cancelar
               </Button>
-            </div>
+              <Button onClick={handleAssignConfirm} isLoading={assignRealtor.isPending}>
+                Enviar invitación
+              </Button>
+            </DialogActions>
           </div>
         )}
       </Modal>
@@ -323,24 +319,22 @@ export default function InterestedAgentsPage() {
               ? 'Se cancelará la invitación. El agente seguirá entre los interesados y podrás invitar a otra persona.'
               : 'El agente dejará de ser el contacto de tu propiedad y podrás elegir a otra persona.'}
           </p>
-          <div className="mt-6 flex gap-3">
-            <Button
-              variant="danger"
-              className="flex-1"
-              onClick={handleUnassignConfirm}
-              isLoading={unassignRealtor.isPending}
-            >
-              {isPendingInvite ? 'Cancelar invitación' : 'Quitar agente'}
-            </Button>
+          <DialogActions>
             <Button
               variant="text"
-              className="flex-1"
               onClick={() => setConfirmUnassign(false)}
               disabled={unassignRealtor.isPending}
             >
               Volver
             </Button>
-          </div>
+            <Button
+              variant="danger"
+              onClick={handleUnassignConfirm}
+              isLoading={unassignRealtor.isPending}
+            >
+              {isPendingInvite ? 'Cancelar invitación' : 'Quitar agente'}
+            </Button>
+          </DialogActions>
         </div>
       </Modal>
 
