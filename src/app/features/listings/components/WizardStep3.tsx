@@ -45,6 +45,9 @@ export default function WizardStep3() {
   const provincia = watch('provincia')
   const departamento = watch('departamento')
   const [pickerOpen, setPickerOpen] = useState(false)
+  // True while the district for a fresh pin is being worked out: nothing is
+  // wrong yet, so no red "Elige el distrito".
+  const [findingDistrict, setFindingDistrict] = useState(false)
 
   // Map plan step 1 (ADR-031): district, provincia and departamento come from
   // the official outlines, never free text. A pin outside every outline leaves
@@ -117,9 +120,11 @@ export default function WizardStep3() {
       setValue('latitude', lat, { shouldValidate: true })
       setValue('longitude', lng, { shouldValidate: true })
       setHasPinPlaced(true)
+      setFindingDistrict(true)
       DistrictResolver.load()
         .then((r) => applyDistrict(r.districtForPin(lat, lng)))
         .catch(() => applyDistrict(null))
+        .finally(() => setFindingDistrict(false))
     },
     [setValue, applyDistrict]
   )
@@ -168,7 +173,9 @@ export default function WizardStep3() {
           {/* District — from the pin; corrected only from the official list. */}
           <div className="rounded-xl border border-border p-4">
             <p className="text-sm font-medium uppercase text-text-primary">Distrito</p>
-            {distrito ? (
+            {findingDistrict ? (
+              <p className="mt-1 text-sm text-text-tertiary">Buscando el distrito…</p>
+            ) : distrito ? (
               <p className="mt-1 text-base text-text-primary">
                 {[distrito, provincia, departamento].filter(Boolean).join(', ')}
               </p>
@@ -182,7 +189,7 @@ export default function WizardStep3() {
             >
               Cambiar distrito
             </button>
-            {(errors.distrito || errors.provincia) && !distrito && (
+            {(errors.distrito || errors.provincia) && !distrito && !findingDistrict && (
               <p className="mt-1.5 text-sm text-error">{errors.distrito?.message ?? errors.provincia?.message}</p>
             )}
           </div>
