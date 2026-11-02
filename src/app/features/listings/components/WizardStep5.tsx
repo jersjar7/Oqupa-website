@@ -30,6 +30,7 @@ import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
+import { editAwareResolver, issuesThatCount } from '../editLimits'
 import { setReturnUrl } from '@/lib/utils'
 import { authService } from '@/services/authService'
 
@@ -103,7 +104,7 @@ export default function WizardStep5() {
     getValues,
     formState: { errors },
   } = useForm<Step4Data>({
-    resolver: zodResolver(step4Schema),
+    resolver: editAwareResolver(zodResolver(step4Schema)),
     defaultValues: {
       operationType: data.operationType,
       rentalDurationType: data.rentalDurationType || undefined,
@@ -173,16 +174,19 @@ export default function WizardStep5() {
 
     // Pre-submission validation of all steps
     // Merge formData (current Step 5 values) since they haven't been saved to the store yet
-    const fullResult = fullListingSchema.safeParse({
+    const checked = {
       ...data,
       ...formData,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
       latitude: data.latitude ?? undefined,
       longitude: data.longitude ?? undefined,
-    })
+    }
+    const fullResult = fullListingSchema.safeParse(checked)
+    // Editing: limits only on what the owner changed (review #6).
+    const blocking = fullResult.success ? [] : issuesThatCount(fullResult.error.issues, checked)
 
-    if (!fullResult.success) {
-      const message = fullResult.error.issues[0]?.message ?? 'Faltan datos obligatorios'
+    if (blocking.length > 0) {
+      const message = blocking[0]?.message ?? 'Faltan datos obligatorios'
       setSubmitError(message)
       return
     }

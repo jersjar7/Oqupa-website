@@ -97,6 +97,13 @@ interface ListingFormState {
   adoptDraftFor: (uid: string) => void
   /** Drops the draft from memory and from this tab's storage (Salir). */
   discardDraft: () => void
+  /**
+   * Editing: the listing as it was loaded. New limits apply only to fields
+   * the owner changes, so an older listing over them stays editable
+   * (hostile review #6).
+   */
+  editBaseline: Partial<ListingFormData> | null
+  markEditBaseline: () => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
@@ -249,6 +256,9 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
 
     discardDraft: () => get().reset(),
 
+    editBaseline: null,
+    markEditBaseline: () => set({ editBaseline: { ...get().data } }),
+
     setNavigationLocked: (locked) => set({ navigationLocked: locked }),
 
     setStep: (step) => {
@@ -295,6 +305,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         publishedListingId: null,
         navigationLocked: false,
         draftOwnerId: null,
+        editBaseline: null,
       })
     },
 

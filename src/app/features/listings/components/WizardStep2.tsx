@@ -8,6 +8,7 @@ import { Button, Input } from '@/app/components/ui'
 import RevealField from './RevealField'
 import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
 import { parseCount, parseLocaleNumber } from '@/lib/localeNumber'
+import { editAwareResolver } from '../editLimits'
 
 /** A finite number, or null — what the draft can keep of a half-typed box. */
 const kept = (n: number | null | undefined): number | null =>
@@ -41,7 +42,7 @@ export default function WizardStep2() {
     getValues,
     formState: { errors },
   } = useForm<Step2Data>({
-    resolver: zodResolver(step2Schema),
+    resolver: editAwareResolver(zodResolver(step2Schema)),
     defaultValues: {
       propertyType: data.propertyType,
       description: data.description,
