@@ -59,6 +59,15 @@ describe('the draft belongs to one account', () => {
     expect(saved().description ?? '').toBe('')
   })
 
+  // Third review #4: the case that shows the publish-owner fallback matters.
+  it('no draft owner, but its ids were claimed by the same account: kept', () => {
+    store().updateData({ description: 'Borrador de Ana' })
+    useListingFormStore.setState({ publishOwnerId: 'ana', draftOwnerId: null })
+    store().adoptDraftFor('ana')
+    expect(store().data.description).toBe('Borrador de Ana')
+    expect(store().draftOwnerId).toBe('ana')
+  })
+
   it('a draft from before owners were recorded goes by its publish owner', () => {
     store().updateData({ description: 'Borrador viejo' })
     useListingFormStore.setState({ publishOwnerId: 'ana', draftOwnerId: null })

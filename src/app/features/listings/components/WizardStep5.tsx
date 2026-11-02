@@ -31,7 +31,7 @@ import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
 import { editAwareResolver, issuesThatCount } from '../editLimits'
-import { setReturnUrl } from '@/lib/utils'
+import { storeWayBackFor } from '@/lib/returnPath'
 import { authService } from '@/services/authService'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
@@ -156,13 +156,14 @@ export default function WizardStep5() {
   // different account gets a clean wizard (draftOwnerWatch).
   async function signInAgain() {
     persistDraft()
-    const back = `${location.pathname}${location.search}`
+    // The way back belongs to this account only (third review #2): someone
+    // else signing in on this computer is not sent into this wizard.
+    if (user) storeWayBackFor(user.id, `${location.pathname}${location.search}`)
     try {
       await authService.endStaleSession()
     } catch {
       // Signing out of a session that is already gone can fail; go on.
     }
-    setReturnUrl(back)
     navigate('/app/login')
   }
 

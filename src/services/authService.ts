@@ -40,8 +40,8 @@ import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
-import { useListingFormStore } from '@/stores/listingFormStore'
-import { noteDeliberateSignOut } from '@/lib/returnPath'
+import { getDraftAccount, setDraftAccount, useListingFormStore } from '@/stores/listingFormStore'
+import { noteDeliberateSignOut, noteSignedInAccount } from '@/lib/returnPath'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -126,10 +126,18 @@ export const authService = {
     // address or ids (hostile review of the wizard fixes, #1). A session that
     // ends by itself does not come through here, so it keeps the draft for
     // the same account.
+    const account = getDraftAccount()
     useListingFormStore.getState().discardDraft()
     // Nor is the page they left a place to send the next sign-in back to.
     noteDeliberateSignOut()
-    await signOut(auth)
+    try {
+      await signOut(auth)
+    } catch (err) {
+      // Still signed in: what they type next is still theirs (third review #5).
+      setDraftAccount(account)
+      noteSignedInAccount(account)
+      throw err
+    }
   },
 
   /**

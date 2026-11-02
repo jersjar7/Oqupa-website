@@ -17,13 +17,23 @@ export function watchDraftOwner(): () => void {
   // account's, dropped for — whoever is signed in: now, and at every change
   // of account. A page load always passes through "nobody yet", so this
   // also runs before the wizard can show a draft that is not theirs.
+  // The last account signed in here: an edit in memory is theirs.
+  let editAccount: string | null = null
   const adopt = (uid: string | null) => {
     setDraftAccount(uid)
     // Whose way back a bounce to the sign-in page would be.
     noteSignedInAccount(uid)
     if (!uid) return
     const form = useListingFormStore.getState()
-    if (form.isEditMode) return
+    if (form.isEditMode) {
+      // An edit holds the listing's true (possibly hidden) address: another
+      // account never inherits it (third review #1). The same account
+      // coming back after its session ended keeps it.
+      if (editAccount && editAccount !== uid) form.reset()
+      editAccount = uid
+      return
+    }
+    editAccount = uid
     form.adoptDraftFor(uid)
   }
   adopt(useAuthStore.getState().firebaseUser?.uid ?? null)

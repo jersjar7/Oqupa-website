@@ -19,6 +19,8 @@ const AUTH_PAGES = /^\/app\/(login|register|forgot-password|verify|auth)(\/|$)/i
 const APP_PATH = /^\/app(\/|$)/i
 
 const BOUNCED_KEY = 'oqupa_bouncedFrom'
+// The account last signed in on THIS tab; survives a reload of the tab.
+const LAST_ACCOUNT_KEY = 'oqupa_lastAccount'
 const DELIBERATE_KEY = 'oqupa_signedOutOnPurposeAt'
 const BOUNCED_TTL_MS = 30 * 60 * 1000
 const DELIBERATE_WINDOW_MS = 60_000
@@ -57,7 +59,22 @@ let lastAccount: string | null = null
 let deliberateHere = 0
 
 export function noteSignedInAccount(uid: string | null): void {
-  if (uid) lastAccount = uid
+  if (!uid) return
+  lastAccount = uid
+  try {
+    sessionStorage.setItem(LAST_ACCOUNT_KEY, uid)
+  } catch {
+    // Storage blocked: this page still knows until it reloads.
+  }
+}
+
+function bouncedAccount(): string | null {
+  if (lastAccount) return lastAccount
+  try {
+    return sessionStorage.getItem(LAST_ACCOUNT_KEY)
+  } catch {
+    return null
+  }
 }
 
 function readStorage(key: string): string | null {
@@ -83,6 +100,11 @@ function removeStorage(key: string): void {
 export function noteDeliberateSignOut(): void {
   deliberateHere = Date.now()
   lastAccount = null
+  try {
+    sessionStorage.removeItem(LAST_ACCOUNT_KEY)
+  } catch {
+    // Nothing stored.
+  }
   removeStorage(BOUNCED_KEY)
   try {
     localStorage.setItem(DELIBERATE_KEY, String(deliberateHere))
@@ -107,10 +129,20 @@ function signedOutOnPurposeRecently(): boolean {
  * unless it is not ours or someone signed out on purpose.
  */
 export function rememberBouncedFrom(from: unknown): void {
-  const path = safeAppPath(from)
-  if (!path || !lastAccount || signedOutOnPurposeRecently()) return
+  const uid = bouncedAccount()
+  if (!uid || signedOutOnPurposeRecently()) return
+  storeWayBackFor(uid, from)
+}
+
+/**
+ * Stores the way back for `uid` directly (the wizard's INICIAR SESIÓN knows
+ * whose session it is ending). Only that account signing in gets it.
+ */
+export function storeWayBackFor(uid: string, to: unknown): void {
+  const path = safeAppPath(to)
+  if (!path) return
   try {
-    localStorage.setItem(BOUNCED_KEY, JSON.stringify({ url: path, at: Date.now(), uid: lastAccount }))
+    localStorage.setItem(BOUNCED_KEY, JSON.stringify({ url: path, at: Date.now(), uid }))
   } catch {
     // Storage blocked: the person lands on their panel, as before.
   }

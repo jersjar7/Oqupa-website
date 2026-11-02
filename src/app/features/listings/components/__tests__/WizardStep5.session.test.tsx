@@ -84,7 +84,11 @@ describe('WizardStep5 — the session closed before PUBLICAR', () => {
     // Signed out first: otherwise the sign-in page sends a signed-in person
     // straight back here, in a loop.
     expect(endStaleSession).toHaveBeenCalledOnce()
-    expect(consumeReturnUrl()).toBe('/app/listings/new')
+    // Changed (third review #2): the way back is bound to this account, not
+    // stored as the shared errand address (which anyone signing in gets).
+    expect(consumeReturnUrl()).toBeNull()
+    const wayBack = JSON.parse(localStorage.getItem('oqupa_bouncedFrom') ?? '{}')
+    expect([wayBack.url, wayBack.uid]).toEqual(['/app/listings/new', 'owner-1'])
     const saved = JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
     expect(saved.description).toBe('Terreno amplio con todos los servicios cerca de la avenida')
     expect(saved.amount).toBe(50000)

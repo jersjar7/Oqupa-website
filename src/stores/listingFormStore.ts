@@ -211,6 +211,11 @@ function saveToSession(
 // left without an owner (second hostile review #1).
 let currentAccount: string | null = null
 
+/** Who the store believes is signed in (null: nobody). */
+export function getDraftAccount(): string | null {
+  return currentAccount
+}
+
 /** Who is signed in now (null: nobody). Called by the sign-in watcher. */
 export function setDraftAccount(uid: string | null): void {
   currentAccount = uid

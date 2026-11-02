@@ -934,3 +934,17 @@ describe('deleteAccount notes a deliberate sign-out', () => {
     expect(localStorage.getItem('oqupa_bouncedFrom')).toBeNull()
   })
 })
+
+// Third hostile review #5: if signing out fails, the person is still signed
+// in, so what they type next must still belong to them.
+describe('logout that fails', () => {
+  it('keeps the account on the draft', async () => {
+    const { useListingFormStore, setDraftAccount } = await import('@/stores/listingFormStore')
+    setDraftAccount('ana')
+    useListingFormStore.getState().reset()
+    signOutMock.mockRejectedValueOnce(new Error('network'))
+    await expect(authService.logout()).rejects.toThrow()
+    useListingFormStore.getState().updateData({ description: 'Sigo aquí' })
+    expect(useListingFormStore.getState().draftOwnerId).toBe('ana')
+  })
+})
