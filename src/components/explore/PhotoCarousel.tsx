@@ -88,6 +88,11 @@ export default function PhotoCarousel({
                   className="h-full w-full object-cover"
                   loading="lazy"
                   decoding="async"
+                  // A photo that fails leaves the quiet placeholder, never the
+                  // browser's broken-image icon (audit 2026-11-02).
+                  onError={(e) => {
+                    e.currentTarget.style.visibility = 'hidden'
+                  }}
                 />
               )}
             </div>

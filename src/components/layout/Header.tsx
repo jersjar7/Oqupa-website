@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import GuardadosLink from './GuardadosLink'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, LogOut } from 'lucide-react'
+import { Home, LifeBuoy, LogOut } from 'lucide-react'
+import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -65,6 +66,7 @@ function PublishCta({ className = '', onNavigate }: { className?: string; onNavi
 function AuthBlock() {
   const { firebaseUser, user, isInitialized } = useAuthStore()
   const location = useLocation()
+  const signOut = useSignOutConfirm(() => authService.logout())
 
   if (!isInitialized) return null
 
@@ -83,28 +85,41 @@ function AuthBlock() {
   const userName = user?.name ?? user?.email ?? '...'
 
   return (
-    <UserMenu
-      userName={userName}
-      items={[
-        {
-          label: 'Mi Panel',
-          icon: <Home className="h-4 w-4" />,
-          to: '/app',
-        },
-        {
-          label: 'Salir',
-          icon: <LogOut className="h-4 w-4" />,
-          onClick: () => authService.logout(),
-          className: 'text-error',
-        },
-      ]}
-    />
+    <>
+      <UserMenu
+        userName={userName}
+        items={[
+          {
+            label: 'Mi panel',
+            icon: <Home className="h-4 w-4" />,
+            to: '/app',
+          },
+          // Help in the signed-in menu, as the app's SOPORTE (ADR-046 #16).
+          {
+            label: 'Ayuda',
+            icon: <LifeBuoy className="h-4 w-4" />,
+            to: '/app/ayuda',
+          },
+          {
+            label: 'Cerrar sesión',
+            icon: <LogOut className="h-4 w-4" />,
+            onClick: signOut.ask,
+            className: 'text-error',
+          },
+        ]}
+      />
+      {signOut.dialog}
+    </>
   )
 }
 
 function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
   const { firebaseUser, user, isInitialized } = useAuthStore()
   const location = useLocation()
+  const signOut = useSignOutConfirm(async () => {
+    onNavigate()
+    await authService.logout()
+  })
 
   if (!isInitialized) return null
 
@@ -133,18 +148,24 @@ function MobileAuthBlock({ onNavigate }: { onNavigate: () => void }) {
         className="flex items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
       >
         <Home className="h-4 w-4" />
-        Mi Panel
+        Mi panel
+      </Link>
+      <Link
+        to="/app/ayuda"
+        onClick={onNavigate}
+        className="flex min-h-11 items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-text-primary transition-colors hover:text-primary"
+      >
+        <LifeBuoy className="h-4 w-4" />
+        Ayuda
       </Link>
       <button
-        onClick={() => {
-          onNavigate()
-          authService.logout()
-        }}
-        className="flex w-full items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-error transition-colors hover:text-error/80"
+        onClick={signOut.ask}
+        className="flex min-h-11 w-full items-center gap-2 rounded-lg px-1 py-2 text-base font-medium text-error transition-colors hover:text-error/80"
       >
         <LogOut className="h-4 w-4" />
-        Salir
+        Cerrar sesión
       </button>
+      {signOut.dialog}
     </div>
   )
 }
@@ -287,7 +308,7 @@ export default function Header({
               ref={toggleRef}
               onClick={toggle}
               className="relative z-50 flex h-10 w-10 items-center justify-center md:hidden"
-              aria-label={isOpen ? 'Cerrar menu' : 'Abrir menu'}
+              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={isOpen}
             >
               <div className="flex w-6 flex-col gap-1.5">

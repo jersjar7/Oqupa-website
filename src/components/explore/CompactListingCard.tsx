@@ -17,6 +17,7 @@ import { drawingSvg, PIN_COLORS } from '@/components/explore/mapbox/pinElements'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import AnimatedImage from '@/app/components/ui/AnimatedImage'
 
 export const COMPACT_CARD_PHOTO_PX = 96
 
@@ -48,7 +49,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
         }}
       >
         {photoRef && (
-          <img src={thumbnail(photoRef)} alt={`${pinKindWord(label.kind)} en ${listingLocationLine(item)}`} className="h-full w-full object-cover" />
+          <AnimatedImage src={thumbnail(photoRef)} alt={`${pinKindWord(label.kind)} en ${listingLocationLine(item)}`} className="h-full w-full object-cover" />
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

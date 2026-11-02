@@ -1,11 +1,30 @@
 import { useMemo } from 'react'
 import type { ListingWithProperty, MapFilters } from '@/types/explore'
 import type { Bounds } from '@/lib/map/mapPoint'
+import { DEFAULT_PEN_PER_USD } from '@/lib/map/exchangeRates'
+import { priceRangeInvalid } from '@/lib/map/filterCount'
+
+/** A typed amount, converted into the listing's own currency (the app's
+ *  displayListings rule: the range is held in both currencies and each
+ *  listing is compared in the one it is priced in). */
+function inListingCurrency(
+  amount: number,
+  typedIn: 'USD' | 'PEN',
+  rawListingCurrency: string | undefined,
+  penPerUsd: number,
+): number {
+  // No or an unknown currency counts as soles, the app's default.
+  const listingCurrency = rawListingCurrency === 'USD' ? 'USD' : 'PEN'
+  if (listingCurrency === typedIn) return amount
+  if (typedIn === 'USD' && listingCurrency === 'PEN') return amount * penPerUsd
+  return amount / penPerUsd
+}
 
 export function useMapFilters(
   items: ListingWithProperty[],
   filters: MapFilters,
   bounds?: Bounds | null,
+  penPerUsd: number = DEFAULT_PEN_PER_USD,
 ) {
   const filtered = useMemo(() => {
     return items.filter(({ listing, property }) => {
@@ -16,15 +35,19 @@ export function useMapFilters(
       if (filters.propertyTypes.length > 0 && !filters.propertyTypes.includes(property.propertyType)) {
         return false
       }
-      if (filters.priceMin != null && listing.price.amount < filters.priceMin) {
+      const { amount, currency } = listing.price
+      const typedIn = filters.priceCurrency
+      // An impossible range (min above max) does not filter; the panel says so.
+      if (priceRangeInvalid(filters)) return true
+      if (filters.priceMin != null && amount < inListingCurrency(filters.priceMin, typedIn, currency, penPerUsd)) {
         return false
       }
-      if (filters.priceMax != null && listing.price.amount > filters.priceMax) {
+      if (filters.priceMax != null && amount > inListingCurrency(filters.priceMax, typedIn, currency, penPerUsd)) {
         return false
       }
       return true
     })
-  }, [items, filters])
+  }, [items, filters, penPerUsd])
 
   // Items visible in the current map viewport (used for cards panel)
   const visible = useMemo(() => {

@@ -1,4 +1,5 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
+import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import VerificationBanner from '@/app/components/VerificationBanner'
@@ -11,8 +12,8 @@ import { PageMetaProvider, usePageMeta } from './pageMetaContext'
 
 // Default title/subtitle per route — pages can override via useSetPageMeta().
 function defaultMetaForPath(pathname: string): { title: string; subtitle?: string } {
-  if (pathname === '/app')                              return { title: 'Dashboard' }
-  if (pathname.startsWith('/app/listings'))             return { title: 'Mis anuncios',  subtitle: 'Gestiona tus propiedades publicadas.' }
+  if (pathname === '/app')                              return { title: 'Mi panel' }
+  if (pathname.startsWith('/app/listings'))             return { title: 'Mis propiedades', subtitle: 'Gestiona tus propiedades publicadas.' }
   if (pathname === '/app/payments')                     return { title: 'Pagos',         subtitle: 'Historial de compras y reembolsos.' }
   if (pathname === '/app/profile')                      return { title: 'Mi perfil',     subtitle: 'Información personal y configuración de cuenta.' }
   if (pathname === '/app/leads')                        return { title: 'Oportunidades', subtitle: 'Propiedades que buscan un agente.' }
@@ -46,6 +47,8 @@ function DashboardShellInner() {
     await authService.logout()
     navigate('/app/login')
   }
+  // Asks first, as the app does (audit 2026-11-02).
+  const signOut = useSignOutConfirm(handleLogout)
 
   const userName = user?.name ?? user?.email ?? 'Invitado'
   const roleLabel =
@@ -65,8 +68,9 @@ function DashboardShellInner() {
           caps={effective}
           userName={userName}
           roleLabel={roleLabel}
-          onLogout={handleLogout}
+          onLogout={signOut.ask}
         />
+        {signOut.dialog}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar
             title={meta.title}

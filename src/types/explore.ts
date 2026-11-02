@@ -20,4 +20,7 @@ export interface MapFilters {
   propertyTypes: string[] // empty = all
   priceMin: number | null
   priceMax: number | null
+  /** The currency the Mín/Máx boxes are typed in (dollars by default, as in
+   *  the app). Each listing is compared in its own currency. */
+  priceCurrency: 'USD' | 'PEN'
 }

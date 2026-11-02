@@ -11,6 +11,7 @@ import {
   type RentalDurationType,
 } from '@/types/enums'
 import type { MapFilters } from '@/types/explore'
+import { priceRangeInvalid } from '@/lib/map/filterCount'
 
 interface ExploreFiltersProps {
   filters: MapFilters
@@ -34,6 +35,7 @@ export default function ExploreFilters({
   showCount = true,
 }: ExploreFiltersProps) {
   const isVertical = layout === 'vertical'
+  const currencySymbol = filters.priceCurrency === 'PEN' ? 'S/' : 'US$'
   const isAlquiler = filters.operationType === 'alquiler'
 
   // Determine which property types to show based on filters
@@ -163,44 +165,74 @@ export default function ExploreFilters({
       {/* Divider (horizontal only) */}
       {!isVertical && <div className="h-5 w-px bg-border" />}
 
-      {/* Price range */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-text-secondary">Precio:</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          name="priceMin"
-          autoComplete="off"
-          placeholder="Mín"
-          aria-label="Precio mínimo"
-          value={filters.priceMin != null ? filters.priceMin.toLocaleString('en-US') : ''}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/[^0-9]/g, '')
-            setFilters((prev) => ({
-              ...prev,
-              priceMin: raw ? Number(raw) : null,
-            }))
-          }}
-          className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
-        />
-        <span className="text-text-tertiary">—</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          name="priceMax"
-          autoComplete="off"
-          placeholder="Máx"
-          aria-label="Precio máximo"
-          value={filters.priceMax != null ? filters.priceMax.toLocaleString('en-US') : ''}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/[^0-9]/g, '')
-            setFilters((prev) => ({
-              ...prev,
-              priceMax: raw ? Number(raw) : null,
-            }))
-          }}
-          className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
-        />
+      {/* Price range — typed in one currency, dollars by default as in the
+          app; each listing is compared in its own currency at the visit's
+          rate (audit 2026-11-02, top item 11). */}
+      <div className={isVertical ? 'space-y-2' : 'flex items-center gap-2'}>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-text-secondary">Precio en:</span>
+          <div role="radiogroup" aria-label="Moneda del precio" className="flex gap-1">
+            {(['USD', 'PEN'] as const).map((c) => {
+              const isActive = filters.priceCurrency === c
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => setFilters((prev) => ({ ...prev, priceCurrency: c }))}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? 'bg-secondary text-white'
+                      : 'bg-background-secondary text-text-secondary hover:bg-border'
+                  }`}
+                >
+                  {c === 'USD' ? 'Dólares (US$)' : 'Soles (S/)'}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            name="priceMin"
+            autoComplete="off"
+            placeholder={`Mín ${currencySymbol}`}
+            aria-label="Precio mínimo"
+            value={filters.priceMin != null ? filters.priceMin.toLocaleString('en-US') : ''}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/[^0-9]/g, '')
+              setFilters((prev) => ({
+                ...prev,
+                priceMin: raw ? Number(raw) : null,
+              }))
+            }}
+            className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
+          />
+          <span className="text-text-tertiary">—</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            name="priceMax"
+            autoComplete="off"
+            placeholder={`Máx ${currencySymbol}`}
+            aria-label="Precio máximo"
+            value={filters.priceMax != null ? filters.priceMax.toLocaleString('en-US') : ''}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/[^0-9]/g, '')
+              setFilters((prev) => ({
+                ...prev,
+                priceMax: raw ? Number(raw) : null,
+              }))
+            }}
+            className="w-28 rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
+          />
+        </div>
+        {priceRangeInvalid(filters) && (
+          <p role="alert" className="text-xs text-error-strong">El precio mínimo es mayor que el máximo.</p>
+        )}
       </div>
 
       {/* Result count */}

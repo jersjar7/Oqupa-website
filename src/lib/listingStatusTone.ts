@@ -11,7 +11,7 @@ export const LISTING_STATUS_TONE: Record<ListingStatus, PhotoOverlayTone> = {
   draft: 'neutral',
   paymentPending: 'warning',
   active: 'success',
-  expired: 'warning',
+  expired: 'neutral', // ADR-014: shown as Desactivado
   deactivated: 'neutral',
   sold: 'neutral',
   rented: 'neutral',

@@ -119,7 +119,8 @@ describe('useListStore', () => {
       act(() => {
         useListStore.getState().initialize('uid-123')
       })
-      expect(subscribeMock).toHaveBeenCalledWith('uid-123', expect.any(Function))
+      // Third argument: the error handler (audit 2026-11-02).
+      expect(subscribeMock).toHaveBeenCalledWith('uid-123', expect.any(Function), expect.any(Function))
     })
 
     it('sets isLoading to true while subscribing', () => {
@@ -205,5 +206,18 @@ describe('useListStore', () => {
 
       expect(unsubFn).toHaveBeenCalledOnce()
     })
+  })
+})
+
+// Audit 2026-11-02 (B.2): a refused read stops loading and says so.
+describe('useListStore — a failed read', () => {
+  it('stops loading and records the failure', () => {
+    subscribeMock.mockImplementation((_uid: string, _cb: unknown, onError: (e: Error) => void) => {
+      onError(new Error('permission-denied'))
+      return () => {}
+    })
+    act(() => useListStore.getState().initialize('u1'))
+    expect(useListStore.getState().isLoading).toBe(false)
+    expect(useListStore.getState().loadFailed).toBe(true)
   })
 })

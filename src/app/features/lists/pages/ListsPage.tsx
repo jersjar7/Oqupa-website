@@ -16,6 +16,7 @@ export default function ListsPage() {
   const firebaseUser = useAuthStore((s) => s.firebaseUser)
   const lists = useListStore((s) => s.lists)
   const isLoading = useListStore((s) => s.isLoading)
+  const loadFailed = useListStore((s) => s.loadFailed)
   const [creating, setCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -64,6 +65,21 @@ export default function ListsPage() {
     } finally {
       setBusy(null)
     }
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center">
+        <p className="text-base text-text-secondary">No pudimos cargar tus guardados. Vuelve a intentarlo.</p>
+        <button
+          type="button"
+          onClick={() => firebaseUser && useListStore.getState().initialize(firebaseUser.uid)}
+          className="mt-4 min-h-11 rounded-full border-[1.5px] border-secondary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-secondary"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
   }
 
   if (isLoading) {

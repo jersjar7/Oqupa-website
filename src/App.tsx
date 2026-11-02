@@ -44,6 +44,8 @@ import AdminApplicationsPage from '@/app/features/admin/pages/AdminApplicationsP
 import LeadsPage from '@/app/features/leads/pages/LeadsPage'
 import LeadDetailPage from '@/app/features/leads/pages/LeadDetailPage'
 import InterestedAgentsPage from '@/app/features/leads/pages/InterestedAgentsPage'
+import GuidelinesPage from '@/app/features/realtor/pages/GuidelinesPage'
+import HelpPage from '@/app/features/help/HelpPage'
 import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
 import ListsPage from '@/app/features/lists/pages/ListsPage'
 import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
@@ -128,6 +130,8 @@ export default function App() {
             <Route path="payments" element={<PaymentHistoryPage />} />
             <Route path="lists" element={<ListsPage />} />
             <Route path="lists/:listId" element={<ListDetailPage />} />
+            <Route path="buenas-practicas" element={<GuidelinesPage />} />
+            <Route path="ayuda" element={<HelpPage />} />
             <Route path="realtor-registration" element={<VerifiedGuard><RealtorRegistrationPage /></VerifiedGuard>} />
             <Route path="leads" element={<VerifiedGuard><RealtorGuard><LeadsPage /></RealtorGuard></VerifiedGuard>} />
             <Route path="leads/:id" element={<VerifiedGuard><RealtorGuard><LeadDetailPage /></RealtorGuard></VerifiedGuard>} />

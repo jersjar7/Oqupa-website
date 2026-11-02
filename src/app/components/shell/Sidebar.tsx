@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ChevronRight, LogOut } from 'lucide-react'
+import { ChevronRight, LifeBuoy, LogOut } from 'lucide-react'
 import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 import type { Capabilities } from './capabilities'
 import { getNavGroups } from './navItems'
@@ -74,6 +74,14 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
       </nav>
 
       <div className="border-t border-border p-3">
+        {/* Help, as the app's SOPORTE (ADR-046 #16). */}
+        <Link
+          to="/app/ayuda"
+          className="mb-1 flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm text-text-secondary hover:bg-background-secondary hover:text-text-primary"
+        >
+          <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+          Ayuda
+        </Link>
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <div className="h-8 w-8 rounded-full bg-secondary text-white grid place-items-center text-xs font-bold uppercase">
             {initials || '·'}
@@ -84,7 +92,7 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
           </div>
           <button
             onClick={onLogout}
-            className="p-1.5 rounded-md hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+            className="grid h-11 w-11 place-items-center rounded-md hover:bg-background-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
             aria-label="Cerrar sesión"
           >
             <LogOut className="h-4 w-4 text-text-secondary" />

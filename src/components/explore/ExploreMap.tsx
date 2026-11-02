@@ -21,6 +21,7 @@ import { createPinElement, createBoostedPinElement, createGroupElement, createDo
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import CompactListingCard from './CompactListingCard'
+import MyLocationButton from './MyLocationButton'
 import HoverPreviewCard from './HoverPreviewCard'
 import type { ListingWithProperty } from '@/types/explore'
 
@@ -329,6 +330,10 @@ function MapboxExploreMap({
   return (
     <>
       <div ref={containerRef} className="h-full w-full" data-testid="explore-map" />
+      {/* My Location, top right in the controls column (ADR-040, ADR-046 #4). */}
+      <MyLocationButton
+        onTarget={(t) => mapRef.current?.flyTo({ center: [t.lng, t.lat], zoom: t.zoom, essential: true })}
+      />
       {previewEl && selectedItem &&
         createPortal(
           <div

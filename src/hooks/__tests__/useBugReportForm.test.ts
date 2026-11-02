@@ -331,7 +331,8 @@ describe('useBugReportForm', () => {
       await act(async () => {
         await result.current.handleSubmit(makeSubmitEvent())
       })
-      expect(toastErrorMock).toHaveBeenCalledWith('Error al enviar. Inténtalo de nuevo.')
+      // The cause and another way to reach us (audit 2026-11-02). Was 'Error al enviar. Inténtalo de nuevo.'
+      expect(toastErrorMock).toHaveBeenCalledWith('No pudimos enviar tu reporte. Revisa tu internet o escríbenos a admin@oqupa.com.')
     })
 
     it('isSuccess remains false after failure', async () => {

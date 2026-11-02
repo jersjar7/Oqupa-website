@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus,
@@ -23,6 +24,7 @@ import StaggerList, { staggerItemVariants } from '@/app/components/ui/StaggerLis
 import ClaimLimitBanner from '../components/ClaimLimitBanner'
 import LeadCard from '../components/LeadCard'
 import ClaimedLeadCard from '../components/ClaimedLeadCard'
+import ClaimConsequences from '../components/ClaimConsequences'
 import AgentAssignmentCard from '@/app/features/dashboard/components/AgentAssignmentCard'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -107,6 +109,14 @@ export default function LeadsPage() {
       <p className="mt-3 text-sm text-text-secondary">
         {TAB_SUBTITLES[tab]}
       </p>
+      {/* The app links its Buenas prácticas from here (ADR-046 #20). */}
+      <Link
+        to="/app/buenas-practicas"
+        className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-secondary hover:text-secondary-hover"
+      >
+        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        Buenas prácticas
+      </Link>
 
       {/* Panes */}
       <div className="mt-6">
@@ -177,7 +187,7 @@ function TabButton({
         active
           ? 'text-secondary'
           : urgent
-            ? 'text-primary hover:text-primary-hover'
+            ? 'text-text-primary hover:text-secondary'
             : 'text-text-secondary hover:text-text-primary',
       ].join(' ')}
     >
@@ -241,10 +251,8 @@ function DisponiblesPane({
   if (query.isError) {
     return (
       <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
-        <p className="text-error-strong">Error al cargar las oportunidades.</p>
-        <button onClick={() => query.refetch()} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">
-          Reintentar
-        </button>
+        <p className="text-error-strong">No pudimos cargar las oportunidades. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
       </div>
     )
   }
@@ -295,11 +303,8 @@ function DisponiblesPane({
                 {PROPERTY_TYPE_LABELS[confirmLead.property.propertyType]} en {confirmLead.property.location.distrito}
               </p>
             </div>
-            <p className="mt-4 text-sm text-text-secondary">
-              Usarás <span className="font-bold">1</span> de{' '}
-              <span className="font-bold">{claimStatus.remaining}</span> reclamaciones restantes este mes.
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
+            <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
+            <p className="mt-3 text-sm text-text-secondary">
               Tu reclamo aparecerá en <span className="font-medium">En Espera</span> hasta
               que el propietario decida. Si te elige, verás la invitación en{' '}
               <span className="font-medium">Invitaciones</span>.
@@ -339,7 +344,8 @@ function EnEsperaPane({
   if (query.isError) {
     return (
       <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
-        <p className="text-error-strong">Error al cargar tus reclamos.</p>
+        <p className="text-error-strong">No pudimos cargar tus reclamos. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
       </div>
     )
   }
@@ -388,6 +394,16 @@ function InvitacionesPane({
   if (query.isLoading) {
     return <div className="flex justify-center py-12"><Spinner size="lg" /></div>
   }
+  // A failed load is not "no invitations": they are time-sensitive (audit
+  // 2026-11-02).
+  if (query.isError) {
+    return (
+      <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+        <p className="text-error-strong">No pudimos cargar tus invitaciones. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
+      </div>
+    )
+  }
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-white p-12 text-center">
@@ -429,5 +445,13 @@ function InvitacionesPane({
         </motion.div>
       ))}
     </StaggerList>
+  )
+}
+
+function RetryButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button className="mt-4" onClick={onClick}>
+      Reintentar
+    </Button>
   )
 }

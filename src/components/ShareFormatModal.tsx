@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, Download, Loader2, Check } from 'lucide-react'
+import { toast } from 'sonner'
+import { Link, Download, Loader2, Check, Share2 } from 'lucide-react'
 import Modal from '@/app/components/ui/Modal'
 import { buildBrandedCardConfig } from '@/lib/brandedCardConfig'
 import { paintBrandedCard } from '@/lib/brandedCardPainter'
@@ -17,14 +18,22 @@ interface ShareFormatModalProps {
   onClose: () => void
   listing: Listing
   property: Property
+  /** Opened right after publishing: the closing button goes to the listing. */
+  justPublished?: boolean
 }
+
+type LinkOutcome = 'shared' | 'copied' | 'failed' | null
 
 export default function ShareFormatModal({
   isOpen,
   onClose,
   listing,
   property,
+  justPublished = false,
 }: ShareFormatModalProps) {
+  const [linkOutcome, setLinkOutcome] = useState<LinkOutcome>(null)
+  // Phones share the image through the share sheet; elsewhere it downloads.
+  const sharesFiles = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
   const [generatingFormat, setGeneratingFormat] = useState<CardFormat | null>(null)
   const [completed, setCompleted] = useState<Set<CompletedAction>>(new Set())
 
@@ -46,14 +55,16 @@ export default function ShareFormatModal({
       totalAreaInSquareMeters: property.specs.totalAreaInSquareMeters,
     }
     const result = await shareListing(params)
-    // Only a share that left the page counts; 'failed' includes a cancel.
-    if (result !== 'failed') {
-      AnalyticsLogger.shareListing(
-        listing.id,
-        property.operationType,
-        result === 'shared' ? 'native' : 'clipboard',
-      )
-    }
+    // A cancel leaves the window as it was (audit 2026-11-02).
+    if (result === 'cancelled') return
+    setLinkOutcome(result)
+    if (result === 'failed') return
+    // Only a share that left the page counts.
+    AnalyticsLogger.shareListing(
+      listing.id,
+      property.operationType,
+      result === 'shared' ? 'native' : 'clipboard',
+    )
     markDone('link')
   }
 
@@ -100,13 +111,24 @@ export default function ShareFormatModal({
       AnalyticsLogger.shareListingBranded(listing.id, property.operationType, format, 'download')
       markDone(format)
     } catch {
-      // Silent fail — user can retry
+      // The app's words (branded_share_bloc); the person can retry.
+      toast.error('No se pudo generar la imagen. Intenta de nuevo.')
     } finally {
       setGeneratingFormat(null)
     }
   }
 
   const linkDone = completed.has('link')
+  const linkTitle =
+    linkOutcome === 'copied' ? 'Enlace copiado' : linkOutcome === 'shared' ? 'Enlace compartido' : 'Compartir enlace'
+  const linkSubtitle =
+    linkOutcome === 'copied'
+      ? '¡Listo para pegar!'
+      : linkOutcome === 'failed'
+        ? 'No se pudo compartir. Vuelve a intentarlo.'
+        : linkOutcome === 'shared'
+          ? 'Puedes compartirlo otra vez cuando quieras.'
+          : 'Envía el enlace de esta propiedad'
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Compartir">
@@ -123,10 +145,10 @@ export default function ShareFormatModal({
         </div>
         <div>
           <p className="font-medium text-text-primary">
-            {linkDone ? 'Enlace copiado' : 'Compartir enlace'}
+            {linkTitle}
           </p>
-          <p className="text-sm text-text-secondary">
-            {linkDone ? '¡Listo para pegar!' : 'Envía el link de tu anuncio'}
+          <p className={`text-sm ${linkOutcome === 'failed' ? 'text-error-strong' : 'text-text-secondary'}`}>
+            {linkSubtitle}
           </p>
         </div>
       </button>
@@ -138,20 +160,22 @@ export default function ShareFormatModal({
       <div className="grid grid-cols-2 gap-3">
         <FormatButton
           label="Historia"
-          sublabel="9:16"
+          sublabel="Para estados e historias"
           format="story"
           isGenerating={generatingFormat === 'story'}
           isDisabled={generatingFormat !== null}
           isDone={completed.has('story')}
+          sharesFiles={sharesFiles}
           onClick={() => handleShareImage('story')}
         />
         <FormatButton
           label="Cuadrada"
-          sublabel="1:1"
+          sublabel="Para publicaciones"
           format="square"
           isGenerating={generatingFormat === 'square'}
           isDisabled={generatingFormat !== null}
           isDone={completed.has('square')}
+          sharesFiles={sharesFiles}
           onClick={() => handleShareImage('square')}
         />
       </div>
@@ -159,9 +183,9 @@ export default function ShareFormatModal({
       {/* Done button */}
       <button
         onClick={onClose}
-        className="mt-6 w-full rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+        className="mt-6 w-full rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
       >
-        Listo — Ver mi publicación
+        {justPublished ? 'Listo — Ver mi publicación' : 'Listo'}
       </button>
     </Modal>
   )
@@ -174,6 +198,7 @@ function FormatButton({
   isGenerating,
   isDisabled,
   isDone,
+  sharesFiles,
   onClick,
 }: {
   label: string
@@ -182,6 +207,7 @@ function FormatButton({
   isGenerating: boolean
   isDisabled: boolean
   isDone: boolean
+  sharesFiles: boolean
   onClick: () => void
 }) {
   const aspectClass = format === 'story' ? 'aspect-[9/16]' : 'aspect-square'
@@ -221,8 +247,8 @@ function FormatButton({
       <div className={`flex items-center gap-1 text-xs ${
         isDone ? 'text-success' : 'text-[var(--color-secondary)]'
       }`}>
-        {isDone ? <Check className="h-3 w-3" /> : <Download className="h-3 w-3" />}
-        <span>{isDone ? 'Descargado' : 'Descargar'}</span>
+        {isDone ? <Check className="h-3 w-3" /> : sharesFiles ? <Share2 className="h-3 w-3" /> : <Download className="h-3 w-3" />}
+        <span>{isDone ? 'Listo' : sharesFiles ? 'Compartir' : 'Descargar'}</span>
       </div>
     </button>
   )

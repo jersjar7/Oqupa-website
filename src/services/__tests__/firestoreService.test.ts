@@ -844,6 +844,18 @@ describe('firestoreService', () => {
       })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
     })
 
+    it('never shows the SDK word "internal" (audit 2026-11-02)', async () => {
+      callableFnMock.mockRejectedValue({ code: 'functions/internal', message: 'internal' })
+      await expect(firestoreService.createRealtorClaim({
+        listingId: 'listing-1',
+        realtorId: 'realtor-1',
+        listingOwnerId: 'owner-1',
+        realtorName: 'Juan',
+        realtorPhone: '+51987',
+        realtorBusinessName: 'JG',
+      })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
+    })
+
     it('throws a generic fallback message when functions/ error has an empty message (line 37 middle && branch)', async () => {
       // isFunctionsError=true but message is empty → condition false → generic fallback
       callableFnMock.mockRejectedValue({

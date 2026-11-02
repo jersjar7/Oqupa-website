@@ -23,11 +23,11 @@ export type NavGroup = {
 }
 
 const ITEMS = {
-  dashboard:          { id: 'dashboard',          label: 'Mi Panel',      to: '/app',                          icon: Home } as NavItem,
-  misAnuncios:        { id: 'misAnuncios',        label: 'Mis Propiedades', to: '/app/listings',               icon: Briefcase } as NavItem,
+  dashboard:          { id: 'dashboard',          label: 'Mi panel',      to: '/app',                          icon: Home } as NavItem,
+  misAnuncios:        { id: 'misAnuncios',        label: 'Mis propiedades', to: '/app/listings',               icon: Briefcase } as NavItem,
   misListas:          { id: 'misListas',          label: 'Guardados',     to: '/app/lists',                    icon: Heart } as NavItem,
   pagos:              { id: 'pagos',              label: 'Pagos',         to: '/app/payments',                 icon: CreditCard } as NavItem,
-  miPerfil:           { id: 'miPerfil',           label: 'Mi Perfil',     to: '/app/profile',                  icon: User } as NavItem,
+  miPerfil:           { id: 'miPerfil',           label: 'Mi perfil',     to: '/app/profile',                  icon: User } as NavItem,
   oportunidades:      { id: 'oportunidades',      label: 'Oportunidades', to: '/app/leads',                    icon: Compass } as NavItem,
   miRegistroAgente:   { id: 'miRegistroAgente',   label: 'Mi Registro',   to: '/app/realtor-registration',     icon: FileBadge } as NavItem,
   aplicaciones:       { id: 'aplicaciones',       label: 'Aplicaciones',  to: '/app/admin/applications',       icon: ClipboardList } as NavItem,

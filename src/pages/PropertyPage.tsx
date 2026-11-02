@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { bathroomsLabel } from '@/lib/roomCounts'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Sparkles } from 'lucide-react'
@@ -7,7 +8,7 @@ import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useRecordListingView } from '@/hooks/useRecordListingView'
 import { useAuthStore } from '@/stores/authStore'
-import { formatPrice, setReturnUrl } from '@/lib/utils'
+import { setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
 import { fullSize } from '@/lib/imageUrl'
 import { OwnerCard } from '@/app/features/listings/components/OwnerCard'
@@ -19,7 +20,7 @@ import {
   logContactRevealFailed,
   logContactTapped,
 } from '@/app/features/listings/contactFunnel'
-import { PROPERTY_TYPE_LABELS } from '@/types/enums'
+import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
 import { AnimatedImage, Button } from '@/app/components/ui'
@@ -37,6 +38,28 @@ import { contactFollowUpCoordinator } from '@/lib/contactFollowUpCoordinator'
 import { contactService, ContactDenied } from '@/services/contactService'
 import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import RevealedContact from '@/app/features/listings/components/RevealedContact'
+import ReportListing from '@/app/features/listings/components/ReportListing'
+import { contactFailureMessage, whatsappGreeting } from '@/app/features/listings/contactReveal'
+import { OFFLINE_MESSAGE } from '@/lib/friendlyErrors'
+
+/** "US$ 1,200" / "S/. 150,000" — in the listing's own currency (the page
+ *  showed every price in soles). */
+function priceInItsCurrency(price: { amount?: number; currency?: string } | undefined): string {
+  if (!price?.amount) return 'Precio no disponible'
+  const symbol = CURRENCY_SYMBOLS[price.currency as keyof typeof CURRENCY_SYMBOLS] ?? 'S/.'
+  return `${symbol} ${price.amount.toLocaleString('es-PE')}`
+}
+
+/** A phone opens WhatsApp in place: a new tab opened after the server call is
+ *  outside the tap, and iPhone Safari can block it silently (audit 2026-11-02). */
+function isPhone(): boolean {
+  try {
+    return window.matchMedia('(pointer: coarse)').matches
+  } catch {
+    return false
+  }
+}
 
 function PropertyGallery({ images }: { images: string[] }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -223,7 +246,7 @@ export default function PropertyPage() {
   const navigate = useNavigate()
   const { pathname, hash } = useLocation()
   const { firebaseUser, user, isInitialized } = useAuthStore()
-  const { listing, property, isLoading, error } = useProperty(id, {
+  const { listing, property, isLoading, failure, refetch } = useProperty(id, {
     viewerId: user?.id,
     authReady: isInitialized,
   })
@@ -243,6 +266,18 @@ export default function PropertyPage() {
   // ("rendered more hooks than during the previous render"), which the error
   // boundary turned into "Algo salió mal" on EVERY property page.
   const [contactLoading, setContactLoading] = useState(false)
+  // The number, once the server has handed it over: shown with LLAMAR and
+  // COPIAR beside WhatsApp (ADR-046 #6). Same rule as above: a hook, so it
+  // lives up here, above the early returns.
+  const [revealedPhone, setRevealedPhone] = useState<string | null>(null)
+  // Phone only: the WhatsApp address, offered as a button in the panel
+  // instead of leaving the page on its own (review 2026-11-02, decision).
+  const [revealedWhatsAppUrl, setRevealedWhatsAppUrl] = useState<string | null>(null)
+  // A different person signed in must not see the previous one's number.
+  useEffect(() => {
+    setRevealedPhone(null)
+    setRevealedWhatsAppUrl(null)
+  }, [firebaseUser?.uid])
   // SEO meta tags
   const metaTitle = useMemo(() => {
     if (!listing || !property) return 'Propiedad - Oqupa'
@@ -344,20 +379,37 @@ export default function PropertyPage() {
     )
   }
 
-  if (error || !listing || !property) {
+  // A failed load is not a deleted listing (audit 2026-11-02): an offline
+  // visitor was told it no longer existed.
+  if (failure === 'network') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-text-secondary">{OFFLINE_MESSAGE}</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="mt-2 inline-flex min-h-11 items-center rounded-full bg-primary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-white hover:bg-primary-hover"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
+  }
+
+  if (!listing || !property) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <h1 className="font-serif text-[28px] font-normal text-text-primary">
-          Propiedad no encontrada
+          Esta propiedad ya no está publicada
         </h1>
         <p className="text-text-secondary">
-          La propiedad que buscas no existe o ha sido eliminada.
+          Puede que se haya vendido, alquilado o retirado. Mira las que siguen disponibles en el mapa.
         </p>
         <Link
-          to="/"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+          to="/explorar"
+          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-6 py-3 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
         >
-          Volver al inicio
+          Ver propiedades disponibles
         </Link>
       </div>
     )
@@ -416,11 +468,24 @@ export default function PropertyPage() {
       // site produces. Reported after the call succeeds, so a denial is not
       // counted as interest.
       AnalyticsLogger.contactRevealed(listingIdForContact, segmentParams)
-      const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`
+      setRevealedPhone(contact.phone)
+      const greeting = whatsappGreeting({
+        displayName: contact.displayName,
+        propertyTypeLabel,
+        place: whatsappAddress,
+        priceText: priceInItsCurrency(listing!.price),
+      })
+      const waUrl = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(greeting)}`
       // The server has already recorded the contact, so the card is due
       // either way; it waits for the person to come back from WhatsApp.
       handedOff = true
       contactFollowUpCoordinator.contactHandedOff()
+      if (isPhone()) {
+        // A phone shows the number panel first — WHATSAPP, LLAMAR, COPIAR —
+        // and never leaves the page on its own (review 2026-11-02).
+        setRevealedWhatsAppUrl(waUrl)
+        return
+      }
       if (auto) {
         // Returning from the pipeline: no user gesture, so a new tab would be
         // blocked by the browser — go there directly instead.
@@ -451,14 +516,8 @@ export default function PropertyPage() {
         )
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
-      } else if (reason === 'listing-not-available') {
-        toast.error('Esta publicación ya no está disponible.')
-      } else if (reason === 'listing-has-no-contact') {
-        toast.error('Esta publicación no tiene un número de contacto.')
-      } else if (reason === 'rate-limited') {
-        toast.error('Has visto muchos contactos hoy. Intenta de nuevo mañana.')
       } else {
-        toast.error('No se pudo obtener el contacto. Intenta de nuevo.')
+        toast.error(contactFailureMessage(reason, navigator.onLine !== false))
       }
     } finally {
       if (!handedOff) contactFollowUpCoordinator.contactEndedWithoutHandOff()
@@ -475,9 +534,6 @@ export default function PropertyPage() {
         .filter(Boolean)
         .join(', ')
     : property.location?.distrito ?? ''
-  const whatsappMessage = encodeURIComponent(
-    `Hola, me interesa la propiedad en: ${whatsappAddress || 'su sitio web'}`
-  )
 
   return (
     <div className="min-h-screen bg-background pb-8 pt-20">
@@ -518,7 +574,7 @@ export default function PropertyPage() {
                 Compartir off-screen (Jerson, staging, 2026-08-26). */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <p className="whitespace-nowrap font-serif text-[28px] font-normal leading-tight text-secondary">
-                {formatPrice(listing.price?.amount)}
+                {priceInItsCurrency(listing.price)}
                 {(() => {
                   const suffix = getPriceSuffix(property.operationType, property.rentalDurationType)
                   return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
@@ -569,7 +625,7 @@ export default function PropertyPage() {
                 </svg>
                 <span className="text-sm">{location}</span>
                 {!showExact && (
-                  <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                  <span className="ml-2 rounded bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-text-secondary">
                     Ubicación aproximada
                   </span>
                 )}
@@ -584,10 +640,10 @@ export default function PropertyPage() {
                   {property.specs.bedroomCount} hab.
                 </span>
               )}
-              {property.specs?.bathroomCount != null && (
+              {(property.specs?.bathroomCount ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
                   <span aria-hidden="true">&#x1F6BF;</span>
-                  {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
+                  {bathroomsLabel(property.specs.bathroomCount)}
                 </span>
               )}
               {property.specs?.totalAreaInSquareMeters != null && (
@@ -612,7 +668,7 @@ export default function PropertyPage() {
             {listing.description && (
               <div className="mt-6">
                 <h2 className="font-serif text-lg font-normal text-text-primary">
-                  Descripción
+                  Sobre esta propiedad
                 </h2>
                 <p className="mt-2 whitespace-pre-line text-text-secondary leading-relaxed">
                   {listing.description}
@@ -648,21 +704,27 @@ export default function PropertyPage() {
                 >
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                 </svg>
-                {contactLoading ? 'Un momento…' : 'Escríbele por WhatsApp'}
+                {contactLoading ? 'Abriendo WhatsApp…' : 'Escríbele por WhatsApp'}
               </button>
               <div className="mt-3 space-y-2 px-1 text-xs leading-relaxed text-text-secondary">
                 <p>
                   Tu mensaje llega directamente a quien publica el aviso. En Oqupa no hay intermediarios.
                 </p>
                 <p>
-                  <span className="font-medium text-text-primary">Tip:</span> tu mensaje ya incluye la dirección. Cuéntale cuándo te gustaría visitarla.
+                  <span className="font-medium text-text-primary">Consejo:</span> cuéntale cuándo te gustaría visitarla.
                 </p>
               </div>
+              {revealedPhone && <RevealedContact phone={revealedPhone} whatsappUrl={revealedWhatsAppUrl} />}
               </div>
             )}
 
             {/* Who published it — from the listing's own copy of the owner's identity */}
             <OwnerCard listing={listing} />
+
+            {/* Reportar anuncio, as in the app (ADR-046 #5). Not on your own. */}
+            {!isOwner && view !== 'owner-only' && (
+              <ReportListing listingId={listing.id} ownerUserId={listing.ownerId} />
+            )}
 
             {/* Owner boost section */}
             {isOwner && listing.status === 'active' && (
@@ -805,7 +867,7 @@ export default function PropertyPage() {
                     logContactGateStep(CONTACT_GATE_STEPS.gateDismissed)
                     setShowAuthModal(false)
                   }}
-                  className="flex w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
+                  className="flex min-h-11 w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
                 >
                   Ahora no
                 </button>
@@ -825,7 +887,7 @@ export default function PropertyPage() {
                         toast.error('No pudimos cerrar tu sesión. Revisa tu conexión e intenta de nuevo.')
                       }
                     }}
-                    className="mx-auto text-xs text-text-tertiary underline underline-offset-2 hover:text-text-secondary"
+                    className="mx-auto min-h-11 px-4 font-sans text-xs font-bold uppercase tracking-[1px] text-text-secondary hover:text-text-primary"
                   >
                     Usar otra cuenta
                   </button>
