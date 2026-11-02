@@ -217,7 +217,7 @@ export default function WizardStep3() {
               type="checkbox"
               checked={showExactLocation}
               onChange={(e) => changeShowExactLocation(e.target.checked)}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-border accent-secondary focus:ring-secondary"
             />
             <div>
               <span className="text-sm font-medium text-text-primary">

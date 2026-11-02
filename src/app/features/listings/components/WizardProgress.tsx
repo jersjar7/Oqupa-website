@@ -21,9 +21,9 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary text-white'
+                      ? 'bg-secondary text-white'
                       : isCompleted
-                        ? 'bg-primary/20 text-primary'
+                        ? 'bg-secondary-pale text-secondary'
                         : 'bg-surface-strong text-text-tertiary'
                   }`}
                 >
@@ -37,7 +37,7 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
                 </div>
                 <span
                   className={`mt-1 text-xs ${
-                    isActive ? 'font-medium text-primary' : 'text-text-tertiary'
+                    isActive ? 'font-medium text-secondary' : 'text-text-tertiary'
                   }`}
                 >
                   {label}
@@ -46,7 +46,7 @@ export default function WizardProgress({ currentStep }: WizardProgressProps) {
               {i < STEP_LABELS.length - 1 && (
                 <div
                   className={`mt-4 h-0.5 flex-1 ${
-                    isCompleted ? 'bg-primary/30' : 'bg-surface-strong'
+                    isCompleted ? 'bg-secondary/30' : 'bg-surface-strong'
                   }`}
                 />
               )}

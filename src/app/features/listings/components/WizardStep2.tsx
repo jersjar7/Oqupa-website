@@ -185,8 +185,8 @@ export default function WizardStep2() {
                   onClick={() => setValue('hasPrivateBathroom', value)}
                   className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                     hasPrivateBathroom === value
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border text-text-secondary hover:border-primary/30'
+                      ? 'border-secondary bg-secondary-pale text-secondary'
+                      : 'border-border text-text-secondary hover:border-secondary/30'
                   }`}
                 >
                   {value ? 'Sí' : 'No'}

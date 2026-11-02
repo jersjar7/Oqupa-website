@@ -511,7 +511,7 @@ export default function WizardStep5() {
                 onClick={() => setValue('currency', cur)}
                 className={`flex-1 py-2 text-sm font-medium transition-colors first:rounded-l-xl last:rounded-r-xl ${
                   currency === cur
-                    ? 'bg-primary text-white'
+                    ? 'bg-secondary text-white'
                     : 'text-text-secondary hover:bg-black/5'
                 }`}
               >
@@ -557,7 +557,7 @@ export default function WizardStep5() {
           <label className="flex items-center gap-3">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-border accent-secondary focus:ring-secondary"
               {...register('wantsRealtorHelp')}
             />
             <div>
@@ -584,8 +584,8 @@ export default function WizardStep5() {
                     onClick={() => setValue('maxRealtors', n)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                       watch('maxRealtors') === n
-                        ? 'bg-primary text-white'
-                        : 'border border-border text-text-secondary hover:border-primary/30'
+                        ? 'bg-secondary text-white'
+                        : 'border border-border text-text-secondary hover:border-secondary/30'
                     }`}
                   >
                     {n}
@@ -607,7 +607,7 @@ export default function WizardStep5() {
 
           {/* Edit mode: what is being saved */}
           {isEditMode && uploadProgress && (
-            <p className="text-sm text-primary">{uploadProgress}</p>
+            <p className="text-sm text-secondary">{uploadProgress}</p>
           )}
 
           {/* Navigation */}

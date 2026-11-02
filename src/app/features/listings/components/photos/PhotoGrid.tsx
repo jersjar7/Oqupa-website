@@ -48,10 +48,10 @@ function PhotoTilePreview({
   const src =
     item.type === 'existing' ? cardUrl(item.url) : previewUrls.get(item.file) ?? ''
   return (
-    <div className="relative h-24 scale-105 overflow-hidden rounded-xl border border-border shadow-2xl ring-2 ring-primary/40">
+    <div className="relative h-24 scale-105 overflow-hidden rounded-xl border border-border shadow-2xl ring-2 ring-secondary/40">
       <img src={src} alt="" className="h-full w-full object-cover" />
       {isCover && (
-        <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-white">
+        <span className="absolute top-1 left-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[1px] text-white">
           Portada
         </span>
       )}
