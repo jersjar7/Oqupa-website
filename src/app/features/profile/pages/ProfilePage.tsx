@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
+import { profileSchema, editedNameError, type ProfileFormData } from '@/schemas/profileSchema'
 import { phoneSchema, verificationCodeSchema, type PhoneFormData, type VerificationCodeFormData } from '@/schemas/authSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -38,6 +38,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    setError: setFieldError,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -72,8 +73,16 @@ export default function ProfilePage() {
     setError(null)
     setSuccess(null)
 
+    // The setup's name rule, only for an edited name (hostile review
+    // 2026-11-02, item 4).
+    const nameError = editedNameError(data.name, user.name)
+    if (nameError) {
+      setFieldError('name', { message: nameError })
+      return
+    }
+
     try {
-      await authService.updateUserName(user.id, data.name)
+      await authService.updateUserName(user.id, data.name.trim())
 
       if (user.contactInfo) {
         await authService.updateUserContactInfo(user.id, {

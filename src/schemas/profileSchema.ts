@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { nameFieldSchema } from './authSchema'
 
 export const profileSchema = z.object({
   name: z
@@ -24,3 +25,14 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   })
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
+
+/**
+ * Mi perfil: the setup's one name rule (ADR-046 #10), applied only when the
+ * person changed the name — stored names are never re-checked (hostile
+ * review 2026-11-02, item 4). Null when there is nothing to say.
+ */
+export function editedNameError(typed: string, stored: string | undefined): string | null {
+  if (typed.trim() === (stored ?? '').trim()) return null
+  const result = nameFieldSchema.safeParse(typed)
+  return result.success ? null : (result.error.issues[0]?.message ?? null)
+}
