@@ -31,6 +31,8 @@ export default function WizardBackButton({ forEdit = false }: { forEdit?: boolea
     forEdit ? s.isEditMode && s.editListingId === id : !s.isEditMode,
   )
   const step = useListingFormStore((s) => s.step)
+  // -1 only when the person went back (ATRÁS); reset() moves forward to 1.
+  const direction = useListingFormStore((s) => s.direction)
   const onGuard = (location.state as GuardState | null)?.wizardGuard === true
 
   const lastKey = useRef<string | null>(null)
@@ -65,12 +67,14 @@ export default function WizardBackButton({ forEdit = false }: { forEdit?: boolea
 
     if (step > 1 && !onGuard) {
       pushGuard()
-    } else if (step === 1 && onGuard && !firstRun) {
+    } else if (step === 1 && onGuard && !firstRun && direction === -1) {
       // ATRÁS reached page 1 while the extra entry is on top: drop it, so one
-      // back press leaves.
+      // back press leaves. Only ATRÁS: the draft being cleared after
+      // publishing also lands on 1, while the router is already on its way to
+      // the new listing — going back then returned to the wizard (D13).
       navigate(-1)
     }
-  }, [engaged, location.key, location.pathname, location.search, location.hash, navigationType, onGuard, step, navigate])
+  }, [engaged, location.key, location.pathname, location.search, location.hash, navigationType, onGuard, step, direction, navigate])
 
   return null
 }
