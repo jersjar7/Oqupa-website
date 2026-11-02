@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
 import { consumeReturnUrl } from '@/lib/utils'
+import { rememberBouncedFrom } from '@/lib/returnPath'
 
 interface GuestGuardProps {
   children: React.ReactNode
@@ -10,6 +12,14 @@ interface GuestGuardProps {
 export default function GuestGuard({ children }: GuestGuardProps) {
   const { firebaseUser, user, isLoading, isInitialized } = useAuthStore()
   const location = useLocation()
+
+  // Bounced here by a guard (the session ended): once signed in, go back
+  // where they were — a same-site /app page only (hostile review #3).
+  const bouncedFrom = (location.state as { from?: unknown } | null)?.from
+  const signedOut = isInitialized && !isLoading && !firebaseUser
+  useEffect(() => {
+    if (signedOut && bouncedFrom) rememberBouncedFrom(bouncedFrom)
+  }, [signedOut, bouncedFrom])
 
   if (!isInitialized || isLoading) {
     return (

@@ -17,13 +17,16 @@ vi.mock('@/services/publishService', async (orig) => ({
   publishListing: publish,
 }))
 
+const endStaleSession = vi.hoisted(() => vi.fn(async () => {}))
+vi.mock('@/services/authService', () => ({ authService: { endStaleSession } }))
+
 import WizardStep5 from '../WizardStep5'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useAuthStore } from '@/stores/authStore'
 import { consumeReturnUrl } from '@/lib/utils'
 import { PublishError } from '@/services/publishService'
 
-const MESSAGE = 'Tu sesión se cerró. Inicia sesión para publicar.'
+const MESSAGE = 'Tu sesión se cerró. Vuelve a iniciar sesión y publica de nuevo.'
 
 function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>
@@ -56,6 +59,7 @@ describe('WizardStep5 — the session closed before PUBLICAR', () => {
     sessionStorage.clear()
     localStorage.clear()
     publish.mockReset()
+    endStaleSession.mockClear()
     vi.spyOn(console, 'error').mockImplementation(() => {})
     fb.auth.currentUser = { uid: 'owner-1' }
     useAuthStore.setState({ user: signedInUser } as never)
@@ -71,22 +75,15 @@ describe('WizardStep5 — the session closed before PUBLICAR', () => {
     useListingFormStore.getState().setStep(5)
   })
 
-  it('signed out (no profile): PUBLICAR says so instead of doing nothing', async () => {
-    useAuthStore.setState({ user: null } as never)
+  it('INICIAR SESIÓN ends the stale session first, then goes to sign-in with the way back, draft kept', async () => {
+    publish.mockRejectedValue(new PublishError(new Error('x'), { online: true, signedIn: false }))
     renderStep()
     fireEvent.click(screen.getByRole('button', { name: /publicar/i }))
-    expect(await screen.findByText(MESSAGE)).toBeTruthy()
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeTruthy()
-    expect(publish).not.toHaveBeenCalled()
-  })
-
-  it('INICIAR SESIÓN goes to sign-in and comes back to the wizard, draft kept', async () => {
-    useAuthStore.setState({ user: null } as never)
-    renderStep()
-    fireEvent.click(screen.getByRole('button', { name: /publicar/i }))
-    fireEvent.click(await screen.findByRole('button', { name: /iniciar sesión/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /iniciar sesión/i }, { timeout: 3000 }))
     await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/app/login'))
-    // Where the sign-in page sends the person once signed in (GuestGuard).
+    // Signed out first: otherwise the sign-in page sends a signed-in person
+    // straight back here, in a loop.
+    expect(endStaleSession).toHaveBeenCalledOnce()
     expect(consumeReturnUrl()).toBe('/app/listings/new')
     const saved = JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
     expect(saved.description).toBe('Terreno amplio con todos los servicios cerca de la avenida')

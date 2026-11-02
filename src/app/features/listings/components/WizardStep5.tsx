@@ -31,10 +31,7 @@ import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
 import { setReturnUrl } from '@/lib/utils'
-
-/** Shown when PUBLICAR is pressed after the sign-in ended (ADR-043 step 3, bug 17). */
-export const SESSION_CLOSED_NOTICE = 'Tu sesión se cerró. Inicia sesión para publicar.'
-const SESSION_CLOSED_NOTICE_EDIT = 'Tu sesión se cerró. Inicia sesión para guardar los cambios.'
+import { authService } from '@/services/authService'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
@@ -151,23 +148,27 @@ export default function WizardStep5() {
     isEditMode
   )
 
-  // INICIAR SESIÓN: keep the draft in this tab, remember to come back here,
-  // and go to the sign-in page (which returns here once signed in).
-  function signInAgain() {
+  // INICIAR SESIÓN after the publish was refused because the sign-in ended:
+  // keep the draft in this tab, end the stale session (otherwise the sign-in
+  // page sends a still-signed-in person straight back here, in a loop), and
+  // go to sign-in, which returns here once the same account is back. A
+  // different account gets a clean wizard (draftOwnerWatch).
+  async function signInAgain() {
     persistDraft()
-    setReturnUrl(`${location.pathname}${location.search}`)
+    const back = `${location.pathname}${location.search}`
+    try {
+      await authService.endStaleSession()
+    } catch {
+      // Signing out of a session that is already gone can fail; go on.
+    }
+    setReturnUrl(back)
     navigate('/app/login')
   }
 
   async function onSubmit(formData: Step4Data) {
-    // Signed out in the middle of the wizard. This used to do nothing at all.
-    // (A sign-in that ends during the publish itself is caught by the
-    // publish engine, with its own message; INICIAR SESIÓN is offered then too.)
-    if (!user) {
-      setSessionClosed(true)
-      setSubmitError(isEditMode ? SESSION_CLOSED_NOTICE_EDIT : SESSION_CLOSED_NOTICE)
-      return
-    }
+    // Unreachable in the app: the route's guards send a signed-out person to
+    // sign-in (and back here afterwards, review #3). Kept for the types.
+    if (!user) return
     setSessionClosed(false)
 
     // Pre-submission validation of all steps
@@ -630,7 +631,7 @@ export default function WizardStep5() {
             <p role="alert" className="text-sm text-error">{submitError}</p>
           )}
           {sessionClosed && (
-            <Button type="button" onClick={signInAgain} className="w-full">
+            <Button type="button" onClick={() => void signInAgain()} className="w-full">
               Iniciar sesión
             </Button>
           )}

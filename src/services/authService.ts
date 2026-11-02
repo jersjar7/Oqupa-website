@@ -41,6 +41,7 @@ import { signupAttribution, type SignupDoor } from '@/lib/attribution'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
 import { useListingFormStore } from '@/stores/listingFormStore'
+import { noteDeliberateSignOut } from '@/lib/returnPath'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -126,6 +127,8 @@ export const authService = {
     // ends by itself does not come through here, so it keeps the draft for
     // the same account.
     useListingFormStore.getState().discardDraft()
+    // Nor is the page they left a place to send the next sign-in back to.
+    noteDeliberateSignOut()
     await signOut(auth)
   },
 
