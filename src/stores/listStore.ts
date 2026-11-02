@@ -5,6 +5,8 @@ import type { UserList } from '@/types/userList'
 interface ListStoreState {
   lists: UserList[]
   isLoading: boolean
+  /** The read failed (offline or refused): not "no saves". */
+  loadFailed: boolean
   /** The account whose lists have arrived at least once (null before). */
   loadedUid: string | null
   _unsubscribe: (() => void) | null
@@ -15,21 +17,26 @@ interface ListStoreState {
 export const useListStore = create<ListStoreState>((set, get) => ({
   lists: [],
   isLoading: false,
+  loadFailed: false,
   loadedUid: null,
   _unsubscribe: null,
 
   initialize: (uid: string) => {
     get()._unsubscribe?.()
-    set({ isLoading: true, loadedUid: null })
-    const unsubscribe = listService.subscribe(uid, (lists) => {
-      set({ lists, isLoading: false, loadedUid: uid })
-    })
+    set({ isLoading: true, loadFailed: false, loadedUid: null })
+    const unsubscribe = listService.subscribe(
+      uid,
+      (lists) => {
+        set({ lists, isLoading: false, loadFailed: false, loadedUid: uid })
+      },
+      () => set({ isLoading: false, loadFailed: true }),
+    )
     set({ _unsubscribe: unsubscribe })
   },
 
   reset: () => {
     get()._unsubscribe?.()
-    set({ lists: [], isLoading: false, loadedUid: null, _unsubscribe: null })
+    set({ lists: [], isLoading: false, loadFailed: false, loadedUid: null, _unsubscribe: null })
   },
 }))
 

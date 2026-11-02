@@ -73,7 +73,11 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
 
     // The account's lists have not arrived yet: wait, or "no lists" would
     // make a second Guardados (re-review).
-    if (!listsArrived) return
+    if (!listsArrived) {
+      // The read failed: say so instead of doing nothing (audit 2026-11-02).
+      if (useListStore.getState().loadFailed) toast.error('No pudimos cargar tus guardados. Vuelve a intentarlo.')
+      return
+    }
 
     // An empty heart saves at once, to the default list; a full one opens
     // the menu to change lists or un-save (2026-10-25: an empty heart used to
@@ -83,6 +87,8 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
       setBusy(true)
       try {
         await listService.addListing(firebaseUser.uid, target.id, listingId)
+        // "Guardado" on every save, as in the app (audit 2026-11-02).
+        toast.success('Guardado')
       } catch {
         toast.error('No se pudo guardar')
       } finally {
