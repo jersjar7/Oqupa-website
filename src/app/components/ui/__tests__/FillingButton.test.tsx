@@ -58,13 +58,30 @@ describe('FillingButton', () => {
     expect(b.querySelector('.text-white')).not.toBeNull()
   })
 
-  it('cannot be clicked while filling', () => {
+  it('cannot be clicked while filling — and does not submit its form', () => {
     const onClick = vi.fn()
-    render(<FillingButton status="filling" onClick={onClick}>Publicar</FillingButton>)
-    const b = screen.getByRole('button') as HTMLButtonElement
-    expect(b.disabled).toBe(true)
+    const onSubmit = vi.fn((e: { preventDefault: () => void }) => e.preventDefault())
+    render(
+      <form onSubmit={onSubmit}>
+        <FillingButton type="submit" status="filling" onClick={onClick}>Publicar</FillingButton>
+      </form>,
+    )
+    const b = screen.getByRole('button')
+    expect(b.getAttribute('aria-disabled')).toBe('true')
     fireEvent.click(b)
     expect(onClick).not.toHaveBeenCalled()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('keeps keyboard focus when it starts filling (not natively disabled)', () => {
+    const { rerender } = render(<FillingButton status="idle">Publicar</FillingButton>)
+    const b = screen.getByRole('button') as HTMLButtonElement
+    b.focus()
+    rerender(<FillingButton status="filling">Publicar</FillingButton>)
+    expect(b.disabled).toBe(false)
+    expect(document.activeElement).toBe(b)
+    rerender(<FillingButton status="done">Publicar</FillingButton>)
+    expect(document.activeElement).toBe(b)
   })
 
   it('fills on the time curve, never decreases, and waits at 0.90', async () => {
@@ -156,11 +173,23 @@ describe('FillingButton', () => {
     expect(screen.getByRole('status').textContent).toBe('Publicado')
   })
 
+  it('announces the failure too', async () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+    fireEvent.click(screen.getByText('failed'))
+    expect(screen.getByRole('status').textContent).toBe('No pudimos publicar')
+  })
+
   it('with reduced motion: no animation, and success jumps straight to full and "¡PUBLICADO!"', async () => {
     mockReducedMotion(true)
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
     expect((screen.getByTestId('filling-bar') as HTMLElement).style.transition).toBe('none')
+    // No stepped movement: straight to the held value, and it stays there.
+    await advance(1)
+    expect(fillOf()).toBe(0.9)
+    await advance(3000)
+    expect(fillOf()).toBe(0.9)
     fireEvent.click(screen.getByText('saved'))
     await advance(1)
     expect(fillOf()).toBe(1)

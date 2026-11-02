@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { nextFill } from '@/lib/fillProgress'
+import { nextFill, FILL_HOLD } from '@/lib/fillProgress'
 
 export type FillStatus = 'idle' | 'filling' | 'done' | 'error'
 
@@ -20,8 +20,9 @@ export interface FillProgress {
  * Drives a filling button (ADR-043, D14). While `status` is 'filling' the bar
  * follows max(time curve, `progress`), capped at 0.90 and never backwards.
  * On 'done' it goes to full in FILL_COMPLETE_MS, shows the done label for
- * FILL_CELEBRATE_MS, then calls `onDone`. With reduced motion the bar jumps
- * to full at once (the label still shows, so the person sees it worked).
+ * FILL_CELEBRATE_MS, then calls `onDone`. With reduced motion the bar does
+ * not move in steps: it shows the held 0.90 at once while working and jumps
+ * to full on success (the label still shows, so the person sees it worked).
  */
 export function useFillProgress(
   status: FillStatus,
@@ -37,19 +38,24 @@ export function useFillProgress(
 
   useEffect(() => {
     if (status !== 'filling') return
+    setShowDone(false)
+    // Reduced motion: no creeping bar — straight to the held value.
+    if (reducedMotion) {
+      setFill(FILL_HOLD)
+      return
+    }
     const start = Date.now()
     setFill(0)
-    setShowDone(false)
     const tick = () => setFill((prev) => nextFill(prev, Date.now() - start, progressRef.current))
     tick()
     const id = setInterval(tick, TICK_MS)
     return () => clearInterval(id)
-  }, [status])
+  }, [status, reducedMotion])
 
   // Real progress can jump ahead between ticks; show it straight away.
   useEffect(() => {
-    if (status === 'filling') setFill((prev) => nextFill(prev, 0, progress))
-  }, [status, progress])
+    if (status === 'filling' && !reducedMotion) setFill((prev) => nextFill(prev, 0, progress))
+  }, [status, progress, reducedMotion])
 
   useEffect(() => {
     if (status === 'done') {

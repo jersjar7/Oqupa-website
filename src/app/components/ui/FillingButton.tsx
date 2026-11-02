@@ -1,4 +1,4 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useState, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useFillProgress, prefersReducedMotion, FILL_COMPLETE_MS, type FillStatus } from '@/hooks/useFillProgress'
 
 export type { FillStatus } from '@/hooks/useFillProgress'
@@ -16,6 +16,7 @@ interface FillingButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   /** Screen-reader announcements, said once each. */
   fillingAnnouncement?: string
   doneAnnouncement?: string
+  errorAnnouncement?: string
   /** Called once the full bar has shown its done label. */
   onDone?: () => void
 }
@@ -43,6 +44,7 @@ export default function FillingButton({
   retryLabel = 'REINTENTAR',
   fillingAnnouncement = 'Publicando',
   doneAnnouncement = 'Publicado',
+  errorAnnouncement = 'No pudimos publicar',
   onDone,
   className = '',
   disabled,
@@ -59,7 +61,7 @@ export default function FillingButton({
 
   const off = !busy && disabled
   const look = busy
-    ? 'pointer-events-none cursor-default border-secondary bg-secondary-pale text-secondary'
+    ? 'cursor-default border-secondary bg-secondary-pale text-secondary'
     : off
       ? 'pointer-events-none border-black/20 text-black/20'
       : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover active:scale-[0.97]'
@@ -86,12 +88,21 @@ export default function FillingButton({
     <>
       <button
         type={type}
-        // One element throughout, so focus is not lost when it starts filling.
-        disabled={busy || off}
+        // One element throughout, and NOT natively disabled while filling:
+        // a disabled button drops keyboard focus to the page. aria-disabled
+        // tells assistive tech; the click guard stops the action (and, for a
+        // submit button, the form submit — Enter in a field clicks it too).
+        disabled={off}
         aria-disabled={busy || off ? 'true' : undefined}
         data-status={status}
         data-fill={busy ? fill.toFixed(4) : undefined}
-        onClick={busy ? undefined : onClick}
+        onClick={(e: MouseEvent<HTMLButtonElement>) => {
+          if (busy) {
+            e.preventDefault()
+            return
+          }
+          onClick?.(e)
+        }}
         className={`${base} ${look} ${className}`}
         {...props}
       >
@@ -119,7 +130,9 @@ export default function FillingButton({
           ? fillingAnnouncement
           : showDone
             ? doneAnnouncement
-            : ''}
+            : status === 'error'
+              ? errorAnnouncement
+              : ''}
       </span>
     </>
   )

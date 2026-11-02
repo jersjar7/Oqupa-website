@@ -328,7 +328,7 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     fireEvent.click(btn)
     await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
     await waitFor(() => expect(btn.getAttribute('data-status')).toBe('done'))
-    expect(btn.disabled).toBe(true)
+    expect(btn.getAttribute('aria-disabled')).toBe('true')
     fireEvent.click(btn)
     fireEvent.submit(btn.closest('form')!)
     await new Promise((r) => setTimeout(r, 100))
