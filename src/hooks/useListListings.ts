@@ -10,6 +10,8 @@ export function useListListings(listingIds: string[]) {
   /** Ids whose load failed (offline, an error) — they may well exist. */
   const [failedIds, setFailedIds] = useState<string[]>([])
 
+  // Bumped by retry() to load again (audit 2026-11-02).
+  const [attempt, setAttempt] = useState(0)
   const key = listingIds.join(',')
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function useListListings(listingIds: string[]) {
       cancelled = true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
+  }, [key, attempt])
 
-  return { items, isLoading, missingIds, failedIds }
+  return { items, isLoading, missingIds, failedIds, retry: () => setAttempt((n) => n + 1) }
 }

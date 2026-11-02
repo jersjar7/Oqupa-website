@@ -15,12 +15,13 @@ import { MemoryRouter } from 'react-router-dom'
 import SaveButton, { popoverTop } from '../SaveButton'
 import { listService } from '@/services/listService'
 import type { UserList } from '@/types/userList'
+import { toast } from 'sonner'
 
 vi.mock('@/services/listService', () => ({
   listService: { addListing: vi.fn(async () => {}), removeListing: vi.fn(async () => {}), createList: vi.fn(async () => 'new'), ensureDefaultList: vi.fn(async () => 'guardados') },
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[], loadedUid: 'u1' as string | null }))
+const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[], loadedUid: 'u1' as string | null, loadFailed: false }))
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: (sel: (s: typeof state) => unknown) => sel(state),
 }))
@@ -68,6 +69,8 @@ describe('SaveButton on the slim card', () => {
     await waitFor(() => expect(listService.addListing).toHaveBeenCalledWith('u1', 'd', 'L1'))
     expect(screen.queryByText(/guardar en/i)).toBeNull()
     expect(card).not.toHaveBeenCalled()
+    // "Guardado" on every save, as in the app (audit 2026-11-02).
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Guardado'))
   })
   it('a full heart opens "Guardar en"; a tap in it never reaches the card', () => {
     const card = setup([list('d', 'Guardados', ['L1'], true)])
@@ -166,5 +169,18 @@ describe('SaveButton — edges from the re-review', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(listService.addListing).not.toHaveBeenCalled()
     state.loadedUid = 'u1'
+  })
+  it('lists that failed to load: the heart says so instead of doing nothing (audit 2026-11-02)', async () => {
+    state.firebaseUser = { uid: 'u1', emailVerified: true }
+    state.user = { name: 'Ana', isPhoneVerified: true }
+    state.lists = []
+    state.loadedUid = null
+    state.loadFailed = true
+    render(<MemoryRouter><SaveButton listingId="L5" variant="plain" /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No pudimos cargar tus guardados. Vuelve a intentarlo.'))
+    expect(listService.addListing).not.toHaveBeenCalled()
+    state.loadedUid = 'u1'
+    state.loadFailed = false
   })
 })

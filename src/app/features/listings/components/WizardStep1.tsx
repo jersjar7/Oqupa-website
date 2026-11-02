@@ -130,8 +130,8 @@ export default function WizardStep1() {
                 onClick={() => handleOperationTypeChange(type)}
                 className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                   selected.operationType === type
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border text-text-secondary hover:border-primary/30'
+                    ? 'border-secondary bg-secondary text-white'
+                    : 'border-border text-text-secondary hover:border-secondary/30'
                 }`}
               >
                 {OPERATION_TYPE_LABELS[type]}
@@ -161,8 +161,8 @@ export default function WizardStep1() {
                   onClick={() => handleRentalDurationChange(type)}
                   className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                     selected.rentalDurationType === type
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border text-text-secondary hover:border-primary/30'
+                      ? 'border-secondary bg-secondary-pale text-secondary'
+                      : 'border-border text-text-secondary hover:border-secondary/30'
                   }`}
                 >
                   {RENTAL_DURATION_TYPE_LABELS[type]}
@@ -188,17 +188,17 @@ export default function WizardStep1() {
                 onClick={() => handlePropertyTypeChange(type)}
                 className={`flex flex-col items-start rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                   selected.propertyType === type
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/30'
+                    ? 'border-secondary bg-secondary-pale'
+                    : 'border-border hover:border-secondary/30'
                 }`}
               >
                 <span className={`text-sm font-semibold ${
-                  selected.propertyType === type ? 'text-primary' : 'text-text-primary'
+                  selected.propertyType === type ? 'text-secondary' : 'text-text-primary'
                 }`}>
                   {PROPERTY_TYPE_LABELS[type]}
                 </span>
                 <span className={`text-xs ${
-                  selected.propertyType === type ? 'text-primary/70' : 'text-text-tertiary'
+                  selected.propertyType === type ? 'text-text-secondary' : 'text-text-tertiary'
                 }`}>
                   {PROPERTY_TYPE_DESCRIPTIONS[type]}
                 </span>
@@ -230,8 +230,8 @@ export default function WizardStep1() {
                 onClick={() => setValue('role', role, { shouldValidate: true })}
                 className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
                   selected.role === role
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border text-text-secondary hover:border-primary/30'
+                    ? 'border-secondary bg-secondary-pale text-secondary'
+                    : 'border-border text-text-secondary hover:border-secondary/30'
                 }`}
               >
                 {LISTING_ROLE_LABELS[role]}

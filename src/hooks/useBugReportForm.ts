@@ -105,7 +105,7 @@ export function useBugReportForm() {
       setFormData({ contact: '', description: '', technical: '' })
       toast.success('¡Gracias! Recibimos tu reporte.')
     } catch {
-      toast.error('Error al enviar. Inténtalo de nuevo.')
+      toast.error('No pudimos enviar tu reporte. Revisa tu internet o escríbenos a admin@oqupa.com.')
     } finally {
       setIsSubmitting(false)
     }

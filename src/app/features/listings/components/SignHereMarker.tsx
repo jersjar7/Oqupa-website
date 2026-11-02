@@ -46,7 +46,7 @@ export default function SignHereMarker({ text, visible, anchorRef }: SignHereMar
   }, [visible, isXl, updatePos])
 
   const markerContent = (
-    <span className="whitespace-pre-line rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary">
+    <span className="whitespace-pre-line rounded-lg border border-secondary/20 bg-secondary-pale px-2.5 py-1.5 text-xs font-medium text-secondary">
       {text}
     </span>
   )
@@ -64,7 +64,7 @@ export default function SignHereMarker({ text, visible, anchorRef }: SignHereMar
               transition={{ duration: 0.3, ease: 'easeOut' }}
               className="pointer-events-none mt-2 flex items-center gap-1.5"
             >
-              <ChevronUp className="h-4 w-4 shrink-0 text-primary" />
+              <ChevronUp className="h-4 w-4 shrink-0 text-secondary" />
               {markerContent}
             </motion.div>
           )}
@@ -83,7 +83,7 @@ export default function SignHereMarker({ text, visible, anchorRef }: SignHereMar
               className="pointer-events-none fixed z-50 flex max-w-[260px] items-center gap-1.5"
               style={{ top: pos.top, left: pos.left, transform: 'translateY(-50%)' }}
             >
-              <ChevronLeft className="h-4 w-4 shrink-0 text-primary" />
+              <ChevronLeft className="h-4 w-4 shrink-0 text-secondary" />
               {markerContent}
             </motion.div>
           )}

@@ -18,15 +18,18 @@ export default function ListDetailPage() {
   const list = lists.find((l) => l.id === listId)
   useSetPageMeta({ title: list?.name ?? 'Lista' })
 
-  const { items, isLoading } = useListListings(list?.listingIds ?? [])
+  const { items, isLoading, missingIds = [], failedIds = [], retry } = useListListings(list?.listingIds ?? [])
+  // Offline or a failed read: not an empty list (audit 2026-11-02).
+  const couldNotLoad = !isLoading && items.length === 0 && failedIds.length > 0
 
   async function handleRemove(listingId: string) {
     if (!firebaseUser || !listId) return
     try {
       await listService.removeListing(firebaseUser.uid, listId, listingId)
-      toast.success('Eliminado de la lista')
+      // The app's words (favorites_bloc).
+      toast.success('Quitado de Guardados')
     } catch {
-      toast.error('No se pudo eliminar')
+      toast.error('No se pudo quitar de Guardados. Vuelve a intentarlo.')
     }
   }
 
@@ -64,7 +67,18 @@ export default function ListDetailPage() {
         <div className="flex min-h-[30vh] items-center justify-center">
           <Spinner size="lg" />
         </div>
-      ) : items.length === 0 ? (
+      ) : couldNotLoad ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+          <p className="font-sans text-base text-text-secondary">Sin conexión. Revisa tu internet y vuelve a intentarlo.</p>
+          <button
+            type="button"
+            onClick={retry}
+            className="min-h-11 rounded-full border-[1.5px] border-secondary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-secondary"
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : items.length === 0 && missingIds.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
           <Heart className="mb-3 h-10 w-10 text-text-tertiary" />
           <p className="font-sans text-base text-text-secondary">Esta lista está vacía</p>
@@ -84,9 +98,25 @@ export default function ListDetailPage() {
                 onClick={() => handleRemove(item.listing.id)}
                 title="Quitar de la lista"
                 aria-label="Quitar de la lista"
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 font-sans text-base font-bold leading-none text-white transition-colors hover:bg-error"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
               >
-                ×
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 font-sans text-base font-bold leading-none text-white transition-colors hover:bg-error">
+                  ×
+                </span>
+              </button>
+            </div>
+          ))}
+          {/* Removed listings stay visible, as the app's stub, so a save never
+              vanishes without a word (audit 2026-11-02). */}
+          {missingIds.map((id) => (
+            <div key={id} className="flex flex-col justify-between rounded-xl border border-border bg-surface-muted p-4">
+              <p className="text-sm text-text-secondary">Esta propiedad ya no está disponible</p>
+              <button
+                type="button"
+                onClick={() => handleRemove(id)}
+                className="mt-3 min-h-11 self-start rounded-full border-[1.5px] border-error/50 px-4 font-sans text-xs font-bold uppercase tracking-[1px] text-error-strong"
+              >
+                Quitar
               </button>
             </div>
           ))}

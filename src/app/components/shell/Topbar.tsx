@@ -30,7 +30,7 @@ export default function Topbar({ title, subtitle, caps, actions, accessArea }: P
         <div
           role="status"
           aria-live="polite"
-          className="bg-accent/40 text-[#8A6400] text-xs px-6 py-1.5 flex flex-wrap items-center gap-2 justify-between"
+          className="bg-accent/40 text-ink text-xs px-6 py-1.5 flex flex-wrap items-center gap-2 justify-between"
         >
           <span>
             <strong>Modo debug:</strong>{' '}
@@ -38,7 +38,7 @@ export default function Topbar({ title, subtitle, caps, actions, accessArea }: P
           </span>
           <button
             onClick={() => setViewAs('self')}
-            className="underline font-medium hover:text-[#6A4E00] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A6400]/50 rounded-sm"
+            className="underline font-medium hover:text-text-secondary shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A6400]/50 rounded-sm"
           >
             Volver a mi vista
           </button>

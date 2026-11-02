@@ -50,7 +50,7 @@ export default function MapListView({
   return (
     <div>
       <div data-testid="map-list-header" className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-text-primary">{listHeader(items.length, isVenta)}</h2>
+        <h2 className="font-serif text-[22px] font-normal text-text-primary">{listHeader(items.length, isVenta)}</h2>
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
@@ -92,7 +92,7 @@ export default function MapListView({
         <div>
           <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSheetOpen(false)} />
           <div role="dialog" aria-label="Ordenar" className="fixed inset-x-0 bottom-0 z-[61] mx-auto max-w-md rounded-t-2xl bg-white px-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-5 md:bottom-auto md:top-1/3 md:rounded-2xl">
-            <p className="mb-2 text-lg font-bold text-text-primary">Ordenar</p>
+            <p className="mb-2 font-serif text-[22px] font-normal text-text-primary">Ordenar</p>
             <div className="flex flex-col gap-1">
               {LIST_SORTS.map((s) => (
                 <button
@@ -102,7 +102,7 @@ export default function MapListView({
                     setSort(s.id)
                     setSheetOpen(false)
                   }}
-                  className={`flex h-14 items-center justify-between rounded-xl px-3.5 text-left text-[17px] text-text-primary ${s.id === sort ? 'bg-[#EEF4F1]' : ''}`}
+                  className={`flex h-14 items-center justify-between rounded-xl px-3.5 text-left text-[17px] text-text-primary ${s.id === sort ? 'bg-secondary/10' : ''}`}
                 >
                   <span>{s.label}</span>
                   {s.id === sort && <span className="font-bold text-secondary">✓</span>}

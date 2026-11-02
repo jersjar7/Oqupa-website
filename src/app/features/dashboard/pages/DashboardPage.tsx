@@ -37,7 +37,7 @@ import StatCard from '../components/StatCard'
 import RecentActivity from '../components/RecentActivity'
 import {
   nextClaimResetText, activeListingsNote, countPublishedSince,
-  spendThisMonthSoles, buildSubtitle,
+  spendThisMonthSoles, buildSubtitle, boostedKpiSubtitle,
 } from './dashboardHelpers'
 
 // ---------------------------------------------------------------------------
@@ -78,8 +78,10 @@ function SectionHeader({
 // ---------------------------------------------------------------------------
 // Owner KPIs — listings, boosts, views
 // ---------------------------------------------------------------------------
-function OwnerKpis({ userId }: { userId: string | undefined }) {
-  const { data: items, isLoading } = useUserListingsWithProperties(userId)
+export function OwnerKpis({ userId }: { userId: string | undefined }) {
+  const { data: items, isLoading: loadingListings, isError } = useUserListingsWithProperties(userId)
+  // A failed load shows "—" and says so, never zeros (audit 2026-11-02).
+  const isLoading = loadingListings || isError
   const { data: payments } = useUserBoostPayments(userId)
   const listings = items ?? []
   const active = listings.filter(({ listing }) => listing.status === 'active').length
@@ -87,13 +89,14 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
   const totalViews = listings.reduce((sum, { listing }) => sum + (listing.viewCount ?? 0), 0)
   const monthlySpend = spendThisMonthSoles(payments)
 
-  const activeSub = activeListingsNote(listings.length, active)
+  const failedNote = 'No pudimos cargar tus números. Recarga la página.'
+  const activeSub = isError ? failedNote : activeListingsNote(listings.length, active)
 
-  const boostedSub = (() => {
-    const ratio = listings.length > 0 ? `${boosted} de ${listings.length} anuncios` : 'Activa uno para destacar'
-    const spend = monthlySpend > 0 ? ` · S/ ${monthlySpend.toFixed(2)} este mes` : ''
-    return boosted > 0 || monthlySpend > 0 ? ratio + spend : 'Activa uno para destacar'
-  })()
+  const boostedSub = boostedKpiSubtitle({
+    boosted,
+    total: listings.length,
+    monthlySpendSoles: monthlySpend,
+  })
 
   const viewsSub = totalViews > 0
     ? 'Acumuladas en todos tus anuncios'
@@ -110,15 +113,15 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
         icon={<Briefcase className="h-6 w-6 text-secondary" />}
       />
       <StatCard
-        label="Boosts activos"
+        label="Destacados activos"
         value={isLoading ? '—' : boosted}
-        sub={boostedSub}
+        sub={isError ? undefined : boostedSub}
         icon={<Zap className="h-6 w-6 text-primary" />}
       />
       <StatCard
         label="Vistas totales"
         value={isLoading ? '—' : totalViews.toLocaleString('es-PE')}
-        sub={viewsSub}
+        sub={isError ? undefined : viewsSub}
         icon={<Eye className="h-6 w-6 text-secondary" />}
       />
     </div>
@@ -151,7 +154,7 @@ function RealtorKpis({ userId, isVerified }: { userId: string | undefined; isVer
         icon={<Compass className="h-6 w-6 text-secondary" />}
       />
       <StatCard
-        label="Claims este mes"
+        label="Reclamos este mes"
         value={`${claimsUsed}/${claimStatus.limit}`}
         sub={
           <div className="mt-1">

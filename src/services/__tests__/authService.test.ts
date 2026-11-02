@@ -975,3 +975,45 @@ describe('authService', () => {
     })
   })
 })
+
+// Hostile review of fix/wizard-bugs-web, #1: Salir clears the publishing
+// draft, so the next person on this computer does not inherit it.
+describe('logout clears the publishing draft', () => {
+  it('memory and this tab\'s storage', async () => {
+    const { useListingFormStore } = await import('@/stores/listingFormStore')
+    useListingFormStore.getState().reset()
+    useListingFormStore.getState().adoptDraftFor('ana')
+    useListingFormStore.getState().updateData({ description: 'Casa de Ana en Castilla' })
+    expect(sessionStorage.getItem('oqupa-listing-form')).not.toBeNull()
+    await authService.logout()
+    expect(useListingFormStore.getState().data.description).toBe('')
+    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+  })
+})
+
+// Second hostile review #4: deleting the account is a deliberate sign-out —
+// no tab may store a way back for it.
+describe('deleteAccount notes a deliberate sign-out', () => {
+  it('marks it for every tab and drops a stored way back', async () => {
+    localStorage.setItem('oqupa_bouncedFrom', JSON.stringify({ url: '/app/listings/new', at: Date.now(), uid: 'u1' }))
+    callableInvokerMock.mockResolvedValueOnce({ data: {} })
+    signOutMock.mockResolvedValueOnce(undefined)
+    await authService.deleteAccount()
+    expect(Number(localStorage.getItem('oqupa_signedOutOnPurposeAt'))).toBeGreaterThan(0)
+    expect(localStorage.getItem('oqupa_bouncedFrom')).toBeNull()
+  })
+})
+
+// Third hostile review #5: if signing out fails, the person is still signed
+// in, so what they type next must still belong to them.
+describe('logout that fails', () => {
+  it('keeps the account on the draft', async () => {
+    const { useListingFormStore, setDraftAccount } = await import('@/stores/listingFormStore')
+    setDraftAccount('ana')
+    useListingFormStore.getState().reset()
+    signOutMock.mockRejectedValueOnce(new Error('network'))
+    await expect(authService.logout()).rejects.toThrow()
+    useListingFormStore.getState().updateData({ description: 'Sigo aquí' })
+    expect(useListingFormStore.getState().draftOwnerId).toBe('ana')
+  })
+})

@@ -160,4 +160,29 @@ describe('useProperty', () => {
 
     expect(getListingWithPropertyMock).not.toHaveBeenCalled()
   })
+
+  // Audit 2026-11-02: an offline visitor was told the listing was deleted.
+  // The page needs to know which failure it is.
+  describe('failure kind', () => {
+    it('a listing that does not exist is not-found', async () => {
+      getListingWithPropertyMock.mockResolvedValueOnce(null)
+      const { result } = renderHook(() => useProperty('l1'), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.failure).toBe('not-found')
+    })
+
+    it('a failed read is network, not not-found', async () => {
+      getListingWithPropertyMock.mockRejectedValueOnce(new Error('offline'))
+      const { result } = renderHook(() => useProperty('l1'), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.failure).toBe('network')
+    })
+
+    it('a loaded listing has no failure', async () => {
+      getListingWithPropertyMock.mockResolvedValueOnce({ listing: { id: 'l1', status: 'active' }, property: { id: 'p1' } })
+      const { result } = renderHook(() => useProperty('l1'), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.failure).toBeNull()
+    })
+  })
 })

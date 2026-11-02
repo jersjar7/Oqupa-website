@@ -43,11 +43,20 @@ function docToList(id: string, data: Record<string, unknown>): UserList {
 }
 
 export const listService = {
-  subscribe(uid: string, callback: (lists: UserList[]) => void): Unsubscribe {
+  subscribe(
+    uid: string,
+    callback: (lists: UserList[]) => void,
+    onError?: (error: Error) => void,
+  ): Unsubscribe {
     const q = query(listsCol(uid), orderBy('createdAt', 'asc'))
-    return onSnapshot(q, (snapshot) => {
-      callback(snapshot.docs.map((d) => docToList(d.id, d.data() as Record<string, unknown>)))
-    })
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        callback(snapshot.docs.map((d) => docToList(d.id, d.data() as Record<string, unknown>)))
+      },
+      // A refused or failed read must end the loading (audit 2026-11-02).
+      (error) => onError?.(error),
+    )
   },
 
   async createList(uid: string, name: string, isDefault = false): Promise<string> {

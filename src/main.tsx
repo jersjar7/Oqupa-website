@@ -9,6 +9,7 @@ import { initErrorBuffer } from '@/lib/errorBuffer'
 import { initMetaPixel } from '@/lib/metaPixel'
 import { initTikTokPixel } from '@/lib/tiktokPixel'
 import { captureAttribution } from '@/lib/attribution'
+import { watchDraftOwner } from '@/stores/draftOwnerWatch'
 
 // Buffer recent client errors so the /reportar form can auto-attach them.
 initErrorBuffer()
@@ -17,6 +18,9 @@ initErrorBuffer()
 // URL — the campaign tags live in the address bar and are gone once React
 // Router replaces it.
 captureAttribution()
+// A different account signing in on this tab never inherits the publishing
+// draft (hostile review of the wizard fixes, #1).
+watchDraftOwner()
 
 // Production only; see metaPixel.ts / tiktokPixel.ts.
 initMetaPixel()

@@ -168,6 +168,15 @@ describe('buildBrandedCardConfig', () => {
       expect(config.specsText).toBe('3 hab. | 2 baños | 120 m²')
     })
 
+    it('leaves out a stored 0 bathrooms (coordinator 2026-11-02)', () => {
+      const config = buildBrandedCardConfig(
+        mkListing(),
+        mkProperty({ specs: { bedroomCount: 2, bathroomCount: 0, totalAreaInSquareMeters: 60 } as unknown as Property['specs'] }),
+        'story',
+      )
+      expect(config.specsText).toBe('2 hab. | 60 m²')
+    })
+
     it('uses "baño" (singular) for 1 bathroom', () => {
       const config = buildBrandedCardConfig(
         mkListing(),

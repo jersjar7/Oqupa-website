@@ -202,7 +202,7 @@ export default function PasswordLoginPage() {
                   disabled={creating}
                   className="block min-h-11 w-full text-left font-medium text-secondary hover:text-secondary-hover disabled:opacity-60"
                 >
-                  {creating ? 'Creando tu cuenta…' : 'Crea tu cuenta con este correo'}
+                  {creating ? 'Creando tu cuenta…' : '¿Primera vez en Oqupa? Crea tu cuenta con este correo'}
                 </button>
                 <Link
                   to="/app/forgot-password"

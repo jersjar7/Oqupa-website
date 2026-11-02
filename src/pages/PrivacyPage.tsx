@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               asesor y los anuncios que cada asesor reclama.
             </li>
             <li>
-              <strong>Pagos:</strong> registros de las compras de boosts (sin
+              <strong>Pagos:</strong> registros de las compras de destacados (sin
               datos de tarjetas).
             </li>
           </ul>
@@ -113,13 +113,13 @@ export default function PrivacyPage() {
               rastreamos la ubicación de forma continua ni en segundo plano.
             </li>
             <li>
-              <strong>Identificadores del dispositivo (token FCM):</strong>{' '}
+              <strong>Identificador del dispositivo para notificaciones:</strong>{' '}
               utilizado únicamente para enviarte notificaciones push relacionadas
               con tu cuenta y tus anuncios.
             </li>
             <li>
               <strong>Metadatos de pagos:</strong> cuando realizas una compra
-              dentro de la aplicación (por ejemplo, un boost), almacenamos el
+              dentro de la aplicación (por ejemplo, un destacado), almacenamos el
               identificador de la transacción, el monto, el método de pago (tarjeta, Link, Apple Pay o Google Pay) y el estado del pago.{' '}
               <strong>
                 No almacenamos información de tarjetas de crédito ni datos
@@ -192,15 +192,15 @@ export default function PrivacyPage() {
             cuenta, tales como:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
-            <li>Reclamos de leads por parte de asesores inmobiliarios.</li>
+            <li>Oportunidades reclamadas por agentes inmobiliarios.</li>
             <li>Cambios en el estado de tus anuncios.</li>
             <li>Revisiones de tu solicitud como asesor inmobiliario.</li>
           </ul>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Para enviarte notificaciones, almacenamos un token de dispositivo
-            FCM asociado a tu cuenta. Puedes desactivar las notificaciones push
+            Para enviarte notificaciones, almacenamos un identificador del
+            dispositivo asociado a tu cuenta. Puedes desactivar las notificaciones push
             en cualquier momento desde la configuración de tu dispositivo, lo
-            que invalidará el token sin necesidad de eliminar tu cuenta.
+            que invalidará ese identificador sin necesidad de eliminar tu cuenta.
           </p>
         </section>
 
@@ -210,7 +210,7 @@ export default function PrivacyPage() {
             6. Procesamiento de Pagos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Oqupa ofrece funciones de pago opcionales (como boosts para destacar
+            Oqupa ofrece funciones de pago opcionales (como destacar
             tus anuncios). El procesamiento de pagos se realiza a través de{' '}
             <strong>Stripe, Inc.</strong>
           </p>
@@ -254,7 +254,7 @@ export default function PrivacyPage() {
               Facilitar la comunicación entre usuarios interesados en
               propiedades.
             </li>
-            <li>Procesar pagos por funciones opcionales como boosts.</li>
+            <li>Procesar pagos por funciones opcionales como destacar un anuncio.</li>
             <li>Enviar notificaciones push relacionadas con el servicio.</li>
             <li>Mejorar la funcionalidad y experiencia de la aplicación.</li>
             <li>Detectar y prevenir fraudes o usos indebidos.</li>
@@ -342,7 +342,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Stripe, Inc.:</strong> procesamiento de pagos por
-              funciones opcionales (boosts).{' '}
+              funciones opcionales (destacados).{' '}
               <a
                 href="https://stripe.com/privacy"
                 target="_blank"
@@ -710,7 +710,7 @@ export default function PrivacyPage() {
               algunas acciones del sitio web y en la verificación por teléfono.
             </li>
             <li>
-              Los anuncios destacados con un boost aparecen antes que los demás.
+              Los anuncios destacados aparecen antes que los demás.
             </li>
           </ul>
           <p className="mt-3 text-text-secondary leading-relaxed">

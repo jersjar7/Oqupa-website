@@ -18,7 +18,7 @@ import type {
   Payment,
   PaymentDocStatus,
 } from '@/types/boost'
-import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS } from '@/types/boost'
+import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS, ON_SALE_BOOST_TIER, ONE_BOOST_OFFER } from '@/types/boost'
 
 // Timestamp converter
 function toDate(value: unknown): Date {
@@ -67,23 +67,23 @@ export const boostService = {
       if (configDoc.exists()) {
         const data = configDoc.data() as Record<string, unknown>
         const boostTiers = data['boostTiers'] as Record<string, Record<string, unknown>> | undefined
-        if (boostTiers) {
-          const tiers: BoostTierConfiguration[] = []
-          const tierKeys: BoostTier[] = ['sevenDays', 'fifteenDays', 'thirtyDays']
-          for (const tierKey of tierKeys) {
-            const tierData = boostTiers[tierKey]
-            if (tierData) {
-              const feeInCentimos = (tierData['feeInCentimos'] as number) ?? 0
-              tiers.push({
-                tier: tierKey,
-                durationDays: (tierData['durationDays'] as number) ?? 0,
-                feeInSoles: feeInCentimos / 100,
-                feeInCentimos,
-                displayName: (tierData['displayName'] as string) ?? tierKey,
-              })
-            }
-          }
-          if (tiers.length === 3) return tiers
+        // Only the tier on sale is offered, whatever else the config lists
+        // (one boost only, ADR-042). Each field the config gives (with the
+        // right type) wins; a missing one keeps the built-in value, as the
+        // app and the server do.
+        const tierData = boostTiers?.[ON_SALE_BOOST_TIER]
+        if (tierData) {
+          const builtIn = FALLBACK_TIERS.find((t) => t.tier === ON_SALE_BOOST_TIER)!
+          const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+          const feeInCentimos = num(tierData['feeInCentimos'], builtIn.feeInCentimos)
+          const displayName = tierData['displayName']
+          return [{
+            tier: ON_SALE_BOOST_TIER,
+            durationDays: num(tierData['durationDays'], builtIn.durationDays),
+            feeInSoles: feeInCentimos / 100,
+            feeInCentimos,
+            displayName: typeof displayName === 'string' && displayName ? displayName : builtIn.displayName,
+          }]
         }
       }
     } catch (err) {
@@ -102,11 +102,14 @@ export const boostService = {
   ): Promise<BoostPaymentInitiation> {
     const functions = getFunctions(undefined, 'southamerica-east1')
     const callable = httpsCallable<
-      { listingId: string; boostTier: string },
+      { listingId: string; boostTier: string; offer: typeof ONE_BOOST_OFFER },
       { clientSecret: string; paymentId: string }
     >(functions, 'createBoostPaymentIntent')
 
-    const result = await callable({ listingId, boostTier })
+    // The marker tells the server this page offers only the one boost
+    // (ADR-042). Without it the server treats the caller as an older client
+    // (option A, LEGACY_TIERS_FOR_UNMARKED_CLIENTS in the functions).
+    const result = await callable({ listingId, boostTier, offer: ONE_BOOST_OFFER })
     return {
       clientSecret: result.data.clientSecret,
       paymentId: result.data.paymentId,

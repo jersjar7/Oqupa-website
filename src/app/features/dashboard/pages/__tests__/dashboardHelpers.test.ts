@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   nextClaimResetText, countExpiringSoon, countPublishedSince, activeListingsNote,
-  spendThisMonthSoles, buildSubtitle,
+  spendThisMonthSoles, buildSubtitle, boostedKpiSubtitle,
 } from '../dashboardHelpers'
 
 describe('nextClaimResetText', () => {
@@ -297,5 +297,26 @@ describe('activeListingsNote', () => {
 
   it('says nothing extra when every listing is active', () => {
     expect(activeListingsNote(4, 4)).toBeUndefined()
+  })
+})
+
+// Boosts are kept available but not promoted (ADR-042, ADR-043 D17): the
+// "Boosts activos" card never nudges the owner to buy one.
+describe('boostedKpiSubtitle', () => {
+  it('says nothing when no listing is boosted and nothing was spent', () => {
+    expect(boostedKpiSubtitle({ boosted: 0, total: 3, monthlySpendSoles: 0 })).toBeUndefined()
+    expect(boostedKpiSubtitle({ boosted: 0, total: 0, monthlySpendSoles: 0 })).toBeUndefined()
+  })
+
+  it('never says "Activa uno para destacar"', () => {
+    for (const total of [0, 1, 5]) {
+      expect(boostedKpiSubtitle({ boosted: 0, total, monthlySpendSoles: 0 }) ?? '').not.toMatch(/Activa uno/)
+    }
+  })
+
+  it('reports boosted listings and this month\'s spend when there are any', () => {
+    expect(boostedKpiSubtitle({ boosted: 1, total: 3, monthlySpendSoles: 29.9 }))
+      .toBe('1 de 3 anuncios · S/ 29.90 este mes')
+    expect(boostedKpiSubtitle({ boosted: 1, total: 3, monthlySpendSoles: 0 })).toBe('1 de 3 anuncios')
   })
 })

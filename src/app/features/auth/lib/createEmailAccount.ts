@@ -1,6 +1,5 @@
 import { toast } from 'sonner'
 import { authService } from '@/services/authService'
-import { useAuthStore } from '@/stores/authStore'
 import { accountCreation } from '@/lib/accountCreation'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
 
@@ -17,7 +16,10 @@ async function afterProfileSaved(): Promise<void> {
   } catch {
     toast.error('No pudimos enviar el correo de verificación. Reenvíalo desde el siguiente paso.')
   }
-  // The store read the profile before it existed.
+  // The store read the profile before it existed. Imported when needed, so
+  // the sign-in pages do not load the auth store (and Firebase) just by
+  // being imported.
+  const { useAuthStore } = await import('@/stores/authStore')
   await useAuthStore.getState().refreshUser().catch(() => {})
   accountCreation.end()
 }

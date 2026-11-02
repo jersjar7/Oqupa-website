@@ -94,7 +94,9 @@ describe('boostService', () => {
   // ── getBoostTierConfigurations ───────────────────────────────────────────
 
   describe('getBoostTierConfigurations', () => {
-    it('returns parsed tiers from Firestore config when all 3 tiers present', async () => {
+    // One boost only — 30 days at S/ 29.90 (ADR-042, ADR-043 D16). 7 and 15
+    // days are never offered, even when a pricing config still lists them.
+    it('offers only the 30-day boost from the Firestore config, even when it lists all 3 tiers', async () => {
       getDocMock.mockResolvedValue(makeDocRef('pricing', {
         boostTiers: {
           sevenDays: { durationDays: 7, feeInCentimos: 990, displayName: '7 días' },
@@ -104,16 +106,20 @@ describe('boostService', () => {
       }))
 
       const tiers = await boostService.getBoostTierConfigurations()
-      expect(tiers).toHaveLength(3)
+      expect(tiers).toHaveLength(1)
       expect(tiers[0]).toMatchObject({
-        tier: 'sevenDays',
-        durationDays: 7,
-        feeInCentimos: 990,
-        feeInSoles: 9.9,
-        displayName: '7 días',
+        tier: 'thirtyDays',
+        durationDays: 30,
+        feeInCentimos: 2990,
+        feeInSoles: 29.9,
+        displayName: '30 días',
       })
-      expect(tiers[1]).toMatchObject({ tier: 'fifteenDays', feeInSoles: 19.9 })
-      expect(tiers[2]).toMatchObject({ tier: 'thirtyDays', feeInSoles: 29.9 })
+    })
+
+    it('DEFAULT_BOOST_TIERS is the one boost: 30 días at S/ 29.90', () => {
+      expect(DEFAULT_BOOST_TIERS).toEqual([
+        { tier: 'thirtyDays', durationDays: 30, feeInSoles: 29.9, feeInCentimos: 2990, displayName: '30 días' },
+      ])
     })
 
     it('returns DEFAULT_BOOST_TIERS when doc does not exist', async () => {
@@ -128,11 +134,11 @@ describe('boostService', () => {
       expect(tiers).toEqual(DEFAULT_BOOST_TIERS)
     })
 
-    it('returns DEFAULT_BOOST_TIERS when fewer than 3 tiers exist in config', async () => {
+    it('returns DEFAULT_BOOST_TIERS when the config does not list the 30-day tier', async () => {
       getDocMock.mockResolvedValue(makeDocRef('pricing', {
         boostTiers: {
           sevenDays: { durationDays: 7, feeInCentimos: 990, displayName: '7 días' },
-          // fifteenDays and thirtyDays missing
+          // thirtyDays missing
         },
       }))
       const tiers = await boostService.getBoostTierConfigurations()
@@ -148,32 +154,39 @@ describe('boostService', () => {
     it('converts feeInCentimos to feeInSoles by dividing by 100', async () => {
       getDocMock.mockResolvedValue(makeDocRef('pricing', {
         boostTiers: {
-          sevenDays: { durationDays: 7, feeInCentimos: 500, displayName: 'test' },
-          fifteenDays: { durationDays: 15, feeInCentimos: 1000, displayName: 'test' },
           thirtyDays: { durationDays: 30, feeInCentimos: 2000, displayName: 'test' },
         },
       }))
       const tiers = await boostService.getBoostTierConfigurations()
-      expect(tiers[0]!.feeInSoles).toBe(5)
-      expect(tiers[1]!.feeInSoles).toBe(10)
-      expect(tiers[2]!.feeInSoles).toBe(20)
+      expect(tiers[0]!.feeInSoles).toBe(20)
     })
 
-    it('defaults feeInCentimos, durationDays, and displayName to 0/tierKey when absent (lines 71-77 ?? branches)', async () => {
+    it('falls back field by field to the built-in 30-day tier when the config omits a field', async () => {
       getDocMock.mockResolvedValue(makeDocRef('pricing', {
         boostTiers: {
-          sevenDays: {},    // all numeric/string fields omitted
-          fifteenDays: {},
-          thirtyDays: {},
+          thirtyDays: {},    // all numeric/string fields omitted
         },
       }))
       const tiers = await boostService.getBoostTierConfigurations()
-      expect(tiers).toHaveLength(3)
-      expect(tiers[0]!.feeInCentimos).toBe(0)    // ?? 0
-      expect(tiers[0]!.durationDays).toBe(0)      // ?? 0
-      expect(tiers[0]!.displayName).toBe('sevenDays')   // ?? tierKey
-      expect(tiers[1]!.displayName).toBe('fifteenDays')
-      expect(tiers[2]!.displayName).toBe('thirtyDays')
+      expect(tiers).toEqual(DEFAULT_BOOST_TIERS)
+    })
+
+    it('keeps the fields the config does give', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: { thirtyDays: { feeInCentimos: 2490 } },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toEqual([
+        { tier: 'thirtyDays', durationDays: 30, feeInSoles: 24.9, feeInCentimos: 2490, displayName: '30 días' },
+      ])
+    })
+
+    it('ignores fields of the wrong type', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: { thirtyDays: { feeInCentimos: '2490', durationDays: null, displayName: 7 } },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toEqual(DEFAULT_BOOST_TIERS)
     })
   })
 
@@ -191,7 +204,11 @@ describe('boostService', () => {
     it('calls callable with listingId and boostTier', async () => {
       callableFnMock.mockResolvedValue({ data: { clientSecret: 's', paymentId: 'p' } })
       await boostService.createBoostPaymentIntent('listing-xyz', 'thirtyDays')
-      expect(callableFnMock).toHaveBeenCalledWith({ listingId: 'listing-xyz', boostTier: 'thirtyDays' })
+      // offer 'one-boost': this page offers only the one boost (ADR-042,
+      // option A); tabs opened before the deploy send no marker.
+      expect(callableFnMock).toHaveBeenCalledWith({
+        listingId: 'listing-xyz', boostTier: 'thirtyDays', offer: 'one-boost',
+      })
     })
 
     it('calls getFunctions with southamerica-east1 region', async () => {

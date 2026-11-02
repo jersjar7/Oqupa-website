@@ -3,7 +3,7 @@
 // the page hold and asks the store to repair the profile, so the person is
 // never stuck with an account that has none.
 import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 
 const ensureProfile = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: { getState: () => ({ ensureProfile }) } }))
@@ -13,11 +13,11 @@ import ProfileSaveRetry from '../ProfileSaveRetry'
 import { accountCreation } from '@/lib/accountCreation'
 
 describe('ProfileSaveRetry', () => {
-  it('on leaving: releases the page hold and runs the repair', () => {
+  it('on leaving: releases the page hold and runs the repair', async () => {
     accountCreation.begin()
     const { unmount } = render(<ProfileSaveRetry onDone={() => {}} />)
     unmount()
     expect(accountCreation.isInFlight()).toBe(false)
-    expect(ensureProfile).toHaveBeenCalled()
+    await waitFor(() => expect(ensureProfile).toHaveBeenCalled())
   })
 })

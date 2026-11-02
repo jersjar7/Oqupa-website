@@ -3,6 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
+import { OFFLINE_MESSAGE, isOfflineError } from '@/lib/friendlyErrors'
+
+/** A failed accept / decline / invite / remove: the cause and the next step
+ *  (audit 2026-11-02, section G); `fallback` for anything unrecognised. */
+function agentActionError(error: unknown, fallback: string): string {
+  if (isOfflineError(error)) return OFFLINE_MESSAGE
+  const code = (error as { code?: unknown } | null)?.code
+  if (code === 'permission-denied' || code === 'not-found') {
+    return 'Esta publicación cambió o ya no está disponible. Actualiza la página.'
+  }
+  return fallback
+}
 
 export function useAgentAssignments(agentId: string | undefined) {
   return useQuery({
@@ -62,6 +74,9 @@ export function useClaimLead() {
       toast.success('Propiedad reclamada exitosamente')
     },
     onError: (error) => {
+      // Refresh either way: a listing that just filled must stop offering
+      // RECLAMAR (audit 2026-11-02).
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
       // createRealtorClaim rethrows the CF's Spanish message (full / already
       // claimed / monthly limit / not verified); show it verbatim.
       toast.error(
@@ -81,14 +96,17 @@ export function useAssignRealtor() {
       listingId: string
       realtorId: string
       realtorPhone: string
+      /** For the toast only. */
+      realtorName?: string
     }) => firestoreService.assignRealtorToListing(data.listingId, data.realtorId, data.realtorPhone),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
-      toast.success('Agente asignado exitosamente')
+      // It sends an invitation; the agent still has to accept it.
+      toast.success(vars.realtorName ? `Invitación enviada a ${vars.realtorName}.` : 'Invitación enviada.')
     },
-    onError: () => {
-      toast.error('Error al asignar el agente')
+    onError: (error) => {
+      toast.error(agentActionError(error, 'Error al asignar el agente'))
     },
   })
 }
@@ -103,8 +121,8 @@ export function useUnassignRealtor() {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       toast.success('Agente removido')
     },
-    onError: () => {
-      toast.error('Error al quitar el agente')
+    onError: (error) => {
+      toast.error(agentActionError(error, 'Error al quitar el agente'))
     },
   })
 }
@@ -129,8 +147,8 @@ export function useAcceptAssignment() {
         duration: 8000,
       })
     },
-    onError: () => {
-      toast.error('Error al aceptar la invitación')
+    onError: (error) => {
+      toast.error(agentActionError(error, 'Error al aceptar la invitación'))
     },
   })
 }
@@ -149,8 +167,8 @@ export function useDeclineAssignment() {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       toast.success('Asignación rechazada')
     },
-    onError: () => {
-      toast.error('Error al rechazar la asignación')
+    onError: (error) => {
+      toast.error(agentActionError(error, 'Error al rechazar la asignación'))
     },
   })
 }

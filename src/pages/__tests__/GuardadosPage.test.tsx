@@ -2,7 +2,7 @@
 // The visitor's Guardados page (Jerson, 2026-10-25): what they saved in this
 // browser. Someone signed in goes to their own Guardados in their account.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import GuardadosPage from '../GuardadosPage'
 import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
@@ -10,10 +10,10 @@ import { useDeviceSavesStore } from '@/stores/deviceSavesStore'
 const auth = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: (sel: (s: typeof auth) => unknown) => sel(auth) }))
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
-const loaded = vi.hoisted(() => ({ ids: [] as string[] }))
+const loaded = vi.hoisted(() => ({ ids: [] as string[], retry: vi.fn() }))
 vi.mock('@/hooks/useListListings', async () => {
   const { mapListing } = await import('@/lib/map/__tests__/mapListingFixture')
-  return { useListListings: (ids: string[]) => { loaded.ids = ids; const live = ids.filter((id) => !id.startsWith('gone') && !id.startsWith('fail')); return { items: live.map((id) => mapListing({ id, amount: 98000, currency: 'USD' })), isLoading: false, missingIds: ids.filter((id) => id.startsWith('gone')), failedIds: ids.filter((id) => id.startsWith('fail')) } } }
+  return { useListListings: (ids: string[]) => { loaded.ids = ids; const live = ids.filter((id) => !id.startsWith('gone') && !id.startsWith('fail')); return { items: live.map((id) => mapListing({ id, amount: 98000, currency: 'USD' })), isLoading: false, missingIds: ids.filter((id) => id.startsWith('gone')), failedIds: ids.filter((id) => id.startsWith('fail')), retry: loaded.retry } } }
 })
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: () => {} }))
 
@@ -53,6 +53,8 @@ describe('GuardadosPage', () => {
     useDeviceSavesStore.setState({ ids: ['a', 'gone1'], nudgeOpen: false })
     renderPage()
     expect(useDeviceSavesStore.getState().ids).toEqual(['a'])
+    // ...and the page says so, as the app does (audit 2026-11-02).
+    expect(screen.getByText('Quitamos 1 propiedad que ya no está disponible.')).toBeDefined()
   })
   // Re-review: offline, the page said "Aún no tienes guardados" while the
   // saves were still there.
@@ -60,7 +62,10 @@ describe('GuardadosPage', () => {
     useDeviceSavesStore.setState({ ids: ['fail1', 'fail2'], nudgeOpen: false })
     renderPage()
     expect(screen.queryByText(/aún no tienes guardados/i)).toBeNull()
-    expect(screen.getByText(/no se pudieron cargar/i)).toBeDefined()
+    // The cause and the next step (audit 2026-11-02). Was "No se pudieron cargar tus guardados."
+    expect(screen.getByText('Sin conexión. Revisa tu internet y vuelve a intentarlo.')).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(loaded.retry).toHaveBeenCalled()
     expect(useDeviceSavesStore.getState().ids).toEqual(['fail1', 'fail2'])
   })
 })

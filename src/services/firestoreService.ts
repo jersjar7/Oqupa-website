@@ -21,6 +21,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/lib/firebase'
 import { getOrCreateClientId } from '@/lib/clientId'
+import { callableErrorMessage } from '@/lib/friendlyErrors'
 import { AnalyticsLogger, type ClaimAttemptResult } from '@/lib/analytics'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -30,16 +31,11 @@ import type { RealtorApplication } from '@/types/realtorApplication'
 import type { RealtorClaim } from '@/types/realtorClaim'
 
 // Maps a claimOpportunity Cloud Function error to a user-facing Spanish message.
-// The CF sends Spanish messages via HttpsError, so prefer those; fall back to a
-// generic message for network/unknown errors.
+// The CF sends Spanish messages via HttpsError for its business refusals, so
+// those are shown; a dropped connection or timeout (the SDK's own English
+// "internal" / "deadline-exceeded") says so instead (audit 2026-11-02).
 function mapClaimError(err: unknown): string {
-  const e = err as { code?: string; message?: string }
-  const isFunctionsError =
-    typeof e?.code === 'string' && e.code.startsWith('functions/')
-  if (isFunctionsError && e.message && e.message.trim().length > 0) {
-    return e.message
-  }
-  return 'No se pudo reclamar la oportunidad. Intenta de nuevo.'
+  return callableErrorMessage(err, { fallback: 'No se pudo reclamar la oportunidad. Intenta de nuevo.' })
 }
 
 // Rejection reasons claimOpportunity sends as HttpsError details: { reason }.

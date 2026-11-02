@@ -41,6 +41,8 @@ import { signupAttribution, type SignupDoor } from '@/lib/attribution'
 import { createProfileIfAbsent } from '@/lib/profileRepair'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
+import { getDraftAccount, setDraftAccount, useListingFormStore } from '@/stores/listingFormStore'
+import { noteDeliberateSignOut, noteSignedInAccount } from '@/lib/returnPath'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -128,6 +130,32 @@ export const authService = {
   async logout() {
     // A change of email waiting for its link belongs to this session only
     // (hostile review 2026-10-24, finding 5).
+    clearPendingEmailChange()
+    // A deliberate sign-out (Salir, "Usar otra cuenta") drops the publishing
+    // draft: the next person on this computer must not inherit its photos,
+    // address or ids (hostile review of the wizard fixes, #1). A session that
+    // ends by itself does not come through here, so it keeps the draft for
+    // the same account.
+    const account = getDraftAccount()
+    useListingFormStore.getState().discardDraft()
+    // Nor is the page they left a place to send the next sign-in back to.
+    noteDeliberateSignOut()
+    try {
+      await signOut(auth)
+    } catch (err) {
+      // Still signed in: what they type next is still theirs (third review #5).
+      setDraftAccount(account)
+      noteSignedInAccount(account)
+      throw err
+    }
+  },
+
+  /**
+   * Ends a session that has already stopped working (the publish was refused
+   * because the sign-in ended), WITHOUT dropping the draft: the same account
+   * signs back in and finds it (draftOwnerWatch drops it for anyone else).
+   */
+  async endStaleSession() {
     clearPendingEmailChange()
     await signOut(auth)
   },
@@ -517,6 +545,10 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     clearPendingEmailChange()
+    // A deleted account's publishing draft goes with it, and no tab keeps a
+    // way back for it (second hostile review #4).
+    useListingFormStore.getState().discardDraft()
+    noteDeliberateSignOut()
     await signOut(auth)
   },
 

@@ -75,6 +75,15 @@ describe('listService', () => {
       expect(unsub).toBe(unsubFn)
     })
 
+    // Audit 2026-11-02 (B.2): a refused read left Guardados spinning forever.
+    it('reports a failed read to onError', () => {
+      const onError = vi.fn()
+      listService.subscribe('uid-123', vi.fn(), onError)
+      const errCb = onSnapshotMock.mock.calls[0]![2] as (e: Error) => void
+      errCb(new Error('permission-denied'))
+      expect(onError).toHaveBeenCalledTimes(1)
+    })
+
     it('orders lists by createdAt ascending', () => {
       listService.subscribe('uid-123', vi.fn())
       expect(orderByMock).toHaveBeenCalledWith('createdAt', 'asc')

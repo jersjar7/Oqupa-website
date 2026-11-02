@@ -107,6 +107,8 @@ export default function EditListingPage() {
       wantsRealtorHelp: listing.wantsRealtorHelp,
       maxRealtors: listing.maxRealtors,
     })
+    // As loaded: new limits apply only to what the owner changes (review #6).
+    useListingFormStore.getState().markEditBaseline()
     setStep(1)
     setInitialized(true)
     }

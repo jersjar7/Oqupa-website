@@ -10,7 +10,8 @@ import { authService } from '@/services/authService'
 import { getPhoneAuthError, getProfileSaveError, getAccountDeleteError } from '@/lib/authErrors'
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
-import { CheckCircle, Shield, Clock, XCircle, Phone } from 'lucide-react'
+import { CheckCircle, Clock, XCircle, Phone, LifeBuoy } from 'lucide-react'
+import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
 import ChangePasswordCard, { isPasswordAccount } from '../components/ChangePasswordCard'
 
 type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
@@ -18,6 +19,10 @@ type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { user, firebaseUser, refreshUser } = useAuthStore()
+  const signOut = useSignOutConfirm(async () => {
+    await authService.logout()
+    navigate('/app/login')
+  })
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -368,15 +373,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Identity verification row */}
-          <div className="flex items-center gap-2">
-            <Shield
-              className={`h-4 w-4 ${user.isIdentityVerified ? 'text-success' : 'text-text-tertiary'}`}
-            />
-            <span className="text-sm text-text-secondary">
-              Identidad {user.isIdentityVerified ? 'verificada' : 'no verificada'}
-            </span>
-          </div>
         </div>
 
         {/* reCAPTCHA container for profile */}
@@ -454,6 +450,26 @@ export default function ProfilePage() {
         </p>
       </Card>
 
+      {/* Ayuda, as the app's SOPORTE (ADR-046 #16) */}
+      <Card>
+        <h2 className="text-sm font-medium uppercase text-text-secondary">Ayuda</h2>
+        <Link
+          to="/app/ayuda"
+          className="mt-2 flex min-h-11 items-center gap-2 text-base text-secondary hover:text-secondary-hover"
+        >
+          <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+          Ayuda: WhatsApp, correo o reportar un problema
+        </Link>
+      </Card>
+
+      {/* Sign out — the only way out on a phone inside Mi Panel (audit 2026-11-02) */}
+      <Card>
+        <Button variant="danger" className="w-full" onClick={signOut.ask}>
+          Cerrar sesión
+        </Button>
+        {signOut.dialog}
+      </Card>
+
       {/* Delete account */}
       <Card>
         <h2 className="text-sm font-medium uppercase text-text-secondary">
@@ -484,11 +500,16 @@ export default function ProfilePage() {
         <p className="text-sm text-text-secondary">
           Esta acción es permanente. Se eliminará:
         </p>
+        {/* The app's list (profile_page.dart), with "Guardados" (ADR-034). */}
         <ul className="mt-2 list-disc pl-5 text-sm text-text-secondary">
-          <li>Tu perfil y datos personales</li>
-          <li>Tus favoritos y notificaciones</li>
-          <li>Tus anuncios activos serán desactivados</li>
+          <li>Tu perfil (nombre, correo, teléfono, foto)</li>
+          <li>Tus avisos publicados (se retirarán de la plataforma)</li>
+          <li>Tus guardados e historial de visitas</li>
+          <li>Tus dispositivos y notificaciones</li>
         </ul>
+        <p className="mt-2 text-sm text-text-secondary">
+          Tus datos de pago no se almacenan en Oqupa, los gestiona Stripe según sus propias políticas.
+        </p>
         <p className="mt-3 text-sm font-medium text-text-primary">
           ¿Estás seguro que deseas continuar?
         </p>

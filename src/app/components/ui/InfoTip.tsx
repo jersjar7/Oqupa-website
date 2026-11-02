@@ -27,7 +27,7 @@ export default function InfoTip({ text }: InfoTipProps) {
         onClick={() => setOpen((v) => !v)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="text-primary/60 hover:text-primary transition-colors"
+        className="text-secondary/70 hover:text-secondary transition-colors"
         aria-label="Más información"
       >
         <HelpCircle className="h-3.5 w-3.5" />

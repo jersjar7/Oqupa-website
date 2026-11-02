@@ -5,7 +5,7 @@
 // the bottom) and on a computer (on the map). Prices are written the way the
 // pins and the list write them ("US$ 98 mil"), never "98,000".
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import CompactListingCard, { COMPACT_CARD_PHOTO_PX } from '../CompactListingCard'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
@@ -42,5 +42,11 @@ describe('CompactListingCard', () => {
     render(<CompactListingCard item={mapListing({ amount: 98000, currency: 'USD' })} />)
     expect(document.querySelector('[data-role="more-arrow"]')).not.toBeNull()
     expect(document.body.textContent).not.toMatch(/ver más|toca|click|detalles/i)
+  })
+  it('a photo that fails to load shows the quiet fallback, not a broken image (audit 2026-11-02)', () => {
+    render(<CompactListingCard item={mapListing({ photos: 1 })} />)
+    fireEvent.error(document.querySelector('img')!)
+    expect(document.querySelector('img')).toBeNull()
+    expect(screen.getByText('No se pudo cargar la imagen')).toBeDefined()
   })
 })
