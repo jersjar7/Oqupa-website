@@ -106,6 +106,11 @@ describe('generateShareText', () => {
     expect(text).toContain('2 baños')
   })
 
+  it('does not include bathrooms when the stored count is 0 (coordinator 2026-11-02)', () => {
+    const text = generateShareText({ ...baseParams, bathroomCount: 0 })
+    expect(text).not.toContain('baño')
+  })
+
   it('does not include bathroom line when bathroomCount is null', () => {
     const text = generateShareText({ ...baseParams, bathroomCount: null })
     expect(text).not.toContain('baño')

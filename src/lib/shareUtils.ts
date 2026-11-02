@@ -1,3 +1,4 @@
+import { bathroomsLabel } from '@/lib/roomCounts'
 import {
   PROPERTY_TYPE_LABELS,
   OPERATION_TYPE_LABELS,
@@ -46,9 +47,9 @@ export function generateShareText(params: ShareListingParams): string {
   if (params.bedroomCount != null) {
     specs.push(`${params.bedroomCount} hab.`)
   }
-  if (params.bathroomCount != null) {
-    const label = params.bathroomCount === 1 ? 'baño' : 'baños'
-    specs.push(`${params.bathroomCount} ${label}`)
+  const baths = bathroomsLabel(params.bathroomCount)
+  if (baths) {
+    specs.push(baths)
   }
   if (params.totalAreaInSquareMeters != null) {
     specs.push(`${Math.floor(params.totalAreaInSquareMeters)} m²`)

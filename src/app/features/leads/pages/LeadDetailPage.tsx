@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { bathroomsLabel } from '@/lib/roomCounts'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
@@ -305,10 +306,10 @@ export default function LeadDetailPage() {
               {property.specs.bedroomCount} hab.
             </span>
           )}
-          {property.specs?.bathroomCount != null && (
+          {(property.specs?.bathroomCount ?? 0) > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6BF;</span>
-              {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
+              {bathroomsLabel(property.specs.bathroomCount)}
             </span>
           )}
           {property.specs?.totalAreaInSquareMeters != null && property.specs.totalAreaInSquareMeters > 0 && (
