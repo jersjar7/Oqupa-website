@@ -24,7 +24,7 @@ const readArea = (v: unknown) => (typeof v === 'number' ? v : parseLocaleNumber(
 const hasOptionalBathrooms = (t: string) => t === 'oficina' || t === 'local'
 
 export default function WizardStep2() {
-  const { data, updateData, nextStep, prevStep } = useListingFormStore()
+  const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
 
   const type = (data.propertyType || '') as PropertyType | ''
   const hasRooms = type ? propertyTypeHasRooms(type) : false
@@ -46,10 +46,13 @@ export default function WizardStep2() {
       description: data.description,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
       // − / + start from a sensible count instead of an empty box (D4).
-      // An older listing's count is shown as it is, even below today's
-      // minimum, so an edit that leaves it alone does not change it.
-      bedroomCount: hasRooms ? data.bedroomCount ?? 1 : null,
-      bathroomCount: hasRooms ? data.bathroomCount ?? 1 : optionalBaths ? data.bathroomCount ?? 0 : null,
+      // An older listing's count is shown as it is — even below today's
+      // minimum, even missing — so an edit that leaves it alone does not
+      // change it (hostile review #6). A new listing starts at 1 / 1.
+      bedroomCount: hasRooms ? (isEditMode ? data.bedroomCount : data.bedroomCount ?? 1) : null,
+      bathroomCount: hasRooms
+        ? (isEditMode ? data.bathroomCount : data.bathroomCount ?? 1)
+        : optionalBaths ? data.bathroomCount ?? 0 : null,
       availableParkingSpaces: data.availableParkingSpaces ?? 0,
       propertyAmenities: data.propertyAmenities ?? [],
       hasPrivateBathroom: data.hasPrivateBathroom ?? false,
@@ -57,8 +60,8 @@ export default function WizardStep2() {
   })
 
   const description = watch('description') ?? ''
-  const bedrooms = watch('bedroomCount') ?? 0
-  const bathrooms = watch('bathroomCount') ?? 0
+  const bedrooms = watch('bedroomCount') ?? null
+  const bathrooms = watch('bathroomCount') ?? null
   const parking = watch('availableParkingSpaces') ?? 0
   const amenities = watch('propertyAmenities') ?? []
   const hasPrivateBathroom = watch('hasPrivateBathroom')
