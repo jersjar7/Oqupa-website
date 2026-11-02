@@ -131,6 +131,14 @@ test.describe('the map', () => {
     const card = mapCard(page, isPhone(info))
     await expect(card).toBeVisible()
     await expect(card).toContainText(/(S\/\.?|US\$)/)
+    // ADR-048 (Jerson, 2026-11-02): the open listing's pin rises on its
+    // leader line close in too, and its plain pin is not drawn as well.
+    const up = raised(page)
+    await expect(up).toHaveCount(1)
+    await expect(up).toHaveAttribute('data-listing-id', l.id)
+    await expect(up.locator('[data-role="leader"]')).toBeVisible()
+    await expect(up.locator('[data-selected="1"]')).toHaveCount(1)
+    await expect(pin).toHaveCount(0)
     await noHorizontalOverflow(page)
     await shot(page, info, '05-pin-card')
 

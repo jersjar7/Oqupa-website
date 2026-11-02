@@ -73,7 +73,8 @@ function MapboxExploreMap({
   const liveRef = useRef<Map<string, LiveMarker>>(new Map())
   const [mapReady, setMapReady] = useState(false)
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
-  // The far-out dot whose pin is raised on a leader line (ADR-033).
+  // The far-out dot whose pin is raised on a leader line (ADR-033). The
+  // selected listing is raised whatever this says (ADR-048).
   const [raisedId, setRaisedId] = useState<string | null>(null)
 
   // Latest callbacks/values for listeners registered once.
@@ -178,8 +179,9 @@ function MapboxExploreMap({
       frame = 0
       const b = map.getBounds()
       if (!b) return
-      // Close in every listing is already its own pin.
-      if (latest.current.raisedId && !showsDots(map.getZoom())) setRaisedId(null)
+      // Close in every listing is already its own pin; the open one stays
+      // raised whatever its zoom (ADR-048), which markersFor handles.
+      if (latest.current.raisedId && !showsDots(map.getZoom()) && latest.current.raisedId !== latest.current.selectedId) setRaisedId(null)
       const wanted = indexRef.current.markersFor(
         { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
         map.getZoom(),
@@ -273,8 +275,9 @@ function MapboxExploreMap({
 
   // --- the selected listing: privacy circle + (computer) pinned preview -------
   const selectedItem = useMemo(() => items.find((i) => i.listing.id === selectedId) ?? null, [items, selectedId])
-  // An open listing raised from its dot sits higher, on its leader line.
-  const lift = raisedId && raisedId === selectedId ? RAISED_LEADER_PX + RAISED_ANCHOR_PX / 2 : 0
+  // The open listing sits higher, on its leader line — every selected listing
+  // does since ADR-048, at any zoom.
+  const lift = selectedItem ? RAISED_LEADER_PX + RAISED_ANCHOR_PX / 2 : 0
   useEffect(() => {
     const map = mapRef.current
     if (!map || !mapReady) return
