@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  nextClaimResetText, countExpiringSoon, countPublishedSince,
+  nextClaimResetText, countExpiringSoon, countPublishedSince, activeListingsNote,
   spendThisMonthSoles, buildSubtitle,
 } from '../dashboardHelpers'
 
@@ -276,5 +276,26 @@ describe('buildSubtitle', () => {
         availableLeads: undefined, leadsLoading: false,
       })).toBe('Aquí está el resumen de tus anuncios.')
     })
+  })
+})
+
+// Listings never expire (ADR-014): the dashboard must never warn about it.
+describe('activeListingsNote', () => {
+  it('never mentions expiry, even for listings carrying an old expiresAt', () => {
+    const note = activeListingsNote(3, 3)
+    expect(note ?? '').not.toMatch(/caduc|venc|expir/i)
+  })
+
+  it('counts listings not shown on the map, singular and plural', () => {
+    expect(activeListingsNote(3, 2)).toBe('1 no se muestra en el mapa')
+    expect(activeListingsNote(5, 2)).toBe('3 no se muestran en el mapa')
+  })
+
+  it('invites the first listing when there are none', () => {
+    expect(activeListingsNote(0, 0)).toBe('Crea tu primer anuncio para empezar')
+  })
+
+  it('says nothing extra when every listing is active', () => {
+    expect(activeListingsNote(4, 4)).toBeUndefined()
   })
 })

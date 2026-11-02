@@ -100,3 +100,14 @@ export function buildSubtitle(args: {
 
   return 'Aquí está el resumen de tus anuncios.'
 }
+
+/**
+ * The line under "Anuncios activos". Listings never expire (ADR-014), so it
+ * never warns about expiry; it only says how many are not on the map.
+ */
+export function activeListingsNote(total: number, active: number): string | undefined {
+  if (total === 0) return 'Crea tu primer anuncio para empezar'
+  const hidden = total - active
+  if (hidden <= 0) return undefined
+  return `${hidden} ${hidden === 1 ? 'no se muestra' : 'no se muestran'} en el mapa`
+}
