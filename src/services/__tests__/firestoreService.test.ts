@@ -844,7 +844,7 @@ describe('firestoreService', () => {
       })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
     })
 
-    it('never shows the SDK word "internal" for a dropped connection (audit 2026-11-02)', async () => {
+    it('never shows the SDK word "internal" (audit 2026-11-02)', async () => {
       callableFnMock.mockRejectedValue({ code: 'functions/internal', message: 'internal' })
       await expect(firestoreService.createRealtorClaim({
         listingId: 'listing-1',
@@ -853,7 +853,7 @@ describe('firestoreService', () => {
         realtorName: 'Juan',
         realtorPhone: '+51987',
         realtorBusinessName: 'JG',
-      })).rejects.toThrow('Sin conexión. Revisa tu internet y vuelve a intentarlo.')
+      })).rejects.toThrow('No se pudo reclamar la oportunidad. Intenta de nuevo.')
     })
 
     it('throws a generic fallback message when functions/ error has an empty message (line 37 middle && branch)', async () => {
@@ -917,16 +917,12 @@ describe('firestoreService', () => {
       ['a reason that is not a string', { reason: 42 }],
       ['ok as a rejection reason', { reason: 'ok' }],
     ])('sends error for a functions error with %s', async (_label, details) => {
-      // A functions/internal failure is a dropped connection or a crash: the
-      // SDK's own word, never shown (audit 2026-11-02, top item 15).
       callableFnMock.mockRejectedValue({
         code: 'functions/internal',
         message: 'Mensaje del servidor',
         details,
       })
-      await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow(
-        'Sin conexión. Revisa tu internet y vuelve a intentarlo.',
-      )
+      await expect(firestoreService.createRealtorClaim(CLAIM)).rejects.toThrow('Mensaje del servidor')
       expect(claimAttemptedMock).toHaveBeenCalledWith('listing-1', 'error')
     })
 

@@ -6,11 +6,12 @@
 export const OFFLINE_MESSAGE = 'Sin conexión. Revisa tu internet y vuelve a intentarlo.'
 export const GENERIC_MESSAGE = 'Algo salió mal. Verifica tus datos y vuelve a intentarlo.'
 
-/** Codes a dropped connection or timeout produces (Functions, Firestore, Auth). */
+/** Codes a dropped connection or timeout produces (Functions, Firestore,
+ *  Auth). Not functions/internal: that is a server fault, not the network
+ *  (review 2026-11-02). */
 const NETWORK_CODES = new Set([
   'functions/unavailable',
   'functions/deadline-exceeded',
-  'functions/internal',
   'unavailable',
   'deadline-exceeded',
   'auth/network-request-failed',
@@ -25,6 +26,9 @@ const BUSINESS_CODES = new Set([
   'functions/resource-exhausted',
   'functions/not-found',
   'functions/out-of-range',
+  // A server fault may carry a Spanish sentence of its own; the SDK's bare
+  // word "internal" is filtered out below.
+  'functions/internal',
 ])
 
 /** Server sentences that are still English, in Spanish. Anything English not
@@ -36,6 +40,8 @@ const ENGLISH_SERVER_MESSAGES: Record<string, string> = {
   'Property not found': 'Esta publicación ya no existe.',
   'Listing has no associated property': 'Esta publicación ya no existe.',
   'Must be logged in': 'Tu sesión se cerró. Vuelve a iniciar sesión.',
+  // getUploadUrl: only the owner can upload photos for now (review 2026-11-02).
+  'You do not own this property': 'Por ahora solo el dueño puede agregar fotos nuevas.',
 }
 
 function codeOf(err: unknown): string | undefined {
@@ -55,7 +61,7 @@ function browserOnline(): boolean {
 /** The server's untranslated sentences are English ("Must be logged in",
  *  "listingId is required"); Spanish ones never use these words. */
 function looksEnglish(text: string): boolean {
-  return /\b(the|is|are|must|be|not|required|invalid|cannot|only|should|to|of|and|failed|error)\b/i.test(text)
+  return /\b(the|is|are|must|be|not|required|invalid|cannot|only|should|to|of|and|failed|internal)\b/i.test(text)
 }
 
 export function isOfflineError(err: unknown, online: boolean = browserOnline()): boolean {
@@ -71,11 +77,14 @@ export function callableErrorMessage(
 ): string {
   const online = opts.online ?? browserOnline()
   const fallback = opts.fallback ?? GENERIC_MESSAGE
-  if (isOfflineError(err, online)) return OFFLINE_MESSAGE
   const code = codeOf(err)
   const message = messageOf(err)
+  // The English lookup first: a known sentence always reads in Spanish.
   if (message && ENGLISH_SERVER_MESSAGES[message]) return ENGLISH_SERVER_MESSAGES[message]
-  if (code && BUSINESS_CODES.has(code) && message && !looksEnglish(message)) return message
+  if (isOfflineError(err, online)) return OFFLINE_MESSAGE
+  // The SDK's own word ("internal", "not-found"…) is never a sentence.
+  const sdkWord = code ? code.replace(/^functions\//, '') : ''
+  if (code && BUSINESS_CODES.has(code) && message && message !== sdkWord && !looksEnglish(message)) return message
   return fallback
 }
 

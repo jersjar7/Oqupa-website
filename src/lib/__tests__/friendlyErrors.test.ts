@@ -16,12 +16,14 @@ describe('isOfflineError', () => {
   it('network-type codes from Functions and Firestore are offline', () => {
     expect(isOfflineError(fnErr('unavailable', 'unavailable'))).toBe(true)
     expect(isOfflineError(fnErr('deadline-exceeded', 'deadline-exceeded'))).toBe(true)
-    expect(isOfflineError(fnErr('internal', 'internal'))).toBe(true)
     expect(isOfflineError({ code: 'unavailable', message: 'x' })).toBe(true)
     expect(isOfflineError({ code: 'auth/network-request-failed' })).toBe(true)
   })
   it('the browser saying it is offline is offline', () => {
     expect(isOfflineError(new Error('x'), false)).toBe(true)
+  })
+  it('an internal server fault is not offline (review 2026-11-02)', () => {
+    expect(isOfflineError(fnErr('internal', 'internal'))).toBe(false)
   })
   it('a business refusal is not offline', () => {
     expect(isOfflineError(fnErr('failed-precondition', 'No puedes'))).toBe(false)
@@ -39,9 +41,22 @@ describe('callableErrorMessage', () => {
     )
   })
   it('never shows the SDK words for a dropped connection', () => {
-    expect(callableErrorMessage(fnErr('internal', 'internal'))).toBe(OFFLINE_MESSAGE)
     expect(callableErrorMessage(fnErr('unavailable', 'unavailable'))).toBe(OFFLINE_MESSAGE)
     expect(callableErrorMessage(fnErr('deadline-exceeded', 'deadline-exceeded'))).toBe(OFFLINE_MESSAGE)
+  })
+  it('an internal fault: the catch-all, or the server sentence when it is Spanish', () => {
+    expect(callableErrorMessage(fnErr('internal', 'internal'))).toBe(GENERIC_MESSAGE)
+    expect(callableErrorMessage(fnErr('internal', 'Ocurrió un error al guardar.'))).toBe('Ocurrió un error al guardar.')
+    expect(callableErrorMessage(fnErr('internal', 'Internal error'))).toBe(GENERIC_MESSAGE)
+  })
+  it('keeps Spanish server sentences that contain "error"', () => {
+    expect(callableErrorMessage(fnErr('failed-precondition', 'Hubo un error con tu perfil.'))).toBe('Hubo un error con tu perfil.')
+  })
+  it('the English lookup wins over any other handling', () => {
+    expect(callableErrorMessage(fnErr('internal', 'Listing not found'))).toBe('Esta publicación ya no existe.')
+    expect(callableErrorMessage(fnErr('permission-denied', 'You do not own this property'))).toBe(
+      'Por ahora solo el dueño puede agregar fotos nuevas.',
+    )
   })
   it('translates the agent-edit server sentences that are still English', () => {
     expect(callableErrorMessage(fnErr('permission-denied', 'You are not assigned to this listing'))).toBe(
