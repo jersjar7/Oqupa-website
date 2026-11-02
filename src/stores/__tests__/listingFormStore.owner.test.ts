@@ -98,6 +98,44 @@ describe('watchDraftOwner: the signed-in account changes', () => {
     signedIn(null)
     signedIn('beto')
     expect(store().data.description).toBe('')
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    // What is stored now is Beto's own, empty draft.
+    expect(saved().description ?? '').toBe('')
+    expect(saved().draftOwnerId).toBe('beto')
+  })
+})
+
+describe('watchDraftOwner: opening the site over a stored draft', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    signedIn(null)
+    store().reset()
+  })
+
+  it('another account already signed in when the watch starts: dropped, fresh ids', () => {
+    draftFor('ana')
+    const id = store().publishId
+    signedIn('beto')
+    const stop = watchDraftOwner()
+    expect(store().data.description).toBe('')
+    expect(store().publishId).not.toBe(id)
+    expect(store().draftOwnerId).toBe('beto')
+    stop()
+  })
+
+  it('the owner signs in after a reload: kept', () => {
+    draftFor('ana')
+    const stop = watchDraftOwner()
+    signedIn('ana')
+    expect(store().data.description).toBe('Casa de Ana en Castilla')
+    stop()
+  })
+
+  it('a draft with no owner yet is claimed by whoever signs in', () => {
+    store().updateData({ description: 'Sin dueño' })
+    const stop = watchDraftOwner()
+    signedIn('ana')
+    expect(store().draftOwnerId).toBe('ana')
+    expect(store().data.description).toBe('Sin dueño')
+    stop()
   })
 })

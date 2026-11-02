@@ -12,12 +12,19 @@ import { useListingFormStore } from './listingFormStore'
  * Returns the unsubscribe function.
  */
 export function watchDraftOwner(): () => void {
-  return useAuthStore.subscribe((state, previous) => {
-    const uid = state.firebaseUser?.uid ?? null
-    if (!uid || uid === (previous.firebaseUser?.uid ?? null)) return
+  // The draft (from this tab's storage) is claimed by — or, if another
+  // account's, dropped for — whoever is signed in: now, and at every change
+  // of account. A page load always passes through "nobody yet", so this
+  // also runs before the wizard can show a draft that is not theirs.
+  const adopt = (uid: string | null) => {
+    if (!uid) return
     const form = useListingFormStore.getState()
     if (form.isEditMode) return
-    const owner = form.draftOwnerId ?? form.publishOwnerId
-    if (owner && owner !== uid) form.discardDraft()
+    form.adoptDraftFor(uid)
+  }
+  adopt(useAuthStore.getState().firebaseUser?.uid ?? null)
+  return useAuthStore.subscribe((state, previous) => {
+    const uid = state.firebaseUser?.uid ?? null
+    if (uid !== (previous.firebaseUser?.uid ?? null)) adopt(uid)
   })
 }
