@@ -14,6 +14,7 @@ import {
   setDoc,
   serverTimestamp,
   writeBatch,
+  runTransaction,
   Timestamp,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
@@ -545,6 +546,59 @@ export const firestoreService = {
       updatedAt: serverTimestamp(),
     })
     return propertyId
+  },
+
+  /**
+   * Saves a NEW property and its listing together, all or nothing (ADR-043).
+   *
+   * Both ids come from the draft's publish identity, so a retry targets the
+   * same two documents. A transaction rather than a plain batch, on purpose:
+   * if an earlier attempt already landed (its reply was lost, or it timed out
+   * on our side and committed later), this one reads the listing, finds it,
+   * and writes NOTHING. A blind rewrite would reset the counters and, for a
+   * listing that hides its address, put the exact street back on the public
+   * property after the server had already masked it.
+   *
+   * `onStage('read')` fires once the existence check is done.
+   */
+  async publishPropertyAndListing(
+    ids: { propertyId: string; listingId: string },
+    property: Omit<Property, 'id' | 'updatedAt'>,
+    listing: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>,
+    onStage?: (stage: 'read') => void,
+  ): Promise<{ alreadyPublished: boolean }> {
+    const propertyRef = doc(db, 'properties', ids.propertyId)
+    const listingRef = doc(db, 'listings', ids.listingId)
+    const cleanedProperty = stripUndefined(property as unknown as Record<string, unknown>)
+    const cleanedListing = stripUndefined(listing as unknown as Record<string, unknown>)
+
+    return runTransaction(db, async (tx) => {
+      const existingListing = await tx.get(listingRef)
+      if (existingListing.exists()) {
+        if (existingListing.data()?.['ownerId'] !== listing.ownerId) {
+          throw new Error('publish-id-taken')
+        }
+        onStage?.('read')
+        return { alreadyPublished: true }
+      }
+      const existingProperty = await tx.get(propertyRef)
+      if (
+        existingProperty.exists() &&
+        existingProperty.data()?.['listedByUserId'] !== property.listedByUserId
+      ) {
+        throw new Error('publish-id-taken')
+      }
+      onStage?.('read')
+      tx.set(propertyRef, { ...cleanedProperty, updatedAt: serverTimestamp() })
+      tx.set(listingRef, {
+        ...cleanedListing,
+        createdFrom: 'web',
+        viewCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      return { alreadyPublished: false }
+    })
   },
 
   async updateProperty(

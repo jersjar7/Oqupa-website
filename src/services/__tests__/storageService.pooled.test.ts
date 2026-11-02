@@ -121,7 +121,7 @@ describe('storageService.uploadPropertyPhotosPooled', () => {
     await storageService.uploadPropertyPhotosPooled('p', files(5), { onProgress: (f) => values.push(f) })
     expect(values.length).toBeGreaterThan(5)
     for (let i = 1; i < values.length; i++) expect(values[i]!).toBeGreaterThanOrEqual(values[i - 1]!)
-    expect(values.at(-1)).toBe(1)
+    expect(values[values.length - 1]).toBe(1)
     // Compression counts as progress before any byte is uploaded.
     expect(values[0]!).toBeGreaterThan(0)
   })
