@@ -190,7 +190,8 @@ function fillDraft() {
 
 function Where() {
   const loc = useLocation()
-  return <div data-testid="where">{loc.pathname}</div>
+  const just = (loc.state as { justPublished?: boolean } | null)?.justPublished === true
+  return <div data-testid="where" data-just-published={String(just)}>{loc.pathname}</div>
 }
 
 function renderStep() {
@@ -356,6 +357,8 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     await waitFor(() =>
       expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`), { timeout: 3000 })
     expect(ids('listings').size).toBe(1)
+    // D13: it opens with the share prompt.
+    expect(screen.getByTestId('where').getAttribute('data-just-published')).toBe('true')
   })
 
   it('once saved, the button cannot be clicked again', async () => {
