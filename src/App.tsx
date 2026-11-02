@@ -47,9 +47,8 @@ import InterestedAgentsPage from '@/app/features/leads/pages/InterestedAgentsPag
 import GuidelinesPage from '@/app/features/realtor/pages/GuidelinesPage'
 import HelpPage from '@/app/features/help/HelpPage'
 import PaymentHistoryPage from '@/app/features/boost/pages/PaymentHistoryPage'
-import ListsPage from '@/app/features/lists/pages/ListsPage'
-import ListDetailPage from '@/app/features/lists/pages/ListDetailPage'
-import ListStoreInitializer from '@/components/lists/ListStoreInitializer'
+import AccountGuardadosPage from '@/app/features/guardados/pages/AccountGuardadosPage'
+import GuardadosInitializer from '@/components/lists/GuardadosInitializer'
 import AnalyticsLabelsInitializer from '@/components/analytics/AnalyticsLabelsInitializer'
 import SaveNudge from '@/components/lists/SaveNudge'
 import ContactFollowUpHost from '@/components/followUp/ContactFollowUpHost'
@@ -61,7 +60,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <ListStoreInitializer />
+      <GuardadosInitializer />
       <AnalyticsLabelsInitializer />
       <SaveNudge />
       {/* A11b: "¿Pudiste contactar al dueño?" on coming back from WhatsApp. */}
@@ -128,8 +127,9 @@ export default function App() {
             <Route path="listings/:id/agents" element={<VerifiedGuard><InterestedAgentsPage /></VerifiedGuard>} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="payments" element={<PaymentHistoryPage />} />
-            <Route path="lists" element={<ListsPage />} />
-            <Route path="lists/:listId" element={<ListDetailPage />} />
+            <Route path="lists" element={<AccountGuardadosPage />} />
+            {/* Named lists are gone: one Guardados (ADR-046 #1). Old links land on it. */}
+            <Route path="lists/:listId" element={<Navigate to="/app/lists" replace />} />
             <Route path="buenas-practicas" element={<GuidelinesPage />} />
             <Route path="ayuda" element={<HelpPage />} />
             <Route path="realtor-registration" element={<VerifiedGuard><RealtorRegistrationPage /></VerifiedGuard>} />
