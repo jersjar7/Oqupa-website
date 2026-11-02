@@ -14,13 +14,13 @@ describe('GuidelinesPage', () => {
     render(<GuidelinesPage />)
     expect(meta.last).toEqual({ title: 'Buenas prácticas' })
     for (const text of [
-      'Oqupa conecta a propietarios y agentes inmobiliarios. Estas son buenas prácticas para que tu experiencia sea segura y clara.',
+      'Oqupa conecta a dueños y agentes inmobiliarios. Estas son buenas prácticas para que tu experiencia sea segura y clara.',
       'Oqupa solo los pone en contacto',
       'Para agentes',
       'Firmen un acuerdo por escrito',
       'Sé profesional y claro',
       'Contacta a tiempo',
-      'Para propietarios',
+      'Para dueños',
       'Conversa antes de elegir',
       'Deja todo por escrito',
       'Tú tienes el control',

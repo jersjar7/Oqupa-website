@@ -241,7 +241,7 @@ function InvitacionesCta({ userId, enabled }: { userId: string | undefined; enab
             {headingText}
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Un propietario te eligió como agente. Acepta para empezar a gestionar la propiedad o rechaza si ya no te interesa.
+            Un dueño te eligió como agente. Acepta para empezar a gestionar la propiedad o rechaza si ya no te interesa.
           </p>
         </div>
         <Link to="/app/leads?tab=invitaciones" className={`${primaryBtn} shrink-0`}>

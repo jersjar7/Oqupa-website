@@ -34,6 +34,7 @@ import SaveButton from '@/components/lists/SaveButton'
 import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
+import ProfileNotFoundDialog from '@/app/features/listings/components/ProfileNotFoundDialog'
 import { contactFollowUpCoordinator } from '@/lib/contactFollowUpCoordinator'
 import { contactService, ContactDenied } from '@/services/contactService'
 import { closedLabel, listingPageView, ownerOnlyNote } from '@/app/features/listings/listingVisibility'
@@ -251,6 +252,8 @@ export default function PropertyPage() {
     authReady: isInitialized,
   })
   const [showAuthModal, setShowAuthModal] = useState(false)
+  // Signed in, no saved profile (feature audit 2026-11-02).
+  const [showProfileNotFound, setShowProfileNotFound] = useState(false)
   // Set only when the server says no phone is attached to this account,
   // so the gate can say "otra vez" instead of contradicting the profile
   // page, which shows the number as verified.
@@ -516,6 +519,9 @@ export default function PropertyPage() {
         )
         setShowAuthModal(true)
         logContactGateStep(CONTACT_GATE_STEPS.gateShown)
+      } else if (reason === 'profile-incomplete') {
+        // No saved profile: a person fixes it — Ayuda's WhatsApp, no gate.
+        setShowProfileNotFound(true)
       } else {
         toast.error(contactFailureMessage(reason, navigator.onLine !== false))
       }
@@ -802,6 +808,8 @@ export default function PropertyPage() {
           property={property}
         />
       )}
+
+      {showProfileNotFound && <ProfileNotFoundDialog onClose={() => setShowProfileNotFound(false)} />}
 
       {/* Auth required modal */}
       <AnimatePresence>

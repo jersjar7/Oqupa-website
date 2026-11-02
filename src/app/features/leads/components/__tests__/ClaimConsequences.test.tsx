@@ -10,9 +10,9 @@ describe('ClaimConsequences', () => {
   it('lists the app bullets with the counts', () => {
     render(<ClaimConsequences limit={5} remaining={3} />)
     expect(screen.getByText('Al reclamar:')).toBeTruthy()
-    expect(screen.getByText('Recibirás el nombre y WhatsApp del propietario')).toBeTruthy()
+    expect(screen.getByText('Recibirás el nombre y WhatsApp del dueño')).toBeTruthy()
     expect(screen.getByText('Usarás 1 de tus 5 oportunidades mensuales (te quedarán 2)')).toBeTruthy()
-    expect(screen.getByText('El propietario verá tu perfil y decidirá si trabaja contigo')).toBeTruthy()
+    expect(screen.getByText('El dueño verá tu perfil y decidirá si trabaja contigo')).toBeTruthy()
     expect(
       screen.getByText('Oqupa solo los pone en contacto. El trato y sus resultados son entre ustedes; Oqupa no es responsable.'),
     ).toBeTruthy()

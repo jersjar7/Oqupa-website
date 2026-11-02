@@ -138,7 +138,7 @@ export default function AgentAssignmentCard({
               </p>
               <p className="mt-1 text-sm text-text-secondary">
                 {confirming === 'decline'
-                  ? 'Si rechazas, el propietario podrá elegir a otro agente. No podrás ser reasignado a esta propiedad.'
+                  ? 'Si rechazas, el dueño podrá elegir a otro agente. No podrás ser reasignado a esta propiedad.'
                   : 'Tu número de WhatsApp aparecerá como contacto principal de este anuncio. Los interesados te contactarán directamente.'}
               </p>
               <div className="mt-3 flex gap-2">

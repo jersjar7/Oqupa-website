@@ -21,6 +21,11 @@ export interface ListingContact {
 
 export type ContactDenialReason =
   | 'needs-login'
+  /** Signed in, but the account has no saved profile. The server answers
+   *  `unauthenticated` as for a visitor, with its own words ("Tu perfil no
+   *  está completo…"); told apart so the person is not sent to verify a phone
+   *  that cannot be saved (feature audit 2026-11-02). */
+  | 'profile-incomplete'
   | 'needs-phone-verification'
   /** Our record claims a verified phone; Firebase Auth has none attached.
    *  Distinct because the person is looking at a profile that says they are
@@ -76,7 +81,11 @@ export const contactService = {
       if (code.includes('out-of-range') || /ya no está disponible|ya no existe/i.test(message)) {
         throw new ContactDenied('listing-not-available', raw)
       }
-      if (code.includes('unauthenticated')) throw new ContactDenied('needs-login', raw)
+      if (code.includes('unauthenticated')) {
+        // The code alone cannot tell a visitor from an account with no saved
+        // profile; the server's words can, as with "ya no existe" above.
+        throw new ContactDenied(/perfil/i.test(message) ? 'profile-incomplete' : 'needs-login', raw)
+      }
       if (code.includes('failed-precondition')) throw new ContactDenied('needs-phone-verification', raw)
       // The seller has no number on file. Telling the buyer to verify THEIR
       // phone was both false and a dead loop (hostile review, 2026-08-27).

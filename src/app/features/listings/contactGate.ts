@@ -36,8 +36,8 @@ export function contactGateCopy({
     // "Otra vez" is doing real work here. Without it the sentence contradicts
     // the screen they just came from, which says the number IS verified.
     return {
-      title: 'Escríbele al propietario',
-      body: 'Para escribirle al propietario, verifica tu número otra vez.',
+      title: 'Escríbele al dueño',
+      body: 'Para escribirle al dueño, verifica tu número otra vez.',
       primary: { label: 'VERIFICAR NÚMERO', to: '/app/verify?reverify=phone' },
       secondary: null,
     }
@@ -46,24 +46,24 @@ export function contactGateCopy({
     // /app/verify will ask for the email link (and maybe a name) before the
     // phone, so this is more than one step — say so honestly.
     return {
-      title: 'Escríbele al propietario',
-      body: 'Para escribirle al propietario, termina de verificar tu cuenta.',
+      title: 'Escríbele al dueño',
+      body: 'Para escribirle al dueño, termina de verificar tu cuenta.',
       primary: { label: 'VERIFICAR CUENTA', to: '/app/verify' },
       secondary: null,
     }
   }
   if (signedIn) {
     return {
-      title: 'Escríbele al propietario',
-      body: 'Para escribirle al propietario, verifica tu número. Solo esta vez.',
+      title: 'Escríbele al dueño',
+      body: 'Para escribirle al dueño, verifica tu número. Solo esta vez.',
       primary: { label: 'VERIFICAR NÚMERO', to: '/app/verify' },
       secondary: null,
     }
   }
   return {
-    title: 'Escríbele al propietario',
+    title: 'Escríbele al dueño',
     body:
-      'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
+      'Para escribirle al dueño, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
     // The entry screen — Google first, email on request — never the old
     // email-only form (Jerson on staging, 2026-08-27).
     primary: { label: 'CREA TU CUENTA', to: '/app/login' },

@@ -3,9 +3,9 @@
 export default function ClaimConsequences({ limit, remaining }: { limit: number; remaining: number }) {
   const after = Math.max(0, remaining - 1)
   const items = [
-    'Recibirás el nombre y WhatsApp del propietario',
+    'Recibirás el nombre y WhatsApp del dueño',
     `Usarás 1 de tus ${limit} oportunidades mensuales (te quedarán ${after})`,
-    'El propietario verá tu perfil y decidirá si trabaja contigo',
+    'El dueño verá tu perfil y decidirá si trabaja contigo',
     'Oqupa solo los pone en contacto. El trato y sus resultados son entre ustedes; Oqupa no es responsable.',
   ]
   return (

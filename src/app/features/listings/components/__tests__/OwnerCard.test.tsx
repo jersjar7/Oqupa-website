@@ -27,9 +27,9 @@ describe('ownerCardFor', () => {
     })
   })
 
-  it('falls back to "Propietario" when the listing was never stamped', () => {
+  it('falls back to "Dueño" when the listing was never stamped', () => {
     expect(ownerCardFor({} as Listing)).toEqual({
-      name: 'Propietario',
+      name: 'Dueño',
       photoKey: null,
       isVerified: false,
       memberSinceYear: null,
@@ -50,7 +50,7 @@ describe('<OwnerCard />', () => {
     expect(screen.getByText('Ana Torres')).toBeTruthy()
     expect(screen.getByLabelText('Verificado')).toBeTruthy()
     expect(screen.getByText(/Miembro desde 2026/)).toBeTruthy()
-    expect(screen.getByText(/Propietario/)).toBeTruthy()
+    expect(screen.getByText(/Dueño/)).toBeTruthy()
   })
 
   it('shows no badge and no year when the owner is unverified and the year is unknown', () => {

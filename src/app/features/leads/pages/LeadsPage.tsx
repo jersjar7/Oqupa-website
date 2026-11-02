@@ -3,7 +3,7 @@
  *
  * Three flat tabs:
  *   - Disponibles  — listings open for claim. Click to claim.
- *   - En Espera    — my claims where the owner is still deciding.
+ *   - En espera    — my claims where the owner is still deciding.
  *   - Invitaciones — owner picked me; I accept or decline here.
  *
  * Once the agent clicks "Aceptar" on an invitation, the claim resolves and
@@ -37,8 +37,8 @@ import {
 
 const TAB_SUBTITLES: Record<LeadsTab, string> = {
   'disponibles':  'Propiedades que buscan un agente. Revisa los detalles y reclama las que quieres trabajar.',
-  'en-espera':    'Propiedades que reclamaste. El propietario está revisando a los agentes interesados y pronto elegirá uno.',
-  'invitaciones': 'Propiedades donde el propietario te eligió. Acepta para gestionarlas, o rechaza si ya no te interesa.',
+  'en-espera':    'Propiedades que reclamaste. El dueño está revisando a los agentes interesados y pronto elegirá uno.',
+  'invitaciones': 'Propiedades donde el dueño te eligió. Acepta para gestionarlas, o rechaza si ya no te interesa.',
 }
 
 export default function LeadsPage() {
@@ -78,7 +78,7 @@ export default function LeadsPage() {
     title: 'Oportunidades',
     subtitle: invitationsCount > 0
       ? `Tienes ${invitationsCount} ${invitationsCount === 1 ? 'invitación pendiente' : 'invitaciones pendientes'} que requieren tu atención.`
-      : 'Descubre propiedades, reclama las que te interesan y acepta las invitaciones de los propietarios.',
+      : 'Descubre propiedades, reclama las que te interesan y acepta las invitaciones de los dueños.',
   })
 
   return (
@@ -154,7 +154,7 @@ function TabBar({
         Disponibles <CountChip n={counts.disponibles} active={tab === 'disponibles'} />
       </TabButton>
       <TabButton active={tab === 'en-espera'} onClick={() => onChange('en-espera')}>
-        En Espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
+        En espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
       </TabButton>
       <TabButton
         active={tab === 'invitaciones'}
@@ -261,7 +261,7 @@ function DisponiblesPane({
       <div className="rounded-2xl border border-border bg-white p-12 text-center">
         <p className="font-serif text-[22px] text-text-primary">No hay oportunidades disponibles</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
-          Cuando un propietario publica una propiedad y solicita ayuda de un agente,
+          Cuando un dueño publica una propiedad y solicita ayuda de un agente,
           aparece aquí. Vuelve pronto — nuevas oportunidades aparecen frecuentemente.
         </p>
       </div>
@@ -305,8 +305,8 @@ function DisponiblesPane({
             </div>
             <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
             <p className="mt-3 text-sm text-text-secondary">
-              Tu reclamo aparecerá en <span className="font-medium">En Espera</span> hasta
-              que el propietario decida. Si te elige, verás la invitación en{' '}
+              Tu reclamo aparecerá en <span className="font-medium">En espera</span> hasta
+              que el dueño decida. Si te elige, verás la invitación en{' '}
               <span className="font-medium">Invitaciones</span>.
             </p>
             <div className="mt-6 flex gap-3">
@@ -325,7 +325,7 @@ function DisponiblesPane({
 }
 
 // ---------------------------------------------------------------------------
-// En Espera pane — claims waiting for owner decision
+// En espera pane — claims waiting for owner decision
 // ---------------------------------------------------------------------------
 function EnEsperaPane({
   userId, query,
@@ -355,7 +355,7 @@ function EnEsperaPane({
         <p className="font-serif text-[22px] text-text-primary">No tienes reclamos en espera</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
           Cuando reclamas una propiedad desde <span className="font-medium">Disponibles</span>,
-          aparece aquí mientras el propietario revisa a los agentes interesados.
+          aparece aquí mientras el dueño revisa a los agentes interesados.
           Pueden pasar unas horas o varios días antes de que decida.
           Si te elige, la propiedad se moverá a <span className="font-medium">Invitaciones</span>.
         </p>
@@ -409,7 +409,7 @@ function InvitacionesPane({
       <div className="rounded-2xl border border-border bg-white p-12 text-center">
         <p className="font-serif text-[22px] text-text-primary">No tienes invitaciones pendientes</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
-          Cuando un propietario te elige de entre los agentes que reclamaron su
+          Cuando un dueño te elige de entre los agentes que reclamaron su
           propiedad, aparece aquí una invitación. Al aceptarla, la propiedad se
           mueve a <Link to="/app/listings?tab=asignadas" className="font-medium text-secondary underline-offset-2 hover:underline">Mis Propiedades → Asignadas</Link>
           {' '}para que la gestiones.

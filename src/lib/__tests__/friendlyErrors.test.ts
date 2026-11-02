@@ -60,10 +60,10 @@ describe('callableErrorMessage', () => {
   })
   it('translates the agent-edit server sentences that are still English', () => {
     expect(callableErrorMessage(fnErr('permission-denied', 'You are not assigned to this listing'))).toBe(
-      'El propietario ya no te tiene asignado a esta publicación.',
+      'El dueño ya no te tiene asignado a esta publicación.',
     )
     expect(callableErrorMessage(fnErr('permission-denied', 'Assignment must be accepted before editing'))).toBe(
-      'Primero acepta la invitación del propietario.',
+      'Primero acepta la invitación del dueño.',
     )
     expect(callableErrorMessage(fnErr('not-found', 'Listing not found'))).toBe('Esta publicación ya no existe.')
     expect(callableErrorMessage(fnErr('not-found', 'Property not found'))).toBe('Esta publicación ya no existe.')

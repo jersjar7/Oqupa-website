@@ -5,7 +5,7 @@
  * IA (2026-04-22): Oportunidades is the funnel — discovery through commit.
  * Three flat tabs:
  *   - Disponibles  — listings open for claim
- *   - En Espera    — claims the agent made; owner hasn't decided yet.
+ *   - En espera    — claims the agent made; owner hasn't decided yet.
  *                    Lost claims (owner picked someone else) hide immediately.
  *   - Invitaciones — owner picked me, I must accept or decline. Time-sensitive.
  *
@@ -32,7 +32,7 @@ export function isValidLeadsTab(t: string | null): t is LeadsTab {
  *     invitations via useAgentAssignments instead.
  *   - Declined invitations (the agent's id is in listing.declinedRealtorIds).
  *     After decline, the server nulls assignedRealtorId — without this check
- *     the claim would re-appear in En Espera, creating a "ghost" state.
+ *     the claim would re-appear in En espera, creating a "ghost" state.
  *
  * Sort: most recently claimed first.
  */

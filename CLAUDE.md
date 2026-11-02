@@ -112,7 +112,7 @@ says **"Publicar"** everywhere (header, hero, footer, Mis Propiedades, Mi Panel)
 
 ### Shared component specs (identical in the app)
 
-- **Status badge** (`PhotoOverlayBadge` + `src/lib/listingStatusTone.ts`): Gotham Medium uppercase; green dot Activo; neutral dot Desactivado / Vendido / Alquilado — never red.
+- **Status badge** (`PhotoOverlayBadge` + `src/lib/listingStatusTone.ts`): the app's pill — white, 10.5 px, 6 px dot; Gotham Medium uppercase, ink label (grey for a closed status); green dot Activo; neutral dot Desactivado / Vendido / Alquilado — never red.
 - **Destacado** (`DestacadoBadge`): ink on `boost`, uppercase "DESTACADO", everywhere. Boost purchase buttons: `bg-boost text-ink`.
 - **Price**: green. Property page `font-serif text-[28px] font-normal text-secondary`; owner/agent cards `font-serif text-xl font-normal text-secondary`; dense map-list cards `font-bold text-text-primary`. Never orange.
 - **Venta / Alquiler** selected: `bg-secondary text-white`, phone and computer.

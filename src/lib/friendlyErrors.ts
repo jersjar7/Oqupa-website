@@ -34,8 +34,8 @@ const BUSINESS_CODES = new Set([
 /** Server sentences that are still English, in Spanish. Anything English not
  *  listed here falls to the catch-all rather than reaching the screen. */
 const ENGLISH_SERVER_MESSAGES: Record<string, string> = {
-  'You are not assigned to this listing': 'El propietario ya no te tiene asignado a esta publicación.',
-  'Assignment must be accepted before editing': 'Primero acepta la invitación del propietario.',
+  'You are not assigned to this listing': 'El dueño ya no te tiene asignado a esta publicación.',
+  'Assignment must be accepted before editing': 'Primero acepta la invitación del dueño.',
   'Listing not found': 'Esta publicación ya no existe.',
   'Property not found': 'Esta publicación ya no existe.',
   'Listing has no associated property': 'Esta publicación ya no existe.',
