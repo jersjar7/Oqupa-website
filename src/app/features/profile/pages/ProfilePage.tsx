@@ -13,6 +13,7 @@ import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Clock, XCircle, Phone, LifeBuoy } from 'lucide-react'
 import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
 import ChangePasswordCard, { isPasswordAccount } from '../components/ChangePasswordCard'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 
@@ -518,9 +519,9 @@ export default function ProfilePage() {
           <p className="mt-3 text-sm text-error">{deleteError}</p>
         )}
 
-        <div className="mt-6 flex gap-3">
+        <DialogActions>
           <Button
-            variant="primary"
+            variant="text"
             onClick={() => {
               setShowDeleteModal(false)
               setDeleteError(null)
@@ -536,7 +537,7 @@ export default function ProfilePage() {
           >
             Eliminar
           </Button>
-        </div>
+        </DialogActions>
       </Modal>
     </div>
   )

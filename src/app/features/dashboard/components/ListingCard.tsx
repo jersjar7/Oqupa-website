@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
+import DialogActions from '@/app/components/ui/DialogActions'
 import { LISTING_STATUS_TONE } from '@/lib/listingStatusTone'
 import { useToggleListingStatus, useDeleteListing, useMarkListingClosed, useSetRealtorHelp } from '@/hooks/useListings'
 import CloseSurveyModal from './CloseSurveyModal'
@@ -237,10 +238,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                 {realtorHelpDisableWarning({ assignmentStatus: listing.assignmentStatus, claimsCount: listing.currentClaimsCount ?? 0 })}
               </p>
             )}
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button variant="text" onClick={() => setShowRealtorHelpOff(false)}>
+                Cancelar
+              </Button>
               <Button
-                variant="text"
-                className="min-h-11 px-3"
                 isLoading={setRealtorHelp.isPending}
                 onClick={() =>
                   setRealtorHelp.mutate(
@@ -251,10 +253,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, desactivar
               </Button>
-              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOff(false)}>
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
         {showRealtorHelpOffer && (
@@ -262,10 +261,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             <p className="text-sm text-text-secondary">
               {`Agentes verificados por Oqupa podrán ofrecerte ayuda para ${isRental ? 'alquilar' : 'vender'} tu propiedad. Oqupa no cobra comisiones por este servicio.`}
             </p>
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>
+                Cancelar
+              </Button>
               <Button
-                variant="text"
-                className="min-h-11 px-3"
                 isLoading={setRealtorHelp.isPending}
                 onClick={() =>
                   setRealtorHelp.mutate(
@@ -276,10 +276,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, activar
               </Button>
-              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOffer(false)}>
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
 
@@ -353,7 +350,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             <p className="text-sm font-medium text-error-strong">
               ¿Eliminar esta publicación? Esta acción no se puede deshacer.
             </p>
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button
+                variant="text"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancelar
+              </Button>
               <Button
                 variant="danger"
                 isLoading={deleteListing.isPending}
@@ -366,14 +369,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, eliminar
               </Button>
-              <Button
-                variant="text"
-                className="min-h-11 px-3"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
 
@@ -388,9 +384,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                 ? '¿Ya encontraste inquilino? La publicación se ocultará y podrás volver a publicarla cuando el contrato termine.'
                 : '¿Ya vendiste la propiedad? La publicación se cerrará.'}
             </p>
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
+                Cancelar
+              </Button>
               <Button
-                variant="text"
                 isLoading={markClosed.isPending}
                 onClick={() =>
                   markClosed.mutate(
@@ -406,10 +404,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 {isRental ? 'Sí, alquilado' : 'Sí, vendido'}
               </Button>
-              <Button variant="text" onClick={() => setShowCloseConfirm(false)}>
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
 
@@ -424,9 +419,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                   : `Te quedan ${boostDaysLeft} días de destacado. Siguen corriendo mientras esté desactivada.`
                 : 'Los días de tu destacado siguen corriendo mientras esté desactivada.'}
             </p>
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button variant="text" onClick={() => setShowDeactivateConfirm(false)}>
+                Cancelar
+              </Button>
               <Button
-                variant="text"
                 isLoading={toggleStatus.isPending}
                 onClick={() =>
                   toggleStatus.mutate(
@@ -437,10 +434,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, desactivar
               </Button>
-              <Button variant="text" onClick={() => setShowDeactivateConfirm(false)}>
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
 
@@ -452,9 +446,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             <p className="mt-1 text-sm text-text-secondary">
               ¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.
             </p>
-            <div className="mt-2 flex gap-2">
+            <DialogActions className="mt-3">
+              <Button variant="text" onClick={() => setShowRepublishConfirm(false)}>
+                Cancelar
+              </Button>
               <Button
-                variant="text"
                 isLoading={toggleStatus.isPending}
                 onClick={() =>
                   toggleStatus.mutate(
@@ -465,10 +461,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, volver a publicar
               </Button>
-              <Button variant="text" onClick={() => setShowRepublishConfirm(false)}>
-                Cancelar
-              </Button>
-            </div>
+            </DialogActions>
           </div>
         )}
 

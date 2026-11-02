@@ -116,6 +116,7 @@ says **"Publicar"** everywhere (header, hero, footer, Mis Propiedades, Mi Panel)
 - **Destacado** (`DestacadoBadge`): ink on `boost`, uppercase "DESTACADO", everywhere. Boost purchase buttons: `bg-boost text-ink`.
 - **Price**: green. Property page `font-serif text-[28px] font-normal text-secondary`; owner/agent cards `font-serif text-xl font-normal text-secondary`; dense map-list cards `font-bold text-text-primary`. Never orange.
 - **Venta / Alquiler** selected: `bg-secondary text-white`, phone and computer.
+- **Confirmation choices** (`DialogActions`; the app's `OqupaAlertDialog`): way out first (`Button variant="text"`), action last (`Button` primary/danger). Two choices sit side by side only when both labels fit on one line, otherwise they stack full width with the action on top; every choice ≥ 48 px, label never wrapped. Red (`danger`) only for destructive actions. Window titles: `font-serif text-[22px] font-normal`.
 
 **Brand rule (per Oqupa Brand Deck typography slide):** Roboto Serif is the **primary heading font** for titles and hero display values. Gotham handles labels, body, and buttons. Do NOT default new headings to Gotham — Header 1 (Roboto Serif, Title Case) is the correct choice for page titles and any hero/display element.
 

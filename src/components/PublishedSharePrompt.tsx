@@ -3,6 +3,8 @@ import Modal from '@/app/components/ui/Modal'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
+import Button from '@/app/components/ui/Button'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 /**
  * The share prompt shown once on a listing that was just published. It used
@@ -25,20 +27,17 @@ export default function PublishedSharePrompt({
         <p className="text-text-secondary">
           ¡Comparte tu anuncio en todas tus redes sociales!
         </p>
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-border px-4 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
-          >
+        <DialogActions>
+          <Button variant="text" onClick={onClose}>
             Ahora no
-          </button>
+          </Button>
           <button
             onClick={() => setSharing(true)}
-            className="flex-1 rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-4 font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
           >
             Compartir
           </button>
-        </div>
+        </DialogActions>
       </Modal>
       <ShareFormatModal
         isOpen={sharing}

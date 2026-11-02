@@ -2,6 +2,8 @@
 // every surface that signs out (audit 2026-11-02, F.2).
 import { useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
+import Button from '@/app/components/ui/Button'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 export function useSignOutConfirm(onConfirm: () => Promise<void> | void) {
   const [open, setOpen] = useState(false)
@@ -10,17 +12,12 @@ export function useSignOutConfirm(onConfirm: () => Promise<void> | void) {
   const dialog = (
     <Modal isOpen={open} onClose={() => !busy && setOpen(false)} title="Cerrar sesión">
       <p className="text-sm text-text-secondary">¿Estás seguro que deseas cerrar sesión?</p>
-      <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => setOpen(false)}
-          className="h-12 flex-1 rounded-full border-[1.5px] border-secondary font-sans text-sm font-bold uppercase tracking-[1px] text-secondary"
-        >
+      <DialogActions>
+        <Button variant="text" disabled={busy} onClick={() => setOpen(false)}>
           Cancelar
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="danger"
           disabled={busy}
           onClick={async () => {
             setBusy(true)
@@ -31,11 +28,10 @@ export function useSignOutConfirm(onConfirm: () => Promise<void> | void) {
               setOpen(false)
             }
           }}
-          className="h-12 flex-1 rounded-full border-[1.5px] border-error font-sans text-sm font-bold uppercase tracking-[1px] text-error"
         >
           Sí, cerrar sesión
-        </button>
-      </div>
+        </Button>
+      </DialogActions>
     </Modal>
   )
 
