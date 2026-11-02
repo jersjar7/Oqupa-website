@@ -310,7 +310,7 @@ describe('getForgotPasswordAuthError', () => {
   it('does NOT reveal that the account is missing for auth/user-not-found (enumeration protection)', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
     expect(info.message).not.toMatch(/no existe una cuenta/i)
-    expect(info.message).toMatch(/verifica tu dirección/i)
+    expect(info.message).toMatch(/revisa que esté bien escrito/i) // audit 2026-11-02: clearer sentence, same on the app
   })
 
   it('maps network-request-failed to a retryable connectivity message', () => {
@@ -321,13 +321,13 @@ describe('getForgotPasswordAuthError', () => {
 
   it('falls back to the address-check message for unrecognized auth/* codes', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/something-else' })
-    expect(info.message).toMatch(/verifica tu dirección/i)
+    expect(info.message).toMatch(/revisa que esté bien escrito/i) // audit 2026-11-02: clearer sentence, same on the app
     expect(info.isRetryable).toBe(true)
   })
 
   it('handles undefined gracefully, falling back to default', () => {
     const info = getForgotPasswordAuthError(undefined)
-    expect(info.message).toMatch(/error al enviar el correo/i)
+    expect(info.message).toMatch(/no pudimos enviar el correo/i) // audit 2026-11-02
     expect(info.isRetryable).toBe(true)
   })
 })
@@ -468,5 +468,13 @@ describe('audit 2026-11-02 — phone hand-over refusals read as what happened', 
   })
   it('the server could not save the number', () => {
     expect(getPhoneAuthError({ code: 'functions/internal' }).message).toBe('No pudimos guardar tu número. Intenta de nuevo.')
+  })
+})
+
+describe('audit 2026-11-02 — forgot password default', () => {
+  it('says what to check, and nothing about whether the account exists', () => {
+    expect(getForgotPasswordAuthError({ code: 'auth/user-not-found' }).message).toBe(
+      'No pudimos enviar el correo. Revisa que esté bien escrito y vuelve a intentarlo.',
+    )
   })
 })

@@ -253,7 +253,7 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
-      return { message: 'Error al enviar el correo. Verifica tu dirección.', isRetryable: true }
+      return { message: 'No pudimos enviar el correo. Revisa que esté bien escrito y vuelve a intentarlo.', isRetryable: true }
   }
 }
 
