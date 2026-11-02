@@ -277,6 +277,19 @@ export const authService = {
     await updatePassword(user, newPassword)
   },
 
+  /**
+   * "Cambiar contraseña" in Mi perfil (ADR-046 #13), as the app does it: the
+   * current password is proved first, so a session left open on a shared
+   * computer cannot be used to take the account, and Firebase never answers
+   * requires-recent-login.
+   */
+  async changePasswordWithCurrent(currentPassword: string, newPassword: string) {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', currentPassword))
+    await updatePassword(user, newPassword)
+  },
+
   // Phone verification flow
   initializeRecaptcha(containerId: string) {
     if (recaptchaVerifier) {

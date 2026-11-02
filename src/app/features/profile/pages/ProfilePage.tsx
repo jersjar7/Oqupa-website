@@ -11,12 +11,13 @@ import { getPhoneAuthError, getProfileSaveError, getAccountDeleteError } from '@
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Shield, Clock, XCircle, Phone } from 'lucide-react'
+import ChangePasswordCard, { isPasswordAccount } from '../components/ChangePasswordCard'
 
 type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, refreshUser } = useAuthStore()
+  const { user, firebaseUser, refreshUser } = useAuthStore()
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -432,6 +433,9 @@ export default function ProfilePage() {
           )}
         </div>
       </Card>
+
+      {/* "Cambiar contraseña" for accounts that have one (ADR-046 #13) */}
+      {isPasswordAccount(firebaseUser) && <ChangePasswordCard />}
 
       {/* Account info */}
       <Card>

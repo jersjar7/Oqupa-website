@@ -135,6 +135,13 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     isRetryable: true,
   },
   unavailable: { message: CONNECTION, isRetryable: true },
+  // The phone hand-over function's refusals (phoneRelease.ts).
+  'oqupa/caller-has-phone': { message: 'Tu cuenta ya tiene un número verificado.', isRetryable: false },
+  'oqupa/phone-holder-changed': {
+    message: 'Algo cambió mientras verificábamos. Pide un código nuevo e intenta otra vez.',
+    isRetryable: true,
+  },
+  'functions/internal': { message: 'No pudimos guardar tu número. Intenta de nuevo.', isRetryable: true },
 }
 
 export function getPhoneAuthError(error: unknown): AuthErrorInfo {
@@ -393,5 +400,27 @@ export function getEmailChangeLinkError(error: unknown): string {
       return CONNECTION
     default:
       return withCode(EMAIL_CHANGE_COPY.linkFailed, code)
+  }
+}
+
+/** "Cambiar contraseña" in Mi perfil (ADR-046 #13) — the app's sentences. */
+export function getPasswordChangeError(error: unknown): AuthErrorInfo & { field?: 'current' } {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return { message: 'Tu contraseña actual no es correcta.', isRetryable: true, field: 'current' }
+    case 'auth/weak-password':
+      return { message: WEAK_PASSWORD, isRetryable: true }
+    case 'auth/requires-recent-login':
+    case 'auth/user-token-expired':
+      return { message: SESSION, isRetryable: false }
+    case 'auth/too-many-requests':
+      return { message: TOO_MANY, isRetryable: false }
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    default:
+      return { message: withCode('No pudimos cambiar tu contraseña. Intenta de nuevo.', code), isRetryable: true }
   }
 }

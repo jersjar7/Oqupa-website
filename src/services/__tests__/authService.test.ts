@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -476,6 +476,41 @@ describe('authService', () => {
       _currentUser = makeUser('uid-8')
       await authService.changePassword('newSecurePass123')
       expect(updatePasswordMock).toHaveBeenCalledWith(_currentUser, 'newSecurePass123')
+    })
+  })
+
+  // ADR-046 #13: the website's "Cambiar contraseña" proves the current one first.
+  describe('changePasswordWithCurrent', () => {
+    // This file's other tests count these calls; leave them as found.
+    afterEach(() => {
+      reauthenticateMock.mockClear()
+      emailCredentialMock.mockClear()
+      updatePasswordMock.mockClear()
+    })
+    it('signs in again with the current password, then sets the new one', async () => {
+      _currentUser = { ...makeUser('uid-9'), email: 'ana@example.com' }
+      const cred = { email: 'ana@example.com', password: 'Vieja123!', type: 'password' }
+      emailCredentialMock.mockReturnValueOnce(cred)
+      reauthenticateMock.mockResolvedValueOnce(undefined)
+      await authService.changePasswordWithCurrent('Vieja123!', 'Nueva123!')
+      expect(emailCredentialMock).toHaveBeenCalledWith('ana@example.com', 'Vieja123!')
+      expect(reauthenticateMock).toHaveBeenCalledWith(_currentUser, cred)
+      expect(updatePasswordMock).toHaveBeenCalledWith(_currentUser, 'Nueva123!')
+      const updates = updatePasswordMock.mock.invocationCallOrder
+      expect(reauthenticateMock.mock.invocationCallOrder[0]!).toBeLessThan(updates[updates.length - 1]!)
+    })
+
+    it('a wrong current password changes nothing', async () => {
+      _currentUser = { ...makeUser('uid-9'), email: 'ana@example.com' }
+      reauthenticateMock.mockRejectedValueOnce({ code: 'auth/invalid-credential' })
+      updatePasswordMock.mockClear()
+      await expect(authService.changePasswordWithCurrent('Mala', 'Nueva123!')).rejects.toMatchObject({ code: 'auth/invalid-credential' })
+      expect(updatePasswordMock).not.toHaveBeenCalled()
+    })
+
+    it('throws when there is no current user', async () => {
+      _currentUser = null
+      await expect(authService.changePasswordWithCurrent('a', 'b')).rejects.toThrow('No authenticated user')
     })
   })
 
