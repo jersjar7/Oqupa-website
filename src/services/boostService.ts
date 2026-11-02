@@ -18,7 +18,7 @@ import type {
   Payment,
   PaymentDocStatus,
 } from '@/types/boost'
-import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS, ON_SALE_BOOST_TIER } from '@/types/boost'
+import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS, ON_SALE_BOOST_TIER, ONE_BOOST_OFFER } from '@/types/boost'
 
 // Timestamp converter
 function toDate(value: unknown): Date {
@@ -102,11 +102,14 @@ export const boostService = {
   ): Promise<BoostPaymentInitiation> {
     const functions = getFunctions(undefined, 'southamerica-east1')
     const callable = httpsCallable<
-      { listingId: string; boostTier: string },
+      { listingId: string; boostTier: string; offer: typeof ONE_BOOST_OFFER },
       { clientSecret: string; paymentId: string }
     >(functions, 'createBoostPaymentIntent')
 
-    const result = await callable({ listingId, boostTier })
+    // The marker tells the server this page offers only the one boost
+    // (ADR-042). Without it the server treats the caller as an older client
+    // (option A, LEGACY_TIERS_FOR_UNMARKED_CLIENTS in the functions).
+    const result = await callable({ listingId, boostTier, offer: ONE_BOOST_OFFER })
     return {
       clientSecret: result.data.clientSecret,
       paymentId: result.data.paymentId,

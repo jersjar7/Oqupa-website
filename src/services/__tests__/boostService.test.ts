@@ -204,7 +204,11 @@ describe('boostService', () => {
     it('calls callable with listingId and boostTier', async () => {
       callableFnMock.mockResolvedValue({ data: { clientSecret: 's', paymentId: 'p' } })
       await boostService.createBoostPaymentIntent('listing-xyz', 'thirtyDays')
-      expect(callableFnMock).toHaveBeenCalledWith({ listingId: 'listing-xyz', boostTier: 'thirtyDays' })
+      // offer 'one-boost': this page offers only the one boost (ADR-042,
+      // option A); tabs opened before the deploy send no marker.
+      expect(callableFnMock).toHaveBeenCalledWith({
+        listingId: 'listing-xyz', boostTier: 'thirtyDays', offer: 'one-boost',
+      })
     })
 
     it('calls getFunctions with southamerica-east1 region', async () => {

@@ -60,6 +60,12 @@ export type PaymentDocStatus =
  */
 export const ON_SALE_BOOST_TIER: BoostTier = 'thirtyDays'
 
+/**
+ * Sent as `offer` with createBoostPaymentIntent: this page offers only the one
+ * boost. Must match ONE_BOOST_OFFER in the functions' lib/boost-tiers.js.
+ */
+export const ONE_BOOST_OFFER = 'one-boost' as const
+
 /** What a new purchase may choose (fallback when Firestore config/pricing is unavailable). */
 export const DEFAULT_BOOST_TIERS: BoostTierConfiguration[] = [
   {
