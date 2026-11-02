@@ -45,6 +45,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
   const toggleDeviceSave = useDeviceSavesStore((s) => s.toggle)
   const lists = useListStore((s) => s.lists)
   const listsArrived = useListStore((s) => !!authUser && s.loadedUid === authUser.uid)
+  const listsFailed = useListStore((s) => s.loadFailed === true)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -75,7 +76,7 @@ export default function SaveButton({ listingId, className = '', variant = 'card'
     // make a second Guardados (re-review).
     if (!listsArrived) {
       // The read failed: say so instead of doing nothing (audit 2026-11-02).
-      if (useListStore.getState().loadFailed) toast.error('No pudimos cargar tus guardados. Vuelve a intentarlo.')
+      if (listsFailed) toast.error('No pudimos cargar tus guardados. Vuelve a intentarlo.')
       return
     }
 
