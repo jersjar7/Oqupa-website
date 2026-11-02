@@ -8,15 +8,35 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { DepartamentoBorder } from '@/lib/map/departamentoBorder'
 import { addDepartamentoBorder } from '@/components/explore/mapbox/mapLayers'
 import { MAPBOX_DEFAULT_ZOOM } from '@/components/explore/mapbox/mapCamera'
-import { pointerWords, usePointerKind } from '@/lib/pointerWords'
+import { currentPointerKind, pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 const MAPBOX_STYLE = 'mapbox://styles/mapbox/standard'
 const TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string | undefined) ?? ''
+
+/** Mapbox's own overlay while one finger tries to move the map. */
+const TWO_FINGER_LOCALE = {
+  'TouchPanBlocker.Message': 'Usa dos dedos para mover el mapa',
+  'ScrollZoomBlocker.CtrlMessage': 'Usa Ctrl + rueda para acercar el mapa',
+  'ScrollZoomBlocker.CmdMessage': 'Usa ⌘ + rueda para acercar el mapa',
+}
 
 interface LocationPickerProps {
   latitude: number | null
   longitude: number | null
   onChange: (lat: number, lng: number) => void
+  /** Where the person is, shown while the page asks "¿Ubicación es correcta?" (D6). */
+  provisional?: { lat: number; lng: number } | null
+  /** Move the map here (the person, a search result); a new key moves it again. */
+  focus?: { lat: number; lng: number; key: number } | null
+}
+
+/** The brand green, read from the page's tokens (no hard-coded colour). */
+function brandGreen(): string {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || 'currentColor'
+  } catch {
+    return 'currentColor'
+  }
 }
 
 export default function LocationPicker(props: LocationPickerProps) {
@@ -24,15 +44,20 @@ export default function LocationPicker(props: LocationPickerProps) {
 }
 
 /** Exported with an explicit token so it can be tested without env vars. */
-export function LocationPickerMap({ token, latitude, longitude, onChange }: LocationPickerProps & { token: string }) {
+export function LocationPickerMap({ token, latitude, longitude, onChange, provisional = null, focus = null }: LocationPickerProps & { token: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
+  const provisionalRef = useRef<mapboxgl.Marker | null>(null)
   const [outsideBoundary, setOutsideBoundary] = useState(false)
   const pointer = usePointerKind()
   const latest = useRef(onChange)
   latest.current = onChange
   const hasPosition = latitude != null && longitude != null
+  // The last place the pin was accepted at: a pin dropped outside Piura goes
+  // back there instead of staying where it was refused.
+  const lastValid = useRef<[number, number] | null>(null)
+  lastValid.current = hasPosition ? [longitude!, latitude!] : null
 
   const tryPlace = async (lat: number, lng: number) => {
     let inside = true
@@ -43,6 +68,13 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     }
     if (!inside) {
       setOutsideBoundary(true)
+      if (lastValid.current) {
+        markerRef.current?.setLngLat(lastValid.current)
+      } else {
+        // No valid place to go back to: the refused pin leaves the map.
+        markerRef.current?.remove()
+        markerRef.current = null
+      }
       return
     }
     setOutsideBoundary(false)
@@ -54,11 +86,16 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
   useEffect(() => {
     if (!token || !containerRef.current) return
     mapboxgl.accessToken = token
+    // On a phone the map sits in a page that scrolls: one finger scrolls the
+    // page, two fingers move the map (before, the map took every swipe and
+    // the page could not be scrolled past it).
+    const touch = currentPointerKind() === 'touch'
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: MAPBOX_STYLE,
       center: hasPosition ? [longitude!, latitude!] : [PIURA_CENTER.lng, PIURA_CENTER.lat],
       zoom: hasPosition ? 15 : MAPBOX_DEFAULT_ZOOM,
+      ...(touch ? { cooperativeGestures: true, locale: TWO_FINGER_LOCALE } : {}),
     })
     mapRef.current = map
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right')
@@ -67,6 +104,8 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     return () => {
       markerRef.current?.remove()
       markerRef.current = null
+      provisionalRef.current?.remove()
+      provisionalRef.current = null
       map.remove()
       mapRef.current = null
     }
@@ -88,6 +127,30 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     }
   }, [latitude, longitude, hasPosition])
 
+  // The person's own place, while asked about: a green marker, not the pin.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (!provisional) {
+      provisionalRef.current?.remove()
+      provisionalRef.current = null
+      return
+    }
+    if (!provisionalRef.current) {
+      provisionalRef.current = new mapboxgl.Marker({ color: brandGreen() }).setLngLat([provisional.lng, provisional.lat]).addTo(map)
+    } else {
+      provisionalRef.current.setLngLat([provisional.lng, provisional.lat])
+    }
+  }, [provisional, hasPosition])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !focus) return
+    map.easeTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.getZoom?.() ?? 0, 16) })
+    // A new key is a new request, even to the same place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.key])
+
   if (!token) {
     return (
       <div className="flex h-[300px] items-center justify-center rounded-xl border border-border bg-cream p-6 text-center text-sm text-text-secondary">
@@ -103,6 +166,9 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
         <p className="mt-2 text-xs text-error">
           Fuera de zona permitida — selecciona una ubicación dentro del departamento de Piura
         </p>
+      )}
+      {pointer === 'touch' && (
+        <p className="mt-2 text-xs text-text-tertiary">Usa dos dedos para mover el mapa.</p>
       )}
       {hasPosition && !outsideBoundary && (
         <p className="mt-2 text-xs text-text-tertiary">

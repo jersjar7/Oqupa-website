@@ -4,6 +4,43 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-02 (afternoon) — Simpler wizard, one boost, Guardados, sign-in, audit fixes (Jerson: "Promote to production")
+
+### New Features
+- The simpler publishing wizard (ADR-043 step 4, D1–D13; Jerson: "Wizard ok"): SIGUIENTE/ATRÁS, "¿Vendes o alquilas?",
+  "Soy el dueño" by default, − / + counts, "Medidas" and "¿Qué tiene?" (the app's amenities), "Busca tu dirección" and
+  "¿Ubicación es correcta?", Sí/No for the exact address, AGREGAR FOTOS with tap-for-cover (maximum 20), "S/ Soles" /
+  "US$ Dólares", agent help moved to Mis Propiedades, drafts kept per account across tab close (photos included,
+  30-day expiry). Monoambiente is built but switched off (MONOAMBIENTE_ENABLED = false) until the app that reads it
+  is on most phones.
+- One 30-day boost (ADR-042/045): "30 días · S/ 29.90"; no "MÁS POPULAR" badge; quieter Destacar button; no
+  dashboard nudge.
+- Guardados in one place with the app (ADR-046 #1): one flat list, the heart saves and un-saves; old lists move in once.
+- My Location on the map; "Reportar anuncio"; the seller's number with LLAMAR and COPIAR after the contact gate;
+  Eliminar on Vendido/Alquilado; "Ayuda" in the menu; "Buenas prácticas" for agents; one agent application form with
+  the app; "Cambiar contraseña" in Mi perfil.
+
+### UX Improvements
+- Wizard bug fixes (ADR-043 step 3): Spanish field errors, ATRÁS and the browser's back keep everything, "120,5" and
+  "1,500" read like the app, limits with plain messages, refused pins go back, one-finger page scroll on phones,
+  photos that can't be used are refused at once, price kept in the draft.
+- Sign-in and sign-up (ADR-046 #7–#13): phone typed any way, Peru mobiles only, one password box, terms line on both
+  doors, rules in words, "¿Primera vez en Oqupa?", a profile lost at sign-up is repaired safely (create-only).
+- Same words as the app: "dueño", status badges, agent tabs (Disponibles / En espera / Invitaciones / Asignadas).
+- Price filter compares each listing in its own currency; US$ prices shown as US$ on the listing page.
+- About 60 clearer messages: no raw server text, no English, "Sin conexión" only when offline.
+
+### Privacy
+- A publishing draft belongs to one account: cleared on sign-out, never shown to another account on a shared computer.
+
+### Legal
+- Términos and Privacidad use "destacado" and "oportunidades" instead of "boost" and "leads"; Términos section 9 says
+  "agentes inmobiliarios". Their "Última actualización" dates move with this.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-02 — Publishing can't make a second copy; the PUBLICAR button fills (ADR-043 step 2)
 
 Decided by Claude under Jerson's standing instruction (2026-11-02, "Follow through with your recommendations"); on

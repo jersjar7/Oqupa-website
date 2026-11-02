@@ -40,7 +40,7 @@ export default function RealtorClaimCard({
   const whatsappPhone = claim.realtorPhone.replace(/[^\d+]/g, '')
 
   return (
-    <div className={`rounded-2xl border bg-white p-4 shadow-light ${isAssigned ? 'border-primary/30 bg-primary/5' : 'border-border'}`}>
+    <div className={`rounded-2xl border bg-white p-4 shadow-light ${isAssigned ? 'border-secondary/30 bg-secondary/5' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           {/* Realtor name */}
@@ -59,7 +59,7 @@ export default function RealtorClaimCard({
 
           {/* Claimed date */}
           <p className="mt-1 text-xs text-text-tertiary">
-            Reclamó {formatRelativeDate(claim.claimedAt)}
+            Reclamó {formatRelativeDate(claim.claimedAt).toLowerCase()}
           </p>
         </div>
       </div>

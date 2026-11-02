@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import type { Listing } from '@/types/listing'
+import { firestoreWriteErrorMessage } from '@/lib/friendlyErrors'
 
 export function useListingDetails(listingId: string | undefined) {
   return useQuery({
@@ -42,11 +43,11 @@ export function useToggleListingStatus() {
       toast.success(
         variables.currentStatus === 'active'
           ? 'Publicación desactivada'
-          : 'Publicación activada'
+          : 'Tu publicación está activa otra vez'
       )
     },
-    onError: () => {
-      toast.error('Error al cambiar el estado de la publicación')
+    onError: (error) => {
+      toast.error(firestoreWriteErrorMessage(error))
     },
   })
 }
@@ -68,8 +69,8 @@ export function useMarkListingClosed() {
         variables.status === 'rented' ? 'Propiedad marcada como alquilada' : 'Propiedad marcada como vendida'
       )
     },
-    onError: () => {
-      toast.error('Error al cambiar el estado de la publicación')
+    onError: (error) => {
+      toast.error(firestoreWriteErrorMessage(error))
     },
   })
 }
@@ -92,8 +93,30 @@ export function useDeleteListing() {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       toast.success('Publicación eliminada')
     },
-    onError: () => {
-      toast.error('Error al eliminar la publicación')
+    onError: (error) => {
+      toast.error(firestoreWriteErrorMessage(error))
+    },
+  })
+}
+
+/**
+ * Agent help, turned on or off by the owner from Mis Propiedades (ADR-043
+ * D10: it left the publishing wizard). Only the switch is written; the
+ * listing keeps its maximum of agents.
+ */
+export function useSetRealtorHelp() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ listingId, on }: { listingId: string; on: boolean }) => {
+      await firestoreService.updateListing(listingId, { wantsRealtorHelp: on })
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success(variables.on ? 'Ayuda de agentes activada' : 'Ayuda de agentes desactivada')
+    },
+    onError: (error) => {
+      toast.error(firestoreWriteErrorMessage(error))
     },
   })
 }

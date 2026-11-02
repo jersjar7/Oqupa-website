@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import { step4Schema, fullListingSchema, type Step4Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { useAuthStore } from '@/stores/authStore'
 import { auth } from '@/lib/firebase'
 import { firestoreService } from '@/services/firestoreService'
@@ -18,10 +17,13 @@ import {
   type ListingDoc,
   type PropertyDoc,
 } from '@/services/publishService'
-import { Button, Input, InfoTip, FillingButton } from '@/app/components/ui'
+import { Input, FillingButton } from '@/app/components/ui'
 import type { FillStatus } from '@/app/components/ui/FillingButton'
-import RevealField from './RevealField'
-import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
+import WizardNav, { WIZARD_BUTTON } from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
+import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import type { Currency } from '@/types/enums'
+import { parseLocaleNumber } from '@/lib/localeNumber'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { publishRealProgress } from '@/lib/fillProgress'
 import type { Listing } from '@/types/listing'
@@ -29,27 +31,38 @@ import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
+import { editAwareResolver, issuesThatCount } from '../editLimits'
+import { storeWayBackFor } from '@/lib/returnPath'
+import { authService } from '@/services/authService'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
 
-function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
-  if (amount == null || isNaN(amount)) return ''
-  const formatted = amount.toLocaleString('en-US')
-  return `${CURRENCY_SYMBOLS[currency]} ${formatted}`
+/** The price box says S/ and US$ (ADR-043 D9). */
+const CURRENCY_WORDS: Record<Currency, string> = { PEN: 'S/', USD: 'US$' }
+/** The currency buttons say the word too (Jerson, 2026-11-02). */
+const CURRENCY_BUTTONS: Record<Currency, string> = { PEN: 'S/ Soles', USD: 'US$ Dólares' }
+
+/** The price as shown once the person leaves the box: "250,000", "1,500.5". */
+function formatAmount(amount: number | null | undefined): string {
+  if (amount == null || !Number.isFinite(amount)) return ''
+  return amount.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
 export default function WizardStep5() {
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const {
-    data, prevStep, isEditMode, editListingId, editPropertyId, reset,
+    data, prevStep, updateData, isEditMode, editListingId, editPropertyId, reset, leaveEdit,
     recordUploadedPhoto, persistDraft, markPublished, claimPublishIdentity, renewPublishIdentity,
   } = useListingFormStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // The sign-in ended before or during PUBLICAR: offer INICIAR SESIÓN.
+  const [sessionClosed, setSessionClosed] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   // The new-listing publish (ADR-043). Always starts idle: a draft that is
   // already published is cleared by CreateListingPage and refused by
@@ -70,6 +83,14 @@ export default function WizardStep5() {
   // identity held in memory rather than refuse to publish, and instead keep
   // this warning up for the whole publish, errors included, until it
   // succeeds or the person leaves on purpose.
+  // While publishing or saving, the browser's back button stays on this page
+  // (it would otherwise go to Fotos in the middle of the save).
+  const busy = isSubmitting || publishStatus === 'filling' || publishStatus === 'done'
+  useEffect(() => {
+    useListingFormStore.getState().setNavigationLocked(busy)
+    return () => useListingFormStore.getState().setNavigationLocked(false)
+  }, [busy])
+
   const guardLeaving = publishStatus === 'filling' || (publishStatus === 'error' && !identityStored)
   useEffect(() => {
     if (!guardLeaving) return
@@ -82,54 +103,82 @@ export default function WizardStep5() {
   }, [guardLeaving])
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<Step4Data>({
-    resolver: zodResolver(step4Schema),
+    resolver: editAwareResolver(zodResolver(step4Schema)),
     defaultValues: {
       operationType: data.operationType,
       rentalDurationType: data.rentalDurationType || undefined,
       propertyType: data.propertyType || undefined,
       amount: data.amount ?? undefined,
       currency: (data.currency || 'PEN') as Currency,
-      wantsRealtorHelp: data.wantsRealtorHelp,
-      maxRealtors: data.maxRealtors,
     },
   })
 
   const currency = watch('currency')
-  const amount = watch('amount')
-  const wantsRealtorHelp = watch('wantsRealtorHelp')
+  // The box shows exactly what is typed. Reformatting it on every keystroke
+  // ("S/. 15,000") threw the cursor to the end; the thousands are shown when
+  // the person leaves the box.
+  const [priceText, setPriceText] = useState(() => formatAmount(data.amount))
+
+  // The price, currency and agent choice go into the draft as they change, so
+  // a refresh in this tab, ATRÁS or the back button keep them.
+  useEffect(() => {
+    const sub = watch((v) => {
+      updateData({
+        amount: typeof v.amount === 'number' && Number.isFinite(v.amount) ? v.amount : null,
+        currency: (v.currency ?? 'PEN') as Currency,
+      })
+    })
+    return () => sub.unsubscribe()
+  }, [watch, updateData])
   const isAlquiler = data.operationType === 'alquiler'
   const isShortTerm = data.rentalDurationType === 'shortTerm'
 
-  const { isRevealed, wasInitial } = useRevealedFields(
-    {
-      price: true, // always visible
-      realtorHelp: typeof amount === 'number' && amount > 0,
-      submitAndError: typeof amount === 'number' && amount > 0,
-    },
-    isEditMode
-  )
+
+  // INICIAR SESIÓN after the publish was refused because the sign-in ended:
+  // keep the draft in this tab, end the stale session (otherwise the sign-in
+  // page sends a still-signed-in person straight back here, in a loop), and
+  // go to sign-in, which returns here once the same account is back. A
+  // different account gets a clean wizard (draftOwnerWatch).
+  async function signInAgain() {
+    persistDraft()
+    // The way back belongs to this account only (third review #2): someone
+    // else signing in on this computer is not sent into this wizard.
+    if (user) storeWayBackFor(user.id, `${location.pathname}${location.search}`)
+    try {
+      await authService.endStaleSession()
+    } catch {
+      // Signing out of a session that is already gone can fail; go on.
+    }
+    navigate('/app/login')
+  }
 
   async function onSubmit(formData: Step4Data) {
+    // Unreachable in the app: the route's guards send a signed-out person to
+    // sign-in (and back here afterwards, review #3). Kept for the types.
     if (!user) return
+    setSessionClosed(false)
 
     // Pre-submission validation of all steps
     // Merge formData (current Step 5 values) since they haven't been saved to the store yet
-    const fullResult = fullListingSchema.safeParse({
+    const checked = {
       ...data,
       ...formData,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
       latitude: data.latitude ?? undefined,
       longitude: data.longitude ?? undefined,
-    })
+    }
+    const fullResult = fullListingSchema.safeParse(checked)
+    // Editing: limits only on what the owner changed (review #6).
+    const blocking = fullResult.success ? [] : issuesThatCount(fullResult.error.issues, checked)
 
-    if (!fullResult.success) {
-      const message = fullResult.error.issues[0]?.message ?? 'Faltan datos obligatorios'
+    if (blocking.length > 0) {
+      const message = blocking[0]?.message ?? 'Faltan datos obligatorios'
       setSubmitError(message)
       return
     }
@@ -255,8 +304,8 @@ export default function WizardStep5() {
           description: data.description,
           price: { amount: formData.amount, currency: formData.currency },
           role: data.role as Listing['role'],
-          wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
-          maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
+          // Agent help is not written: the Mis Propiedades card owns it
+          // (ADR-043 D10; hostile review #4).
           media: editedMedia,
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,
@@ -274,7 +323,8 @@ export default function WizardStep5() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
-      reset()
+      // Back to the stored new-listing draft, untouched by the edit.
+      leaveEdit()
       navigate('/app')
     } catch (err) {
       console.error('Submission error:', err)
@@ -381,8 +431,10 @@ export default function WizardStep5() {
             publishedAt: now,
             expiresAt,
             media: mediaDoc,
-            wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
-            maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
+            // D10: agent help is offered after publishing, off until the
+            // owner turns it on in Mis Propiedades.
+            wantsRealtorHelp: false,
+            maxRealtors: 3,
             currentClaimsCount: 0,
             contactClickCount: 0,
             operationType: data.operationType as Listing['operationType'],
@@ -455,6 +507,7 @@ export default function WizardStep5() {
       // One Spanish sentence saying what went wrong. The retry reuses the
       // same identity and skips the photos that already arrived.
       setSubmitError(err instanceof PublishError ? err.message : PUBLISH_ERROR_MESSAGES.other)
+      setSessionClosed(err instanceof PublishError && err.failure === 'session')
       setPublishStatus('error')
     }
   }
@@ -468,144 +521,96 @@ export default function WizardStep5() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Price — always visible */}
-      <RevealField visible={isRevealed('price')} animate={!wasInitial('price')}>
-        <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Precio</h3>
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
+      <section>
+        <h2 className={WIZARD_HEADING}>Precio</h2>
 
-          {/* Currency toggle */}
-          <div className="mt-3 flex rounded-xl border border-border">
-            {(['PEN', 'USD'] as const).map((cur) => (
-              <button
-                key={cur}
-                type="button"
-                onClick={() => setValue('currency', cur)}
-                className={`flex-1 py-2 text-sm font-medium transition-colors first:rounded-l-xl last:rounded-r-xl ${
-                  currency === cur
-                    ? 'bg-primary text-white'
-                    : 'text-text-secondary hover:bg-black/5'
-                }`}
-              >
-                {CURRENCY_SYMBOLS[cur]} ({cur})
-              </button>
-            ))}
-          </div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {(['PEN', 'USD'] as const).map((cur) => (
+            <button
+              key={cur}
+              type="button"
+              aria-pressed={currency === cur}
+              onClick={() => setValue('currency', cur)}
+              className={choiceClass(currency === cur)}
+            >
+              {CURRENCY_BUTTONS[cur]}
+            </button>
+          ))}
+        </div>
 
-          <div className="mt-3">
+        <div className="mt-4">
+          <div className="flex items-start gap-2">
+            <span className="pt-2.5 text-base font-medium text-text-primary" aria-hidden="true">
+              {CURRENCY_WORDS[currency]}
+            </span>
             <Input
               type="text"
-              inputMode="numeric"
-              placeholder={`Ej: ${CURRENCY_SYMBOLS[currency]} ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
+              inputMode="decimal"
+              aria-label={`Precio en ${CURRENCY_WORDS[currency]}`}
+              placeholder={`Ej: ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
               error={errors.amount?.message}
-              value={formatPriceDisplay(amount, currency)}
+              value={priceText}
               onChange={(e) => {
-                const raw = e.target.value.replace(/[^\d]/g, '')
-                const num = raw === '' ? undefined : Number(raw)
-                setValue('amount', num as number, { shouldValidate: true })
+                setPriceText(e.target.value)
+                setValue('amount', parseLocaleNumber(e.target.value) as number, { shouldValidate: true })
+              }}
+              onBlur={() => {
+                const n = getValues('amount')
+                if (typeof n === 'number' && Number.isFinite(n)) setPriceText(formatAmount(n))
               }}
             />
-            {isAlquiler && (
-              <p className="mt-1 text-xs text-text-tertiary">
-                {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
-              </p>
-            )}
           </div>
-        </div>
-      </RevealField>
-
-      {/* Realtor Help */}
-      <RevealField visible={isRevealed('realtorHelp')} animate={!wasInitial('realtorHelp')}>
-        <div className="rounded-xl border border-border p-4">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              {...register('wantsRealtorHelp')}
-            />
-            <div>
-              <span className="text-sm font-medium uppercase text-text-primary">
-                Quiero ayuda de agentes
-              </span>
-              <p className="text-xs text-text-secondary">
-                Agentes verificados podrán contactarte para ayudar a vender tu propiedad
-              </p>
-            </div>
-          </label>
-
-          {wantsRealtorHelp && (
-            <div className="mt-4">
-              <label className="text-sm font-medium uppercase text-text-primary">
-                Máximo de agentes
-                <InfoTip text="Limita cuántos agentes pueden solicitar ayudarte con tu propiedad. Puedes cambiar esto después de publicar." />
-              </label>
-              <div className="mt-2 flex gap-2">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setValue('maxRealtors', n)}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                      watch('maxRealtors') === n
-                        ? 'bg-primary text-white'
-                        : 'border border-border text-text-secondary hover:border-primary/30'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {isAlquiler && (
+            <p className="mt-1 text-sm text-text-secondary">
+              {isShortTerm ? 'Precio por noche' : 'Precio mensual'}
+            </p>
           )}
         </div>
-      </RevealField>
+      </section>
 
-      {/* Submit + Error */}
-      <RevealField visible={isRevealed('submitAndError')} animate={!wasInitial('submitAndError')} delay={0.15}>
-        <div className="space-y-6">
-          {/* Submit error */}
-          {submitError && (
-            <p role="alert" className="text-sm text-error">{submitError}</p>
-          )}
+      <div className="space-y-4">
+        {submitError && (
+          <p role="alert" data-wizard-error className="text-sm text-error">{submitError}</p>
+        )}
+        {sessionClosed && (
+          <button
+            type="button"
+            onClick={() => void signInAgain()}
+            className={`${WIZARD_BUTTON} w-full bg-secondary text-white hover:bg-secondary-hover`}
+          >
+            Iniciar sesión
+          </button>
+        )}
 
-          {/* Edit mode: what is being saved */}
-          {isEditMode && uploadProgress && (
-            <p className="text-sm text-primary">{uploadProgress}</p>
-          )}
+        {/* Edit mode: what is being saved */}
+        {isEditMode && uploadProgress && (
+          <p className="text-sm text-secondary">{uploadProgress}</p>
+        )}
 
-          {/* Navigation */}
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="text"
-              onClick={prevStep}
-              disabled={isSubmitting || publishStatus === 'filling' || publishStatus === 'done'}
-              className="flex-1"
+        <WizardNav onBack={prevStep} backDisabled={busy}>
+          {isEditMode ? (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`${WIZARD_BUTTON} flex-[2] bg-secondary text-white hover:bg-secondary-hover disabled:opacity-60`}
             >
-              Atrás
-            </Button>
-            {isEditMode ? (
-              <Button
-                type="submit"
-                isLoading={isSubmitting}
-                className="flex-1"
-              >
-                Guardar Cambios
-              </Button>
-            ) : (
-              <FillingButton
-                type="submit"
-                status={publishStatus}
-                progress={publishProgress}
-                onDone={handlePublishedShown}
-                className="flex-1"
-              >
-                Publicar
-              </FillingButton>
-            )}
-          </div>
-        </div>
-      </RevealField>
+              {isSubmitting ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+          ) : (
+            <FillingButton
+              type="submit"
+              status={publishStatus}
+              progress={publishProgress}
+              onDone={handlePublishedShown}
+              solid
+              className="h-14 flex-[2]"
+            >
+              Publicar
+            </FillingButton>
+          )}
+        </WizardNav>
+      </div>
     </form>
   )
 }

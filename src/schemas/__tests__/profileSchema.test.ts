@@ -170,3 +170,21 @@ describe('changePasswordSchema', () => {
     }
   })
 })
+
+// Hostile review 2026-11-02, item 4: Mi perfil follows the setup's one name
+// rule (ADR-046 #10) — only when the person edits the name; a stored name is
+// never re-checked.
+import { editedNameError } from '../profileSchema'
+describe('editedNameError', () => {
+  it('an unchanged stored name is never re-checked', () => {
+    expect(editedNameError('Juan 2', 'Juan 2')).toBeNull()
+  })
+  it('an edited name follows the setup rule', () => {
+    expect(editedNameError('Juan 2', 'Juan')).toBe('Tu nombre no puede llevar números.')
+    expect(editedNameError('Ana_T', 'Ana')).toBe("Usa solo letras, espacios, apóstrofo ('), guion (-) y punto (.).")
+    expect(editedNameError("María-José O'Neill", 'María')).toBeNull()
+  })
+  it('surrounding spaces do not count as an edit', () => {
+    expect(editedNameError(' Juan 2 ', 'Juan 2')).toBeNull()
+  })
+})

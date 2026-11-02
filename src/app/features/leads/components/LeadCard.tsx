@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
 import { AnimatedImage, Badge, Button } from '@/app/components/ui'
 import { blurHashToDataUrl } from '@/lib/blurhash'
@@ -158,10 +159,10 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{property.specs.bedroomCount} hab.</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
           )}
-          {property.specs.bathroomCount != null && (
-            <span>{property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}</span>
+          {bathroomsLabel(property.specs.bathroomCount) && (
+            <span>{bathroomsLabel(property.specs.bathroomCount)}</span>
           )}
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
@@ -174,7 +175,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
             {listing.currentClaimsCount}/{listing.maxRealtors} agentes
           </span>
           {slotsFull && (
-            <Badge variant="default">Completo</Badge>
+            <Badge variant="default">Ya no hay cupos</Badge>
           )}
         </div>
       </Link>

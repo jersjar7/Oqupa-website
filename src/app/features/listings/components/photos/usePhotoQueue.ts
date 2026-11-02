@@ -1,11 +1,12 @@
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 export type PhotoItem = { id: string } & (
   | { type: 'existing'; url: string; blurHash: string }
   | { type: 'new'; file: File }
 )
 
-export const MAX_PHOTOS = 25
+/** The same on the app and the website (ADR-043 D8). */
+export const MAX_PHOTOS = 20
 
 export interface SubmitData {
   photos: File[]
@@ -77,15 +78,32 @@ export function usePhotoQueue(initial: InitialPhotos): PhotoQueue {
     })
   }, [])
 
-  const previewUrls = useMemo(() => {
-    const map = new Map<File, string>()
+  // One preview per new photo, released from memory when the photo is
+  // removed and when the page goes away (before, none was ever released, and
+  // every visit to this page made a fresh copy of every photo).
+  const urlsRef = useRef(new Map<File, string>())
+  const [previewUrls, setPreviewUrls] = useState<Map<File, string>>(() => new Map())
+  useEffect(() => {
+    const previous = urlsRef.current
+    const next = new Map<File, string>()
     for (const item of items) {
-      if (item.type === 'new' && !map.has(item.file)) {
-        map.set(item.file, URL.createObjectURL(item.file))
+      if (item.type === 'new' && !next.has(item.file)) {
+        next.set(item.file, previous.get(item.file) ?? URL.createObjectURL(item.file))
       }
     }
-    return map
+    for (const [file, url] of previous) {
+      if (!next.has(file)) URL.revokeObjectURL(url)
+    }
+    urlsRef.current = next
+    setPreviewUrls(next)
   }, [items])
+  useEffect(
+    () => () => {
+      for (const url of urlsRef.current.values()) URL.revokeObjectURL(url)
+      urlsRef.current = new Map()
+    },
+    [],
+  )
 
   const toSubmitData = useCallback((): SubmitData => {
     const existingPhotoUrls: string[] = []

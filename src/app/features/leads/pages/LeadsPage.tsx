@@ -3,7 +3,7 @@
  *
  * Three flat tabs:
  *   - Disponibles  — listings open for claim. Click to claim.
- *   - En Espera    — my claims where the owner is still deciding.
+ *   - En espera    — my claims where the owner is still deciding.
  *   - Invitaciones — owner picked me; I accept or decline here.
  *
  * Once the agent clicks "Aceptar" on an invitation, the claim resolves and
@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus,
@@ -23,6 +24,7 @@ import StaggerList, { staggerItemVariants } from '@/app/components/ui/StaggerLis
 import ClaimLimitBanner from '../components/ClaimLimitBanner'
 import LeadCard from '../components/LeadCard'
 import ClaimedLeadCard from '../components/ClaimedLeadCard'
+import ClaimConsequences from '../components/ClaimConsequences'
 import AgentAssignmentCard from '@/app/features/dashboard/components/AgentAssignmentCard'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -35,8 +37,8 @@ import {
 
 const TAB_SUBTITLES: Record<LeadsTab, string> = {
   'disponibles':  'Propiedades que buscan un agente. Revisa los detalles y reclama las que quieres trabajar.',
-  'en-espera':    'Propiedades que reclamaste. El propietario está revisando a los agentes interesados y pronto elegirá uno.',
-  'invitaciones': 'Propiedades donde el propietario te eligió. Acepta para gestionarlas, o rechaza si ya no te interesa.',
+  'en-espera':    'Propiedades que reclamaste. El dueño está revisando a los agentes interesados y pronto elegirá uno.',
+  'invitaciones': 'Propiedades donde el dueño te eligió. Acepta para gestionarlas, o rechaza si ya no te interesa.',
 }
 
 export default function LeadsPage() {
@@ -76,7 +78,7 @@ export default function LeadsPage() {
     title: 'Oportunidades',
     subtitle: invitationsCount > 0
       ? `Tienes ${invitationsCount} ${invitationsCount === 1 ? 'invitación pendiente' : 'invitaciones pendientes'} que requieren tu atención.`
-      : 'Descubre propiedades, reclama las que te interesan y acepta las invitaciones de los propietarios.',
+      : 'Descubre propiedades, reclama las que te interesan y acepta las invitaciones de los dueños.',
   })
 
   return (
@@ -107,6 +109,14 @@ export default function LeadsPage() {
       <p className="mt-3 text-sm text-text-secondary">
         {TAB_SUBTITLES[tab]}
       </p>
+      {/* The app links its Buenas prácticas from here (ADR-046 #20). */}
+      <Link
+        to="/app/buenas-practicas"
+        className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-secondary hover:text-secondary-hover"
+      >
+        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        Buenas prácticas
+      </Link>
 
       {/* Panes */}
       <div className="mt-6">
@@ -144,7 +154,7 @@ function TabBar({
         Disponibles <CountChip n={counts.disponibles} active={tab === 'disponibles'} />
       </TabButton>
       <TabButton active={tab === 'en-espera'} onClick={() => onChange('en-espera')}>
-        En Espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
+        En espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
       </TabButton>
       <TabButton
         active={tab === 'invitaciones'}
@@ -177,7 +187,7 @@ function TabButton({
         active
           ? 'text-secondary'
           : urgent
-            ? 'text-primary hover:text-primary-hover'
+            ? 'text-text-primary hover:text-secondary'
             : 'text-text-secondary hover:text-text-primary',
       ].join(' ')}
     >
@@ -241,10 +251,8 @@ function DisponiblesPane({
   if (query.isError) {
     return (
       <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
-        <p className="text-error-strong">Error al cargar las oportunidades.</p>
-        <button onClick={() => query.refetch()} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">
-          Reintentar
-        </button>
+        <p className="text-error-strong">No pudimos cargar las oportunidades. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
       </div>
     )
   }
@@ -253,7 +261,7 @@ function DisponiblesPane({
       <div className="rounded-2xl border border-border bg-white p-12 text-center">
         <p className="font-serif text-[22px] text-text-primary">No hay oportunidades disponibles</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
-          Cuando un propietario publica una propiedad y solicita ayuda de un agente,
+          Cuando un dueño publica una propiedad y solicita ayuda de un agente,
           aparece aquí. Vuelve pronto — nuevas oportunidades aparecen frecuentemente.
         </p>
       </div>
@@ -295,13 +303,10 @@ function DisponiblesPane({
                 {PROPERTY_TYPE_LABELS[confirmLead.property.propertyType]} en {confirmLead.property.location.distrito}
               </p>
             </div>
-            <p className="mt-4 text-sm text-text-secondary">
-              Usarás <span className="font-bold">1</span> de{' '}
-              <span className="font-bold">{claimStatus.remaining}</span> reclamaciones restantes este mes.
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              Tu reclamo aparecerá en <span className="font-medium">En Espera</span> hasta
-              que el propietario decida. Si te elige, verás la invitación en{' '}
+            <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
+            <p className="mt-3 text-sm text-text-secondary">
+              Tu reclamo aparecerá en <span className="font-medium">En espera</span> hasta
+              que el dueño decida. Si te elige, verás la invitación en{' '}
               <span className="font-medium">Invitaciones</span>.
             </p>
             <div className="mt-6 flex gap-3">
@@ -320,7 +325,7 @@ function DisponiblesPane({
 }
 
 // ---------------------------------------------------------------------------
-// En Espera pane — claims waiting for owner decision
+// En espera pane — claims waiting for owner decision
 // ---------------------------------------------------------------------------
 function EnEsperaPane({
   userId, query,
@@ -339,7 +344,8 @@ function EnEsperaPane({
   if (query.isError) {
     return (
       <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
-        <p className="text-error-strong">Error al cargar tus reclamos.</p>
+        <p className="text-error-strong">No pudimos cargar tus reclamos. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
       </div>
     )
   }
@@ -349,7 +355,7 @@ function EnEsperaPane({
         <p className="font-serif text-[22px] text-text-primary">No tienes reclamos en espera</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
           Cuando reclamas una propiedad desde <span className="font-medium">Disponibles</span>,
-          aparece aquí mientras el propietario revisa a los agentes interesados.
+          aparece aquí mientras el dueño revisa a los agentes interesados.
           Pueden pasar unas horas o varios días antes de que decida.
           Si te elige, la propiedad se moverá a <span className="font-medium">Invitaciones</span>.
         </p>
@@ -388,12 +394,22 @@ function InvitacionesPane({
   if (query.isLoading) {
     return <div className="flex justify-center py-12"><Spinner size="lg" /></div>
   }
+  // A failed load is not "no invitations": they are time-sensitive (audit
+  // 2026-11-02).
+  if (query.isError) {
+    return (
+      <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
+        <p className="text-error-strong">No pudimos cargar tus invitaciones. Revisa tu internet.</p>
+        <RetryButton onClick={() => query.refetch()} />
+      </div>
+    )
+  }
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-white p-12 text-center">
         <p className="font-serif text-[22px] text-text-primary">No tienes invitaciones pendientes</p>
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
-          Cuando un propietario te elige de entre los agentes que reclamaron su
+          Cuando un dueño te elige de entre los agentes que reclamaron su
           propiedad, aparece aquí una invitación. Al aceptarla, la propiedad se
           mueve a <Link to="/app/listings?tab=asignadas" className="font-medium text-secondary underline-offset-2 hover:underline">Mis Propiedades → Asignadas</Link>
           {' '}para que la gestiones.
@@ -429,5 +445,13 @@ function InvitacionesPane({
         </motion.div>
       ))}
     </StaggerList>
+  )
+}
+
+function RetryButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button className="mt-4" onClick={onClick}>
+      Reintentar
+    </Button>
   )
 }

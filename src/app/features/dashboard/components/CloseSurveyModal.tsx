@@ -129,14 +129,14 @@ export default function CloseSurveyModal({
           <button
             type="button"
             onClick={() => finish(true)}
-            className="mt-4 w-full rounded-full bg-primary px-6 py-3 font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
+            className="mt-4 w-full rounded-full bg-secondary px-6 py-3 font-sans text-base font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-secondary-hover"
           >
             ENVIAR
           </button>
           <button
             type="button"
             onClick={() => finish(false)}
-            className="mt-2 w-full py-2 text-base text-primary hover:text-primary-hover"
+            className="mt-2 min-h-11 w-full py-2 text-base text-secondary hover:text-secondary-hover"
           >
             Omitir
           </button>

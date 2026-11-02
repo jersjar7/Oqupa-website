@@ -3,20 +3,26 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
+import { profileSchema, editedNameError, type ProfileFormData } from '@/schemas/profileSchema'
 import { phoneSchema, verificationCodeSchema, type PhoneFormData, type VerificationCodeFormData } from '@/schemas/authSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { getPhoneAuthError, getProfileSaveError, getAccountDeleteError } from '@/lib/authErrors'
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
-import { CheckCircle, Shield, Clock, XCircle, Phone } from 'lucide-react'
+import { CheckCircle, Clock, XCircle, Phone, LifeBuoy } from 'lucide-react'
+import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
+import ChangePasswordCard, { isPasswordAccount } from '../components/ChangePasswordCard'
 
 type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, refreshUser } = useAuthStore()
+  const { user, firebaseUser, refreshUser } = useAuthStore()
+  const signOut = useSignOutConfirm(async () => {
+    await authService.logout()
+    navigate('/app/login')
+  })
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -37,6 +43,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    setError: setFieldError,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -71,8 +78,16 @@ export default function ProfilePage() {
     setError(null)
     setSuccess(null)
 
+    // The setup's name rule, only for an edited name (hostile review
+    // 2026-11-02, item 4).
+    const nameError = editedNameError(data.name, user.name)
+    if (nameError) {
+      setFieldError('name', { message: nameError })
+      return
+    }
+
     try {
-      await authService.updateUserName(user.id, data.name)
+      await authService.updateUserName(user.id, data.name.trim())
 
       if (user.contactInfo) {
         await authService.updateUserContactInfo(user.id, {
@@ -291,7 +306,7 @@ export default function ProfilePage() {
                   className={`h-4 w-4 ${user.isPhoneVerified ? 'text-success' : 'text-text-tertiary'}`}
                 />
                 <span className="text-sm text-text-secondary">
-                  Teléfono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
+                  {user.isPhoneVerified ? 'Teléfono verificado' : 'Teléfono sin verificar'}
                 </span>
               </div>
               {!user.isPhoneVerified && phoneMode === 'idle' && (
@@ -358,15 +373,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Identity verification row */}
-          <div className="flex items-center gap-2">
-            <Shield
-              className={`h-4 w-4 ${user.isIdentityVerified ? 'text-success' : 'text-text-tertiary'}`}
-            />
-            <span className="text-sm text-text-secondary">
-              Identidad {user.isIdentityVerified ? 'verificada' : 'no verificada'}
-            </span>
-          </div>
         </div>
 
         {/* reCAPTCHA container for profile */}
@@ -433,12 +439,35 @@ export default function ProfilePage() {
         </div>
       </Card>
 
+      {/* "Cambiar contraseña" for accounts that have one (ADR-046 #13) */}
+      {isPasswordAccount(firebaseUser) && <ChangePasswordCard />}
+
       {/* Account info */}
       <Card>
         <h2 className="text-sm font-medium uppercase text-text-secondary">Cuenta</h2>
         <p className="mt-2 text-xs text-text-tertiary">
           Miembro desde {user.createdAt.toLocaleDateString('es-PE')}
         </p>
+      </Card>
+
+      {/* Ayuda, as the app's SOPORTE (ADR-046 #16) */}
+      <Card>
+        <h2 className="text-sm font-medium uppercase text-text-secondary">Ayuda</h2>
+        <Link
+          to="/app/ayuda"
+          className="mt-2 flex min-h-11 items-center gap-2 text-base text-secondary hover:text-secondary-hover"
+        >
+          <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+          Ayuda: WhatsApp, correo o reportar un problema
+        </Link>
+      </Card>
+
+      {/* Sign out — the only way out on a phone inside Mi Panel (audit 2026-11-02) */}
+      <Card>
+        <Button variant="danger" className="w-full" onClick={signOut.ask}>
+          Cerrar sesión
+        </Button>
+        {signOut.dialog}
       </Card>
 
       {/* Delete account */}
@@ -471,11 +500,16 @@ export default function ProfilePage() {
         <p className="text-sm text-text-secondary">
           Esta acción es permanente. Se eliminará:
         </p>
+        {/* The app's list (profile_page.dart), with "Guardados" (ADR-034). */}
         <ul className="mt-2 list-disc pl-5 text-sm text-text-secondary">
-          <li>Tu perfil y datos personales</li>
-          <li>Tus favoritos y notificaciones</li>
-          <li>Tus anuncios activos serán desactivados</li>
+          <li>Tu perfil (nombre, correo, teléfono, foto)</li>
+          <li>Tus avisos publicados (se retirarán de la plataforma)</li>
+          <li>Tus guardados e historial de visitas</li>
+          <li>Tus dispositivos y notificaciones</li>
         </ul>
+        <p className="mt-2 text-sm text-text-secondary">
+          Tus datos de pago no se almacenan en Oqupa, los gestiona Stripe según sus propias políticas.
+        </p>
         <p className="mt-3 text-sm font-medium text-text-primary">
           ¿Estás seguro que deseas continuar?
         </p>

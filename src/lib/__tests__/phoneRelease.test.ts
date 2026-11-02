@@ -65,11 +65,19 @@ describe('releaseCollidedPhone', () => {
     expect(d.refreshSession).not.toHaveBeenCalled()
   })
 
-  it('an account that already has a number reads the same way', async () => {
+  // Audit 2026-11-02 C §3: this was mislabelled as "number on another account".
+  it('an account that already has a number is told exactly that', async () => {
     const d = deps({
       callRelease: vi.fn().mockRejectedValue({ code: 'functions/failed-precondition', details: { reason: 'caller-has-phone' } }),
     })
-    await expect(releaseCollidedPhone(collision(), d)).rejects.toMatchObject({ code: 'auth/credential-already-in-use' })
+    await expect(releaseCollidedPhone(collision(), d)).rejects.toMatchObject({ code: 'oqupa/caller-has-phone' })
+  })
+
+  it('a holder that changed mid-way asks for a new code', async () => {
+    const d = deps({
+      callRelease: vi.fn().mockRejectedValue({ code: 'functions/failed-precondition', details: { reason: 'holder-changed' } }),
+    })
+    await expect(releaseCollidedPhone(collision(), d)).rejects.toMatchObject({ code: 'oqupa/phone-holder-changed' })
   })
 
   it('a proof the server will not accept asks for a new code', async () => {

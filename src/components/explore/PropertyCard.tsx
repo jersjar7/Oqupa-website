@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
 import { AnimatedImage } from '@/app/components/ui'
 import { CURRENCY_SYMBOLS, PROPERTY_TYPE_LABELS } from '@/types/enums'
@@ -73,10 +74,10 @@ export default function PropertyCard({ item, isHighlighted = false }: PropertyCa
           </p>
           <div className="mt-1 flex items-center gap-2 text-xs text-text-tertiary">
             {property.specs.bedroomCount != null && (
-              <span>{property.specs.bedroomCount} hab.</span>
+              <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
             )}
-            {property.specs.bathroomCount != null && (
-              <span>{property.specs.bathroomCount} baños</span>
+            {bathroomsLabel(property.specs.bathroomCount) && (
+              <span>{bathroomsLabel(property.specs.bathroomCount)}</span>
             )}
             {property.specs.totalAreaInSquareMeters > 0 && (
               <span>{property.specs.totalAreaInSquareMeters} m²</span>

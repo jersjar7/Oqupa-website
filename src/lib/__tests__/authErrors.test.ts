@@ -21,9 +21,10 @@ describe('getRegisterAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
-  it('maps weak-password to a min-length hint', () => {
+  // Audit 2026-11-02: it said 6 while the rule is 8 + four kinds of character.
+  it('maps weak-password to the real rule', () => {
     const info = getRegisterAuthError({ code: 'auth/weak-password' })
-    expect(info.message).toMatch(/al menos 6 caracteres/i)
+    expect(info.message).toBe('La contraseña es muy débil. Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.')
     expect(info.isRetryable).toBe(true)
   })
 
@@ -39,9 +40,10 @@ describe('getRegisterAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
-  it('maps operation-not-allowed to a contact-support message', () => {
+  // Audit 2026-11-02: "Contacta a soporte" named no address.
+  it('maps operation-not-allowed to a message with the support address', () => {
     const info = getRegisterAuthError({ code: 'auth/operation-not-allowed' })
-    expect(info.message).toMatch(/contacta a soporte/i)
+    expect(info.message).toMatch(/admin@oqupa\.com/)
     expect(info.isRetryable).toBe(false)
   })
 
@@ -96,6 +98,8 @@ describe('getLoginAuthError', () => {
   it('maps user-disabled to a non-retryable disabled-account message', () => {
     const info = getLoginAuthError({ code: 'auth/user-disabled' })
     expect(info.message).toMatch(/desactivada/i)
+    // Audit 2026-11-02: the same sentence everywhere, with a way forward.
+    expect(info.message).toMatch(/admin@oqupa\.com/)
     expect(info.isRetryable).toBe(false)
   })
 
@@ -306,7 +310,7 @@ describe('getForgotPasswordAuthError', () => {
   it('does NOT reveal that the account is missing for auth/user-not-found (enumeration protection)', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/user-not-found' })
     expect(info.message).not.toMatch(/no existe una cuenta/i)
-    expect(info.message).toMatch(/verifica tu dirección/i)
+    expect(info.message).toMatch(/revisa que esté bien escrito/i) // audit 2026-11-02: clearer sentence, same on the app
   })
 
   it('maps network-request-failed to a retryable connectivity message', () => {
@@ -317,13 +321,13 @@ describe('getForgotPasswordAuthError', () => {
 
   it('falls back to the address-check message for unrecognized auth/* codes', () => {
     const info = getForgotPasswordAuthError({ code: 'auth/something-else' })
-    expect(info.message).toMatch(/verifica tu dirección/i)
+    expect(info.message).toMatch(/revisa que esté bien escrito/i) // audit 2026-11-02: clearer sentence, same on the app
     expect(info.isRetryable).toBe(true)
   })
 
   it('handles undefined gracefully, falling back to default', () => {
     const info = getForgotPasswordAuthError(undefined)
-    expect(info.message).toMatch(/error al enviar el correo/i)
+    expect(info.message).toMatch(/no pudimos enviar el correo/i) // audit 2026-11-02
     expect(info.isRetryable).toBe(true)
   })
 })
@@ -444,5 +448,33 @@ describe('deleting an account', () => {
   })
   it('unknown shows its code', () => {
     expect(getAccountDeleteError({ code: 'functions/aborted' }).message).toContain('(functions/aborted)')
+  })
+})
+
+describe('audit 2026-11-02 — the password sentences name the real rule', () => {
+  it('register: a missing password asks for the real rule', () => {
+    expect(getRegisterAuthError({ code: 'auth/missing-password' }).message).not.toMatch(/6/)
+  })
+})
+
+describe('audit 2026-11-02 — phone hand-over refusals read as what happened', () => {
+  it('the account already has a number', () => {
+    expect(getPhoneAuthError({ code: 'oqupa/caller-has-phone' }).message).toBe('Tu cuenta ya tiene un número verificado.')
+  })
+  it('the holder changed mid-way', () => {
+    expect(getPhoneAuthError({ code: 'oqupa/phone-holder-changed' }).message).toBe(
+      'Algo cambió mientras verificábamos. Pide un código nuevo e intenta otra vez.',
+    )
+  })
+  it('the server could not save the number', () => {
+    expect(getPhoneAuthError({ code: 'functions/internal' }).message).toBe('No pudimos guardar tu número. Intenta de nuevo.')
+  })
+})
+
+describe('audit 2026-11-02 — forgot password default', () => {
+  it('says what to check, and nothing about whether the account exists', () => {
+    expect(getForgotPasswordAuthError({ code: 'auth/user-not-found' }).message).toBe(
+      'No pudimos enviar el correo. Revisa que esté bien escrito y vuelve a intentarlo.',
+    )
   })
 })

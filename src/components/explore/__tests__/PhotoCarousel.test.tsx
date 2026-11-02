@@ -215,4 +215,11 @@ describe('PhotoCarousel — onPhotoClick prop', () => {
     fireEvent.click(container)
     expect(onClick).toHaveBeenCalled()
   })
+
+  it('a later photo that fails to load is hidden, not a broken icon (audit 2026-11-02)', () => {
+    render(<PhotoCarousel photoRefs={['photo-1', 'photo-2', 'photo-3']} />)
+    const lazy = document.querySelector('img[loading="lazy"]') as HTMLImageElement
+    fireEvent.error(lazy)
+    expect(lazy.style.visibility).toBe('hidden')
+  })
 })

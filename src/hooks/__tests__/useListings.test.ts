@@ -155,7 +155,8 @@ describe('useListings hooks', () => {
         await result.current.mutateAsync({ listingId: 'l1', currentStatus: 'draft' })
       })
 
-      expect(toastSuccessMock).toHaveBeenCalledWith('Publicación activada')
+      // One wording on both platforms (audit 2026-11-02). Was 'Publicación activada'.
+      expect(toastSuccessMock).toHaveBeenCalledWith('Tu publicación está activa otra vez')
     })
 
     it('shows error toast on failure', async () => {
@@ -217,6 +218,36 @@ describe('useListings hooks', () => {
       })
 
       expect(toastErrorMock).toHaveBeenCalled()
+    })
+  })
+
+  // Audit 2026-11-02 (E): the cause and next step, the same words as the app.
+  describe('failure messages', () => {
+    it('toggle offline', async () => {
+      deactivateListingMock.mockRejectedValueOnce({ code: 'unavailable' })
+      const { result } = renderHook(() => useToggleListingStatus(), { wrapper })
+      await act(async () => {
+        try { await result.current.mutateAsync({ listingId: 'l1', currentStatus: 'active' }) } catch { /* expected */ }
+      })
+      expect(toastErrorMock).toHaveBeenCalledWith('Sin conexión. Revisa tu internet y vuelve a intentarlo.')
+    })
+
+    it('delete refused: gone or not yours', async () => {
+      deleteListingMock.mockRejectedValueOnce({ code: 'permission-denied' })
+      const { result } = renderHook(() => useDeleteListing(), { wrapper })
+      await act(async () => {
+        try { await result.current.mutateAsync({ listingId: 'l1', propertyId: 'p1' }) } catch { /* expected */ }
+      })
+      expect(toastErrorMock).toHaveBeenCalledWith('Esta publicación ya no existe o no es tuya. Actualiza la página.')
+    })
+
+    it('anything else', async () => {
+      deleteListingMock.mockRejectedValueOnce(new Error('x'))
+      const { result } = renderHook(() => useDeleteListing(), { wrapper })
+      await act(async () => {
+        try { await result.current.mutateAsync({ listingId: 'l1', propertyId: 'p1' }) } catch { /* expected */ }
+      })
+      expect(toastErrorMock).toHaveBeenCalledWith('No se pudo guardar el cambio. Vuelve a intentarlo.')
     })
   })
 })

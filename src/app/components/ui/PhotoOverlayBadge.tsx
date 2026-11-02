@@ -1,12 +1,12 @@
 /**
- * PhotoOverlayBadge — pill used over property card photos.
+ * PhotoOverlayBadge — the status pill over a property card's photo.
  *
- * Because the photo background varies wildly (bright sky, dark interior,
- * busy street), the badge uses a consistent black semi-transparent surface
- * with white text + backdrop-blur so it stays legible everywhere. An
- * optional colored dot keeps state meaning (green = success, amber =
- * warning, etc.) without sacrificing contrast. Label: Gotham Medium,
- * uppercase (shared status-badge spec with the app, 2026-10-31).
+ * One look with the app's ListingStatusBadge (feature audit 2026-11-02; brand
+ * audit C5): a white pill, a 6 px dot and a Gotham Medium uppercase label,
+ * 10.5 px. Ink label when live; a neutral (closed) status — Desactivado,
+ * Vendido, Alquilado — reads grey, label and dot, because none of them is an
+ * error. The website used to draw a black 60 % pill with white text, which
+ * made the same badge look like a different component on each platform.
  */
 import type { HTMLAttributes } from 'react'
 
@@ -18,7 +18,7 @@ interface PhotoOverlayBadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const dotColor: Record<PhotoOverlayTone, string> = {
-  neutral: 'bg-white/60',
+  neutral: 'bg-text-tertiary',
   success: 'bg-success',
   warning: 'bg-accent',
   info:    'bg-primary',
@@ -31,14 +31,15 @@ export default function PhotoOverlayBadge({
   return (
     <span
       className={[
-        'inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1',
-        'font-sans text-[10px] font-medium uppercase tracking-wider text-white',
-        'backdrop-blur-sm shadow-sm',
+        'inline-flex items-center gap-[5px] rounded-full bg-white/90 px-2 py-[3px]',
+        'font-sans text-[10.5px] font-medium uppercase tracking-[0.5px]',
+        tone === 'neutral' ? 'text-text-tertiary' : 'text-text-primary',
+        'shadow-sm',
         className,
       ].join(' ')}
       {...props}
     >
-      {tone && <span className={`h-2 w-2 rounded-full ring-1 ring-white/70 ${dotColor[tone]}`} />}
+      {tone && <span className={`h-1.5 w-1.5 rounded-full ${dotColor[tone]}`} />}
       {children}
     </span>
   )

@@ -39,10 +39,14 @@ export default class ErrorBoundary extends Component<Props, State> {
               this.setState({ hasError: false })
               window.location.reload()
             }}
-            className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+            className="mt-4 min-h-11 rounded-full bg-primary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
           >
-            Recargar página
+            Recargar
           </button>
+          {/* A plain link: the crash may be outside the router. */}
+          <a href="/reportar" className="mt-3 inline-flex min-h-11 items-center text-sm text-secondary underline-offset-2 hover:underline">
+            Si sigue pasando, cuéntanos aquí
+          </a>
         </div>
       )
     }

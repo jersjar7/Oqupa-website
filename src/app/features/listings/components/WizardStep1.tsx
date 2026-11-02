@@ -1,28 +1,56 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step1Schema, type Step1Data } from '@/schemas/listingSchema'
 import { useListingFormStore } from '@/stores/listingFormStore'
-import { useRevealedFields } from '@/hooks/useRevealedFields'
-import { Button, InfoTip } from '@/app/components/ui'
-import RevealField from './RevealField'
 import {
   PROPERTY_TYPE_LABELS,
   PROPERTY_TYPE_DESCRIPTIONS,
-  OPERATION_TYPE_LABELS,
   LISTING_ROLE_LABELS,
-  RENTAL_DURATION_TYPE_LABELS,
   VENTA_PROPERTY_TYPES,
   ALQUILER_LONG_TERM_PROPERTY_TYPES,
   ALQUILER_SHORT_TERM_PROPERTY_TYPES,
-  PropertyType,
-  OperationType,
-  RentalDurationType,
   ListingRole,
-  isAlquilerOnlyType,
+  type PropertyType,
 } from '@/types/enums'
+import WizardNav from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
+import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+
+/** The three answers to "¿Vendes o alquilas?" (D2): the plazo is part of the answer. */
+type Deal = 'venta' | 'mes' | 'noche'
+
+const DEALS: Array<{ deal: Deal; label: string }> = [
+  { deal: 'venta', label: 'Venta' },
+  { deal: 'mes', label: 'Alquiler por mes' },
+  { deal: 'noche', label: 'Alquiler por noche' },
+]
+
+const DEAL_FIELDS: Record<Deal, Pick<Step1Data, 'operationType' | 'rentalDurationType'>> = {
+  venta: { operationType: 'venta', rentalDurationType: '' },
+  mes: { operationType: 'alquiler', rentalDurationType: 'longTerm' },
+  noche: { operationType: 'alquiler', rentalDurationType: 'shortTerm' },
+}
+
+const TYPES_FOR: Record<Deal, PropertyType[]> = {
+  venta: VENTA_PROPERTY_TYPES,
+  mes: ALQUILER_LONG_TERM_PROPERTY_TYPES,
+  noche: ALQUILER_SHORT_TERM_PROPERTY_TYPES,
+}
+
+function dealOf(operationType: string | undefined, rentalDurationType: string | undefined): Deal | null {
+  if (operationType === 'venta') return 'venta'
+  if (operationType !== 'alquiler') return null
+  if (rentalDurationType === 'shortTerm') return 'noche'
+  // An older Alquiler saved without a length: nothing chosen, so the person
+  // picks one (hostile review 2026-11-02).
+  return rentalDurationType === 'longTerm' ? 'mes' : null
+}
 
 export default function WizardStep1() {
-  const { data, updateData, nextStep, isEditMode } = useListingFormStore()
+  const navigate = useNavigate()
+  const { data, updateData, nextStep } = useListingFormStore()
 
   const {
     setValue,
@@ -35,218 +63,125 @@ export default function WizardStep1() {
       propertyType: (data.propertyType || undefined) as Step1Data['propertyType'],
       operationType: (data.operationType || undefined) as Step1Data['operationType'],
       rentalDurationType: (data.rentalDurationType || undefined) as Step1Data['rentalDurationType'],
-      role: (data.role || undefined) as Step1Data['role'],
+      // D3: the owner is the usual case, so it is chosen from the start.
+      role: (data.role || 'owner') as Step1Data['role'],
     },
   })
 
   const selected = watch()
-  const isAlquiler = selected.operationType === 'alquiler'
-  const isShortTerm = selected.rentalDurationType === 'shortTerm'
+  const deal = dealOf(selected.operationType, selected.rentalDurationType)
+  const availableTypes = deal ? TYPES_FOR[deal] : []
+  // The choices open only when asked for; picking one closes them again.
+  const [roleOpen, setRoleOpen] = useState(false)
+  const role = (selected.role || 'owner') as ListingRole
 
-  const { isRevealed, wasInitial } = useRevealedFields(
-    {
-      operationType: true, // always visible
-      rentalDuration: !!selected.operationType && isAlquiler,
-      propertyType: !!selected.operationType && (!isAlquiler || !!selected.rentalDurationType),
-      role: !!selected.propertyType,
-      submit: !!selected.role,
-    },
-    isEditMode
-  )
-
-  // Determine available property types based on operation + rental duration
-  const availablePropertyTypes = !isAlquiler
-    ? VENTA_PROPERTY_TYPES
-    : isShortTerm
-      ? ALQUILER_SHORT_TERM_PROPERTY_TYPES
-      : ALQUILER_LONG_TERM_PROPERTY_TYPES
-
-  function handleOperationTypeChange(type: OperationType) {
-    setValue('operationType', type, { shouldValidate: true })
-
-    if (type === 'venta') {
-      // Clear rental duration and reset alquiler-only property types
-      setValue('rentalDurationType', '', { shouldValidate: true })
-      if (selected.propertyType && isAlquilerOnlyType(selected.propertyType as PropertyType)) {
-        setValue('propertyType', undefined as unknown as Step1Data['propertyType'])
-      }
-    } else {
-      // Default to longTerm when switching to alquiler
-      if (!selected.rentalDurationType) {
-        setValue('rentalDurationType', 'longTerm', { shouldValidate: true })
-      }
-    }
-  }
-
-  function handleRentalDurationChange(type: RentalDurationType) {
-    setValue('rentalDurationType', type, { shouldValidate: true })
-
-    // Auto-set hospedaje to shortTerm
-    if (selected.propertyType === 'hospedaje' && type !== 'shortTerm') {
+  function chooseDeal(next: Deal) {
+    const fields = DEAL_FIELDS[next]
+    setValue('operationType', fields.operationType, { shouldValidate: true })
+    setValue('rentalDurationType', fields.rentalDurationType, { shouldValidate: true })
+    // A type that this answer does not offer (a Cuarto for sale) is cleared.
+    if (selected.propertyType && !TYPES_FOR[next].includes(selected.propertyType as PropertyType)) {
       setValue('propertyType', undefined as unknown as Step1Data['propertyType'])
-    }
-
-    // Reset property type if not available for this rental duration
-    const newAvailableTypes = type === 'shortTerm'
-      ? ALQUILER_SHORT_TERM_PROPERTY_TYPES
-      : ALQUILER_LONG_TERM_PROPERTY_TYPES
-
-    if (selected.propertyType && !newAvailableTypes.includes(selected.propertyType as PropertyType)) {
-      setValue('propertyType', undefined as unknown as Step1Data['propertyType'])
-    }
-  }
-
-  function handlePropertyTypeChange(type: PropertyType) {
-    setValue('propertyType', type as Step1Data['propertyType'], { shouldValidate: true })
-
-    // Auto-set rental duration for hospedaje
-    if (type === 'hospedaje') {
-      setValue('rentalDurationType', 'shortTerm', { shouldValidate: true })
     }
   }
 
   function onSubmit(formData: Step1Data) {
     updateData({
       ...formData,
-      rentalDurationType: formData.rentalDurationType || '',
+      rentalDurationType: formData.operationType === 'alquiler' ? formData.rentalDurationType || 'longTerm' : '',
     })
     nextStep()
   }
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Operation Type — always visible */}
-      <RevealField visible={isRevealed('operationType')} animate={!wasInitial('operationType')}>
-        <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de operación</h3>
-          {errors.operationType && (
-            <p className="mt-1 text-sm text-error">{errors.operationType.message}</p>
-          )}
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {Object.values(OperationType).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleOperationTypeChange(type)}
-                className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                  selected.operationType === type
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border text-text-secondary hover:border-primary/30'
-                }`}
-              >
-                {OPERATION_TYPE_LABELS[type]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </RevealField>
+  const dealError = errors.operationType?.message ?? errors.rentalDurationType?.message
 
-      {/* Rental Duration Type (only when Alquiler is selected) */}
-      {isAlquiler && (
-        <RevealField
-          visible={isRevealed('rentalDuration')}
-          animate={!wasInitial('rentalDuration')}
-          tooltip={"Largo plazo = meses.\nCorto plazo = noches, estilo Airbnb."}
-        >
-          <div>
-            <h3 className="text-sm font-medium uppercase text-text-primary">
-              Duración del alquiler
-              <InfoTip text="Largo plazo: contratos mensuales (1 mes o más). Corto plazo: alquiler por noches o días, estilo Airbnb." />
-            </h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {Object.values(RentalDurationType).map((type) => (
+  return (
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
+      <section>
+        <h2 className={WIZARD_HEADING}>¿Vendes o alquilas?</h2>
+        {dealError && <p data-wizard-error className="mt-1 text-sm text-error">{dealError}</p>}
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {DEALS.map(({ deal: d, label }) => (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={deal === d}
+              onClick={() => chooseDeal(d)}
+              className={choiceClass(deal === d)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {deal && (
+        <section>
+          <h2 className={WIZARD_HEADING}>Tipo de propiedad</h2>
+          {errors.propertyType && <p data-wizard-error className="mt-1 text-sm text-error">{errors.propertyType.message}</p>}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {availableTypes.map((type) => {
+              const on = selected.propertyType === type
+              return (
                 <button
                   key={type}
                   type="button"
-                  onClick={() => handleRentalDurationChange(type)}
-                  className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                    selected.rentalDurationType === type
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border text-text-secondary hover:border-primary/30'
+                  aria-pressed={on}
+                  onClick={() => setValue('propertyType', type as Step1Data['propertyType'], { shouldValidate: true })}
+                  className={`flex min-h-14 flex-col items-start justify-center rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                    on ? 'border-secondary bg-secondary text-white' : 'border-border bg-white text-text-primary hover:border-secondary/40'
                   }`}
                 >
-                  {RENTAL_DURATION_TYPE_LABELS[type]}
+                  <span className="text-base font-medium">{PROPERTY_TYPE_LABELS[type]}</span>
+                  <span className={`text-sm ${on ? 'text-white' : 'text-text-secondary'}`}>
+                    {PROPERTY_TYPE_DESCRIPTIONS[type]}
+                  </span>
                 </button>
-              ))}
-            </div>
+              )
+            })}
           </div>
-        </RevealField>
+        </section>
       )}
 
-      {/* Property Type */}
-      <RevealField visible={isRevealed('propertyType')} animate={!wasInitial('propertyType')}>
-        <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">Tipo de propiedad</h3>
-          {errors.propertyType && (
-            <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>
-          )}
-          <div className="mt-3 grid grid-cols-1 gap-3">
-            {availablePropertyTypes.map((type) => (
+      <section>
+        {errors.role && <p data-wizard-error className="mb-1 text-sm text-error">{errors.role.message}</p>}
+        {roleOpen ? (
+          <div className="grid gap-3">
+            {Object.values(ListingRole).map((r) => (
               <button
-                key={type}
+                key={r}
                 type="button"
-                onClick={() => handlePropertyTypeChange(type)}
-                className={`flex flex-col items-start rounded-xl border-2 px-4 py-3 text-left transition-colors ${
-                  selected.propertyType === type
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/30'
-                }`}
+                aria-pressed={selected.role === r}
+                onClick={() => {
+                  setValue('role', r, { shouldValidate: true })
+                  setRoleOpen(false)
+                }}
+                className={choiceClass(selected.role === r)}
               >
-                <span className={`text-sm font-semibold ${
-                  selected.propertyType === type ? 'text-primary' : 'text-text-primary'
-                }`}>
-                  {PROPERTY_TYPE_LABELS[type]}
-                </span>
-                <span className={`text-xs ${
-                  selected.propertyType === type ? 'text-primary/70' : 'text-text-tertiary'
-                }`}>
-                  {PROPERTY_TYPE_DESCRIPTIONS[type]}
-                </span>
+                {LISTING_ROLE_LABELS[r]}
               </button>
             ))}
           </div>
-        </div>
-      </RevealField>
-
-      {/* Role */}
-      <RevealField
-        visible={isRevealed('role')}
-        animate={!wasInitial('role')}
-        tooltip="Esto nos ayuda a personalizar tu experiencia."
-      >
-        <div>
-          <h3 className="text-sm font-medium uppercase text-text-primary">
-            Tu relación con la propiedad
-            <InfoTip text="Selecciona 'Agente inmobiliario' si trabajas como agente. 'Represento al propietario' si eres familiar, amigo, o apoderado del dueño." />
-          </h3>
-          {errors.role && (
-            <p className="mt-1 text-sm text-error">{errors.role.message}</p>
-          )}
-          <div className="mt-3 grid gap-3">
-            {Object.values(ListingRole).map((role) => (
-              <button
-                key={role}
-                type="button"
-                onClick={() => setValue('role', role, { shouldValidate: true })}
-                className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors ${
-                  selected.role === role
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border text-text-secondary hover:border-primary/30'
-                }`}
-              >
-                {LISTING_ROLE_LABELS[role]}
-              </button>
-            ))}
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-white px-4 py-2">
+            <span className="flex items-center gap-2 text-base text-text-primary">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 text-secondary" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {LISTING_ROLE_LABELS[role]}
+            </span>
+            <button
+              type="button"
+              onClick={() => setRoleOpen(true)}
+              className="min-h-12 text-base text-secondary underline underline-offset-2 hover:text-secondary-hover"
+            >
+              {role === 'owner' ? '¿No eres el dueño?' : 'Cambiar'}
+            </button>
           </div>
-        </div>
-      </RevealField>
+        )}
+      </section>
 
-      {/* Submit */}
-      <RevealField visible={isRevealed('submit')} animate={!wasInitial('submit')}>
-        <Button type="submit" className="w-full">
-          Continuar
-        </Button>
-      </RevealField>
+      <WizardNav onBack={() => navigate(-1)} />
     </form>
   )
 }

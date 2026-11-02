@@ -61,9 +61,12 @@ function renderPage() {
   )
 }
 
+// One form with the app (ADR-046 #19): experience is one of the app's
+// ranges and districts come from the official list, not typed with commas.
 function fillAndSubmit({ motivation = 'Quiero ayudar a mis clientes a encontrar casa en Piura.' } = {}) {
-  fireEvent.change(screen.getByLabelText(/Años de experiencia/i), { target: { value: '5' } })
-  fireEvent.change(screen.getByLabelText(/Zonas de servicio/i), { target: { value: 'Piura, Castilla' } })
+  fireEvent.click(screen.getByRole('radio', { name: '5 – 10 años' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Piura' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Castilla' }))
   fireEvent.change(screen.getByLabelText(/Motivación/i), { target: { value: motivation } })
   fireEvent.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 }
@@ -185,5 +188,64 @@ describe('realtor_application_started', () => {
     startedMock.mockImplementation(() => { throw new Error('analytics down') })
     renderPage()
     await waitFor(() => expect(screen.getByRole('button', { name: /Enviar Solicitud/i })).toBeTruthy())
+  })
+})
+
+/**
+ * One application form with the app (ADR-046 #19): the app's experience
+ * ranges, districts from the official list (a typo in comma-typed zones meant
+ * no matching opportunities), no business name, the app's "Cómo funciona".
+ */
+describe('the form matches the app', () => {
+  it('sends the range value and the chosen official districts, no business name', async () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('radio', { name: '3 – 5 años' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sullana' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Castilla' }))
+    fireEvent.change(screen.getByLabelText(/Motivación/i), {
+      target: { value: 'Quiero ayudar a mis clientes a encontrar casa en Piura.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+    await waitFor(() => expect(submitApplicationMock).toHaveBeenCalledTimes(1))
+    expect(submitApplicationMock).toHaveBeenCalledWith('u1', expect.objectContaining({
+      yearsExperience: 4,
+      serviceZones: ['Castilla', 'Sullana'],
+      businessName: '',
+    }))
+    expect(screen.queryByLabelText(/Nombre del negocio/i)).toBeNull()
+  })
+
+  it('offers the app ranges', () => {
+    renderPage()
+    for (const label of ['Menos de 1 año', '1 – 3 años', '3 – 5 años', '5 – 10 años', 'Más de 10 años']) {
+      expect(screen.getByRole('radio', { name: label })).toBeTruthy()
+    }
+  })
+
+  it('a chosen district can be removed again', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'Paita' }))
+    expect(screen.getByRole('button', { name: 'Quitar Paita' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar Paita' }))
+    expect(screen.queryByRole('button', { name: 'Quitar Paita' })).toBeNull()
+  })
+
+  it('asks for a range and at least one district', async () => {
+    renderPage()
+    fireEvent.change(screen.getByLabelText(/Motivación/i), {
+      target: { value: 'Quiero ayudar a mis clientes a encontrar casa en Piura.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+    await waitFor(() => expect(screen.getByText('Elige cuántos años llevas como agente.')).toBeTruthy())
+    expect(screen.getByText('Elige al menos un distrito.')).toBeTruthy()
+    expect(submitApplicationMock).not.toHaveBeenCalled()
+  })
+
+  it('explains how it works in the app words', () => {
+    renderPage()
+    expect(screen.getByText('Así funciona ser agente en Oqupa')).toBeTruthy()
+    expect(screen.getByText('3 preguntas rápidas. Te verificamos en 24-48 h.')).toBeTruthy()
+    expect(screen.getByText('Sin comisiones — Oqupa no cobra por esto')).toBeTruthy()
+    expect(screen.queryByText(/Te contactaremos por teléfono/)).toBeNull()
   })
 })

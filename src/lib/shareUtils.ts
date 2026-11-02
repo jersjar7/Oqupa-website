@@ -1,3 +1,4 @@
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import {
   PROPERTY_TYPE_LABELS,
   OPERATION_TYPE_LABELS,
@@ -44,11 +45,11 @@ export function generateShareText(params: ShareListingParams): string {
   // Line 3: Specs (conditional)
   const specs: string[] = []
   if (params.bedroomCount != null) {
-    specs.push(`${params.bedroomCount} hab.`)
+    specs.push(bedroomsLabel(params.bedroomCount, { propertyType: params.propertyType }))
   }
-  if (params.bathroomCount != null) {
-    const label = params.bathroomCount === 1 ? 'baño' : 'baños'
-    specs.push(`${params.bathroomCount} ${label}`)
+  const baths = bathroomsLabel(params.bathroomCount)
+  if (baths) {
+    specs.push(baths)
   }
   if (params.totalAreaInSquareMeters != null) {
     specs.push(`${Math.floor(params.totalAreaInSquareMeters)} m²`)
@@ -76,7 +77,7 @@ export function generateShareText(params: ShareListingParams): string {
 
 export async function shareListing(
   params: ShareListingParams,
-): Promise<'shared' | 'copied' | 'failed'> {
+): Promise<'shared' | 'copied' | 'cancelled' | 'failed'> {
   const text = generateShareText(params)
   const propertyTypeLabel =
     PROPERTY_TYPE_LABELS[params.propertyType] ?? params.propertyType
@@ -87,8 +88,9 @@ export async function shareListing(
       await navigator.share({ title: subject, text })
       return 'shared'
     } catch (err) {
+      // The person closed the share sheet: not a failure (audit 2026-11-02).
       if (err instanceof Error && err.name === 'AbortError') {
-        return 'failed'
+        return 'cancelled'
       }
     }
   }

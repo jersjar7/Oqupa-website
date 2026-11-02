@@ -14,14 +14,14 @@ import ExploreFilters from '@/components/explore/ExploreFilters'
 import MapListView from '@/components/explore/list/MapListView'
 import PhoneMapBar from '@/components/explore/PhoneMapBar'
 import MapFilterBar from '@/components/explore/MapFilterBar'
-import { activeFilterCount, filtersDoneLabel } from '@/lib/map/filterCount'
+import { activeFilterCount, clearedFilters, filtersDoneLabel } from '@/lib/map/filterCount'
 import { MAP_FILTERS_Z } from '@/lib/map/mapView'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
-import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
+import { penPerUsdForThisVisit, penPerUsdRightNow } from '@/lib/map/exchangeRates'
 import type { Bounds } from '@/lib/map/mapPoint'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { thumbnail } from '@/lib/imageUrl'
-import { getExploreEmptyMessage } from '@/lib/exploreEmptyState'
+import { getExploreEmptyMessage, exploreLoadErrorMessage } from '@/lib/exploreEmptyState'
 import { X, MapPin } from 'lucide-react'
 import type { MapFilters } from '@/types/explore'
 import type { ListingWithProperty } from '@/types/explore'
@@ -69,7 +69,11 @@ export default function ExplorePage() {
     propertyTypes: [],
     priceMin: null,
     priceMax: null,
+    priceCurrency: 'USD',
   })
+  // The visit's soles-per-dollar rate, for comparing a typed price with
+  // listings priced in the other currency (audit 2026-11-02, top item 11).
+  const [penPerUsd, setPenPerUsd] = useState(penPerUsdRightNow)
   const [mapBounds, setMapBounds] = useState<Bounds | null>(null)
   const {
     data: items,
@@ -81,7 +85,7 @@ export default function ExplorePage() {
     hitPageCeiling,
     refetch,
   } = useExploreListings(filters.operationType)
-  const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
+  const { filtered, visible, total } = useMapFilters(items, filters, mapBounds, penPerUsd)
   // filter_applied / search_no_results (metrics plan A12a). Counts every
   // matching listing, not just those in view, as the app does — so it waits
   // until the whole catalogue for this operation has loaded.
@@ -147,7 +151,11 @@ export default function ExplorePage() {
   // The visit's exchange rate, fetched once in the background as the page opens
   // so the list's price sorts already have it (ADR-031 item 19).
   useEffect(() => {
-    void penPerUsdForThisVisit()
+    let alive = true
+    void penPerUsdForThisVisit().then((rate) => alive && setPenPerUsd(rate))
+    return () => {
+      alive = false
+    }
   }, [])
 
   useEffect(() => {
@@ -210,10 +218,12 @@ export default function ExplorePage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <p className="text-sm text-error">Error al cargar propiedades</p>
+              <p className="px-6 text-center text-sm text-error-strong">
+                {exploreLoadErrorMessage(typeof navigator === 'undefined' || navigator.onLine !== false)}
+              </p>
               <button
                 onClick={() => refetch()}
-                className="rounded-full bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
+                className="min-h-11 rounded-full bg-primary px-5 font-sans text-sm font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-primary-hover"
               >
                 Reintentar
               </button>
@@ -237,7 +247,9 @@ export default function ExplorePage() {
           </Suspense>
 
           {/* Mobile empty area toast */}
-          {!isLoading && visible.length === 0 && !toastDismissed && (
+          {/* Not while loading failed: the error says why; "we're just
+              starting" would be untrue (audit 2026-11-02). */}
+          {!isLoading && !error && visible.length === 0 && !toastDismissed && (
             <div className="absolute bottom-36 left-4 right-4 z-10 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 shadow-medium backdrop-blur-sm md:hidden">
               <MapPin className="h-4 w-4 shrink-0 text-text-tertiary" />
               <p className="flex-1 text-xs text-text-secondary">
@@ -245,7 +257,8 @@ export default function ExplorePage() {
               </p>
               <button
                 onClick={() => setToastDismissed(true)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-black/5"
+                aria-label="Cerrar aviso"
+                className="-my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-black/5"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -265,7 +278,7 @@ export default function ExplorePage() {
               one. Cannot trigger at Piura's current size; the honest fix when
               it does is querying by map viewport. */}
           {hitPageCeiling && (
-            <p className="mb-3 rounded-lg bg-accent/30 px-3 py-2 text-xs text-[#8A6400]">
+            <p className="mb-3 rounded-lg bg-accent/40 px-3 py-2 text-xs text-ink">
               Mostrando las propiedades más recientes. Usa los filtros o acerca
               el mapa para ver el resto.
             </p>
@@ -276,7 +289,7 @@ export default function ExplorePage() {
                 <PropertyCardSkeleton key={i} />
               ))}
             </div>
-          ) : (
+          ) : error ? null : (
             <MapListView
               items={spotItems ?? visible}
               isVenta={isVenta}
@@ -362,12 +375,21 @@ export default function ExplorePage() {
             onClick={() => setDrawerOpen(false)}
           />
           <div className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] overflow-y-auto rounded-t-2xl bg-cream p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-large md:hidden">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-text-primary">Filtros</h2>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="font-serif text-[22px] font-normal text-text-primary">Filtros</h2>
+              {activeFilterCount(filters) > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilters(clearedFilters)}
+                  className="ml-auto min-h-11 px-2 text-sm font-medium text-secondary underline-offset-2 hover:underline"
+                >
+                  Limpiar
+                </button>
+              )}
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Cerrar filtros"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-background-secondary"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-background-secondary"
               >
                 <X className="h-4 w-4 text-text-secondary" />
               </button>

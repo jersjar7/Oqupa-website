@@ -58,7 +58,7 @@ export default function AppLayout() {
                     ...(location.pathname !== '/app/profile'
                       ? [
                           {
-                            label: 'Mi Perfil',
+                            label: 'Mi perfil',
                             icon: <User className="h-4 w-4" />,
                             to: '/app/profile',
                           },

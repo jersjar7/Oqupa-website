@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
@@ -9,6 +10,7 @@ import { getPriceSuffix } from '@/lib/formatters'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { Button, Modal, Spinner } from '@/app/components/ui'
 import GalleryModal from '@/app/components/GalleryModal'
+import ClaimConsequences from '../components/ClaimConsequences'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 
 function formatPrice(amount: number, currency: string): string {
@@ -83,7 +85,7 @@ export default function LeadDetailPage() {
   if (error || !listing || !property || !listing.wantsRealtorHelp) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="font-sans text-2xl font-medium text-text-primary">
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">
           Oportunidad no encontrada
         </h1>
         <p className="mt-2 text-text-secondary">
@@ -292,7 +294,7 @@ export default function LeadDetailPage() {
             </>
           )}
         </div>
-        <span className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+        <span className="mt-1 inline-block rounded bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-text-secondary">
           Ubicación aproximada
         </span>
 
@@ -301,13 +303,13 @@ export default function LeadDetailPage() {
           {property.specs?.bedroomCount != null && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6CF;&#xFE0F;</span>
-              {property.specs.bedroomCount} hab.
+              {bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}
             </span>
           )}
-          {property.specs?.bathroomCount != null && (
+          {(property.specs?.bathroomCount ?? 0) > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary">
               <span aria-hidden="true">&#x1F6BF;</span>
-              {property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}
+              {bathroomsLabel(property.specs.bathroomCount)}
             </span>
           )}
           {property.specs?.totalAreaInSquareMeters != null && property.specs.totalAreaInSquareMeters > 0 && (
@@ -331,7 +333,7 @@ export default function LeadDetailPage() {
         {/* Description */}
         {listing.description && (
           <div className="mt-6">
-            <h2 className="font-sans text-sm font-medium uppercase text-primary">
+            <h2 className="font-sans text-sm font-medium uppercase text-secondary">
               Descripción
             </h2>
             <p className="mt-2 whitespace-pre-line text-text-secondary leading-relaxed">
@@ -343,7 +345,7 @@ export default function LeadDetailPage() {
         {/* Amenities */}
         {property.specs?.propertyAmenities && property.specs.propertyAmenities.length > 0 && (
           <div className="mt-6">
-            <h2 className="font-sans text-sm font-medium uppercase text-primary">
+            <h2 className="font-sans text-sm font-medium uppercase text-secondary">
               Características
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -369,7 +371,7 @@ export default function LeadDetailPage() {
           </div>
           {slotsFull && (
             <p className="mt-2 text-xs text-error">
-              Todos los espacios están ocupados.
+              Ya no hay cupos.
             </p>
           )}
         </div>
@@ -388,7 +390,7 @@ export default function LeadDetailPage() {
             disabled={!canClaim}
             onClick={() => setConfirmOpen(true)}
           >
-            {slotsFull ? 'Completo' : !claimStatus.canClaim ? 'Límite alcanzado' : 'Reclamar'}
+            {slotsFull ? 'Ya no hay cupos' : !claimStatus.canClaim ? 'Límite alcanzado' : 'Reclamar'}
           </Button>
         </div>
       </div>
@@ -422,14 +424,7 @@ export default function LeadDetailPage() {
             </p>
           </div>
 
-          <p className="mt-4 text-sm text-text-secondary">
-            Usarás <span className="font-bold">1</span> de{' '}
-            <span className="font-bold">{claimStatus.remaining}</span> reclamaciones restantes
-            este mes.
-          </p>
-          <p className="mt-2 text-sm text-text-secondary">
-            Al reclamar, podrás ver la información de contacto del propietario.
-          </p>
+          <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
 
           <div className="mt-6 flex gap-3">
             <Button

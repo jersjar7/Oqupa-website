@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams, Navigate, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
 import { useListingClaims, useAssignRealtor, useUnassignRealtor } from '@/hooks/useRealtorLeads'
@@ -16,6 +16,7 @@ import type { RealtorClaim } from '@/types/realtorClaim'
 export default function InterestedAgentsPage() {
   const { id: listingId } = useParams<{ id: string }>()
   const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
   const [confirmAssign, setConfirmAssign] = useState<RealtorClaim | null>(null)
 
   const listingDetails = useListingDetails(listingId)
@@ -39,10 +40,20 @@ export default function InterestedAgentsPage() {
     )
   }
 
-  // Not found or not owner
+  // Not found or not owner: say so rather than bouncing silently (audit
+  // 2026-11-02).
   if (!listing || !property || listing.ownerId !== user?.id) {
-    return <Navigate to="/app" replace />
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">Esta publicación ya no existe.</h1>
+        <p className="mt-2 text-text-secondary">Puede que la hayas eliminado o que el enlace esté incompleto.</p>
+        <div className="mt-6 flex justify-center">
+          <Button onClick={() => navigate('/app/listings')}>Volver</Button>
+        </div>
+      </div>
+    )
   }
+  const isPendingInvite = listing.assignmentStatus === 'pending_acceptance'
 
   function handleAssignConfirm() {
     if (!confirmAssign || !listingId) return
@@ -52,6 +63,7 @@ export default function InterestedAgentsPage() {
         listingId,
         realtorId: confirmAssign.realtorId,
         realtorPhone: confirmAssign.realtorPhone,
+        realtorName: confirmAssign.realtorName,
       },
       {
         onSuccess: () => setConfirmAssign(null),
@@ -81,13 +93,20 @@ export default function InterestedAgentsPage() {
         className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="h-4 w-4" />
-        Mis Publicaciones
+        Mis propiedades
       </Link>
 
       {/* Header */}
-      <h1 className="mt-4 font-sans text-[28px] font-medium text-text-primary">
-        Agentes Interesados
+      <h1 className="mt-4 font-serif text-[28px] font-normal text-text-primary">
+        Agentes interesados
       </h1>
+      <Link
+        to="/app/buenas-practicas"
+        className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-secondary hover:text-secondary-hover"
+      >
+        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        Buenas prácticas
+      </Link>
 
       {/* Listing summary */}
       <div className="mt-4 flex items-center gap-4 rounded-xl border border-border bg-white p-4 shadow-light">
@@ -140,14 +159,14 @@ export default function InterestedAgentsPage() {
       {/* Assigned realtor banner */}
       {listing.assignedRealtorId && (
         <div className={`mt-4 rounded-xl border p-4 ${
-          listing.assignmentStatus === 'pending_acceptance'
-            ? 'border-amber-300 bg-amber-50'
-            : 'border-primary/20 bg-primary/5'
+          isPendingInvite
+            ? 'border-accent bg-accent/20'
+            : 'border-secondary/30 bg-secondary/5'
         }`}>
           <div className="flex items-center gap-2">
-            <Badge variant={listing.assignmentStatus === 'pending_acceptance' ? 'warning' : 'info'}>
-              {listing.assignmentStatus === 'pending_acceptance'
-                ? 'Pendiente de aceptación'
+            <Badge variant={isPendingInvite ? 'warning' : 'info'}>
+              {isPendingInvite
+                ? 'Invitación enviada'
                 : 'Agente asignado'}
             </Badge>
             <span className="text-sm text-text-secondary">
@@ -156,10 +175,10 @@ export default function InterestedAgentsPage() {
           </div>
           <button
             type="button"
-            className="mt-2 text-sm font-medium text-error hover:text-error-strong"
+            className="mt-2 min-h-11 font-sans text-sm font-bold uppercase tracking-[1px] text-error hover:text-error-strong"
             onClick={() => setConfirmUnassign(true)}
           >
-            Quitar Agente
+            {isPendingInvite ? 'Cancelar invitación' : 'Quitar agente'}
           </button>
         </div>
       )}
@@ -180,14 +199,11 @@ export default function InterestedAgentsPage() {
         {claims.isError && (
           <div className="rounded-2xl border border-error/20 bg-error/5 p-12 text-center">
             <p className="text-error-strong">
-              Error al cargar los agentes interesados.
+              No pudimos cargar los agentes interesados. Revisa tu internet.
             </p>
-            <button
-              onClick={() => claims.refetch()}
-              className="mt-2 text-sm font-medium text-primary hover:text-primary-hover"
-            >
+            <Button className="mt-4" onClick={() => claims.refetch()}>
               Reintentar
-            </button>
+            </Button>
           </div>
         )}
 
@@ -247,29 +263,32 @@ export default function InterestedAgentsPage() {
       <Modal
         isOpen={!!confirmAssign}
         onClose={() => !assignRealtor.isPending && setConfirmAssign(null)}
-        title="Asignar agente"
+        title="¿Trabajar con este agente?"
       >
         {confirmAssign && (
           <div>
             <p className="text-sm text-text-secondary">
-              Quieres trabajar con <span className="font-bold">{confirmAssign.realtorName}</span>
+              ¿Quieres trabajar con <span className="font-bold">{confirmAssign.realtorName}</span>
               {confirmAssign.realtorBusinessName ? ` de ${confirmAssign.realtorBusinessName}` : ''}?
             </p>
 
-            <p className="mt-3 text-sm font-medium text-text-primary">Al asignar un agente:</p>
-            <ul className="mt-2 space-y-2">
+            {/* The app's words: it is an invitation, not an assignment. */}
+            <ul className="mt-3 space-y-2">
               {[
-                'Su número de WhatsApp reemplazará al tuyo como contacto principal del anuncio',
-                'Los interesados en tu propiedad contactarán directamente al agente',
-                'Tú seguirás viendo todas las estadísticas y el estado de tu anuncio',
-                'Puedes cambiar de agente en cualquier momento',
+                'Le enviaremos una invitación. Debe aceptarla para representar tu propiedad.',
+                'Mientras él/ella no acepte, tú sigues siendo el contacto del anuncio y ves todas las estadísticas.',
+                'Cuando él/ella acepte, su WhatsApp reemplazará al tuyo como contacto del anuncio.',
+                'Puedes cancelar la invitación o cambiar de agente cuando quieras.',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-2 text-sm text-text-secondary">
-                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
                   <span>{text}</span>
                 </li>
               ))}
             </ul>
+            <p className="mt-3 text-sm text-text-secondary">
+              Oqupa solo los pone en contacto. El acuerdo con el agente es entre ustedes; Oqupa no es responsable del trato.
+            </p>
 
             <div className="mt-6 flex gap-3">
               <Button
@@ -277,7 +296,7 @@ export default function InterestedAgentsPage() {
                 onClick={handleAssignConfirm}
                 isLoading={assignRealtor.isPending}
               >
-                Confirmar
+                Enviar invitación
               </Button>
               <Button
                 variant="text"
@@ -296,19 +315,22 @@ export default function InterestedAgentsPage() {
       <Modal
         isOpen={confirmUnassign}
         onClose={() => !unassignRealtor.isPending && setConfirmUnassign(false)}
-        title="Quitar agente"
+        title={isPendingInvite ? 'Cancelar invitación' : 'Quitar agente'}
       >
         <div>
           <p className="text-sm text-text-secondary">
-            El agente dejará de manejar los contactos de esta propiedad. Podrás elegir otro agente.
+            {isPendingInvite
+              ? 'Se cancelará la invitación. El agente seguirá entre los interesados y podrás invitar a otra persona.'
+              : 'El agente dejará de ser el contacto de tu propiedad y podrás elegir a otra persona.'}
           </p>
           <div className="mt-6 flex gap-3">
             <Button
-              className="flex-1 !bg-error hover:!bg-error-strong"
+              variant="danger"
+              className="flex-1"
               onClick={handleUnassignConfirm}
               isLoading={unassignRealtor.isPending}
             >
-              Quitar
+              {isPendingInvite ? 'Cancelar invitación' : 'Quitar agente'}
             </Button>
             <Button
               variant="text"
@@ -316,7 +338,7 @@ export default function InterestedAgentsPage() {
               onClick={() => setConfirmUnassign(false)}
               disabled={unassignRealtor.isPending}
             >
-              Cancelar
+              Volver
             </Button>
           </div>
         </div>

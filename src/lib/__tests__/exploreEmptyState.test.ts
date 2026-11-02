@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getExploreEmptyMessage } from '../exploreEmptyState'
+import { getExploreEmptyMessage, exploreLoadErrorMessage } from '../exploreEmptyState'
 
 describe('getExploreEmptyMessage', () => {
   it('returns the "launching" message when total is 0', () => {
@@ -23,13 +23,19 @@ describe('getExploreEmptyMessage', () => {
 
   it('returns the "zoom out" message when total > 0 and filteredCount > 0', () => {
     expect(getExploreEmptyMessage(50, 10)).toBe(
-      'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicación.',
+      'No hay propiedades en esta parte del mapa. Aléjalo con dos dedos para ver más.',
     )
   })
 
   it('returns the "zoom out" message when filteredCount equals total', () => {
     expect(getExploreEmptyMessage(10, 10)).toBe(
-      'No hay propiedades en esta zona del mapa. Aleja el zoom o navega a otra ubicación.',
+      'No hay propiedades en esta parte del mapa. Aléjalo con dos dedos para ver más.',
     )
   })
+})
+
+// Audit 2026-11-02: the map's load error said why only as "Error al cargar".
+describe('exploreLoadErrorMessage', () => {
+  it('offline', () => expect(exploreLoadErrorMessage(false)).toBe('Sin conexión. Revisa tu internet y toca Reintentar.'))
+  it('online', () => expect(exploreLoadErrorMessage(true)).toBe('No pudimos cargar las propiedades. Toca Reintentar.'))
 })

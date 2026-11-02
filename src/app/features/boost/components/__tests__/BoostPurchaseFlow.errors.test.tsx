@@ -10,7 +10,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
  * so every refusal showed the generic "Error al procesar el pago".
  */
 
-const h = vi.hoisted(() => ({ createMutateAsync: vi.fn() }))
+const h = vi.hoisted(() => ({ createMutateAsync: vi.fn(), invalidateQueries: vi.fn() }))
 
 vi.mock('@/lib/analytics', () => ({
   AnalyticsLogger: { boostOfferViewed: vi.fn(), boostTierSelected: vi.fn(), boostCheckoutAbandoned: vi.fn() },
@@ -20,11 +20,16 @@ vi.mock('@/hooks/useBoost', () => ({
   usePollPaymentCompletion: () => ({ mutateAsync: vi.fn() }),
   useBoostTiers: () => ({ data: [] }),
 }))
-vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }))
+vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ invalidateQueries: h.invalidateQueries }) }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
 vi.mock('../BoostTierSelectionModal', () => ({
-  default: ({ isOpen, onConfirm }: { isOpen: boolean; onConfirm: (tier: string) => void }) =>
-    isOpen ? <button onClick={() => onConfirm('sevenDays')}>tier:confirm</button> : null,
+  default: ({ isOpen, onConfirm, notice }: { isOpen: boolean; onConfirm: (tier: string) => void; notice?: string }) =>
+    isOpen ? (
+      <div data-testid="tier-modal">
+        {notice && <p data-testid="tier-notice">{notice}</p>}
+        <button onClick={() => onConfirm('sevenDays')}>tier:confirm</button>
+      </div>
+    ) : null,
 }))
 vi.mock('../StripePaymentModal', () => ({ default: () => null }))
 
@@ -77,5 +82,43 @@ describe('BoostPurchaseFlow — refused checkout messages', () => {
   it('falls back to the generic message for anything else', async () => {
     await refuseWith(new Error('network down'))
     expect(screen.getByText('Error al procesar el pago. Intenta de nuevo.')).toBeTruthy()
+  })
+
+  // One boost only (ADR-043 D16): a tier no longer sold (an older page still
+  // open in a tab) is refused with invalid-argument + details.reason
+  // 'tierNotOnSale'. The owner reads the server's Spanish sentence and lands
+  // back on the 30-day option, so one tap continues.
+  describe('a tier that is no longer sold', () => {
+    const ONE_BOOST = 'Ahora el destacado es de 30 días por S/ 29.90. Elige 30 días para continuar.'
+
+    it('shows the server sentence on the 30-day option, not the generic error', async () => {
+      await refuseWith(functionsError('invalid-argument', ONE_BOOST, { reason: 'tierNotOnSale' }))
+      expect(screen.getByTestId('tier-modal')).toBeTruthy()
+      expect(screen.getByTestId('tier-notice').textContent).toBe(ONE_BOOST)
+      expect(screen.queryByText('Error al procesar el pago. Intenta de nuevo.')).toBeNull()
+    })
+
+    it('refreshes the price on offer', async () => {
+      await refuseWith(functionsError('invalid-argument', ONE_BOOST, { reason: 'tierNotOnSale' }))
+      expect(h.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['config', 'boostTiers'] })
+    })
+
+    it('quotes a changed price the server sends', async () => {
+      const other = 'Ahora el destacado es de 30 días por S/ 24.90. Elige 30 días para continuar.'
+      await refuseWith(functionsError('invalid-argument', other, { reason: 'tierNotOnSale' }))
+      expect(screen.getByTestId('tier-notice').textContent).toBe(other)
+    })
+
+    it('never passes through other server text under that reason', async () => {
+      await refuseWith(functionsError('invalid-argument', 'Tier sevenDays is not on sale', { reason: 'tierNotOnSale' }))
+      expect(screen.queryByText(/Tier sevenDays/)).toBeNull()
+      expect(screen.getByTestId('tier-notice').textContent).toBe(ONE_BOOST)
+    })
+
+    it('an invalid-argument without that reason stays the generic error', async () => {
+      await refuseWith(functionsError('invalid-argument', 'Esta opción de destacado ya no está disponible.'))
+      expect(screen.getByText('Error al procesar el pago. Intenta de nuevo.')).toBeTruthy()
+      expect(screen.queryByTestId('tier-modal')).toBeNull()
+    })
   })
 })

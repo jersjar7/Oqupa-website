@@ -38,8 +38,11 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
+import { createProfileIfAbsent } from '@/lib/profileRepair'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
+import { getDraftAccount, setDraftAccount, useListingFormStore } from '@/stores/listingFormStore'
+import { noteDeliberateSignOut, noteSignedInAccount } from '@/lib/returnPath'
 
 /**
  * Creates a new account's user document. If the security rules refuse it, the
@@ -70,6 +73,25 @@ function newAccountAttribution(credential: UserCredential, door: SignupDoor) {
     : {}
 }
 
+function newEmailProfile(email: string | null, attribution?: ReturnType<typeof signupAttribution>) {
+  const now = new Date()
+  const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return {
+    email,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    isActive: true,
+    isPhoneVerified: false,
+    isIdentityVerified: false,
+    isVerifiedRealtor: false,
+    claimsThisMonth: 0,
+    claimMonth,
+    authProvider: 'password',
+    // Where this account came from — write-once in the rules (A12b).
+    ...(attribution ? { signupAttribution: attribution } : {}),
+  }
+}
+
 // Store for phone verification flow
 let recaptchaVerifier: RecaptchaVerifier | null = null
 
@@ -82,25 +104,15 @@ export const authService = {
     )
     const user = credential.user
 
-    // Create Firestore user document
-    const now = new Date()
-    const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
+    // Create Firestore user document. A failure here leaves an account with
+    // no profile; it is marked so the page can stay and retry
+    // (saveNewEmailProfile), hostile review 2026-11-02 item 1a.
     const attribution = signupAttribution('email')
-    await createUserDocument(user.uid, {
-      email: user.email,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      isActive: true,
-      isPhoneVerified: false,
-      isIdentityVerified: false,
-      isVerifiedRealtor: false,
-      claimsThisMonth: 0,
-      claimMonth,
-      authProvider: 'password',
-      // Where this account came from — write-once in the rules (A12b).
-      signupAttribution: attribution,
-    })
+    try {
+      await createUserDocument(user.uid, newEmailProfile(user.email, attribution))
+    } catch (error) {
+      throw Object.assign(error as object, { profileSaveFailed: true })
+    }
 
     AnalyticsLogger.registrationCompleted({
       campaign: attribution.lastCampaign ?? attribution.firstCampaign ?? null,
@@ -118,6 +130,32 @@ export const authService = {
   async logout() {
     // A change of email waiting for its link belongs to this session only
     // (hostile review 2026-10-24, finding 5).
+    clearPendingEmailChange()
+    // A deliberate sign-out (Salir, "Usar otra cuenta") drops the publishing
+    // draft: the next person on this computer must not inherit its photos,
+    // address or ids (hostile review of the wizard fixes, #1). A session that
+    // ends by itself does not come through here, so it keeps the draft for
+    // the same account.
+    const account = getDraftAccount()
+    useListingFormStore.getState().discardDraft()
+    // Nor is the page they left a place to send the next sign-in back to.
+    noteDeliberateSignOut()
+    try {
+      await signOut(auth)
+    } catch (err) {
+      // Still signed in: what they type next is still theirs (third review #5).
+      setDraftAccount(account)
+      noteSignedInAccount(account)
+      throw err
+    }
+  },
+
+  /**
+   * Ends a session that has already stopped working (the publish was refused
+   * because the sign-in ended), WITHOUT dropping the draft: the same account
+   * signs back in and finds it (draftOwnerWatch drops it for anyone else).
+   */
+  async endStaleSession() {
     clearPendingEmailChange()
     await signOut(auth)
   },
@@ -271,9 +309,33 @@ export const authService = {
     })
   },
 
+  /**
+   * Retries saving the profile of the account just created (see above).
+   * Create-only: if the first save landed after all, it is done — never
+   * rewritten (second review 2026-11-02, item 4).
+   */
+  async saveNewEmailProfile() {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await createProfileIfAbsent(user.uid, newEmailProfile(user.email), signupAttribution('email'))
+  },
+
   async changePassword(newPassword: string) {
     const user = auth.currentUser
     if (!user) throw new Error('No authenticated user')
+    await updatePassword(user, newPassword)
+  },
+
+  /**
+   * "Cambiar contraseña" in Mi perfil (ADR-046 #13), as the app does it: the
+   * current password is proved first, so a session left open on a shared
+   * computer cannot be used to take the account, and Firebase never answers
+   * requires-recent-login.
+   */
+  async changePasswordWithCurrent(currentPassword: string, newPassword: string) {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', currentPassword))
     await updatePassword(user, newPassword)
   },
 
@@ -483,6 +545,10 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     clearPendingEmailChange()
+    // A deleted account's publishing draft goes with it, and no tab keeps a
+    // way back for it (second hostile review #4).
+    useListingFormStore.getState().discardDraft()
+    noteDeliberateSignOut()
     await signOut(auth)
   },
 

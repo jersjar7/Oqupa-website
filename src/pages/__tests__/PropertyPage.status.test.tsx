@@ -162,7 +162,7 @@ describe('an active listing', () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith('Esta publicación ya no está disponible.'),
     )
-    expect(screen.queryByText(/Escríbele al propietario/i, { selector: 'h3' })).toBeNull()
+    expect(screen.queryByText(/Escríbele al dueño/i, { selector: 'h3' })).toBeNull()
   })
 })
 
@@ -170,7 +170,7 @@ describe('the owner, on their own listing', () => {
   it('sees a deactivated listing, with a note that only they can see it', () => {
     show('deactivated', 'owner-only', 'owner-1')
     renderPage()
-    expect(screen.queryByText('Propiedad no encontrada')).toBeNull()
+    expect(screen.queryByText('Esta propiedad ya no está publicada')).toBeNull()
     expect(screen.getByRole('status').textContent).toContain(
       'Esta publicación está desactivada. Solo tú puedes verla.',
     )

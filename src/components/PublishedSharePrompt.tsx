@@ -48,6 +48,7 @@ export default function PublishedSharePrompt({
         }}
         listing={listing}
         property={property}
+        justPublished
       />
     </>
   )

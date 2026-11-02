@@ -53,22 +53,21 @@ export type PaymentDocStatus =
   | 'refunded'
   | 'expired'
 
-/** Default tier configurations (fallback when Firestore config/pricing is unavailable) */
+/**
+ * The one boost on sale: 30 days at S/ 29.90 (ADR-042, ADR-043 D16).
+ * 7 and 15 days stay in `BoostTier` and `BOOST_TIER_LABELS` only so past
+ * purchases still read correctly in payment history.
+ */
+export const ON_SALE_BOOST_TIER: BoostTier = 'thirtyDays'
+
+/**
+ * Sent as `offer` with createBoostPaymentIntent: this page offers only the one
+ * boost. Must match ONE_BOOST_OFFER in the functions' lib/boost-tiers.js.
+ */
+export const ONE_BOOST_OFFER = 'one-boost' as const
+
+/** What a new purchase may choose (fallback when Firestore config/pricing is unavailable). */
 export const DEFAULT_BOOST_TIERS: BoostTierConfiguration[] = [
-  {
-    tier: 'sevenDays',
-    durationDays: 7,
-    feeInSoles: 9.90,
-    feeInCentimos: 990,
-    displayName: '7 días',
-  },
-  {
-    tier: 'fifteenDays',
-    durationDays: 15,
-    feeInSoles: 19.90,
-    feeInCentimos: 1990,
-    displayName: '15 días',
-  },
   {
     tier: 'thirtyDays',
     durationDays: 30,
@@ -88,7 +87,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentDocStatus, string> = {
   expired: 'Expirado',
 }
 
-/** Boost tier display labels */
+/** Boost tier display labels — every tier ever sold, for payment history. */
 export const BOOST_TIER_LABELS: Record<BoostTier, string> = {
   sevenDays: '7 días',
   fifteenDays: '15 días',

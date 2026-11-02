@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 /**
- * ClaimedLeadCard — vertical property card used on Oportunidades → En Espera
+ * ClaimedLeadCard — vertical property card used on Oportunidades → En espera
  * for claims the agent is still waiting on the owner to decide. Shares its
  * shape with ListingCard and AgentAssignmentCard so all tabs render a
  * uniform grid.
@@ -26,6 +27,7 @@ import {
 } from '@/types/enums'
 import { toast } from 'sonner'
 import { contactService, ContactDenied } from '@/services/contactService'
+import ProfileNotFoundDialog from '@/app/features/listings/components/ProfileNotFoundDialog'
 
 interface ClaimedLeadCardProps {
   claim: RealtorClaim
@@ -67,6 +69,9 @@ export default function ClaimedLeadCard({
   // The agent asks the server, which checks they actually hold a claim on THIS
   // listing before disclosing it, and records that it did.
   const [opening, setOpening] = useState(false)
+  // Signed in, no saved profile (feature audit 2026-11-02): same window as
+  // the listing page.
+  const [showProfileNotFound, setShowProfileNotFound] = useState(false)
 
   async function openWhatsApp() {
     if (opening) return
@@ -79,12 +84,16 @@ export default function ClaimedLeadCard({
         'noopener,noreferrer',
       )
     } catch (error) {
+      if (error instanceof ContactDenied && error.reason === 'profile-incomplete') {
+        setShowProfileNotFound(true)
+        return
+      }
       // Sold, rented or deactivated since the claim: the server refuses it.
       // Saying "could not" would invite a retry that can never work.
       toast.error(
         error instanceof ContactDenied && error.reason === 'listing-not-available'
           ? 'Esta publicación ya no está disponible.'
-          : 'No se pudo obtener el contacto del propietario.',
+          : 'No se pudo obtener el contacto del dueño.',
       )
     } finally {
       setOpening(false)
@@ -130,10 +139,10 @@ export default function ClaimedLeadCard({
         {/* Specs — single line, wraps if needed but clamped to 1 line on narrow */}
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{property.specs.bedroomCount} hab.</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
           )}
-          {property.specs.bathroomCount != null && (
-            <span>{property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}</span>
+          {bathroomsLabel(property.specs.bathroomCount) && (
+            <span>{bathroomsLabel(property.specs.bathroomCount)}</span>
           )}
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
@@ -158,6 +167,7 @@ export default function ClaimedLeadCard({
           </button>
         </div>
       </div>
+      {showProfileNotFound && <ProfileNotFoundDialog onClose={() => setShowProfileNotFound(false)} />}
     </div>
   )
 }

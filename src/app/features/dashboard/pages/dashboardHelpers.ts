@@ -111,3 +111,21 @@ export function activeListingsNote(total: number, active: number): string | unde
   if (hidden <= 0) return undefined
   return `${hidden} ${hidden === 1 ? 'no se muestra' : 'no se muestran'} en el mapa`
 }
+
+/**
+ * Subtitle of the owner's "Boosts activos" card. Boosts are available but not
+ * promoted (ADR-042, ADR-043 D17), so with nothing boosted and nothing spent it
+ * says nothing at all — never a nudge to buy one.
+ */
+export function boostedKpiSubtitle(args: {
+  boosted: number
+  total: number
+  monthlySpendSoles: number
+}): string | undefined {
+  const { boosted, total, monthlySpendSoles } = args
+  if (boosted <= 0 && monthlySpendSoles <= 0) return undefined
+  const parts: string[] = []
+  if (total > 0) parts.push(`${boosted} de ${total} anuncios`)
+  if (monthlySpendSoles > 0) parts.push(`S/ ${monthlySpendSoles.toFixed(2)} este mes`)
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}

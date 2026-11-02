@@ -15,6 +15,7 @@ vi.mock('@/hooks/useListings', () => ({
   useToggleListingStatus: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteListing: () => ({ mutate: vi.fn(), isPending: false }),
   useMarkListingClosed: () => ({ mutate: vi.fn(), isPending: false }),
+  useSetRealtorHelp: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ setQueryData: vi.fn() }) }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => ({ user: { id: 'owner-1' } }) }))

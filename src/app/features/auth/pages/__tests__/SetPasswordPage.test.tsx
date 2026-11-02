@@ -147,5 +147,18 @@ describe('SetPasswordPage', () => {
         expect(screen.getByText(/d.bil/i)).toBeDefined()
       })
     })
+
+    // Audit 2026-11-02: the sentence said 6 characters; the rule is 8 + four kinds.
+    it('a weak password names the real rule, not 6 characters', async () => {
+      mockAuthService.confirmSetPassword.mockRejectedValue(new Error('weak-password'))
+      renderPage()
+      await waitFor(() => screen.getByLabelText(/nueva contrase/i))
+      fireEvent.change(screen.getByLabelText(/nueva contrase/i), { target: { value: 'Password1!' } })
+      fireEvent.change(screen.getByLabelText(/confirma/i), { target: { value: 'Password1!' } })
+      fireEvent.submit(document.querySelector('form')!)
+      await waitFor(() => {
+        expect(screen.getByText(/al menos 8 caracteres/i)).toBeDefined()
+      })
+    })
   })
 })

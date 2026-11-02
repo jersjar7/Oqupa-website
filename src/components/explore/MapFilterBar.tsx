@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { OPERATION_TYPE_LABELS, isAlquilerOnlyType, type PropertyType } from '@/types/enums'
-import { activeFilterCount, filtersDoneLabel } from '@/lib/map/filterCount'
+import { activeFilterCount, clearedFilters, filtersDoneLabel } from '@/lib/map/filterCount'
 import ExploreFilters from './ExploreFilters'
 import type { MapFilters } from '@/types/explore'
 
@@ -55,6 +55,17 @@ export default function MapFilterBar({ filters, setFilters, count }: MapFilterBa
       </button>
       {open && (
         <div role="dialog" aria-label="Filtros" className="absolute left-0 top-12 z-30 w-[360px] rounded-2xl bg-cream p-5 shadow-large">
+          {active > 0 && (
+            <div className="-mt-2 mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setFilters(clearedFilters)}
+                className="min-h-11 px-2 text-sm font-medium text-secondary underline-offset-2 hover:underline"
+              >
+                Limpiar
+              </button>
+            </div>
+          )}
           <ExploreFilters filters={filters} setFilters={setFilters} resultCount={0} total={0} layout="vertical" showOperation={false} showCount={false} />
           <button
             type="button"

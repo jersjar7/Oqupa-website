@@ -14,7 +14,7 @@ export function useProperty(
   listingId: string | undefined,
   { viewerId, authReady = true }: UsePropertyOptions = {},
 ) {
-  const { data, isLoading: queryLoading, error } = useQuery({
+  const { data, isLoading: queryLoading, error, refetch } = useQuery({
     queryKey: ['listings', 'detail', listingId],
     queryFn: () => firestoreService.getListingWithProperty(listingId!),
     enabled: !!listingId,
@@ -32,7 +32,19 @@ export function useProperty(
 
   const notFound = !isLoading && (!data || view === 'hidden')
 
+  // Which failure, so an offline visitor is not told the listing was deleted
+  // (audit 2026-11-02).
+  const failure: 'network' | 'not-found' | null = isLoading
+    ? null
+    : error
+      ? 'network'
+      : notFound || !listingId
+        ? 'not-found'
+        : null
+
   return {
+    failure,
+    refetch,
     listing: notFound ? null : listing,
     property: notFound ? null : property,
     view: isLoading ? null : view,

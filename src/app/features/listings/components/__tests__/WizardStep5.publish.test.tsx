@@ -190,7 +190,8 @@ function fillDraft() {
 
 function Where() {
   const loc = useLocation()
-  return <div data-testid="where">{loc.pathname}</div>
+  const just = (loc.state as { justPublished?: boolean } | null)?.justPublished === true
+  return <div data-testid="where" data-just-published={String(just)}>{loc.pathname}</div>
 }
 
 function renderStep() {
@@ -228,6 +229,7 @@ beforeEach(() => {
   toastMock.mockClear()
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
+  localStorage.clear()
   sessionStorage.clear()
   useAuthStore.setState({
     user: {
@@ -247,6 +249,16 @@ afterEach(() => {
 })
 
 describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
+  it('D10: a new listing is published without agent help, even over an old draft that asked for it', async () => {
+    useListingFormStore.getState().updateData({ wantsRealtorHelp: true, maxRealtors: 5 })
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    const listing = [...net.docs.entries()].find(([p]) => p.startsWith('listings/'))![1]
+    expect(listing.wantsRealtorHelp).toBe(false)
+    expect(listing.maxRealtors).toBe(3)
+  })
+
   it('a double click writes one property and one listing, together in one commit', async () => {
     renderStep()
     const btn = publishButton()
@@ -340,11 +352,13 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     fireEvent.click(publishButton())
     await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
     // Cleared the moment the write succeeded — not when a dialog closes.
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     expect((await screen.findAllByText('¡PUBLICADO!', {}, { timeout: 2000 })).length).toBeGreaterThan(0)
     await waitFor(() =>
       expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`), { timeout: 3000 })
     expect(ids('listings').size).toBe(1)
+    // D13: it opens with the share prompt.
+    expect(screen.getByTestId('where').getAttribute('data-just-published')).toBe('true')
   })
 
   it('once saved, the button cannot be clicked again', async () => {
@@ -604,5 +618,38 @@ describe('WizardStep5 — a failed publish says what went wrong', () => {
     net.putBehaviour = () => 'fail'
     await publishAndRead()
     expect(document.body.textContent).not.toMatch(/duplic/i)
+  })
+})
+
+// Hostile review 2026-11-02 #4: agent help belongs to the Mis Propiedades
+// card now (ADR-043 D10). Saving an edit must neither check it (an older
+// listing over the old limit failed silently) nor write it.
+describe('WizardStep5 — saving an edit leaves agent help alone (review #4)', () => {
+  it('an older listing with maxRealtors 9 saves, and agent help is not rewritten', async () => {
+    net.docs.set('listings/L1', { ownerId: 'owner-1', wantsRealtorHelp: true, maxRealtors: 9, currentClaimsCount: 2 })
+    net.docs.set('properties/P1', { listedByUserId: 'owner-1' })
+    const s = useListingFormStore.getState()
+    s.startEdit('L1', 'P1')
+    s.updateData({
+      propertyType: 'terreno', operationType: 'venta', role: 'owner',
+      description: 'Terreno amplio con todos los servicios cerca de la avenida',
+      totalAreaInSquareMeters: 200, latitude: -5.19, longitude: -80.63, calle: 'Av. Grau 123',
+      distrito: 'Piura', provincia: 'Piura', departamento: 'Piura', amount: 60000, currency: 'USD',
+      existingPhotoUrls: ['property-photos/P1/1-0.webp'], originalExistingPhotoUrls: ['property-photos/P1/1-0.webp'],
+      // What the form loaded may be stale: the owner changed agent help on
+      // the card meanwhile. The save must not write this back.
+      wantsRealtorHelp: false, maxRealtors: 3,
+    })
+    s.markEditBaseline()
+    s.setStep(5)
+    renderStep()
+    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }))
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/app'), { timeout: 3000 })
+    const listing = net.docs.get('listings/L1')!
+    expect(listing.price).toEqual({ amount: 60000, currency: 'USD' })
+    expect(listing.wantsRealtorHelp).toBe(true)
+    expect(listing.maxRealtors).toBe(9)
+    const lastListingWrite = net.commits.filter((c) => c.includes('listings/L1')).length
+    expect(lastListingWrite).toBeGreaterThan(0)
   })
 })

@@ -13,6 +13,7 @@ vi.mock('@/hooks/useListings', () => ({
   useToggleListingStatus: () => ({ mutate: toggleMutate, isPending: false }),
   useDeleteListing: () => ({ mutate: vi.fn(), isPending: false }),
   useMarkListingClosed: () => ({ mutate: markClosedMutate, isPending: false }),
+  useSetRealtorHelp: () => ({ mutate: () => {}, isPending: false }),
 }))
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ setQueryData: vi.fn() }) }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => ({ user: { id: 'owner-1' } }) }))
@@ -107,7 +108,8 @@ describe('ListingCard — Vendido / Alquilado', () => {
     // Asks first, with the app's words — one click used to put it live.
     expect(toggleMutate).not.toHaveBeenCalled()
     expect(screen.getByText('¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Sí, re-publicar' }))
+    // One label everywhere (audit 2026-11-02). Was 'Sí, re-publicar'.
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, volver a publicar' }))
     expect(toggleMutate).toHaveBeenCalledWith(
       { listingId: 'L1', currentStatus: status },
       expect.anything(),

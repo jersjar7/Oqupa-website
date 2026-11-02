@@ -14,7 +14,7 @@
  * clicks "Aceptar" on an invitation.
  *
  * Legacy `?tab=reclamadas` links (older dashboards or bookmarks) redirect
- * to the Oportunidades → En Espera tab.
+ * to the Oportunidades → En espera tab.
  */
 import { useEffect, useMemo } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -34,8 +34,8 @@ import { isValidTab, filterAsignadasAccepted, type Tab } from './listingsHelpers
 export type { Tab }
 
 const TAB_SUBTITLES: Record<Tab, string> = {
-  propias:   'Listings que publicaste. Gestiónalos, destácalos y compártelos.',
-  asignadas: 'Propiedades donde aceptaste ser el agente. Trabaja con el propietario para cerrar la venta o alquiler.',
+  propias:   'Propiedades que publicaste. Gestiónalas, destácalas y compártelas.',
+  asignadas: 'Propiedades donde aceptaste ser el agente. Trabaja con el dueño para cerrar la venta o alquiler.',
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +47,7 @@ export default function ListingsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Legacy `?tab=reclamadas` → Oportunidades → En Espera. Run once on mount.
+  // Legacy `?tab=reclamadas` → Oportunidades → En espera. Run once on mount.
   useEffect(() => {
     if (searchParams.get('tab') === 'reclamadas') {
       navigate('/app/leads?tab=en-espera', { replace: true })
@@ -55,13 +55,13 @@ export default function ListingsPage() {
   }, [searchParams, navigate])
 
   useSetPageMeta({
-    title: 'Mis Propiedades',
+    title: 'Mis propiedades',
     subtitle: isVerifiedRealtor
       ? 'Gestiona tus propias propiedades y las que administras como agente.'
       : 'Gestiona tus propiedades publicadas.',
   })
 
-  const { data: items, isLoading, error } = useUserListingsWithProperties(user?.id)
+  const { data: items, isLoading, error, refetch } = useUserListingsWithProperties(user?.id)
   const agentAssignments = useAgentAssignments(isVerifiedRealtor ? user?.id : undefined)
 
   const tab: Tab = (() => {
@@ -114,7 +114,7 @@ export default function ListingsPage() {
 
       {/* Panes */}
       {(!isVerifiedRealtor || tab === 'propias') && (
-        <PropiasPane items={items} isLoading={isLoading} error={!!error} />
+        <PropiasPane items={items} isLoading={isLoading} error={!!error} refetch={refetch} />
       )}
 
       {isVerifiedRealtor && tab === 'asignadas' && (
@@ -198,11 +198,12 @@ function CountChip({ n, active }: { n: number; active: boolean }) {
 // Panes
 // ---------------------------------------------------------------------------
 function PropiasPane({
-  items, isLoading, error,
+  items, isLoading, error, refetch,
 }: {
   items: ReturnType<typeof useUserListingsWithProperties>['data']
   isLoading: boolean
   error: boolean
+  refetch: () => unknown
 }) {
   return (
     <AnimatePresence mode="wait">
@@ -226,10 +227,10 @@ function PropiasPane({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <p className="text-error">Error al cargar tus publicaciones</p>
+          <p className="text-error-strong">No pudimos cargar tus publicaciones. Revisa tu internet y vuelve a intentarlo.</p>
           <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-base text-secondary hover:text-secondary-hover"
+            onClick={() => void refetch()}
+            className="mt-3 min-h-11 rounded-full border-[1.5px] border-secondary px-6 font-sans text-sm font-bold uppercase tracking-[1px] text-secondary hover:text-secondary-hover"
           >
             Reintentar
           </button>
@@ -278,12 +279,12 @@ function AsignadasPane({
       <div className="mt-8 rounded-lg border border-dashed border-border bg-background-secondary/40 p-8 text-center">
         <p className="font-serif text-[22px] text-text-primary">Aún no gestionas propiedades como agente</p>
         <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
-          Las propiedades aparecen aquí cuando aceptas una invitación del propietario.
+          Las propiedades aparecen aquí cuando aceptas una invitación del dueño.
           Para recibir invitaciones, primero reclama una oportunidad en{' '}
           <Link to="/app/leads" className="font-medium text-secondary underline-offset-2 hover:underline">
             Oportunidades
           </Link>
-          . Si el propietario te elige, verás la invitación en{' '}
+          . Si el dueño te elige, verás la invitación en{' '}
           <Link to="/app/leads?tab=invitaciones" className="font-medium text-secondary underline-offset-2 hover:underline">
             Invitaciones
           </Link>

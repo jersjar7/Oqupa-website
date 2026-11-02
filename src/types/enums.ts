@@ -184,16 +184,17 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   draft: 'Borrador',
   paymentPending: 'Pago Pendiente',
   active: 'Activo',
-  expired: 'Vencido',
+  // ADR-014: listings never expire; an old `expired` reads as Desactivado.
+  expired: 'Desactivado',
   deactivated: 'Desactivado',
   sold: 'Vendido',
   rented: 'Alquilado',
 }
 
 export const LISTING_ROLE_LABELS: Record<ListingRole, string> = {
-  owner: 'Soy el propietario',
+  owner: 'Soy el dueño',
   realtor: 'Soy agente inmobiliario',
-  relative: 'Represento al propietario',
+  relative: 'Represento al dueño',
 }
 
 export const CONTACT_TIME_SLOT_LABELS: Record<ContactTimeSlot, string> = {

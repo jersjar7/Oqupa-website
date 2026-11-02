@@ -49,6 +49,20 @@ describe('FillingButton', () => {
     expect(b.className).not.toMatch(/gray-|green-|red-|#/)
   })
 
+  // ADR-043 D1: on the wizard's last page PUBLICAR is the one filled button,
+  // as SIGUIENTE is on the others; filling looks the same either way.
+  it('solid: at rest and as REINTENTAR a filled green button with a white label', () => {
+    const { rerender } = render(<FillingButton status="idle" solid>Publicar</FillingButton>)
+    const b = screen.getByRole('button', { name: 'Publicar' })
+    expect(b.className).toMatch(/\bbg-secondary\b/)
+    expect(b.className).toMatch(/\btext-white\b/)
+    rerender(<FillingButton status="error" solid>Publicar</FillingButton>)
+    expect(screen.getByRole('button', { name: 'REINTENTAR' }).className).toMatch(/\bbg-secondary\b/)
+    rerender(<FillingButton status="filling" solid>Publicar</FillingButton>)
+    expect(screen.getByRole('button').className).toMatch(/\bbg-secondary-pale\b/)
+    expect(screen.getByRole('button').className).not.toMatch(/\bbg-secondary\b(?!-)/)
+  })
+
   it('while filling: pale green track, brand green fill, white label on the fill, "PUBLICANDO…"', () => {
     render(<FillingButton status="filling">Publicar</FillingButton>)
     const b = screen.getByRole('button')

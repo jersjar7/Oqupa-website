@@ -13,3 +13,14 @@ export function activeFilterCount(f: MapFilters): number {
 export function filtersDoneLabel(count: number, isVenta: boolean): string {
   return `Listo · ${count} en ${isVenta ? 'venta' : 'alquiler'}`
 }
+
+/** "Limpiar": every filter off; Venta/Alquiler and the price currency stay. */
+export function clearedFilters(f: MapFilters): MapFilters {
+  return { ...f, rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null }
+}
+
+/** Both bounds typed and the minimum above the maximum: the price filter is
+ *  ignored and the panel says so (review 2026-11-02). */
+export function priceRangeInvalid(f: Pick<MapFilters, 'priceMin' | 'priceMax'>): boolean {
+  return f.priceMin != null && f.priceMax != null && f.priceMin > f.priceMax
+}

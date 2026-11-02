@@ -128,7 +128,7 @@ export default function SetPasswordPage() {
           'Este enlace expiró. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".'
         )
       } else if (message.includes('weak-password')) {
-        setSubmitError('La contraseña es muy débil. Usa al menos 6 caracteres.')
+        setSubmitError('La contraseña es muy débil. Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.')
       } else {
         setSubmitError('No pudimos configurar tu contraseña. Intenta de nuevo.')
       }

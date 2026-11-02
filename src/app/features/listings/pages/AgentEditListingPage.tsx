@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Info, Upload, X, Loader2 } from 'lucide-react'
+import { ArrowLeft, Info, X, Loader2 } from 'lucide-react'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
-import { storageService } from '@/services/storageService'
 import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Spinner } from '@/app/components/ui'
+import { callableErrorMessage } from '@/lib/friendlyErrors'
+import { agentEditParams } from '../agentEdit'
 
 export default function AgentEditListingPage() {
   const { id } = useParams<{ id: string }>()
@@ -15,28 +16,13 @@ export default function AgentEditListingPage() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const { data: result, isLoading, error } = useListingDetails(id)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [description, setDescription] = useState('')
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([])
-  const [newPhotos, setNewPhotos] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [initialized, setInitialized] = useState(false)
-
-  // Memoize blob URLs to avoid creating new ones on every render and enable cleanup
-  const newPhotoPreviewUrls = useMemo(
-    () => newPhotos.map((file) => URL.createObjectURL(file)),
-    [newPhotos],
-  )
-
-  // Revoke blob URLs on cleanup to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      newPhotoPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [newPhotoPreviewUrls])
 
   // Pre-fill form with existing data
   useEffect(() => {
@@ -52,21 +38,11 @@ export default function AgentEditListingPage() {
     const origRefs = result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls
     const refsChanged = existingPhotoUrls.length !== origRefs.length ||
       existingPhotoUrls.some((ref, i) => ref !== origRefs[i])
-    return descChanged || refsChanged || newPhotos.length > 0
+    return descChanged || refsChanged
   })()
 
   const handleRemoveExisting = (index: number) => {
     setExistingPhotoUrls(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleRemoveNew = (index: number) => {
-    setNewPhotos(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
-    setNewPhotos(prev => [...prev, ...files])
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleSubmit = async () => {
@@ -75,7 +51,7 @@ export default function AgentEditListingPage() {
       setSubmitError('La descripción no puede estar vacía')
       return
     }
-    if (existingPhotoUrls.length === 0 && newPhotos.length === 0) {
+    if (existingPhotoUrls.length === 0) {
       setSubmitError('Debes tener al menos una foto')
       return
     }
@@ -85,18 +61,7 @@ export default function AgentEditListingPage() {
     setSubmitError('')
 
     try {
-      let finalPhotoUrls = [...existingPhotoUrls]
-
-      // Upload new photos if any
-      if (newPhotos.length > 0) {
-        setSubmitStatus('Subiendo fotos...')
-        const uploadResults = await storageService.uploadMultiplePropertyPhotos(
-          result.property.id,
-          newPhotos,
-          (p) => setSubmitStatus(`Subiendo fotos... (${Math.round(p)}%)`)
-        )
-        finalPhotoUrls = [...finalPhotoUrls, ...uploadResults.map(r => r.objectKey)]
-      }
+      const finalPhotoUrls = [...existingPhotoUrls]
 
       setSubmitStatus('Guardando cambios...')
 
@@ -104,20 +69,16 @@ export default function AgentEditListingPage() {
       const functions = getFunctions(undefined, 'southamerica-east1')
       const updateAsAgent = httpsCallable(functions, 'updateListingAsAgent')
 
-      const params: Record<string, unknown> = { listingId: id }
+      // Photos go as photoKeys, as the app sends them (audit 2026-11-02).
+      const params = agentEditParams({
+        listingId: id,
+        description: trimmedDesc,
+        originalDescription: result.listing.description,
+        photoRefs: finalPhotoUrls,
+        originalPhotoRefs: result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls,
+      })
 
-      if (trimmedDesc !== result.listing.description) {
-        params.description = trimmedDesc
-      }
-
-      const origRefs = result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls
-      const refsChanged = finalPhotoUrls.length !== origRefs.length ||
-        finalPhotoUrls.some((ref, i) => ref !== origRefs[i])
-      if (refsChanged) {
-        params.propertyPhotoUrls = finalPhotoUrls
-      }
-
-      if (Object.keys(params).length > 1) {
+      if (params) {
         await updateAsAgent(params)
       }
 
@@ -127,8 +88,8 @@ export default function AgentEditListingPage() {
 
       navigate('/app', { replace: true })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error inesperado'
-      setSubmitError(message)
+      // Never the server's English or the SDK's own words.
+      setSubmitError(callableErrorMessage(err))
     } finally {
       setIsSubmitting(false)
       setSubmitStatus('')
@@ -146,7 +107,12 @@ export default function AgentEditListingPage() {
   if (error || !result) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
-        <p className="text-center text-error">Error al cargar el anuncio</p>
+        <p className="text-center text-error">
+          No pudimos abrir esta publicación. Revisa tu internet o vuelve a Mis propiedades.
+        </p>
+        <div className="mt-4 flex justify-center">
+          <Button onClick={() => navigate('/app/listings')}>Volver a Mis propiedades</Button>
+        </div>
       </div>
     )
   }
@@ -159,7 +125,7 @@ export default function AgentEditListingPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
         <p className="text-center text-error">
-          Solo puedes editar anuncios que hayas aceptado como agente
+          Solo puedes editar publicaciones que hayas aceptado como agente.
         </p>
       </div>
     )
@@ -171,20 +137,21 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="rounded-full p-1 text-text-secondary hover:bg-surface-muted"
+          aria-label="Volver"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-text-secondary hover:bg-surface-muted"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="font-sans text-[28px] font-medium text-text-primary">
-          Editar Anuncio
+        <h1 className="font-serif text-[28px] font-normal text-text-primary">
+          Editar publicación
         </h1>
       </div>
 
       {/* Info banner */}
-      <div className="mb-6 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
-        <p className="text-sm text-blue-800">
-          Como agente asignado, puedes editar la descripción y las fotos.
+      <div className="mb-6 flex items-start gap-2 rounded-lg border border-secondary/30 bg-secondary/10 p-3">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" />
+        <p className="text-sm text-text-primary">
+          Como agente asignado, puedes editar la descripción y quitar fotos.
         </p>
       </div>
 
@@ -227,9 +194,11 @@ export default function AgentEditListingPage() {
                   <button
                     onClick={() => handleRemoveExisting(index)}
                     aria-label={`Eliminar foto ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
                   >
-                    <X className="h-3 w-3" />
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-error text-white shadow-light">
+                      <X className="h-4 w-4" />
+                    </span>
                   </button>
                   {index === 0 && (
                     <span className="absolute bottom-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -238,45 +207,9 @@ export default function AgentEditListingPage() {
                   )}
                 </div>
               ))}
-
-              {/* New photos */}
-              {newPhotos.map((_file, index) => (
-                <div key={`new-${index}`} className="group relative aspect-square">
-                  <img
-                    src={newPhotoPreviewUrls[index]}
-                    alt={`Nueva foto ${index + 1}`}
-                    className="h-full w-full rounded-lg object-cover"
-                  />
-                  <button
-                    onClick={() => handleRemoveNew(index)}
-                    aria-label={`Eliminar foto nueva ${index + 1}`}
-                    className="absolute right-1 top-1 rounded-full bg-error p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-
-              {/* Add button */}
-              {existingPhotoUrls.length + newPhotos.length < 20 && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Agregar foto"
-                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-separator text-text-tertiary transition-colors hover:border-primary hover:text-primary"
-                >
-                  <Upload className="h-6 w-6" />
-                </button>
-              )}
             </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleAddPhotos}
-              className="hidden"
-            />
+            {/* getUploadUrl is owner-only for now (review 2026-11-02). */}
+            <p className="mt-3 text-sm text-text-secondary">Por ahora solo el dueño puede agregar fotos nuevas.</p>
           </div>
 
           {/* Error */}

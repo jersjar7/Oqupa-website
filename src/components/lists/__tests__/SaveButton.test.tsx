@@ -2,40 +2,33 @@
 // The heart on a listing card (Jerson, 2026-10-25, from his iPhone):
 // - on the slim map card: no grey circle, just the heart — a faded red
 //   outline, full red once saved;
-// - an empty heart saves at once (to "Guardados", the default list); a full
-//   heart opens "Guardar en" to change lists or un-save — a tap on an empty
-//   heart used to open the menu instead of saving;
-// - the menu opens upward when there is no room below (it ran off the bottom
-//   of the phone screen);
-// - a tap inside the menu never reaches the card under it (which opens the
-//   listing).
+// - a tap never reaches the card under it (which opens the listing).
+// ADR-046 #1 (2026-11-02): one Guardados, the app's store
+// (users/{uid}/favorites). An empty heart saves and a full heart un-saves, in
+// one tap, like the app — the "Guardar en" list menu is gone.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import SaveButton, { popoverTop } from '../SaveButton'
-import { listService } from '@/services/listService'
-import type { UserList } from '@/types/userList'
+import SaveButton from '../SaveButton'
+import { favoritesService } from '@/services/favoritesService'
+import { toast } from 'sonner'
 
-vi.mock('@/services/listService', () => ({
-  listService: { addListing: vi.fn(async () => {}), removeListing: vi.fn(async () => {}), createList: vi.fn(async () => 'new'), ensureDefaultList: vi.fn(async () => 'guardados') },
+vi.mock('@/services/favoritesService', () => ({
+  favoritesService: { add: vi.fn(async () => {}), remove: vi.fn(async () => {}) },
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, lists: [] as unknown[], loadedUid: 'u1' as string | null }))
+const state = vi.hoisted(() => ({ firebaseUser: null as unknown, user: null as unknown, ids: [] as string[], loadedUid: 'u1' as string | null, loadFailed: false }))
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: (sel: (s: typeof state) => unknown) => sel(state),
 }))
-vi.mock('@/stores/listStore', () => ({
-  useListStore: (sel: (s: typeof state) => unknown) => sel(state),
-  isSavedInAnyList: (lists: { listingIds: string[] }[], id: string) => lists.some((l) => l.listingIds.includes(id)),
+vi.mock('@/stores/favoritesStore', () => ({
+  useFavoritesStore: (sel: (s: typeof state) => unknown) => sel(state),
 }))
 
-const list = (id: string, name: string, listingIds: string[], isDefault = false): UserList =>
-  ({ id, name, listingIds, isDefault, createdAt: new Date() })
-
-function setup(lists: UserList[], onCardClick = vi.fn()) {
+function setup(ids: string[], onCardClick = vi.fn()) {
   state.firebaseUser = { uid: 'u1', emailVerified: true }
   state.user = { name: 'Ana', isPhoneVerified: true }
-  state.lists = lists
+  state.ids = ids
   render(
     <MemoryRouter>
       <div onClick={onCardClick}>
@@ -50,7 +43,7 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('SaveButton on the slim card', () => {
   it('no grey circle: an outline heart, faded red', () => {
-    setup([list('d', 'Guardados', [], true)])
+    setup([])
     const button = screen.getByRole('button', { name: /guardar propiedad/i })
     expect(button.className).not.toMatch(/bg-black/)
     const heart = button.querySelector('svg')!
@@ -58,37 +51,38 @@ describe('SaveButton on the slim card', () => {
     expect(heart.getAttribute('class')).toMatch(/fill-transparent/)
   })
   it('saved: a full red heart', () => {
-    setup([list('d', 'Guardados', ['L1'], true)])
-    const heart = screen.getByRole('button', { name: /administrar listas/i }).querySelector('svg')!
+    setup(['L1'])
+    const heart = screen.getByRole('button', { name: /quitar de guardados/i }).querySelector('svg')!
     expect(heart.getAttribute('class')).toMatch(/fill-error/)
   })
-  it('an empty heart saves at once to the default list, without a menu', async () => {
-    const card = setup([list('other', 'Playa', []), list('d', 'Guardados', [], true)])
+  it('an empty heart saves at once into Guardados, without a menu or reaching the card', async () => {
+    const card = setup([])
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
-    await waitFor(() => expect(listService.addListing).toHaveBeenCalledWith('u1', 'd', 'L1'))
+    await waitFor(() => expect(favoritesService.add).toHaveBeenCalledWith('u1', 'L1'))
     expect(screen.queryByText(/guardar en/i)).toBeNull()
     expect(card).not.toHaveBeenCalled()
+    // "Guardado" on every save, as in the app (audit 2026-11-02).
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Guardado'))
   })
-  it('a full heart opens "Guardar en"; a tap in it never reaches the card', () => {
-    const card = setup([list('d', 'Guardados', ['L1'], true)])
-    fireEvent.click(screen.getByRole('button', { name: /administrar listas/i }))
-    expect(screen.getByText(/guardar en/i)).toBeDefined()
-    fireEvent.click(screen.getByText('Guardados'))
-    expect(listService.removeListing).toHaveBeenCalledWith('u1', 'd', 'L1')
+  it('a full heart un-saves in one tap, in the app’s words, without reaching the card', async () => {
+    const card = setup(['L1'])
+    fireEvent.click(screen.getByRole('button', { name: /quitar de guardados/i }))
+    await waitFor(() => expect(favoritesService.remove).toHaveBeenCalledWith('u1', 'L1'))
+    expect(screen.queryByText(/guardar en/i)).toBeNull()
     expect(card).not.toHaveBeenCalled()
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Quitado de Guardados'))
   })
-})
-
-describe('popoverTop', () => {
-  const vh = 800
-  it('below the heart when it fits', () => {
-    expect(popoverTop({ anchorTop: 100, anchorBottom: 132, popoverHeight: 150, viewportHeight: vh })).toBe(138)
+  it('a failed save or un-save says so', async () => {
+    vi.mocked(favoritesService.add).mockRejectedValueOnce(new Error('offline'))
+    setup([])
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No se pudo guardar'))
   })
-  it('above the heart when it would run off the bottom', () => {
-    expect(popoverTop({ anchorTop: 700, anchorBottom: 732, popoverHeight: 150, viewportHeight: vh })).toBe(700 - 6 - 150)
-  })
-  it('never above the top of the screen', () => {
-    expect(popoverTop({ anchorTop: 100, anchorBottom: 132, popoverHeight: 760, viewportHeight: vh })).toBeGreaterThanOrEqual(8)
+  it('a failed un-save says so', async () => {
+    vi.mocked(favoritesService.remove).mockRejectedValueOnce(new Error('offline'))
+    setup(['L1'])
+    fireEvent.click(screen.getByRole('button', { name: /quitar de guardados/i }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No se pudo quitar de Guardados. Vuelve a intentarlo.'))
   })
 })
 
@@ -100,7 +94,7 @@ describe('SaveButton for a visitor', () => {
     localStorage.clear()
     useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
     state.firebaseUser = null
-    state.lists = []
+    state.ids = []
     render(
       <MemoryRouter initialEntries={['/explorar']}>
         <SaveButton listingId="L9" variant="plain" />
@@ -112,6 +106,7 @@ describe('SaveButton for a visitor', () => {
     expect(full.querySelector('svg')!.getAttribute('class')).toMatch(/fill-error/)
     fireEvent.click(full)
     expect(useDeviceSavesStore.getState().ids).toEqual([])
+    expect(favoritesService.add).not.toHaveBeenCalled()
   })
 })
 
@@ -121,26 +116,24 @@ describe('SaveButton for an account still being set up', () => {
     useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
     state.firebaseUser = { uid: 'u1', emailVerified: false }
     state.user = { name: 'Ana', isPhoneVerified: false }
-    state.lists = []
+    state.ids = []
     render(<MemoryRouter><SaveButton listingId="L7" variant="plain" /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
     expect(useDeviceSavesStore.getState().ids).toEqual(['L7'])
-    expect(listService.addListing).not.toHaveBeenCalled()
+    expect(favoritesService.add).not.toHaveBeenCalled()
   })
 })
 
-
 // Re-review, 2026-10-25.
 describe('SaveButton — edges from the re-review', () => {
-  it('an account still being set up: a listing already in its lists shows saved, and opens the menu', () => {
+  it('an account still being set up: a listing already in its Guardados shows saved, and one tap un-saves it there', async () => {
     useDeviceSavesStore.setState({ ids: [], nudgeOpen: false })
     state.firebaseUser = { uid: 'u1', emailVerified: true }
     state.user = { name: 'Ana', isPhoneVerified: false }
-    state.lists = [list('d', 'Guardados', ['L1'], true)]
+    state.ids = ['L1']
     render(<MemoryRouter><SaveButton listingId="L1" variant="plain" /></MemoryRouter>)
-    const heart = screen.getByRole('button', { name: /administrar listas/i })
-    fireEvent.click(heart)
-    expect(screen.getByText(/guardar en/i)).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: /quitar de guardados/i }))
+    await waitFor(() => expect(favoritesService.remove).toHaveBeenCalledWith('u1', 'L1'))
     expect(useDeviceSavesStore.getState().ids).toEqual([])
   })
   it("someone with an account never uses up the visitor's card", () => {
@@ -149,22 +142,35 @@ describe('SaveButton — edges from the re-review', () => {
     localStorage.setItem('oqupa_guardados', JSON.stringify(['x', 'y']))
     state.firebaseUser = { uid: 'u1', emailVerified: false }
     state.user = { name: 'Ana', isPhoneVerified: false }
-    state.lists = []
+    state.ids = []
     render(<MemoryRouter><SaveButton listingId="L3" variant="plain" /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
     expect(useDeviceSavesStore.getState().ids).toEqual(['x', 'y', 'L3'])
     expect(useDeviceSavesStore.getState().nudgeOpen).toBe(false)
     expect(localStorage.getItem('oqupa_guardados_aviso')).toBeNull()
   })
-  it('a ready account whose lists have not arrived yet: the heart waits (no second Guardados)', async () => {
+  it('a ready account whose Guardados has not arrived yet: the heart waits', async () => {
     state.firebaseUser = { uid: 'u1', emailVerified: true }
     state.user = { name: 'Ana', isPhoneVerified: true }
-    state.lists = []
+    state.ids = []
     state.loadedUid = null
     render(<MemoryRouter><SaveButton listingId="L4" variant="plain" /></MemoryRouter>)
     fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
     await new Promise((r) => setTimeout(r, 0))
-    expect(listService.addListing).not.toHaveBeenCalled()
+    expect(favoritesService.add).not.toHaveBeenCalled()
     state.loadedUid = 'u1'
+  })
+  it('Guardados failed to load: the heart says so instead of doing nothing (audit 2026-11-02)', async () => {
+    state.firebaseUser = { uid: 'u1', emailVerified: true }
+    state.user = { name: 'Ana', isPhoneVerified: true }
+    state.ids = []
+    state.loadedUid = null
+    state.loadFailed = true
+    render(<MemoryRouter><SaveButton listingId="L5" variant="plain" /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /guardar propiedad/i }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No pudimos cargar tus guardados. Vuelve a intentarlo.'))
+    expect(favoritesService.add).not.toHaveBeenCalled()
+    state.loadedUid = 'u1'
+    state.loadFailed = false
   })
 })

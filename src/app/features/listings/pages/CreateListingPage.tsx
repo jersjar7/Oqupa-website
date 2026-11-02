@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
@@ -8,6 +8,7 @@ import WizardStep2 from '../components/WizardStep2'
 import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
 import WizardStep5 from '../components/WizardStep5'
+import { useScrollTopOnPageChange } from '../useWizardPageChange'
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -29,21 +30,31 @@ export default function CreateListingPage() {
     title: 'Crear Publicación',
     subtitle: 'Completa los datos de tu propiedad',
   })
-  const { step, direction, isEditMode, reset } = useListingFormStore()
+  const { step, direction, reset, leaveEdit, draftVersion } = useListingFormStore()
+  const top = useRef<HTMLDivElement>(null)
+  useScrollTopOnPageChange(step, top)
 
-  // Reset if coming from edit mode (only on mount)
-  useEffect(() => {
-    if (isEditMode) reset()
-  }, [isEditMode, reset])
-
-  // A draft that was already published (the person left during publishing,
-  // or in the moment "¡PUBLICADO!" showed) is done: start a fresh one.
-  useEffect(() => {
-    if (useListingFormStore.getState().publishedListingId) reset()
-  }, [reset])
+  // Opened over an edit, or over a draft that was already published (the
+  // person left during publishing, or in the moment "¡PUBLICADO!" showed):
+  // start a fresh one — before anything is painted, so the old page (an
+  // edit's address included) never flashes on screen (third review #1).
+  // An edit in memory goes back to the stored draft — never cleared: the
+  // unfinished new listing and its photos are kept (hostile review #3).
+  const [staleAtOpen] = useState(() => {
+    const s = useListingFormStore.getState()
+    return s.isEditMode ? 'edit' : s.publishedListingId ? 'published' : null
+  })
+  const [fresh, setFresh] = useState(!staleAtOpen)
+  useLayoutEffect(() => {
+    if (!staleAtOpen) return
+    if (staleAtOpen === 'edit') leaveEdit()
+    else reset()
+    setFresh(true)
+  }, [staleAtOpen, reset, leaveEdit])
+  if (!fresh) return null
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+    <div ref={top} className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       {/* Title lives in the Topbar via useSetPageMeta */}
 
       <div className="mt-2">
@@ -51,7 +62,7 @@ export default function CreateListingPage() {
 
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
-            key={step}
+            key={`${step}-${draftVersion}`}
             custom={direction}
             variants={stepVariants}
             initial="initial"

@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
+import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
-import { Badge, Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
+import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
 import { LISTING_STATUS_TONE } from '@/lib/listingStatusTone'
-import { useToggleListingStatus, useDeleteListing, useMarkListingClosed } from '@/hooks/useListings'
+import { useToggleListingStatus, useDeleteListing, useMarkListingClosed, useSetRealtorHelp } from '@/hooks/useListings'
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
@@ -20,11 +21,16 @@ import {
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
+import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
 
 interface ListingCardProps {
   listing: Listing
   property: Property
 }
+
+/** A brand action: Gotham Bold, uppercase, tracked, 44px (audit 2026-11-02). */
+const ACTION =
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-secondary/40 px-3 font-sans text-xs font-bold uppercase tracking-[1px] text-secondary transition-colors hover:border-secondary hover:text-secondary-hover disabled:opacity-50'
 
 function formatPrice(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency
@@ -43,6 +49,9 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showCloseSurvey, setShowCloseSurvey] = useState(false)
   const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
+  const setRealtorHelp = useSetRealtorHelp()
+  const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
+  const [showRealtorHelpOff, setShowRealtorHelpOff] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -77,11 +86,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const isClosed = listing.status === 'sold' || listing.status === 'rented'
   // Sold / rented listings can be published again, as in the app.
-  const canToggle = listing.status === 'active' || listing.status === 'deactivated' || isClosed
+  // An old 'expired' reads Desactivado (ADR-014) and gets its actions.
+  const isOff = listing.status === 'deactivated' || listing.status === 'expired'
+  const canToggle = listing.status === 'active' || isOff || isClosed
   // Same rule and wording as the app: only an active listing, and only the
   // action that matches how it is offered.
   const isRental = property.operationType === 'alquiler'
   const canClose = listing.status === 'active'
+  const canDelete = isOff || isClosed
   // Deactivating does not pause a boost: the expiry job ignores status, so the
   // paid days keep running and nothing is returned. A boosted listing asks
   // first and says so; an unboosted one has nothing to lose.
@@ -130,10 +142,10 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{property.specs.bedroomCount} hab.</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
           )}
-          {property.specs.bathroomCount != null && (
-            <span>{property.specs.bathroomCount} baño{property.specs.bathroomCount !== 1 ? 's' : ''}</span>
+          {bathroomsLabel(property.specs.bathroomCount) && (
+            <span>{bathroomsLabel(property.specs.bathroomCount)}</span>
           )}
           {property.specs.totalAreaInSquareMeters > 0 && (
             <span>{property.specs.totalAreaInSquareMeters} m²</span>
@@ -166,9 +178,9 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             {(openFlow) => (
               <button
                 onClick={openFlow}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-boost/20 px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-boost/30"
+                className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-boost px-4 font-sans text-sm font-bold uppercase tracking-[1px] text-ink transition-colors hover:bg-boost-hover"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
                 Destacar mi propiedad
               </button>
             )}
@@ -181,13 +193,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {(listing.wantsRealtorHelp || listing.assignedRealtorId) && listing.status === 'active' && (
           <div className="mt-2">
             {listing.assignedRealtorId ? (
-              <Link to={`/app/listings/${listing.id}/agents`} className="inline-flex">
-                <Badge variant="info">Agente asignado</Badge>
+              <Link to={`/app/listings/${listing.id}/agents`} className="inline-flex min-h-11 items-center">
+                <span className="text-xs font-medium text-secondary">Agente asignado</span>
               </Link>
             ) : (
               <Link
                 to={`/app/listings/${listing.id}/agents`}
-                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover"
+                className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-secondary hover:text-secondary-hover"
               >
                 <Users className="h-3.5 w-3.5" />
                 {listing.currentClaimsCount > 0
@@ -198,26 +210,99 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           </div>
         )}
 
-        {/* Actions — pinned to the bottom via mt-auto */}
-        <div className="mt-auto pt-4 flex flex-wrap gap-2">
-          <Link to={`/app/listings/${listing.id}/edit`} className="flex-1">
-            <Button variant="text" className="w-full">
-              <Pencil className="h-4 w-4" />
-              Editar
-            </Button>
+        {/* Agent help (ADR-043 D10): offered here after publishing, off
+            until the owner turns it on. With an agent assigned the agents
+            page above handles it. */}
+        {listing.status === 'active' && !listing.assignedRealtorId && (
+          <div className="mt-2">
+            {listing.wantsRealtorHelp ? (
+              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
+                Desactivar ayuda de agentes
+              </button>
+            ) : (
+              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOffer(true)}>
+                <Users className="h-4 w-4" aria-hidden="true" />
+                Ayuda de agentes
+              </button>
+            )}
+          </div>
+        )}
+        {/* Turning it off releases and notifies the agents: it asks first,
+            with the app's words (hostile review #5). */}
+        {showRealtorHelpOff && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">¿Desactivar la ayuda de agentes?</p>
+            {realtorHelpDisableWarning({ assignmentStatus: listing.assignmentStatus, claimsCount: listing.currentClaimsCount ?? 0 }) && (
+              <p className="mt-1 text-sm text-text-secondary">
+                {realtorHelpDisableWarning({ assignmentStatus: listing.assignmentStatus, claimsCount: listing.currentClaimsCount ?? 0 })}
+              </p>
+            )}
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                className="min-h-11 px-3"
+                isLoading={setRealtorHelp.isPending}
+                onClick={() =>
+                  setRealtorHelp.mutate(
+                    { listingId: listing.id, on: false },
+                    { onSuccess: () => setShowRealtorHelpOff(false) },
+                  )
+                }
+              >
+                Sí, desactivar
+              </Button>
+              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOff(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+        {showRealtorHelpOffer && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm text-text-secondary">
+              {`Agentes verificados por Oqupa podrán ofrecerte ayuda para ${isRental ? 'alquilar' : 'vender'} tu propiedad. Oqupa no cobra comisiones por este servicio.`}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                className="min-h-11 px-3"
+                isLoading={setRealtorHelp.isPending}
+                onClick={() =>
+                  setRealtorHelp.mutate(
+                    { listingId: listing.id, on: true },
+                    { onSuccess: () => setShowRealtorHelpOffer(false) },
+                  )
+                }
+              >
+                Sí, activar
+              </Button>
+              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOffer(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Actions — pinned to the bottom via mt-auto. Brand buttons, 44px
+            tall (audit 2026-11-02: they were small lowercase text links). */}
+        <div className="mt-auto flex flex-wrap gap-2 pt-4">
+          <Link to={`/app/listings/${listing.id}/edit`} className={`${ACTION} flex-1`}>
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+            Editar
           </Link>
           {listing.status === 'active' && (
-            <Button variant="text" onClick={() => setShowShareModal(true)}>
-              <Share2 className="h-4 w-4" />
+            <button type="button" className={ACTION} onClick={() => setShowShareModal(true)}>
+              <Share2 className="h-4 w-4" aria-hidden="true" />
               Compartir
-            </Button>
+            </button>
           )}
           {canToggle && (
-            <Button
-              variant="text"
-              isLoading={toggleStatus.isPending}
+            <button
+              type="button"
+              className={ACTION}
+              disabled={toggleStatus.isPending}
               onClick={() =>
-                isClosed
+                listing.status !== 'active'
                   ? setShowRepublishConfirm(true)
                   : asksBeforeDeactivating
                   ? setShowDeactivateConfirm(true)
@@ -229,32 +314,36 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             >
               {listing.status === 'active' ? (
                 <>
-                  <PowerOff className="h-4 w-4" />
+                  <PowerOff className="h-4 w-4" aria-hidden="true" />
                   Desactivar
                 </>
               ) : (
                 <>
-                  <Power className="h-4 w-4" />
-                  {isClosed ? 'Volver a publicar' : 'Activar'}
+                  <Power className="h-4 w-4" aria-hidden="true" />
+                  Volver a publicar
                 </>
               )}
-            </Button>
+            </button>
           )}
           {canClose && (
-            <Button variant="text" onClick={() => setShowCloseConfirm(true)}>
-              <CheckCircle2 className="h-4 w-4" />
+            <button type="button" className={ACTION} onClick={() => setShowCloseConfirm(true)}>
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               {isRental ? 'Marcar como alquilado' : 'Marcar como vendido'}
-            </Button>
+            </button>
           )}
-          {listing.status === 'deactivated' && (
-            <Button
-              variant="text"
-              className="text-error hover:text-error-strong"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </Button>
+          {/* Deactivated, Vendido or Alquilado can be deleted directly
+              (ADR-046 #14); set apart from the other actions. */}
+          {canDelete && (
+            <div className="mt-2 w-full border-t border-border pt-2">
+              <button
+                type="button"
+                className={`${ACTION} border-error/40 text-error hover:border-error hover:text-error-strong`}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                Eliminar
+              </button>
+            </div>
           )}
         </div>
 
@@ -266,8 +355,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             </p>
             <div className="mt-2 flex gap-2">
               <Button
-                variant="text"
-                className="text-error hover:text-error-strong"
+                variant="danger"
                 isLoading={deleteListing.isPending}
                 onClick={() =>
                   deleteListing.mutate(
@@ -276,10 +364,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                   )
                 }
               >
-                Eliminar
+                Sí, eliminar
               </Button>
               <Button
                 variant="text"
+                className="min-h-11 px-3"
                 onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancelar
@@ -355,10 +444,11 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           </div>
         )}
 
-        {/* Re-publish a sold / rented listing — the app's confirmation */}
+        {/* Put back on the map (deactivated, sold or rented) — the app's
+            confirmation, now for every case (audit 2026-11-02) */}
         {showRepublishConfirm && (
           <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
-            <p className="text-sm font-medium text-text-primary">Re-publicar propiedad</p>
+            <p className="text-sm font-medium text-text-primary">Volver a publicar</p>
             <p className="mt-1 text-sm text-text-secondary">
               ¿Quieres volver a publicar esta propiedad? Se mantendrá activa hasta que la desactives.
             </p>
@@ -373,7 +463,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                   )
                 }
               >
-                Sí, re-publicar
+                Sí, volver a publicar
               </Button>
               <Button variant="text" onClick={() => setShowRepublishConfirm(false)}>
                 Cancelar
