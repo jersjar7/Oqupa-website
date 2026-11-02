@@ -54,6 +54,30 @@ describe('listing status badge', () => {
     const dot = badge.querySelector('span')!
     expect(dot.className).not.toMatch(/bg-error|red-/)
   })
+
+  // One look on both platforms (feature audit 2026-11-02): the app's pill —
+  // white over the photo, ink label, 10.5 px, a 6 px dot. The website drew a
+  // black 60 % pill with white text, a different component to the eye.
+  it('is the app pill: white, ink label, 10.5 px, 6 px dot', () => {
+    render(<PhotoOverlayBadge tone="success">Activo</PhotoOverlayBadge>)
+    const badge = screen.getByText('Activo')
+    expect(badge.className).toMatch(/\bbg-white\/90\b/)
+    expect(badge.className).toMatch(/\btext-text-primary\b/)
+    expect(badge.className).toMatch(/text-\[10\.5px\]/)
+    expect(badge.className).not.toMatch(/bg-black|text-white/)
+    const dot = badge.querySelector('span')!
+    expect(dot.className).toMatch(/\bh-1\.5\b/)
+    expect(dot.className).toMatch(/\bw-1\.5\b/)
+    expect(dot.className).toMatch(/\bbg-success\b/)
+  })
+
+  it('a closed status reads grey, label and dot, as on the app', () => {
+    render(<PhotoOverlayBadge tone="neutral">Vendido</PhotoOverlayBadge>)
+    const badge = screen.getByText('Vendido')
+    expect(badge.className).toMatch(/\btext-text-tertiary\b/)
+    expect(badge.className).not.toMatch(/\btext-text-primary\b/)
+    expect(badge.querySelector('span')!.className).toMatch(/\bbg-text-tertiary\b/)
+  })
 })
 
 describe('Button labels', () => {
