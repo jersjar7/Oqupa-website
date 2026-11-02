@@ -53,8 +53,9 @@ describe('usePhotoQueue', () => {
     expect(new Set(ids).size).toBe(3)
   })
 
-  it('addFiles appends new files capped at MAX_PHOTOS (25)', () => {
-    const seedFiles = Array.from({ length: 24 }, (_, i) => fakeFile(`s${i}.jpg`))
+  // ADR-043 D8 / D18: the maximum is 20 on both platforms (was 25 here).
+  it('addFiles appends new files capped at MAX_PHOTOS (20)', () => {
+    const seedFiles = Array.from({ length: 19 }, (_, i) => fakeFile(`s${i}.jpg`))
     const { result } = renderHook(() =>
       usePhotoQueue({
         existingPhotoUrls: [],
@@ -67,7 +68,7 @@ describe('usePhotoQueue', () => {
       result.current.addFiles([fakeFile('extra1.jpg'), fakeFile('extra2.jpg')])
     })
 
-    expect(result.current.items).toHaveLength(25)
+    expect(result.current.items).toHaveLength(20)
   })
 
   it('remove drops the item at the given index', () => {
@@ -202,7 +203,7 @@ describe('usePhotoQueue', () => {
   })
 
   it('addFiles does nothing when already at MAX_PHOTOS cap', () => {
-    const seedFiles = Array.from({ length: 25 }, (_, i) => fakeFile(`s${i}.jpg`))
+    const seedFiles = Array.from({ length: 20 }, (_, i) => fakeFile(`s${i}.jpg`))
     const { result } = renderHook(() =>
       usePhotoQueue({
         existingPhotoUrls: [],
@@ -215,7 +216,7 @@ describe('usePhotoQueue', () => {
       result.current.addFiles([fakeFile('overflow.jpg')])
     })
 
-    expect(result.current.items).toHaveLength(25)
+    expect(result.current.items).toHaveLength(20)
   })
 
   it('previewUrls map contains one entry per unique new-file', () => {
