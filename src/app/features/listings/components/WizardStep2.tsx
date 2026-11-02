@@ -90,7 +90,8 @@ export default function WizardStep2() {
   function onSubmit(formData: Step2Data) {
     const baths = formData.bathroomCount ?? null
     updateData({
-      description: formData.description,
+      // Saved without spaces at the ends, as the app saves it.
+      description: formData.description.trim(),
       totalAreaInSquareMeters: formData.totalAreaInSquareMeters,
       bedroomCount: hasRooms ? formData.bedroomCount ?? null : null,
       // Oficina / Local: 0 baños is "not said", as the app keeps it.
