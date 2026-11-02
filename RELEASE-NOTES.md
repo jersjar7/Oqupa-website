@@ -4,6 +4,32 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-02 — Publishing can't make a second copy; the PUBLICAR button fills (ADR-043 step 2)
+
+Decided by Claude under Jerson's standing instruction (2026-11-02, "Follow through with your recommendations"); on
+staging since 2026-11-01, verified there by outcome (one listing per publish, lands on the new listing).
+
+### New Features
+- One publish identity per draft: pressing PUBLICAR again, retrying after an error, or refreshing can never create a
+  second listing. Photos upload first (4 at a time, 30 s each); property and listing are saved together in one step.
+- The PUBLICAR button fills while publishing (fast to 70%, slow to 90%, 100% and "¡PUBLICADO!" only once saved) and
+  becomes REINTENTAR on failure. After publishing, the person lands on the new listing, which offers to share it.
+
+### UX Improvements
+- A specific Spanish message for each reason publishing fails (no internet, slow connection, server down, signed out,
+  account not allowed, photo can't be opened, photo refused), and "Algo salió mal. Verifica tus datos y vuelve a
+  intentarlo." for anything else. No message mentions duplicates (Jerson, 2026-11-02).
+
+### Legal
+- Privacidad no longer lists "Recordatorios de expiración de anuncios" among the push notifications: listings never expire and no such reminder is sent (ADR-014). Its "Última actualización" date moves with this change.
+
+### Bug Fixes
+- The owner dashboard no longer says "N caducan en menos de 7 días" (listings never expire, ADR-014); it says how many listings are not shown on the map.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-01 (evening) — Legal dates update themselves
 
 ### Legal

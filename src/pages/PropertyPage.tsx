@@ -24,6 +24,8 @@ import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
 import { AnimatedImage } from '@/app/components/ui'
 import ShareFormatModal from '@/components/ShareFormatModal'
+import PublishedSharePrompt from '@/components/PublishedSharePrompt'
+import { useJustPublished } from '@/hooks/useJustPublished'
 import GalleryModal from '@/app/components/GalleryModal'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
 import AppStoreBadges from '@/components/AppStoreBadges'
@@ -231,6 +233,8 @@ export default function PropertyPage() {
   // page, which shows the number as verified.
   const [phoneNeedsReverification, setPhoneNeedsReverification] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  // Arrived straight from publishing (ADR-043): offer to share, once.
+  const { justPublished, dismiss: dismissPublished } = useJustPublished()
   // MUST stay up here with the other hooks. This lived further down, next to
   // the WhatsApp handler it belongs to, where it replaced a plain `const` in
   // ADR-015 Phase 3.4 — but that spot is BELOW the `isLoading` and `not found`
@@ -724,6 +728,11 @@ export default function PropertyPage() {
           </aside>
         </div>
       </motion.div>
+
+      {/* Just published: the share prompt the wizard used to show */}
+      {justPublished && isOwner && (
+        <PublishedSharePrompt listing={listing} property={property} onClose={dismissPublished} />
+      )}
 
       {/* Share format modal */}
       {listing && property && (

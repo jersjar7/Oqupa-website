@@ -195,7 +195,6 @@ export default function PrivacyPage() {
             <li>Reclamos de leads por parte de asesores inmobiliarios.</li>
             <li>Cambios en el estado de tus anuncios.</li>
             <li>Revisiones de tu solicitud como asesor inmobiliario.</li>
-            <li>Recordatorios de expiración de anuncios.</li>
           </ul>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Para enviarte notificaciones, almacenamos un token de dispositivo

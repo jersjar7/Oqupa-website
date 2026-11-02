@@ -36,7 +36,7 @@ import { useViewAs } from '@/app/components/shell/viewAsContext'
 import StatCard from '../components/StatCard'
 import RecentActivity from '../components/RecentActivity'
 import {
-  nextClaimResetText, countExpiringSoon, countPublishedSince,
+  nextClaimResetText, activeListingsNote, countPublishedSince,
   spendThisMonthSoles, buildSubtitle,
 } from './dashboardHelpers'
 
@@ -85,16 +85,9 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
   const active = listings.filter(({ listing }) => listing.status === 'active').length
   const boosted = listings.filter(({ listing }) => listing.isBoosted).length
   const totalViews = listings.reduce((sum, { listing }) => sum + (listing.viewCount ?? 0), 0)
-  const expiringSoon = countExpiringSoon(listings)
   const monthlySpend = spendThisMonthSoles(payments)
 
-  const activeSub = expiringSoon > 0
-    ? `${expiringSoon} ${expiringSoon === 1 ? 'caduca' : 'caducan'} en menos de 7 días`
-    : listings.length > active
-      ? `${listings.length - active} en borrador o expirados`
-      : listings.length === 0
-        ? 'Crea tu primer anuncio para empezar'
-        : undefined
+  const activeSub = activeListingsNote(listings.length, active)
 
   const boostedSub = (() => {
     const ratio = listings.length > 0 ? `${boosted} de ${listings.length} anuncios` : 'Activa uno para destacar'
@@ -114,7 +107,6 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
         label="Anuncios activos"
         value={isLoading ? '—' : active}
         sub={activeSub}
-        tone={expiringSoon > 0 ? 'warning' : 'default'}
         icon={<Briefcase className="h-6 w-6 text-secondary" />}
       />
       <StatCard
