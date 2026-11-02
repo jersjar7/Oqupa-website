@@ -1,9 +1,9 @@
 // The public site, as a visitor, at computer, tablet and phone size. What the
 // map, the list, the hearts and the doors promise on screen (ADR-030..034,
 // docs/map-in-words-plan.md) — checked by doing it.
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page, type Locator } from '@playwright/test'
 import {
-  asVisitor, collectPageErrors, openExplore, pins, dots, raised, tappableMarker,
+  asVisitor, collectPageErrors, emptyMapPoint, openExplore, pins, dots, raised, tappableMarker,
   noHorizontalOverflow, shot, cutTexts, textLines, isPhone, deviceSaves, someListing, PIURA_FAR, NUDGE_KEY,
 } from './helpers'
 
@@ -27,6 +27,15 @@ const listHeader = (page: Page) => page.locator('[data-testid="map-list-header"]
 const listCards = (page: Page) => page.locator('[data-testid="listing-list-card"]:visible')
 
 /** The listing's own card on the map: beside the pin on a computer, at the bottom on a phone. */
+async function cardInsideMap(page: Page, card: Locator) {
+  const map = (await page.getByTestId('explore-map').boundingBox())!
+  const c = (await card.boundingBox())!
+  expect(c.x).toBeGreaterThanOrEqual(map.x)
+  expect(c.y).toBeGreaterThanOrEqual(map.y)
+  expect(c.x + c.width).toBeLessThanOrEqual(map.x + map.width + 0.5)
+  expect(c.y + c.height).toBeLessThanOrEqual(map.y + map.height + 0.5)
+}
+
 const mapCard = (page: Page, phone: boolean) =>
   phone ? page.getByRole('dialog', { name: 'Detalle de la propiedad' }) : page.getByTestId('compact-listing-card')
 
@@ -105,11 +114,16 @@ test.describe('the map', () => {
       expect(Math.abs(after.x - before.x)).toBeLessThan(2)
       expect(Math.abs(after.y - before.y)).toBeLessThan(2)
     }
+    // Tablet/computer: the floating card is wholly inside the map, whatever
+    // dot was tapped (production 2026-11-02: cut off at the left edge).
+    if (!isPhone(info)) await cardInsideMap(page, card)
     await shot(page, info, '02-dot-raised-and-card')
 
     // Closing the card (a tap on the map) drops the pin back into its dot.
-    const box = (await page.getByTestId('explore-map').boundingBox())!
-    await page.mouse.click(box.x + 20, box.y + box.height / 2)
+    // A point checked to be bare map: a fixed spot could land on a marker or
+    // on the card itself (it did, at tablet size).
+    const bare = await emptyMapPoint(page)
+    await page.mouse.click(bare.x, bare.y)
     await expect(raised(page)).toHaveCount(0)
     await expect(card).toBeHidden()
     await shot(page, info, '03-card-closed')
@@ -131,6 +145,15 @@ test.describe('the map', () => {
     const card = mapCard(page, isPhone(info))
     await expect(card).toBeVisible()
     await expect(card).toContainText(/(S\/\.?|US\$)/)
+    // ADR-048 (Jerson, 2026-11-02): the open listing's pin rises on its
+    // leader line close in too, and its plain pin is not drawn as well.
+    const up = raised(page)
+    await expect(up).toHaveCount(1)
+    await expect(up).toHaveAttribute('data-listing-id', l.id)
+    await expect(up.locator('[data-role="leader"]')).toBeVisible()
+    await expect(up.locator('[data-selected="1"]')).toHaveCount(1)
+    await expect(pin).toHaveCount(0)
+    if (!isPhone(info)) await cardInsideMap(page, card)
     await noHorizontalOverflow(page)
     await shot(page, info, '05-pin-card')
 

@@ -75,10 +75,13 @@ describe('MapMarkerIndex', () => {
     expect(groups[0]!.kind === 'group' && groups[0]!.count).toBe(2)
   })
 
-  it('the selected listing shows on its own, even inside a group', () => {
+  // Changed by ADR-048 (Jerson, 2026-11-02): was "its own pin". It is still
+  // on its own, now raised on its leader line with the small dot at its foot.
+  it('the selected listing shows on its own, even inside a group — raised on its leader line', () => {
     const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b'), sameSpot('c')]).markersFor(metro, 15, 'b')
-    const pins = out.filter((m) => m.kind === 'pin')
-    expect(pins.map((m) => (m.kind === 'pin' ? m.item.listing.id : ''))).toEqual(['b'])
+    expect(out.filter((m) => m.kind === 'pin')).toEqual([])
+    const r = out.find((m) => m.kind === 'raised')
+    expect(r && r.kind === 'raised' && r.item.listing.id).toBe('b')
     const g = out.find((m) => m.kind === 'group')
     expect(g && g.kind === 'group' ? g.count : 0).toBe(2)
   })
@@ -141,10 +144,12 @@ describe('MapMarkerIndex', () => {
   describe('far out, the listing you are looking at shows as its pin', () => {
     const items = () => [mapListing({ id: 'a', lat: -5.19, lng: -80.63 }), mapListing({ id: 'b', lat: -5.15, lng: -80.70 })]
 
-    it('the selected listing is its pin, drawn last, not a dot', () => {
+    // Changed by ADR-048 (Jerson, 2026-11-02): was "is its pin" (a plain pin,
+    // no line). Every selected listing is now raised on its leader line.
+    it('the selected listing is its pin raised on its leader line, drawn last, not a dot', () => {
       const out = new MapMarkerIndex(items()).markersFor(metro, 12, 'a')
-      expect(out.map((m) => m.kind)).toEqual(['dot', 'pin'])
-      expect(out[1]!.kind === 'pin' && out[1]!.item.listing.id).toBe('a')
+      expect(out.map((m) => m.kind)).toEqual(['anchor', 'dot', 'raised'])
+      expect(out[2]!.kind === 'raised' && out[2]!.item.listing.id).toBe('a')
     })
 
     it('a listing hovered in the list is its pin too', () => {
@@ -156,6 +161,59 @@ describe('MapMarkerIndex', () => {
     it('outside the visible area it draws nothing', () => {
       const far = { south: -4.0, west: -79.0, north: -3.9, east: -78.9 }
       expect(new MapMarkerIndex(items()).markersFor(far, 12, 'a')).toEqual([])
+    })
+  })
+
+  // ADR-048 (Jerson, 2026-11-02): "Can we have all selected listings be just
+  // the leader line and their badge like this? […] I wish we only have that
+  // version for selected listings." A selected listing always shows its pin
+  // raised on its leader line, at any zoom, however it was opened; it is not
+  // also drawn as its normal pin or dot; deselected it is its normal self.
+  describe('ADR-048: every selected listing shows its pin raised on a leader line', () => {
+    const items = () => [
+      mapListing({ id: 'a', lat: -5.19, lng: -80.63 }),
+      mapListing({ id: 'b', lat: -5.15, lng: -80.70 }),
+      mapListing({ id: 'boost', lat: -5.17, lng: -80.65, boosted: true, boostScore: 2 }),
+    ]
+    const ids = (out: ReturnType<MapMarkerIndex['markersFor']>) =>
+      out.map((m) => `${m.kind}:${m.kind === 'group' ? m.id : m.item.listing.id}`)
+
+    it('close in: the selected pin is raised on its line with the small dot at its foot, drawn last', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 15, 'a')
+      expect(ids(out)).toEqual(['pin:b', 'pin:boost', 'anchor:a', 'raised:a'])
+      const r = out[3]!
+      expect(r.lat).toBeCloseTo(-5.19)
+      expect(r.lng).toBeCloseTo(-80.63)
+    })
+
+    it('close in: a selected boosted listing raises its gold pin instead of its pin', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 15, 'boost')
+      expect(ids(out)).toEqual(['pin:a', 'pin:b', 'anchor:boost', 'raised:boost'])
+    })
+
+    it('close in: deselected, it is its normal pin again', () => {
+      expect(ids(new MapMarkerIndex(items()).markersFor(metro, 15, null))).toEqual(['pin:a', 'pin:b', 'pin:boost'])
+    })
+
+    it('close in: a selected listing at a shared point is raised; the shared pin counts the rest', () => {
+      const out = new MapMarkerIndex([sameSpot('a'), sameSpot('b')]).markersFor(metro, 15, 'a')
+      expect(out.map((m) => m.kind)).toEqual(['pin', 'anchor', 'raised'])
+      expect(out[0]!.kind === 'pin' && out[0]!.item.listing.id).toBe('b')
+    })
+
+    it('far out: a listing opened without tapping its dot is raised too', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, 'b')
+      expect(ids(out)).toEqual(['dot:a', 'anchor:b', 'dot:boost', 'raised:b'])
+    })
+
+    it('selected and pointed at in the list: one raised pin, not a raised pin and a pin', () => {
+      const out = new MapMarkerIndex(items()).markersFor(metro, 12, 'a', null, 'a')
+      expect(ids(out)).toEqual(['anchor:a', 'dot:b', 'dot:boost', 'raised:a'])
+    })
+
+    it('a selected listing outside the visible area draws nothing for it', () => {
+      const far = { south: -5.16, west: -80.75, north: -5.10, east: -80.65 }
+      expect(ids(new MapMarkerIndex(items()).markersFor(far, 15, 'a'))).toEqual(['pin:b'])
     })
   })
 })
