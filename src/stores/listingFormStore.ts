@@ -81,6 +81,12 @@ interface ListingFormState {
    * storage, nothing re-saves it, and the wizard cannot publish again.
    */
   publishedListingId: string | null
+  /**
+   * True while the wizard must not change page — publishing or saving. The
+   * browser's back button is held on the page meanwhile.
+   */
+  navigationLocked: boolean
+  setNavigationLocked: (locked: boolean) => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
@@ -212,6 +218,9 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     uploadedPhotos: savedUploads ?? {},
     publishOwnerId: savedOwner ?? null,
     publishedListingId: null,
+    navigationLocked: false,
+
+    setNavigationLocked: (locked) => set({ navigationLocked: locked }),
 
     setStep: (step) => {
       const dir = step >= get().step ? 1 : -1
@@ -255,6 +264,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         uploadedPhotos: {},
         publishOwnerId: null,
         publishedListingId: null,
+        navigationLocked: false,
       })
     },
 

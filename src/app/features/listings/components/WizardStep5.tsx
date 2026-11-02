@@ -71,6 +71,14 @@ export default function WizardStep5() {
   // identity held in memory rather than refuse to publish, and instead keep
   // this warning up for the whole publish, errors included, until it
   // succeeds or the person leaves on purpose.
+  // While publishing or saving, the browser's back button stays on this page
+  // (it would otherwise go to Fotos in the middle of the save).
+  const busy = isSubmitting || publishStatus === 'filling' || publishStatus === 'done'
+  useEffect(() => {
+    useListingFormStore.getState().setNavigationLocked(busy)
+    return () => useListingFormStore.getState().setNavigationLocked(false)
+  }, [busy])
+
   const guardLeaving = publishStatus === 'filling' || (publishStatus === 'error' && !identityStored)
   useEffect(() => {
     if (!guardLeaving) return
