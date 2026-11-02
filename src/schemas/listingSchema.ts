@@ -186,7 +186,8 @@ export const step3Schema = z.object({
 })
 export type Step3Data = z.infer<typeof step3Schema>
 
-// Step 4: Price
+// Step 4: Price. Agent help is not here: it is set on the Mis Propiedades
+// card (ADR-043 D10; hostile review 2026-11-02 #4).
 export const step4Schema = z
   .object({
     operationType: z.string({ error: 'Selecciona el tipo de operación' }), // passed through for price validation
@@ -194,12 +195,6 @@ export const step4Schema = z
     propertyType: z.string({ error: 'Selecciona el tipo de propiedad' }).optional(), // passed through for price validation
     amount: priceSchema('Ingresa un precio válido', 'El precio debe ser mayor a 0.'),
     currency: z.enum(['PEN', 'USD'], { error: 'Elige la moneda' }),
-    wantsRealtorHelp: z.boolean({ error: 'Elige si quieres ayuda de agentes' }),
-    maxRealtors: z
-      .number({ error: 'Selecciona un número válido de agentes' })
-      .int('Selecciona un número válido de agentes')
-      .min(1, 'Selecciona un número válido de agentes')
-      .max(5, 'Selecciona un número válido de agentes'),
   })
 export type Step4Data = z.infer<typeof step4Schema>
 
@@ -225,12 +220,4 @@ export const fullListingSchema = z.object({
   currency: z.enum(['PEN', 'USD'], {
     message: 'Moneda no seleccionada (Paso 5)',
   }),
-  wantsRealtorHelp: z.boolean({
-    message: 'Preferencia de agente no seleccionada (Paso 5)',
-  }),
-  maxRealtors: z
-    .number({ message: 'Número de agentes no ingresado (Paso 5)' })
-    .int('Número de agentes inválido (Paso 5)')
-    .min(1, 'Número de agentes inválido (Paso 5)')
-    .max(5, 'Número de agentes inválido (Paso 5)'),
 })

@@ -115,8 +115,6 @@ export default function WizardStep5() {
       propertyType: data.propertyType || undefined,
       amount: data.amount ?? undefined,
       currency: (data.currency || 'PEN') as Currency,
-      wantsRealtorHelp: data.wantsRealtorHelp,
-      maxRealtors: data.maxRealtors,
     },
   })
 
@@ -305,10 +303,8 @@ export default function WizardStep5() {
           description: data.description,
           price: { amount: formData.amount, currency: formData.currency },
           role: data.role as Listing['role'],
-          // Agent help is changed from Mis Propiedades now (D10): an edit
-          // keeps what the listing has.
-          wantsRealtorHelp: data.wantsRealtorHelp ?? false,
-          maxRealtors: data.maxRealtors ?? 3,
+          // Agent help is not written: the Mis Propiedades card owns it
+          // (ADR-043 D10; hostile review #4).
           media: editedMedia,
           contactInfo: user.contactInfo,
           showExactLocation: data.showExactLocation,

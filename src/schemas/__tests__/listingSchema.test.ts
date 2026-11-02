@@ -354,29 +354,13 @@ describe('step4Schema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('accepts wantsRealtorHelp true and false', () => {
-    expect(() => step4Schema.parse({ ...validStep4, wantsRealtorHelp: true })).not.toThrow()
-    expect(() => step4Schema.parse({ ...validStep4, wantsRealtorHelp: false })).not.toThrow()
-  })
-
-  it('rejects maxRealtors of 0', () => {
-    const result = step4Schema.safeParse({ ...validStep4, maxRealtors: 0 })
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects maxRealtors above 5', () => {
-    const result = step4Schema.safeParse({ ...validStep4, maxRealtors: 6 })
-    expect(result.success).toBe(false)
-  })
-
-  it('accepts maxRealtors at boundary values 1 and 5', () => {
-    expect(() => step4Schema.parse({ ...validStep4, maxRealtors: 1 })).not.toThrow()
-    expect(() => step4Schema.parse({ ...validStep4, maxRealtors: 5 })).not.toThrow()
-  })
-
-  it('rejects fractional maxRealtors', () => {
-    const result = step4Schema.safeParse({ ...validStep4, maxRealtors: 2.5 })
-    expect(result.success).toBe(false)
+  // Hostile review 2026-11-02 #4 (ADR-043 D10): agent help is set on the
+  // Mis Propiedades card now, not in the wizard. The wizard no longer checks
+  // it, so an older listing with an out-of-range value can still be edited.
+  it('agent help is not the wizard\'s to check any more', () => {
+    expect(() => step4Schema.parse({ ...validStep4, wantsRealtorHelp: undefined, maxRealtors: undefined })).not.toThrow()
+    expect(() => step4Schema.parse({ ...validStep4, maxRealtors: 0 })).not.toThrow()
+    expect(() => step4Schema.parse({ ...validStep4, maxRealtors: 9 })).not.toThrow()
   })
 })
 
@@ -461,9 +445,9 @@ describe('fullListingSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects maxRealtors above 5', () => {
-    const result = fullListingSchema.safeParse({ ...validFull, maxRealtors: 6 })
-    expect(result.success).toBe(false)
+  it('does not check agent help (review #4)', () => {
+    expect(fullListingSchema.safeParse({ ...validFull, maxRealtors: 6 }).success).toBe(true)
+    expect(fullListingSchema.safeParse({ ...validFull, wantsRealtorHelp: undefined }).success).toBe(true)
   })
 
   it('allows optional rentalDurationType to be absent', () => {

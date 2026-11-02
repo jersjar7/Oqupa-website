@@ -44,7 +44,7 @@ describe('every wizard message is Spanish', () => {
     ['step1', step1Schema, { propertyType: 'casa', operationType: 'alquiler', role: 'owner', rentalDurationType: 'longTerm' }, ['propertyType', 'operationType', 'role', 'rentalDurationType']],
     ['step2', step2Schema, room, ['description', 'totalAreaInSquareMeters', 'bedroomCount', 'bathroomCount', 'availableParkingSpaces', 'propertyAmenities', 'hasPrivateBathroom']],
     ['step3', step3Schema, { latitude: -5.19, longitude: -80.63, calle: 'Av. Grau 1', urbanizacion: '', distrito: 'Piura', provincia: 'Piura', departamento: 'Piura' }, ['latitude', 'longitude', 'calle', 'urbanizacion', 'distrito', 'provincia', 'departamento']],
-    ['step4', step4Schema, step4, ['amount', 'currency', 'wantsRealtorHelp', 'maxRealtors']],
+    ['step4', step4Schema, step4, ['amount', 'currency']],
   ]
   for (const [name, schema, valid, fields] of cases) {
     for (const field of fields) {
@@ -59,7 +59,7 @@ describe('every wizard message is Spanish', () => {
   }
 
   it('the pre-publish check is Spanish too', () => {
-    for (const field of ['latitude', 'longitude', 'maxRealtors', 'amount', 'totalAreaInSquareMeters']) {
+    for (const field of ['latitude', 'longitude', 'amount', 'totalAreaInSquareMeters']) {
       for (const bad of garbage) {
         for (const issue of messages(fullListingSchema, { [field]: bad })) {
           expect(issue.message, `${field}=${String(bad)}`).not.toMatch(ENGLISH)
