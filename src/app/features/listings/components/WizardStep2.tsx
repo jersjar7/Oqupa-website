@@ -9,6 +9,7 @@ import { parseLocaleNumber } from '@/lib/localeNumber'
 import { bedroomsLabel } from '@/lib/roomCounts'
 import { editAwareResolver } from '../editLimits'
 import WizardNav from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
 import WizardStepper from './WizardStepper'
 import WizardAmenities from './WizardAmenities'
 import { WIZARD_HEADING, choiceClass } from './wizardStyles'
@@ -24,7 +25,7 @@ const readArea = (v: unknown) => (typeof v === 'number' ? v : parseLocaleNumber(
 const hasOptionalBathrooms = (t: string) => t === 'oficina' || t === 'local'
 
 export default function WizardStep2() {
-  const { data, updateData, nextStep, prevStep } = useListingFormStore()
+  const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
 
   const type = (data.propertyType || '') as PropertyType | ''
   const hasRooms = type ? propertyTypeHasRooms(type) : false
@@ -46,10 +47,13 @@ export default function WizardStep2() {
       description: data.description,
       totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
       // − / + start from a sensible count instead of an empty box (D4).
-      // An older listing's count is shown as it is, even below today's
-      // minimum, so an edit that leaves it alone does not change it.
-      bedroomCount: hasRooms ? data.bedroomCount ?? 1 : null,
-      bathroomCount: hasRooms ? data.bathroomCount ?? 1 : optionalBaths ? data.bathroomCount ?? 0 : null,
+      // An older listing's count is shown as it is — even below today's
+      // minimum, even missing — so an edit that leaves it alone does not
+      // change it (hostile review #6). A new listing starts at 1 / 1.
+      bedroomCount: hasRooms ? (isEditMode ? data.bedroomCount : data.bedroomCount ?? 1) : null,
+      bathroomCount: hasRooms
+        ? (isEditMode ? data.bathroomCount : data.bathroomCount ?? 1)
+        : optionalBaths ? data.bathroomCount ?? 0 : null,
       availableParkingSpaces: data.availableParkingSpaces ?? 0,
       propertyAmenities: data.propertyAmenities ?? [],
       hasPrivateBathroom: data.hasPrivateBathroom ?? false,
@@ -57,8 +61,8 @@ export default function WizardStep2() {
   })
 
   const description = watch('description') ?? ''
-  const bedrooms = watch('bedroomCount') ?? 0
-  const bathrooms = watch('bathroomCount') ?? 0
+  const bedrooms = watch('bedroomCount') ?? null
+  const bathrooms = watch('bathroomCount') ?? null
   const parking = watch('availableParkingSpaces') ?? 0
   const amenities = watch('propertyAmenities') ?? []
   const hasPrivateBathroom = watch('hasPrivateBathroom')
@@ -104,7 +108,7 @@ export default function WizardStep2() {
     : null
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
       <section>
         <label htmlFor="description" className={`${WIZARD_HEADING} block`}>
           Descripción
@@ -112,6 +116,7 @@ export default function WizardStep2() {
         <textarea
           id="description"
           rows={5}
+          aria-invalid={descriptionError ? 'true' : undefined}
           placeholder="Cuenta cómo es tu propiedad: lo que más te gusta, qué hay cerca."
           className={`mt-3 w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 ${
             descriptionError ? 'border-error' : 'border-border'
@@ -146,7 +151,7 @@ export default function WizardStep2() {
               min={bedMin}
               max={MAX_COUNT}
               onChange={setCount('bedroomCount')}
-              display={(n) => bedroomsLabel(n, { bare: true })}
+              display={(n) => bedroomsLabel(n, { bare: true, propertyType: type })}
             />
           )}
           {(hasRooms || optionalBaths) && (
@@ -161,7 +166,7 @@ export default function WizardStep2() {
           />
         </div>
         {(errors.bedroomCount || errors.bathroomCount || errors.availableParkingSpaces) && (
-          <p className="mt-1.5 text-sm text-error">
+          <p data-wizard-error className="mt-1.5 text-sm text-error">
             {errors.bedroomCount?.message ?? errors.bathroomCount?.message ?? errors.availableParkingSpaces?.message}
           </p>
         )}
@@ -195,7 +200,7 @@ export default function WizardStep2() {
             onChange={(next) => setValue('propertyAmenities', next, { shouldValidate: Boolean(errors.propertyAmenities) })}
           />
         </div>
-        {errors.propertyAmenities && <p className="mt-1.5 text-sm text-error">{errors.propertyAmenities.message}</p>}
+        {errors.propertyAmenities && <p data-wizard-error className="mt-1.5 text-sm text-error">{errors.propertyAmenities.message}</p>}
       </section>
 
       <WizardNav onBack={prevStep} />

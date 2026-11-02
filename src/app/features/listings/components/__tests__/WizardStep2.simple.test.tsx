@@ -55,19 +55,19 @@ describe('WizardStep2 — steppers (D4)', () => {
     expect(btn('Más dormitorios').className).toMatch(/\bw-12\b/)
   })
 
-  it('Departamento can go to 0 dormitorios, shown "Monoambiente", and publishes as 0', async () => {
+  // Monoambiente is switched off until the app that reads 0 is on most phones
+  // (hostile review 2026-11-02, HIGH): a Departamento keeps at least 1 for now.
+  it('Departamento: at least 1 dormitorio while Monoambiente is off', async () => {
     prepare('departamento')
     render(<WizardStep2 />)
-    fireEvent.click(btn('Menos dormitorios'))
-    expect(value('Dormitorios')).toBe('Monoambiente')
+    expect(value('Dormitorios')).toBe('1')
     expect((btn('Menos dormitorios') as HTMLButtonElement).disabled).toBe(true)
-    expect((btn('Menos baños') as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByText('Monoambiente')).toBeNull()
     describeIt(DESCRIPTION)
     area('35')
     fireEvent.click(btn('Siguiente'))
     await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
-    expect(useListingFormStore.getState().data.bedroomCount).toBe(0)
-    expect(useListingFormStore.getState().data.bathroomCount).toBe(1)
+    expect(useListingFormStore.getState().data.bedroomCount).toBe(1)
   })
 
   it('Alojamiento keeps at least 1 dormitorio', () => {
@@ -159,6 +159,8 @@ describe('WizardStep2 — description hint (D5)', () => {
     fireEvent.click(btn('Siguiente'))
     await waitFor(() => expect(screen.getByText('Escribe un poco más (faltan 16 letras)').className).toMatch(/text-error/))
     expect(useListingFormStore.getState().step).toBe(2)
+    // The first problem gets the focus (hostile review 2026-11-02).
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Descripción')))
   })
 })
 
@@ -236,3 +238,43 @@ describe('WizardStep2 — Medidas and ¿Qué tiene? (D12)', () => {
     expect(btn('Huerto').getAttribute('aria-pressed')).toBe('true')
   })
 })
+
+// Hostile review 2026-11-02 #6: an older listing with no dormitorios / baños
+// recorded was saved as 1 / 1 by any edit. Missing stays missing unless the
+// owner changes it.
+describe('WizardStep2 — editing an older listing with missing counts (review #6)', () => {
+  function openEdit() {
+    localStorage.clear()
+    const s = useListingFormStore.getState()
+    s.startEdit('L1', 'P1')
+    s.updateData({
+      propertyType: 'casa', operationType: 'venta', role: 'owner',
+      description: DESCRIPTION, totalAreaInSquareMeters: 120, bedroomCount: null, bathroomCount: null,
+    })
+    s.markEditBaseline()
+    s.setStep(2)
+  }
+
+  it('shows them as not given and keeps them missing on SIGUIENTE', async () => {
+    openEdit()
+    render(<WizardStep2 />)
+    expect(value('Dormitorios')).toBe('—')
+    expect(value('Baños')).toBe('—')
+    fireEvent.click(btn('Siguiente'))
+    await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
+    expect(useListingFormStore.getState().data.bedroomCount).toBeNull()
+    expect(useListingFormStore.getState().data.bathroomCount).toBeNull()
+  })
+
+  it('+ gives the first real count', async () => {
+    openEdit()
+    render(<WizardStep2 />)
+    fireEvent.click(btn('Más dormitorios'))
+    expect(value('Dormitorios')).toBe('1')
+    fireEvent.click(btn('Siguiente'))
+    await waitFor(() => expect(useListingFormStore.getState().step).toBe(3))
+    expect(useListingFormStore.getState().data.bedroomCount).toBe(1)
+    expect(useListingFormStore.getState().data.bathroomCount).toBeNull()
+  })
+})
+

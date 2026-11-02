@@ -110,6 +110,8 @@ describe('WizardStep1 — ¿Vendes o alquilas? (D2, D3)', () => {
     expect(await screen.findByText('Elige si vendes o alquilas.')).toBeTruthy()
     expect(useListingFormStore.getState().step).toBe(1)
     expect(document.body.textContent).not.toMatch(ENGLISH)
+    // The first message gets the focus (hostile review 2026-11-02).
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Elige si vendes o alquilas.'))
   })
 
   it('SIGUIENTE without a type asks for it', async () => {
@@ -118,6 +120,22 @@ describe('WizardStep1 — ¿Vendes o alquilas? (D2, D3)', () => {
     fireEvent.click(btn('Siguiente'))
     expect(await screen.findByText('Elige el tipo de propiedad.')).toBeTruthy()
     expect(useListingFormStore.getState().step).toBe(1)
+  })
+
+  // Hostile review 2026-11-02: an older Alquiler saved without a rental
+  // length showed "Alquiler por mes" chosen while SIGUIENTE refused it.
+  it('an older Alquiler with no rental length shows nothing chosen, and asks', async () => {
+    useListingFormStore.getState().updateData({ operationType: 'alquiler', rentalDurationType: '', propertyType: 'casa', role: 'owner' })
+    renderStep()
+    for (const name of ['Venta', 'Alquiler por mes', 'Alquiler por noche']) {
+      expect(btn(name).getAttribute('aria-pressed')).toBe('false')
+    }
+    fireEvent.click(btn('Siguiente'))
+    expect(await screen.findByText('Elige si vendes o alquilas.')).toBeTruthy()
+    fireEvent.click(btn('Alquiler por mes'))
+    fireEvent.click(btn('Siguiente'))
+    await waitFor(() => expect(useListingFormStore.getState().step).toBe(2))
+    expect(useListingFormStore.getState().data.rentalDurationType).toBe('longTerm')
   })
 
   it('ATRÁS on the first page leaves the wizard', () => {

@@ -24,7 +24,7 @@ export default function WizardNav({ onBack, backDisabled = false, children }: Wi
         onClick={onBack}
         disabled={backDisabled}
         className={`${WIZARD_BUTTON} flex-1 border-[1.5px] ${
-          backDisabled ? 'border-black/20 text-black/20' : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover'
+          backDisabled ? 'border-border text-text-tertiary' : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover'
         }`}
       >
         Atrás

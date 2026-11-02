@@ -49,7 +49,7 @@ export function buildBrandedCardConfig(
   // Specs line (conditional bedrooms/bathrooms)
   const specs: string[] = []
   if (property.specs.bedroomCount != null) {
-    specs.push(bedroomsLabel(property.specs.bedroomCount))
+    specs.push(bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType }))
   }
   const baths = bathroomsLabel(property.specs.bathroomCount)
   if (baths) {

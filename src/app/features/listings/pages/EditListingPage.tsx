@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
@@ -11,6 +11,7 @@ import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
 import WizardStep5 from '../components/WizardStep5'
 import { firestoreService } from '@/services/firestoreService'
+import { useScrollTopOnPageChange } from '../useWizardPageChange'
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -31,9 +32,11 @@ export default function EditListingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data: result, isLoading, error } = useListingDetails(id)
-  const { step, direction, updateData, setStep, setEditMode, reset } =
+  const { step, direction, updateData, setStep, startEdit } =
     useListingFormStore()
   const [initialized, setInitialized] = useState(false)
+  const top = useRef<HTMLDivElement>(null)
+  useScrollTopOnPageChange(step, top)
 
   // Pre-fill form with existing data.
   //
@@ -62,8 +65,9 @@ export default function EditListingPage() {
       longitude: number
       calle: string
     } | null) {
-    reset()
-    setEditMode(listing.id, property.id)
+    // In memory only: the unfinished new-listing draft and its photos stay
+    // stored, untouched (hostile review 2026-11-02 #3).
+    startEdit(listing.id, property.id)
     updateData({
       propertyType: property.propertyType,
       operationType: property.operationType,
@@ -150,7 +154,7 @@ export default function EditListingPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+    <div ref={top} className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="font-serif text-[28px] font-normal text-text-primary">
         Editar Publicación
       </h1>

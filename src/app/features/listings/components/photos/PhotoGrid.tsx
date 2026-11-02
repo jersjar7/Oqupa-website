@@ -41,7 +41,7 @@ export default function PhotoGrid({
         {minPhotos === 1 ? 'Mínimo 1 foto' : `Mínimo ${minPhotos} fotos`}
       </p>
       {items.length > 1 && <p className="mt-1 text-base text-text-secondary">Tocar para hacer portada</p>}
-      {photoError && <p className="mt-1 text-sm text-error">{photoError}</p>}
+      {photoError && <p data-wizard-error className="mt-1 text-sm text-error">{photoError}</p>}
 
       {items.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">

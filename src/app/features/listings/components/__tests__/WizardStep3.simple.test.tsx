@@ -149,7 +149,7 @@ describe('WizardStep3 — address search (D6)', () => {
     search.fn.mockReset()
   })
 
-  it('finds the address, moves the map there and places the pin; the street fills Dirección', async () => {
+  it('finds the address and moves the map there; the pin waits for the person\'s yes, then the street fills Dirección', async () => {
     search.fn.mockResolvedValue([
       { id: 'a', name: 'Avenida Grau 123', place: 'Castilla, Departamento de Piura, Perú', latitude: -5.2138, longitude: -80.6255, isStreet: true },
     ])
@@ -157,8 +157,12 @@ describe('WizardStep3 — address search (D6)', () => {
     fireEvent.change(screen.getByLabelText('Busca tu dirección'), { target: { value: 'Av Grau 123' } })
     const result = await screen.findByRole('button', { name: /Avenida Grau 123/ })
     await act(async () => fireEvent.click(result))
-    await waitFor(() => expect(useListingFormStore.getState().data.latitude).toBe(-5.2138))
     expect(picker.props!.focus).toMatchObject({ lat: -5.2138, lng: -80.6255 })
+    // Not saved until confirmed (hostile review): a geocoding point is a guess.
+    expect(await screen.findByText(ASK)).toBeTruthy()
+    expect(useListingFormStore.getState().data.latitude).toBeNull()
+    await act(async () => fireEvent.click(btn('Sí')))
+    await waitFor(() => expect(useListingFormStore.getState().data.latitude).toBe(-5.2138))
     expect((screen.getByLabelText('Dirección') as HTMLInputElement).value).toBe('Avenida Grau 123')
     expect(screen.queryByRole('button', { name: /Avenida Grau 123/ })).toBeNull()
   })

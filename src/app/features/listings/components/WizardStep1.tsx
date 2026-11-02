@@ -15,6 +15,7 @@ import {
   type PropertyType,
 } from '@/types/enums'
 import WizardNav from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
 import { WIZARD_HEADING, choiceClass } from './wizardStyles'
 
 /** The three answers to "¿Vendes o alquilas?" (D2): the plazo is part of the answer. */
@@ -41,7 +42,10 @@ const TYPES_FOR: Record<Deal, PropertyType[]> = {
 function dealOf(operationType: string | undefined, rentalDurationType: string | undefined): Deal | null {
   if (operationType === 'venta') return 'venta'
   if (operationType !== 'alquiler') return null
-  return rentalDurationType === 'shortTerm' ? 'noche' : 'mes'
+  if (rentalDurationType === 'shortTerm') return 'noche'
+  // An older Alquiler saved without a length: nothing chosen, so the person
+  // picks one (hostile review 2026-11-02).
+  return rentalDurationType === 'longTerm' ? 'mes' : null
 }
 
 export default function WizardStep1() {
@@ -92,10 +96,10 @@ export default function WizardStep1() {
   const dealError = errors.operationType?.message ?? errors.rentalDurationType?.message
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
       <section>
         <h2 className={WIZARD_HEADING}>¿Vendes o alquilas?</h2>
-        {dealError && <p className="mt-1 text-sm text-error">{dealError}</p>}
+        {dealError && <p data-wizard-error className="mt-1 text-sm text-error">{dealError}</p>}
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {DEALS.map(({ deal: d, label }) => (
             <button
@@ -114,7 +118,7 @@ export default function WizardStep1() {
       {deal && (
         <section>
           <h2 className={WIZARD_HEADING}>Tipo de propiedad</h2>
-          {errors.propertyType && <p className="mt-1 text-sm text-error">{errors.propertyType.message}</p>}
+          {errors.propertyType && <p data-wizard-error className="mt-1 text-sm text-error">{errors.propertyType.message}</p>}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {availableTypes.map((type) => {
               const on = selected.propertyType === type
@@ -140,7 +144,7 @@ export default function WizardStep1() {
       )}
 
       <section>
-        {errors.role && <p className="mb-1 text-sm text-error">{errors.role.message}</p>}
+        {errors.role && <p data-wizard-error className="mb-1 text-sm text-error">{errors.role.message}</p>}
         {roleOpen ? (
           <div className="grid gap-3">
             {Object.values(ListingRole).map((r) => (

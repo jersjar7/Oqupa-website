@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { PropertyType, OperationType, ListingRole, Currency, RentalDurationType } from '@/types/enums'
 import type { PhotoUploadResult } from '@/services/storageService'
 import { newPublishId } from '@/lib/publishIdentity'
-import { clearDraftPhotos, loadDraftPhotos, saveDraftPhotos } from './draftPhotos'
+import { clearDraftPhotos, loadDraftPhotos, saveDraftPhotos, DRAFT_MAX_AGE_MS } from './draftPhotos'
 
 export interface ListingFormData {
   // Step 1: Basics
@@ -110,6 +110,13 @@ interface ListingFormState {
   prevStep: () => void
   updateData: (partial: Partial<ListingFormData>) => void
   setEditMode: (listingId: string, propertyId: string) => void
+  /**
+   * Opens an edit in memory only. The unfinished new-listing draft and its
+   * photos stay stored, untouched (hostile review 2026-11-02 #3).
+   */
+  startEdit: (listingId: string, propertyId: string) => void
+  /** Leaves an edit: the new-listing draft comes back from storage as it was. */
+  leaveEdit: () => void
   reset: () => void
   recordUploadedPhoto: (fingerprint: string, result: PhotoUploadResult) => void
   /** Writes the draft (and its identity) to storage now. False if storage refused it. */
@@ -124,6 +131,8 @@ interface ListingFormState {
    * the page): the photo page starts again with them.
    */
   photosRestoredAt: number
+  /** Changes when another tab replaced the draft: the page starts again with it. */
+  draftVersion: number
 }
 
 const INITIAL_DATA: ListingFormData = {
@@ -161,7 +170,12 @@ const INITIAL_DATA: ListingFormData = {
 
 const STORAGE_KEY = 'oqupa-listing-form'
 
+/** Publish identities already published in this browser, newest last (any tab). */
+const PUBLISHED_KEY = 'oqupa-listing-published'
+
 interface SavedDraft extends Partial<ListingFormData> {
+  /** When the draft was last written; a draft untouched for 30 days is dropped. */
+  savedAt?: number
   step?: number
   draftOwnerId?: string | null
   publishId?: string
@@ -185,16 +199,49 @@ function removeSession() {
   }
 }
 
-function loadFromSession(): SavedDraft {
+function loadFromSession(now = Date.now()): SavedDraft {
   for (const store of [() => localStorage, () => sessionStorage]) {
     try {
       const raw = store().getItem(STORAGE_KEY)
-      if (raw) return JSON.parse(raw)
+      if (!raw) continue
+      const draft = JSON.parse(raw) as SavedDraft
+      // Untouched for 30 days: dropped (its photos expire with it).
+      if (typeof draft.savedAt === 'number' && now - draft.savedAt > DRAFT_MAX_AGE_MS) {
+        removeSession()
+        return {}
+      }
+      // Already published from another tab: never brought back.
+      if (draft.publishId && wasPublished(draft.publishId)) return {}
+      return draft
     } catch {
       // Unreadable here: try the other one, else start clean.
     }
   }
   return {}
+}
+
+function publishedIds(): string[] {
+  try {
+    const raw = localStorage.getItem(PUBLISHED_KEY)
+    const ids = raw ? (JSON.parse(raw) as unknown) : []
+    return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** True when this draft identity was published — in this tab or another. */
+function wasPublished(publishId: string): boolean {
+  return publishedIds().includes(publishId)
+}
+
+function rememberPublished(publishId: string) {
+  try {
+    const ids = publishedIds().filter((id) => id !== publishId)
+    localStorage.setItem(PUBLISHED_KEY, JSON.stringify([...ids, publishId].slice(-20)))
+  } catch {
+    // Storage refused: this tab still knows (publishedListingId).
+  }
 }
 
 function saveToSession(
@@ -211,7 +258,7 @@ function saveToSession(
     // Don't save File objects to sessionStorage
     // Photos are files: they are kept in IndexedDB (draftPhotos), not here.
     const { photos: _photos, ...serializable } = data
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable, ...identity }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, ...serializable, ...identity, savedAt: Date.now() }))
     // An older copy in this tab's storage must not outlive this one.
     try {
       sessionStorage.removeItem(STORAGE_KEY)
@@ -242,6 +289,34 @@ export function setDraftAccount(uid: string | null): void {
   currentAccount = uid
 }
 
+/**
+ * Another tab changed the stored draft (typed, published, signed out): this
+ * tab follows it, in memory only, so two tabs never mix two drafts or bring a
+ * published one back (hostile review 2026-11-02 #2). Not while editing or
+ * publishing here. Started with the sign-in watcher; returns the stop.
+ */
+export function watchOtherTabs(): () => void {
+  if (typeof window === 'undefined') return () => {}
+  const onStorage = (e: StorageEvent) => {
+    if (e.key !== STORAGE_KEY && e.key !== PUBLISHED_KEY && e.key !== null) return
+    const store = useListingFormStore
+    const s = store.getState()
+    if (s.isEditMode || s.navigationLocked) return
+    const stored = draftState(loadFromSession())
+    const samePhotos = stored.publishId === s.publishId
+    store.setState({
+      ...stored,
+      data: { ...stored.data, ...(samePhotos ? { photos: s.data.photos, photoOrder: s.data.photoOrder } : {}) },
+      publishedListingId: null,
+      direction: 1,
+      draftVersion: s.draftVersion + 1,
+    })
+    if (!samePhotos && currentAccount) store.getState().adoptDraftFor(currentAccount)
+  }
+  window.addEventListener('storage', onStorage)
+  return () => window.removeEventListener('storage', onStorage)
+}
+
 /** Nothing typed, chosen or uploaded: there is nothing anyone could inherit. */
 function isEmptyDraft(step: number, data: ListingFormData, uploads: Record<string, unknown>): boolean {
   if (step !== 1 || data.photos.length > 0 || Object.keys(uploads).length > 0) return false
@@ -250,17 +325,31 @@ function isEmptyDraft(step: number, data: ListingFormData, uploads: Record<strin
   return JSON.stringify(rest) === JSON.stringify(initial)
 }
 
-export const useListingFormStore = create<ListingFormState>((set, get) => {
+/** The draft part of the state, as stored (or a fresh draft when nothing is). */
+function draftState(saved: SavedDraft) {
   const {
     publishId: savedPublishId,
     uploadedPhotos: savedUploads,
     publishOwnerId: savedOwner,
     draftOwnerId: savedDraftOwner,
-    ...saved
-  } = loadFromSession()
+    savedAt: _savedAt,
+    step,
+    ...data
+  } = saved
+  return {
+    step: step ?? 1,
+    data: { ...INITIAL_DATA, ...data, photos: [] as File[] },
+    publishId: savedPublishId || newPublishId(),
+    uploadedPhotos: savedUploads ?? {},
+    publishOwnerId: savedOwner ?? null,
+    draftOwnerId: savedDraftOwner ?? null,
+  }
+}
 
-  // Every save goes through here. After a successful publish it does nothing,
-  // so a late keystroke or step change cannot bring the published draft back.
+export const useListingFormStore = create<ListingFormState>((set, get) => {
+  // Every save goes through here. After a successful publish — in this tab
+  // or another — it does nothing, so a late keystroke, a step change or a
+  // second tab cannot bring the published draft back.
   const save = (step: number, data: ListingFormData): boolean => {
     const s = get()
     if (s.publishedListingId) return false
@@ -268,6 +357,10 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     // (possibly hidden) address and belongs to no draft owner. A reload of
     // the edit page loads the listing again from the server (review #2).
     if (s.isEditMode) return false
+    if (wasPublished(s.publishId)) {
+      set({ publishedListingId: `listing_${s.publishId}` })
+      return false
+    }
     return saveToSession(step, data, {
       publishId: s.publishId,
       uploadedPhotos: s.uploadedPhotos,
@@ -277,19 +370,15 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
   }
 
   return {
-    step: saved.step ?? 1,
+    ...draftState(loadFromSession()),
     direction: 1,
-    data: { ...INITIAL_DATA, ...saved },
     isEditMode: false,
     editListingId: null,
     editPropertyId: null,
-    publishId: savedPublishId || newPublishId(),
-    uploadedPhotos: savedUploads ?? {},
-    publishOwnerId: savedOwner ?? null,
     publishedListingId: null,
     navigationLocked: false,
-    draftOwnerId: savedDraftOwner ?? null,
     photosRestoredAt: 0,
+    draftVersion: 0,
 
     adoptDraftFor: (uid) => {
       currentAccount = uid
@@ -308,7 +397,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
       // The photos of this account's draft, kept from an earlier visit (D11).
       if (s.data.photos.length === 0 && !isEmptyDraft(s.step, s.data, s.uploadedPhotos)) {
         const draft = s.publishId
-        void loadDraftPhotos(uid).then((files) => {
+        void loadDraftPhotos(uid, draft).then((files) => {
           const now = get()
           if (
             files.length === 0 || now.publishId !== draft || now.draftOwnerId !== uid ||
@@ -362,13 +451,40 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
       const now = get()
       const owner = now.draftOwnerId
       if ('photos' in partial && owner && !now.isEditMode && !now.publishedListingId) {
-        void saveDraftPhotos(owner, updated.photos)
+        void saveDraftPhotos(owner, now.publishId, updated.photos)
       }
     },
 
     setEditMode: (listingId, propertyId) => {
-      removeSession()
       set({ isEditMode: true, editListingId: listingId, editPropertyId: propertyId })
+    },
+
+    startEdit: (listingId, propertyId) => {
+      set({
+        step: 1,
+        direction: 1,
+        data: { ...INITIAL_DATA },
+        isEditMode: true,
+        editListingId: listingId,
+        editPropertyId: propertyId,
+        publishedListingId: null,
+        navigationLocked: false,
+        editBaseline: null,
+      })
+    },
+
+    leaveEdit: () => {
+      set({
+        ...draftState(loadFromSession()),
+        direction: 1,
+        isEditMode: false,
+        editListingId: null,
+        editPropertyId: null,
+        publishedListingId: null,
+        navigationLocked: false,
+        editBaseline: null,
+      })
+      if (currentAccount) get().adoptDraftFor(currentAccount)
     },
 
     reset: () => {
@@ -418,6 +534,7 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     },
 
     markPublished: (listingId) => {
+      rememberPublished(get().publishId)
       removeSession()
       void clearDraftPhotos()
       set({ publishedListingId: listingId })

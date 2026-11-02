@@ -9,6 +9,7 @@ import { Input } from '@/app/components/ui'
 const LocationPicker = lazy(() => import('./LocationPicker'))
 import OfficialDistrictPicker from './OfficialDistrictPicker'
 import WizardNav from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
 import WizardAddressSearch from './WizardAddressSearch'
 import { WIZARD_HEADING, choiceClass } from './wizardStyles'
 import { DistrictResolver } from '@/lib/map/districtResolver'
@@ -25,8 +26,11 @@ export default function WizardStep3() {
 
   const [showExactLocation, setShowExactLocation] = useState(data.showExactLocation)
   const [hasPinPlaced, setHasPinPlaced] = useState(() => data.latitude != null)
-  // Where the person is, while the page asks "¿Ubicación es correcta?" (D6).
-  const [here, setHere] = useState<Point | null>(null)
+  // A place waiting for the person's yes — where they are (D6), or a search
+  // result — while the page asks "¿Ubicación es correcta?". Only a yes (or a
+  // tap on the map) places the pin: the saved point is always the person's
+  // confirmed pin, never a geocoding result as such (hostile review).
+  const [here, setHere] = useState<(Point & { street?: string }) | null>(null)
   // Where the map should move to (the person, or a search result).
   const [focus, setFocus] = useState<(Point & { key: number }) | null>(null)
 
@@ -169,16 +173,22 @@ export default function WizardStep3() {
 
   function chooseResult(r: AddressResult) {
     setFocus({ lat: r.latitude, lng: r.longitude, key: Date.now() })
-    handleLocationChange(r.latitude, r.longitude)
+    setHere({ lat: r.latitude, lng: r.longitude, ...(r.isStreet ? { street: r.name } : {}) })
+  }
+
+  function confirmHere() {
+    if (!here) return
+    const { street } = here
+    handleLocationChange(here.lat, here.lng)
     // A street from the search is a good start for "Dirección" — never over
     // what the person already typed.
-    if (r.isStreet && !getValues('calle')) setValue('calle', r.name, { shouldValidate: true })
+    if (street && !getValues('calle')) setValue('calle', street, { shouldValidate: true })
   }
 
   const pinned = typeof watchedLat === 'number' && typeof watchedLng === 'number'
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
       <section>
         <h2 className={WIZARD_HEADING}>Ubicación</h2>
         <div className="mt-3">
@@ -195,11 +205,11 @@ export default function WizardStep3() {
             />
           </Suspense>
         </div>
-        {here && !pinned ? (
+        {here ? (
           <div className="mt-3 rounded-xl border border-border bg-white p-4">
             <p className={WIZARD_HEADING}>¿Ubicación es correcta?</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => handleLocationChange(here.lat, here.lng)} className={choiceClass(false)}>
+              <button type="button" onClick={confirmHere} className={choiceClass(false)}>
                 Sí
               </button>
               <button type="button" onClick={() => setHere(null)} className={choiceClass(false)}>
@@ -211,7 +221,7 @@ export default function WizardStep3() {
           !pinned && <p className="mt-2 text-base text-text-secondary">{TAP_HINT}</p>
         )}
         {(errors.latitude || errors.longitude) && (
-          <p className="mt-1.5 text-sm text-error">Selecciona una ubicación en el mapa</p>
+          <p data-wizard-error className="mt-1.5 text-sm text-error">Selecciona una ubicación en el mapa</p>
         )}
       </section>
 
@@ -241,7 +251,7 @@ export default function WizardStep3() {
                 {[distrito, provincia, departamento].filter(Boolean).join(', ')}
               </p>
             ) : (
-              <p className="mt-1 text-sm text-error">Elige el distrito</p>
+              <p data-wizard-error className="mt-1 text-sm text-error">Elige el distrito</p>
             )}
             <button
               type="button"

@@ -64,7 +64,7 @@ export function listingDetailsLine({ property }: ListingWithProperty): string {
       const beds = property.specs?.bedroomCount
       const baths = property.specs?.bathroomCount
       return [
-        beds === 0 ? 'Monoambiente' : beds != null && beds > 0 ? count(beds, 'dormitorio', 'dormitorios') : null,
+        beds === 0 && property.propertyType === 'departamento' ? 'Monoambiente' : beds != null && beds > 0 ? count(beds, 'dormitorio', 'dormitorios') : null,
         baths != null && baths > 0 ? count(baths, 'baño', 'baños') : null,
         areaPart,
       ].filter(Boolean).join(' · ')

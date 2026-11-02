@@ -14,12 +14,19 @@ describe('bathroomsLabel', () => {
   })
 })
 
-// ADR-043 D4: a departamento with 0 dormitorios reads "Monoambiente", never "0 hab.".
+// ADR-043 D4: a Departamento with 0 dormitorios reads "Monoambiente", never
+// "0 hab."; no other type is ever called a Monoambiente (hostile review).
 describe('bedroomsLabel', () => {
-  it('0 is Monoambiente; others are "N hab." or just N beside a label', () => {
-    expect(bedroomsLabel(0)).toBe('Monoambiente')
-    expect(bedroomsLabel(0, { bare: true })).toBe('Monoambiente')
-    expect(bedroomsLabel(3)).toBe('3 hab.')
+  it('Departamento 0 is Monoambiente; others are "N hab." or just N beside a label', () => {
+    expect(bedroomsLabel(0, { propertyType: 'departamento' })).toBe('Monoambiente')
+    expect(bedroomsLabel(0, { bare: true, propertyType: 'departamento' })).toBe('Monoambiente')
+    expect(bedroomsLabel(3, { propertyType: 'departamento' })).toBe('3 hab.')
     expect(bedroomsLabel(3, { bare: true })).toBe('3')
+  })
+  it('never Monoambiente for another type', () => {
+    for (const t of ['casa', 'hospedaje', 'habitacion', undefined]) {
+      expect(bedroomsLabel(0, { propertyType: t })).not.toBe('Monoambiente')
+      expect(bedroomsLabel(0, { bare: true, propertyType: t })).toBe('0')
+    }
   })
 })

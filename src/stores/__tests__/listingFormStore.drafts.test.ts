@@ -58,8 +58,9 @@ describe('drafts kept across a closed tab (D11)', () => {
     let b = await boot()
     b.signedIn('ana')
     b.store().updateData({ description: 'Casa A', photos: [photo('a.jpg', 'aaa'), photo('b.jpg'), photo('c.jpg')] })
+    const id = b.store().publishId
     b.store().setStep(4)
-    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana')).length).toBe(3))
+    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(3))
     b.stop()
     closeTab()
     b = await boot()
@@ -77,13 +78,14 @@ describe('drafts kept across a closed tab (D11)', () => {
     let b = await boot()
     b.signedIn('ana')
     b.store().updateData({ description: 'Casa A', photos: [photo('a.jpg')] })
-    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana')).length).toBe(1))
+    const id = b.store().publishId
+    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(1))
     b.stop()
     closeTab()
     b = await boot()
     b.signedIn('beto')
     expect(b.store().data.description).toBe('')
-    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana')).toEqual([]))
+    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana', id)).toEqual([]))
     expect(b.store().data.photos).toEqual([])
     b.stop()
   })
@@ -92,10 +94,11 @@ describe('drafts kept across a closed tab (D11)', () => {
     const b = await boot()
     b.signedIn('ana')
     b.store().updateData({ description: 'Casa A', photos: [photo('a.jpg')] })
-    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana')).length).toBe(1))
+    const id = b.store().publishId
+    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(1))
     b.store().discardDraft()
     expect(localStorage.getItem(KEY)).toBeNull()
-    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana')).toEqual([]))
+    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana', id)).toEqual([]))
     b.stop()
   })
 
@@ -103,10 +106,11 @@ describe('drafts kept across a closed tab (D11)', () => {
     const b = await boot()
     b.signedIn('ana')
     b.store().updateData({ description: 'Casa A', photos: [photo('a.jpg')] })
-    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana')).length).toBe(1))
+    const id = b.store().publishId
+    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(1))
     b.store().markPublished('listing_x')
     expect(localStorage.getItem(KEY)).toBeNull()
-    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana')).toEqual([]))
+    await waitFor(async () => expect(await b.photos.loadDraftPhotos('ana', id)).toEqual([]))
     b.stop()
   })
 
@@ -116,9 +120,125 @@ describe('drafts kept across a closed tab (D11)', () => {
     b.store().reset()
     b.store().setEditMode('L1', 'P1')
     b.store().updateData({ photos: [photo('a.jpg')] })
+    const id = b.store().publishId
     await new Promise((r) => setTimeout(r, 30))
-    expect(await b.photos.loadDraftPhotos('ana')).toEqual([])
+    expect(await b.photos.loadDraftPhotos('ana', id)).toEqual([])
     expect(localStorage.getItem(KEY)).toBeNull()
+    b.stop()
+  })
+
+  it('a draft untouched for more than 30 days is dropped', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ step: 3, description: 'Casa vieja', draftOwnerId: 'ana', savedAt: Date.now() - 31 * 24 * 60 * 60 * 1000 }))
+    const b = await boot()
+    b.signedIn('ana')
+    expect(b.store().data.description).toBe('')
+    expect(b.store().step).toBe(1)
+    b.stop()
+  })
+})
+
+// Hostile review 2026-11-02 #2: the draft is shared by every tab now. A
+// second tab must never bring back a published draft or mix two drafts.
+describe('two tabs (review #2)', () => {
+  beforeEach(async () => {
+    sessionStorage.clear()
+    localStorage.clear()
+    const { clearDraftPhotos } = await import('@/stores/draftPhotos')
+    await clearDraftPhotos()
+  })
+
+  /** What another tab publishing this draft leaves in the browser. */
+  function otherTabPublished(publishId: string) {
+    localStorage.removeItem(KEY)
+    localStorage.setItem('oqupa-listing-published', JSON.stringify([publishId]))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'oqupa-listing-published' }))
+  }
+
+  it('published in another tab: this tab starts a fresh draft, and never writes the old one back', async () => {
+    const b = await boot()
+    b.signedIn('ana')
+    b.store().updateData({ description: 'Casa A' })
+    b.store().setStep(5)
+    const old = b.store().publishId
+    otherTabPublished(old)
+    expect(b.store().publishId).not.toBe(old)
+    expect(b.store().data.description).toBe('')
+    b.store().updateData({ description: 'Otra casa' })
+    expect(JSON.parse(localStorage.getItem(KEY)!).publishId).not.toBe(old)
+    b.stop()
+  })
+
+  it('even if the news is missed, a published draft is never saved again', async () => {
+    const b = await boot()
+    b.signedIn('ana')
+    b.store().updateData({ description: 'Casa A' })
+    const old = b.store().publishId
+    localStorage.removeItem(KEY)
+    localStorage.setItem('oqupa-listing-published', JSON.stringify([old])) // no event
+    b.store().updateData({ description: 'Casa A, tecleo tardío' })
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(b.store().publishedListingId).toBe(`listing_${old}`)
+    b.stop()
+  })
+
+  it('a reload never brings back a draft published in another tab', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ step: 5, description: 'Casa A', publishId: 'p1', draftOwnerId: 'ana' }))
+    localStorage.setItem('oqupa-listing-published', JSON.stringify(['p1']))
+    const b = await boot()
+    b.signedIn('ana')
+    expect(b.store().publishId).not.toBe('p1')
+    expect(b.store().data.description).toBe('')
+    b.stop()
+  })
+
+  it('typed in another tab: this tab follows that draft whole, and the page restarts with it', async () => {
+    const b = await boot()
+    b.signedIn('ana')
+    b.store().updateData({ description: 'Casa A' })
+    const version = b.store().draftVersion
+    const other = { step: 3, description: 'Casa B escrita en otra pestaña', publishId: 'p2', draftOwnerId: 'ana' }
+    localStorage.setItem(KEY, JSON.stringify(other))
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }))
+    expect(b.store().publishId).toBe('p2')
+    expect(b.store().data.description).toBe('Casa B escrita en otra pestaña')
+    expect(b.store().step).toBe(3)
+    expect(b.store().draftVersion).toBe(version + 1)
+    b.stop()
+  })
+})
+
+// Hostile review 2026-11-02 #3: opening Editar used to wipe the unfinished
+// new-listing draft and its photos.
+describe('editing leaves the new-listing draft alone (review #3)', () => {
+  beforeEach(async () => {
+    sessionStorage.clear()
+    localStorage.clear()
+    const { clearDraftPhotos } = await import('@/stores/draftPhotos')
+    await clearDraftPhotos()
+  })
+
+  it('Editar and back: the draft, its page and its photos are all still there', async () => {
+    const b = await boot()
+    b.signedIn('ana')
+    b.store().updateData({ description: 'Casa nueva a medias', photos: [photo('a.jpg', 'aaa'), photo('b.jpg')] })
+    b.store().setStep(4)
+    const id = b.store().publishId
+    await waitFor(async () => expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(2))
+    const stored = localStorage.getItem(KEY)
+
+    b.store().startEdit('L1', 'P1')
+    b.store().updateData({ description: 'Texto del anuncio que se edita', calle: 'Dirección real' })
+    b.store().setStep(3)
+    expect(localStorage.getItem(KEY)).toBe(stored)
+    expect((await b.photos.loadDraftPhotos('ana', id)).length).toBe(2)
+
+    b.store().leaveEdit()
+    expect(b.store().isEditMode).toBe(false)
+    expect(b.store().data.description).toBe('Casa nueva a medias')
+    expect(b.store().data.calle).toBe('')
+    expect(b.store().step).toBe(4)
+    expect(b.store().publishId).toBe(id)
+    await waitFor(() => expect(b.store().data.photos.map((f) => f.name)).toEqual(['a.jpg', 'b.jpg']))
     b.stop()
   })
 })

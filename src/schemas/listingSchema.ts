@@ -84,20 +84,35 @@ export const step1Schema = z.object({
 export type Step1Data = z.infer<typeof step1Schema>
 
 /**
- * Casa, departamento and alojamiento need at least one bathroom, and casa and
- * alojamiento at least one bedroom — the app's sentences, with the type as
- * this website names it ("Alojamiento" for hospedaje). A departamento with 0
- * dormitorios is a Monoambiente (ADR-043 D4, both platforms).
+ * 0 dormitorios = "Monoambiente" (ADR-043 D4) — OFF until the app release that
+ * reads 0 reaches most phones. Every installed app version today throws on a
+ * property with 0 bedrooms (PropertySpecs.create): the listing drops off its
+ * map and the owner's whole Mis Propiedades fails to load. Turn on (true)
+ * only after that release is on most phones; the app agent ships the reader.
  */
-export const AT_LEAST_ONE: Record<string, { bedroom: string | null; bathroom: string }> = {
+export const MONOAMBIENTE_ENABLED = false
+
+/**
+ * Casa, departamento and alojamiento need at least one bedroom and one
+ * bathroom — the app's sentences, with the type as this website names it
+ * ("Alojamiento" for hospedaje). With MONOAMBIENTE_ENABLED a departamento may
+ * have 0 dormitorios.
+ */
+export const AT_LEAST_ONE: Record<string, { bedroom: string; bathroom: string }> = {
   casa: { bedroom: 'Una casa necesita al menos 1 dormitorio.', bathroom: 'Una casa necesita al menos 1 baño.' },
-  departamento: { bedroom: null, bathroom: 'Un departamento necesita al menos 1 baño.' },
+  departamento: { bedroom: 'Un departamento necesita al menos 1 dormitorio.', bathroom: 'Un departamento necesita al menos 1 baño.' },
   hospedaje: { bedroom: 'Un alojamiento necesita al menos 1 dormitorio.', bathroom: 'Un alojamiento necesita al menos 1 baño.' },
 }
 
-/** The fewest dormitorios a type can have: 0 (Monoambiente) for a departamento, else 1. */
-export function minBedrooms(propertyType: string): number {
-  return AT_LEAST_ONE[propertyType]?.bedroom ? 1 : 0
+/** The sentence refusing 0 dormitorios for this type, or null when 0 is allowed (a Monoambiente). */
+export function zeroBedroomsMessage(propertyType: string, monoambiente = MONOAMBIENTE_ENABLED): string | null {
+  if (monoambiente && propertyType === 'departamento') return null
+  return AT_LEAST_ONE[propertyType]?.bedroom ?? null
+}
+
+/** The fewest dormitorios a type can have: 1, or 0 for a departamento once Monoambiente is on. */
+export function minBedrooms(propertyType: string, monoambiente = MONOAMBIENTE_ENABLED): number {
+  return zeroBedroomsMessage(propertyType, monoambiente) ? 1 : 0
 }
 
 /** The description's minimum, in letters (D5). */
@@ -143,8 +158,8 @@ export const step2Schema = z
           path: ['bedroomCount'],
           message: 'Ingresa cantidad de dormitorios',
         })
-      } else if (data.bedroomCount === 0 && needs?.bedroom) {
-        ctx.addIssue({ code: 'custom', path: ['bedroomCount'], message: needs.bedroom })
+      } else if (data.bedroomCount === 0 && zeroBedroomsMessage(data.propertyType)) {
+        ctx.addIssue({ code: 'custom', path: ['bedroomCount'], message: zeroBedroomsMessage(data.propertyType)! })
       }
       if (data.bathroomCount == null) {
         ctx.addIssue({
@@ -171,7 +186,8 @@ export const step3Schema = z.object({
 })
 export type Step3Data = z.infer<typeof step3Schema>
 
-// Step 4: Price
+// Step 4: Price. Agent help is not here: it is set on the Mis Propiedades
+// card (ADR-043 D10; hostile review 2026-11-02 #4).
 export const step4Schema = z
   .object({
     operationType: z.string({ error: 'Selecciona el tipo de operación' }), // passed through for price validation
@@ -179,12 +195,6 @@ export const step4Schema = z
     propertyType: z.string({ error: 'Selecciona el tipo de propiedad' }).optional(), // passed through for price validation
     amount: priceSchema('Ingresa un precio válido', 'El precio debe ser mayor a 0.'),
     currency: z.enum(['PEN', 'USD'], { error: 'Elige la moneda' }),
-    wantsRealtorHelp: z.boolean({ error: 'Elige si quieres ayuda de agentes' }),
-    maxRealtors: z
-      .number({ error: 'Selecciona un número válido de agentes' })
-      .int('Selecciona un número válido de agentes')
-      .min(1, 'Selecciona un número válido de agentes')
-      .max(5, 'Selecciona un número válido de agentes'),
   })
 export type Step4Data = z.infer<typeof step4Schema>
 
@@ -210,12 +220,4 @@ export const fullListingSchema = z.object({
   currency: z.enum(['PEN', 'USD'], {
     message: 'Moneda no seleccionada (Paso 5)',
   }),
-  wantsRealtorHelp: z.boolean({
-    message: 'Preferencia de agente no seleccionada (Paso 5)',
-  }),
-  maxRealtors: z
-    .number({ message: 'Número de agentes no ingresado (Paso 5)' })
-    .int('Número de agentes inválido (Paso 5)')
-    .min(1, 'Número de agentes inválido (Paso 5)')
-    .max(5, 'Número de agentes inválido (Paso 5)'),
 })

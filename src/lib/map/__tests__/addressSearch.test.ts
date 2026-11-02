@@ -1,10 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import { searchAddresses, PIURA_BBOX } from '../addressSearch'
 
-const feature = (name: string, lng: number, lat: number, type = 'street') => ({
+const feature = (name: string, lng: number, lat: number, type = 'street', region = 'PE-PIU') => ({
   id: name,
   geometry: { coordinates: [lng, lat] },
-  properties: { feature_type: type, name, place_formatted: 'Castilla, Departamento de Piura, Perú' },
+  properties: {
+    feature_type: type, name, place_formatted: 'Castilla, Departamento de Piura, Perú',
+    context: { region: { name: 'Departamento', region_code_full: region } },
+  },
 })
 
 function fakeFetch(features: unknown[], ok = true) {
@@ -34,6 +37,18 @@ describe('searchAddresses (ADR-043 D6)', () => {
     expect(r.map((x) => x.name)).toEqual(['Avenida Grau', 'Castilla'])
     expect(r[0]).toMatchObject({ latitude: -5.2138, longitude: -80.6255, isStreet: true })
     expect(r[1]!.isStreet).toBe(false)
+  })
+
+  // Hostile review 2026-11-02: the box around Piura also covers parts of
+  // Tumbes, Lambayeque and Ecuador; only the departamento de Piura counts.
+  it('keeps only places in the departamento de Piura, not just inside the box', async () => {
+    const f = fakeFetch([
+      feature('Avenida Grau', -80.6255, -5.2138),
+      feature('Calle en Tumbes', -80.5, -4.1, 'street', 'PE-TUM'),
+      feature('Sin región', -80.6, -5.1, 'street', ''),
+    ])
+    const r = await searchAddresses('grau', { token: 'pk.x', fetchFn: f })
+    expect(r.map((x) => x.name)).toEqual(['Avenida Grau'])
   })
 
   it('too short or no token: no request', async () => {

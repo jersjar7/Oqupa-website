@@ -8,10 +8,14 @@ export function bathroomsLabel(count: number | null | undefined): string | null 
 }
 
 /**
- * 0 dormitorios reads "Monoambiente" everywhere (ADR-043 D4); otherwise
- * "3 hab." — or just "3" with `bare`, where the label sits beside it.
+ * "3 hab." — or just "3" with `bare`, where the label sits beside it. A
+ * Departamento with 0 dormitorios reads "Monoambiente" (ADR-043 D4); no other
+ * type ever does.
  */
-export function bedroomsLabel(count: number, { bare = false }: { bare?: boolean } = {}): string {
-  if (count === 0) return 'Monoambiente'
+export function bedroomsLabel(
+  count: number,
+  { bare = false, propertyType }: { bare?: boolean; propertyType?: string } = {},
+): string {
+  if (count === 0 && propertyType === 'departamento') return 'Monoambiente'
   return bare ? String(count) : `${count} hab.`
 }

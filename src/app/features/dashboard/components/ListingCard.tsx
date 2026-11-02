@@ -21,6 +21,7 @@ import {
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
+import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
 
 interface ListingCardProps {
   listing: Listing
@@ -50,6 +51,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
   const setRealtorHelp = useSetRealtorHelp()
   const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
+  const [showRealtorHelpOff, setShowRealtorHelpOff] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -140,7 +142,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {/* Specs */}
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-secondary">
           {property.specs.bedroomCount != null && (
-            <span>{bedroomsLabel(property.specs.bedroomCount)}</span>
+            <span>{bedroomsLabel(property.specs.bedroomCount, { propertyType: property.propertyType })}</span>
           )}
           {bathroomsLabel(property.specs.bathroomCount) && (
             <span>{bathroomsLabel(property.specs.bathroomCount)}</span>
@@ -214,12 +216,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {listing.status === 'active' && !listing.assignedRealtorId && (
           <div className="mt-2">
             {listing.wantsRealtorHelp ? (
-              <button
-                type="button"
-                className="inline-flex min-h-11 items-center text-xs font-medium text-text-secondary underline underline-offset-2 hover:text-text-primary disabled:opacity-50"
-                disabled={setRealtorHelp.isPending}
-                onClick={() => setRealtorHelp.mutate({ listingId: listing.id, on: false })}
-              >
+              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
                 Desactivar ayuda de agentes
               </button>
             ) : (
@@ -230,6 +227,36 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             )}
           </div>
         )}
+        {/* Turning it off releases and notifies the agents: it asks first,
+            with the app's words (hostile review #5). */}
+        {showRealtorHelpOff && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm font-medium text-text-primary">¿Desactivar la ayuda de agentes?</p>
+            {realtorHelpDisableWarning({ assignmentStatus: listing.assignmentStatus, claimsCount: listing.currentClaimsCount ?? 0 }) && (
+              <p className="mt-1 text-sm text-text-secondary">
+                {realtorHelpDisableWarning({ assignmentStatus: listing.assignmentStatus, claimsCount: listing.currentClaimsCount ?? 0 })}
+              </p>
+            )}
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                className="min-h-11 px-3"
+                isLoading={setRealtorHelp.isPending}
+                onClick={() =>
+                  setRealtorHelp.mutate(
+                    { listingId: listing.id, on: false },
+                    { onSuccess: () => setShowRealtorHelpOff(false) },
+                  )
+                }
+              >
+                Sí, desactivar
+              </Button>
+              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOff(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
         {showRealtorHelpOffer && (
           <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
             <p className="text-sm text-text-secondary">
@@ -238,6 +265,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
             <div className="mt-2 flex gap-2">
               <Button
                 variant="text"
+                className="min-h-11 px-3"
                 isLoading={setRealtorHelp.isPending}
                 onClick={() =>
                   setRealtorHelp.mutate(
@@ -248,7 +276,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
               >
                 Sí, activar
               </Button>
-              <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>
+              <Button variant="text" className="min-h-11 px-3" onClick={() => setShowRealtorHelpOffer(false)}>
                 Cancelar
               </Button>
             </div>

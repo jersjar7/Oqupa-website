@@ -61,6 +61,18 @@ describe('PhotoStep — tap to make the cover (D8)', () => {
   })
 })
 
+describe('PhotoStep — one photo is singular', () => {
+  it('an edit of a one-photo listing asks for "al menos 1 foto"', async () => {
+    const s = useListingFormStore.getState()
+    s.startEdit('L1', 'P1')
+    s.updateData({ existingPhotoUrls: [], originalExistingPhotoUrls: ['property-photos/P1/1-0.webp'] })
+    s.setStep(4)
+    render(<PhotoStep />)
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('Sube al menos 1 foto')).toBeTruthy()
+  })
+})
+
 describe('PhotoStep — ATRÁS', () => {
   it('ATRÁS keeps every photo', async () => {
     const { unmount } = render(<PhotoStep />)
