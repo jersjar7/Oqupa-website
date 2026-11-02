@@ -77,11 +77,27 @@ describe('ListingCard — agent help after publishing (D10)', () => {
     expect(screen.queryByText(/Agentes verificados/)).toBeNull()
   })
 
-  it('on: the owner can turn it off in one tap', () => {
-    setup({ wantsRealtorHelp: true })
+  // Hostile review 2026-11-02 #5: turning it off releases and notifies the
+  // agents, so it asks first, with the app's words, never on one tap.
+  it('on: turning it off asks first, with the app\'s warning when agents are interested', () => {
+    setup({ wantsRealtorHelp: true, currentClaimsCount: 2 })
     expect(screen.queryByRole('button', { name: 'Ayuda de agentes' })).toBeNull()
+    const off = btn('Desactivar ayuda de agentes')
+    expect(off.className).toMatch(/\bmin-h-11\b/)
+    fireEvent.click(off)
+    expect(setHelp.mutate).not.toHaveBeenCalled()
+    expect(screen.getByText('¿Desactivar la ayuda de agentes?')).toBeTruthy()
+    expect(screen.getByText('2 agentes están interesados en trabajar contigo. Si guardas este cambio, dejarán de ver tu anuncio y se les avisará.')).toBeTruthy()
+    fireEvent.click(btn('Sí, desactivar'))
+    expect(setHelp.mutate).toHaveBeenCalledWith({ listingId: 'L1', on: false }, expect.anything())
+  })
+
+  it('turning it off can be cancelled', () => {
+    setup({ wantsRealtorHelp: true })
     fireEvent.click(btn('Desactivar ayuda de agentes'))
-    expect(setHelp.mutate).toHaveBeenCalledWith({ listingId: 'L1', on: false })
+    fireEvent.click(btn('Cancelar'))
+    expect(setHelp.mutate).not.toHaveBeenCalled()
+    expect(screen.queryByText('¿Desactivar la ayuda de agentes?')).toBeNull()
   })
 
   it('with an agent assigned, no switch (the agents page handles it)', () => {
