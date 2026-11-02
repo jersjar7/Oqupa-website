@@ -99,6 +99,8 @@ export default function AuthPipelinePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [smsCooldown, setSmsCooldown] = useState(0)
   const pendingPhoneRef = useRef<{ phoneNumber: string; countryName: string } | null>(null)
+  // Shown on the code screen, so the person can see where the SMS went.
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   const finish = useCallback(() => {
     clearPendingEmailChange()
@@ -255,6 +257,7 @@ export default function AuthPipelinePage() {
                     setSmsCooldown(RESEND_SECONDS)
                     toast.success('Código enviado')
                     pendingPhoneRef.current = { phoneNumber: phoneWithCountry, countryName }
+                    setSentTo(formatPhoneForDisplay(data.countryCode, data.phoneNumber))
                     setDirection(1)
                     setStep('verify-code')
                   } catch (err) {
@@ -276,6 +279,7 @@ export default function AuthPipelinePage() {
 
             {step === 'verify-code' && (
               <VerifyCodeStep
+                sentTo={sentTo}
                 error={error}
                 recoveryHint={recoveryHint}
                 isSubmitting={isSubmitting}
@@ -403,7 +407,7 @@ function NameStep({
         ¿Cómo te llamas?
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Tu nombre aparecerá en tus anuncios
+        Tu nombre aparecerá en tus publicaciones.
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <Input
@@ -498,7 +502,19 @@ function PhoneStep({
   )
 }
 
+/** "+51 912 345 678" / "+1 (202) 555-1234" — the number as people read it. */
+function formatPhoneForDisplay(countryCode: string, digits: string): string {
+  if (countryCode === '+51' && digits.length === 9) {
+    return `+51 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+  }
+  if (countryCode === '+1' && digits.length === 10) {
+    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+  return `${countryCode} ${digits}`
+}
+
 function VerifyCodeStep({
+  sentTo,
   error,
   recoveryHint,
   isSubmitting,
@@ -507,6 +523,7 @@ function VerifyCodeStep({
   onResend,
   onChangeNumber,
 }: {
+  sentTo: string | null
   error: string | null
   recoveryHint: string | null
   isSubmitting: boolean
@@ -541,7 +558,7 @@ function VerifyCodeStep({
         Ingresa el código
       </h1>
       <p className="mt-2 text-center text-base text-text-secondary">
-        Te enviamos 6 dígitos por SMS
+        {sentTo ? `Te enviamos 6 dígitos al ${sentTo}` : 'Te enviamos 6 dígitos por SMS'}
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <Input

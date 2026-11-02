@@ -98,20 +98,15 @@ function renderPage() {
 function fillForm({
   email = 'new@example.com',
   password = 'Password1!',
-  confirmPassword = 'Password1!',
 }: {
   email?: string
   password?: string
-  confirmPassword?: string
 } = {}) {
   fireEvent.change(screen.getByRole('textbox', { name: /correo/i }), {
     target: { value: email },
   })
   fireEvent.change(screen.getByLabelText(/^contraseña$/i), {
     target: { value: password },
-  })
-  fireEvent.change(screen.getByLabelText(/confirma la contraseña/i), {
-    target: { value: confirmPassword },
   })
 }
 
@@ -127,11 +122,12 @@ describe('RegisterPage', () => {
   })
 
   describe('rendering', () => {
-    it('renders email, password and confirmPassword fields', () => {
+    // ADR-046 #9: one password box, as in the app — no "Confirma la contraseña".
+    it('renders email and ONE password field', () => {
       renderPage()
       expect(screen.getByRole('textbox', { name: /correo/i })).toBeDefined()
       expect(screen.getByLabelText(/^contraseña$/i)).toBeDefined()
-      expect(screen.getByLabelText(/confirma la contraseña/i)).toBeDefined()
+      expect(screen.queryByLabelText(/confirma la contraseña/i)).toBeNull()
     })
 
     it('renders the submit button', () => {
@@ -198,19 +194,9 @@ describe('RegisterPage', () => {
   })
 
   describe('client-side validation', () => {
-    it('blocks submit when passwords do not match', async () => {
-      renderPage()
-      fillForm({ confirmPassword: 'different' })
-      fireEvent.submit(document.querySelector('form')!)
-      await waitFor(() => {
-        expect(screen.getByText(/no coinciden/i)).toBeDefined()
-      })
-      expect(mockAuthService.registerWithEmailAndPassword).not.toHaveBeenCalled()
-    })
-
     it('blocks submit when password is too short', async () => {
       renderPage()
-      fillForm({ password: '12345', confirmPassword: '12345' })
+      fillForm({ password: '12345' })
       fireEvent.submit(document.querySelector('form')!)
       await waitFor(() => {
         expect(screen.getByText(/al menos 8/i)).toBeDefined()
@@ -321,5 +307,36 @@ describe('RegisterPage — Google first (email sign-up fix, step 1)', () => {
     renderClosed('/app/register?email=a%40b.co')
     expect((screen.getByRole('textbox', { name: /correo/i }) as HTMLInputElement).value).toBe('a@b.co')
     expect(screen.queryByRole('button', { name: /continuar con correo/i })).toBeNull()
+  })
+})
+
+describe('RegisterPage — feature audit 2026-11-02', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  // ADR-046 #8: the same sentence under the buttons on both doors.
+  it('says what continuing accepts, with both links, under the buttons', () => {
+    renderClosed()
+    const line = screen.getByTestId('terms-line')
+    expect(line.textContent).toBe('Al continuar aceptas los Términos y la Política de Privacidad de Oqupa.')
+    expect(screen.getByRole('link', { name: 'Términos' }).getAttribute('href')).toBe('/terms')
+    expect(screen.getByRole('link', { name: 'Política de Privacidad' }).getAttribute('href')).toBe('/privacy')
+  })
+
+  // ADR-046 #7: ñ, accents and spaces are accepted.
+  it('creates the account with a password that has ñ and a space', async () => {
+    mockAuthService.registerWithEmailAndPassword.mockResolvedValue({ uid: 'u' })
+    mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined)
+    renderPage()
+    fillForm({ password: 'Contraseña 1!' })
+    fireEvent.submit(document.querySelector('form')!)
+    await waitFor(() =>
+      expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalledWith('new@example.com', 'Contraseña 1!'),
+    )
+  })
+
+  it('shows the hints in words', () => {
+    renderPage()
+    fillForm({ password: 'a' })
+    expect(screen.getByText('una mayúscula')).toBeDefined()
   })
 })

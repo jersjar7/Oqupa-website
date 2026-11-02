@@ -392,3 +392,73 @@ describe('AuthPipelinePage — contact funnel (A10)', () => {
     expect(steps()).toEqual(['email_verified'])
   })
 })
+
+describe('AuthPipelinePage — feature audit 2026-11-02', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFunnel.pendingContactErrand.mockReturnValue(null)
+    mockAuthState.firebaseUser = { uid: 'uid-123', email: 'test@example.com', emailVerified: true }
+    mockAuthState.user = { name: 'Juan', isPhoneVerified: false }
+    mockAuthState.refreshUser.mockResolvedValue(undefined)
+    mockAuthState.refreshFirebaseUser.mockResolvedValue(mockAuthState.firebaseUser)
+    mockConsumeReturnUrl.mockReturnValue(null)
+    mockAuthService.sendPhoneVerificationCode.mockResolvedValue('ver-1')
+    mockAuthService.updateUserName.mockResolvedValue(undefined)
+  })
+
+  function typeNumber(value: string) {
+    renderPage()
+    fireEvent.change(screen.getByPlaceholderText(/912 345 678/), { target: { value } })
+    fireEvent.click(screen.getByRole('button', { name: /enviar código/i }))
+  }
+
+  // Top item 4: the box refused the spaces its own example shows.
+  it.each(['912 345 678', '+51 912345678', '51912345678'])(
+    'the phone step accepts %j and sends to +51912345678',
+    async (typed) => {
+      typeNumber(typed)
+      await waitFor(() => expect(mockAuthService.sendPhoneVerificationCode).toHaveBeenCalledWith('+51912345678'))
+    },
+  )
+
+  // ADR-046 #11
+  it('a Peru landline is refused before any SMS, with the sentence', async () => {
+    typeNumber('731234567')
+    await waitFor(() => expect(screen.getByText('Ingresa tu celular: 9 dígitos que empiezan con 9.')).toBeDefined())
+    expect(mockAuthService.sendPhoneVerificationCode).not.toHaveBeenCalled()
+  })
+
+  // Audit C §3: the code screen did not say where the SMS went.
+  it('the code screen shows the number the SMS went to', async () => {
+    typeNumber('912 345 678')
+    await waitFor(() => expect(screen.getByText(/ingresa el código/i)).toBeDefined())
+    expect(screen.getByText('Te enviamos 6 dígitos al +51 912 345 678')).toBeDefined()
+  })
+
+  // ADR-046 #10
+  describe('name step', () => {
+    beforeEach(() => { mockAuthState.user = null })
+    it('accepts a hyphenated name and saves it without surrounding spaces', async () => {
+      renderPage()
+      fireEvent.change(screen.getByLabelText(/nombre completo/i), { target: { value: ' María-José ' } })
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }))
+      await waitFor(() => expect(mockAuthService.updateUserName).toHaveBeenCalledWith('uid-123', 'María-José'))
+    })
+    it('refuses digits, saying so', async () => {
+      renderPage()
+      fireEvent.change(screen.getByLabelText(/nombre completo/i), { target: { value: 'Juan 2' } })
+      fireEvent.click(screen.getByRole('button', { name: /continuar/i }))
+      await waitFor(() => expect(screen.getByText('Tu nombre no puede llevar números.')).toBeDefined())
+      expect(mockAuthService.updateUserName).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('AuthPipelinePage — the name step says the same line as the app', () => {
+  it('"Tu nombre aparecerá en tus publicaciones."', () => {
+    mockAuthState.firebaseUser = { uid: 'u', email: 'e@x.com', emailVerified: true }
+    mockAuthState.user = null
+    renderPage()
+    expect(screen.getByText('Tu nombre aparecerá en tus publicaciones.')).toBeDefined()
+  })
+})

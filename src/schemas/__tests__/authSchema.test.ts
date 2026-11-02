@@ -99,17 +99,6 @@ describe('registerSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects mismatched passwords', () => {
-    const result = registerSchema.safeParse({
-      ...validRegister,
-      confirmPassword: strongPassword + 'x',
-    })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(result.error.issues.some((i) => i.path.includes('confirmPassword'))).toBe(true)
-    }
-  })
-
   it('rejects invalid email', () => {
     const result = registerSchema.safeParse({ ...validRegister, email: 'bad-email' })
     expect(result.success).toBe(false)
@@ -313,5 +302,100 @@ describe('verificationCodeSchema', () => {
     expect(() =>
       verificationCodeSchema.parse({ code: '000000' })
     ).not.toThrow()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Feature audit 2026-11-02 (ADR-046 #10, #11; audit top item 4)
+// ---------------------------------------------------------------------------
+describe('phoneSchema — typed the way people type a number (audit top item 4)', () => {
+  const parsed = (phoneNumber: string, countryCode: '+51' | '+1' = '+51') =>
+    phoneSchema.safeParse({ phoneNumber, countryCode })
+
+  it.each([
+    ['912 345 678', '912345678'],
+    ['+51 912345678', '912345678'],
+    ['+51 912 345 678', '912345678'],
+    ['51912345678', '912345678'],
+    ['912-345-678', '912345678'],
+    [' 912345678 ', '912345678'],
+  ])('accepts %j and keeps only the 9 digits', (typed, digits) => {
+    const result = parsed(typed)
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.phoneNumber).toBe(digits)
+  })
+
+  it('accepts a US number typed with its punctuation', () => {
+    const result = parsed('(202) 555-1234', '+1')
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.phoneNumber).toBe('2025551234')
+  })
+
+  it('accepts a US number pasted with +1', () => {
+    const result = parsed('+1 202 555 1234', '+1')
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.phoneNumber).toBe('2025551234')
+  })
+
+  it('still refuses letters', () => {
+    expect(parsed('91234567a').success).toBe(false)
+  })
+})
+
+describe('phoneSchema — a Peru number must be a mobile (ADR-046 #11)', () => {
+  const MOBILE_ONLY = 'Ingresa tu celular: 9 dígitos que empiezan con 9.'
+
+  it('refuses 9 digits that do not start with 9 (a landline), with the sentence', () => {
+    const result = phoneSchema.safeParse({ phoneNumber: '731234567', countryCode: '+51' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.issues[0]!.message).toBe(MOBILE_ONLY)
+  })
+
+  it('says the same for the wrong number of digits', () => {
+    const result = phoneSchema.safeParse({ phoneNumber: '98765432', countryCode: '+51' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.issues[0]!.message).toBe(MOBILE_ONLY)
+  })
+
+  it('leaves other countries as they were (a US number may start with any digit 2-9)', () => {
+    expect(phoneSchema.safeParse({ phoneNumber: '3125551234', countryCode: '+1' }).success).toBe(true)
+  })
+})
+
+describe('nameSchema — one name rule on both apps (ADR-046 #10)', () => {
+  it.each(['María-José', "O'Neill", 'José Ñáñez', 'Ana M. Torres', 'Jo'])('accepts %j', (name) => {
+    expect(nameSchema.safeParse({ name }).success).toBe(true)
+  })
+
+  it('refuses digits, saying so', () => {
+    const result = nameSchema.safeParse({ name: 'Juan 2' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.issues[0]!.message).toBe('Tu nombre no puede llevar números.')
+  })
+
+  it.each(['Juan@', 'Ana_Torres', '😀😀'])('refuses other symbols in %j', (name) => {
+    const result = nameSchema.safeParse({ name })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]!.message).toBe("Usa solo letras, espacios, apóstrofo ('), guion (-) y punto (.).")
+    }
+  })
+
+  it('refuses punctuation with no letters', () => {
+    expect(nameSchema.safeParse({ name: '--' }).success).toBe(false)
+  })
+
+  it('measures the name without the spaces around it', () => {
+    expect(nameSchema.safeParse({ name: ' J ' }).success).toBe(false)
+  })
+})
+
+describe('registerSchema — passwords in Spanish (ADR-046 #7, #9)', () => {
+  it('accepts ñ, accents and spaces, as before', () => {
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'Contraseña 1!' }).success).toBe(true)
+  })
+
+  it('has no confirm-password field any more', () => {
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'Abcdef1!' }).success).toBe(true)
   })
 })

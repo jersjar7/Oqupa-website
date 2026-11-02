@@ -21,9 +21,10 @@ describe('getRegisterAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
-  it('maps weak-password to a min-length hint', () => {
+  // Audit 2026-11-02: it said 6 while the rule is 8 + four kinds of character.
+  it('maps weak-password to the real rule', () => {
     const info = getRegisterAuthError({ code: 'auth/weak-password' })
-    expect(info.message).toMatch(/al menos 6 caracteres/i)
+    expect(info.message).toBe('La contraseña es muy débil. Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.')
     expect(info.isRetryable).toBe(true)
   })
 
@@ -39,9 +40,10 @@ describe('getRegisterAuthError', () => {
     expect(info.isRetryable).toBe(false)
   })
 
-  it('maps operation-not-allowed to a contact-support message', () => {
+  // Audit 2026-11-02: "Contacta a soporte" named no address.
+  it('maps operation-not-allowed to a message with the support address', () => {
     const info = getRegisterAuthError({ code: 'auth/operation-not-allowed' })
-    expect(info.message).toMatch(/contacta a soporte/i)
+    expect(info.message).toMatch(/admin@oqupa\.com/)
     expect(info.isRetryable).toBe(false)
   })
 
@@ -96,6 +98,8 @@ describe('getLoginAuthError', () => {
   it('maps user-disabled to a non-retryable disabled-account message', () => {
     const info = getLoginAuthError({ code: 'auth/user-disabled' })
     expect(info.message).toMatch(/desactivada/i)
+    // Audit 2026-11-02: the same sentence everywhere, with a way forward.
+    expect(info.message).toMatch(/admin@oqupa\.com/)
     expect(info.isRetryable).toBe(false)
   })
 
@@ -444,5 +448,11 @@ describe('deleting an account', () => {
   })
   it('unknown shows its code', () => {
     expect(getAccountDeleteError({ code: 'functions/aborted' }).message).toContain('(functions/aborted)')
+  })
+})
+
+describe('audit 2026-11-02 — the password sentences name the real rule', () => {
+  it('register: a missing password asks for the real rule', () => {
+    expect(getRegisterAuthError({ code: 'auth/missing-password' }).message).not.toMatch(/6/)
   })
 })

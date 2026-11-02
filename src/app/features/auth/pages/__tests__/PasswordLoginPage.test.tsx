@@ -8,6 +8,8 @@ import { MemoryRouter } from "react-router-dom";
 
 const mockAuthService = vi.hoisted(() => ({
   loginWithEmailAndPassword: vi.fn(),
+  registerWithEmailAndPassword: vi.fn(),
+  sendEmailVerificationToCurrentUser: vi.fn(),
   signInWithGoogle: vi.fn(),
   getSignInMethods: vi.fn(),
 }));
@@ -48,6 +50,12 @@ vi.mock("@/app/features/listings/contactFunnel", () => ({
   pendingContactErrand: mockFunnel.pendingContactErrand,
   logContactMilestone: mockFunnel.logContactMilestone,
 }));
+
+const mockNavigate = vi.hoisted(() => vi.fn());
+vi.mock("react-router-dom", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("react-router-dom")>();
+  return { ...mod, useNavigate: () => mockNavigate };
+});
 
 import PasswordLoginPage from "../PasswordLoginPage";
 
@@ -152,6 +160,8 @@ describe("PasswordLoginPage — the entry screen", () => {
         expect(screen.getByText("Credenciales incorrectas")).toBeDefined();
       });
     });
+    // ADR-046 #9: "Crea tu cuenta con este correo" creates it right here with
+    // what was typed — no second screen, no second password box.
     it("a mismatch offers to create the account with that email, or recover the password", async () => {
       mockAuthService.loginWithEmailAndPassword.mockRejectedValue({
         code: "auth/invalid-credential",
@@ -163,12 +173,9 @@ describe("PasswordLoginPage — the entry screen", () => {
       await waitFor(() =>
         expect(screen.getByText(/no coinciden/i)).toBeDefined(),
       );
-      const create = screen.getByRole("link", {
-        name: /crea tu cuenta con este correo/i,
-      });
-      expect(create.getAttribute("href")).toBe(
-        "/app/register?email=ana%40example.com",
-      );
+      expect(
+        screen.getByRole("button", { name: /crea tu cuenta con este correo/i }),
+      ).toBeDefined();
       expect(
         screen.getAllByRole("link", { name: /olvidaste tu contraseña/i })
           .length,
@@ -262,5 +269,67 @@ describe("PasswordLoginPage — after an email change", () => {
     renderPage("/app/login?correo=1&email=a%40b.co");
     expect((screen.getByRole("textbox", { name: /correo/i }) as HTMLInputElement).value).toBe("a@b.co");
     expect(screen.queryByText(/tu correo cambió/i)).toBeNull();
+  });
+});
+
+describe("PasswordLoginPage — feature audit 2026-11-02", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: "auth/invalid-credential" });
+    mockAuthService.registerWithEmailAndPassword.mockResolvedValue({ uid: "new" });
+    mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined);
+  });
+
+  async function mismatch(email: string, password: string) {
+    renderPage();
+    openEmail();
+    fillForm(email, password);
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() => expect(screen.getByText(/no coinciden/i)).toBeDefined());
+  }
+
+  // ADR-046 #8: Google creates accounts from this door too.
+  it("says what continuing accepts, with both links, under the buttons", () => {
+    renderPage();
+    expect(screen.getByTestId("terms-line").textContent).toBe(
+      "Al continuar aceptas los Términos y la Política de Privacidad de Oqupa.",
+    );
+    expect(screen.getByRole("link", { name: "Términos" }).getAttribute("href")).toBe("/terms");
+    expect(screen.getByRole("link", { name: "Política de Privacidad" }).getAttribute("href")).toBe("/privacy");
+  });
+
+  it("speaks to everyone: ¿Primera vez en Oqupa?", () => {
+    renderPage();
+    expect(screen.getByRole("link", { name: /primera vez en oqupa\? crea tu cuenta/i })).toBeDefined();
+    expect(screen.queryByText(/nueva en oqupa/i)).toBeNull();
+  });
+
+  it("creates the account in place with what was typed, then asks for the email link", async () => {
+    await mismatch("nueva@example.com", "Contraseña 1!");
+    fireEvent.click(screen.getByRole("button", { name: /crea tu cuenta con este correo/i }));
+    await waitFor(() =>
+      expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalledWith("nueva@example.com", "Contraseña 1!"),
+    );
+    await waitFor(() => expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled());
+    expect(mockNavigate).toHaveBeenCalledWith("/app/verify", { replace: true });
+  });
+
+  it("a password that does not meet the rule names what it is missing, and creates nothing", async () => {
+    await mismatch("nueva@example.com", "abcdefg1");
+    fireEvent.click(screen.getByRole("button", { name: /crea tu cuenta con este correo/i }));
+    await waitFor(() =>
+      expect(screen.getByText("Para crear tu cuenta, tu contraseña necesita una mayúscula y un símbolo.")).toBeDefined(),
+    );
+    expect(mockAuthService.registerWithEmailAndPassword).not.toHaveBeenCalled();
+  });
+
+  it("an address that turns out to exist reads as a mismatch, with recovery offered", async () => {
+    mockAuthService.registerWithEmailAndPassword.mockRejectedValue({ code: "auth/email-already-in-use" });
+    await mismatch("ana@example.com", "Contraseña 1!");
+    fireEvent.click(screen.getByRole("button", { name: /crea tu cuenta con este correo/i }));
+    await waitFor(() => expect(mockAuthService.registerWithEmailAndPassword).toHaveBeenCalled());
+    expect(screen.getByText(/no coinciden/i)).toBeDefined();
+    expect(screen.getAllByRole("link", { name: /olvidaste tu contraseña/i }).length).toBeGreaterThan(0);
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

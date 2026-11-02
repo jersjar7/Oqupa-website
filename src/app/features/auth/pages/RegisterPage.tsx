@@ -9,6 +9,8 @@ import { getRegisterAuthError, getSocialSignInError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
+import { createEmailAccount } from '../lib/createEmailAccount'
+import TermsLine from '../components/TermsLine'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -34,20 +36,8 @@ export default function RegisterPage() {
 
   async function onSubmit(data: RegisterFormData) {
     setError(null)
-    const errand = pendingContactErrand()
     try {
-      await authService.registerWithEmailAndPassword(data.email, data.password)
-      logContactMilestone(CONTACT_GATE_STEPS.signedIn, errand)
-      // Email verification is non-negotiable: kick off the action link before
-      // the user leaves this page so the inbox is already waiting when they
-      // hit the verify-email step.
-      try {
-        await authService.sendEmailVerificationToCurrentUser()
-      } catch {
-        // Non-fatal — the pipeline's "Reenviar correo" button can retry.
-        // Surface a soft toast but still advance to the pipeline.
-        toast.error('No pudimos enviar el correo de verificación. Reenvíalo desde el siguiente paso.')
-      }
+      await createEmailAccount(data.email, data.password)
       navigate('/app/verify', { replace: true })
     } catch (err) {
       const errorInfo = getRegisterAuthError(err)
@@ -114,16 +104,6 @@ export default function RegisterPage() {
             />
             <PasswordRequirements password={passwordValue} />
 
-            <Input
-              label="Confirma la contraseña"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Repite la contraseña"
-              error={errors.confirmPassword?.message}
-              revealToggle
-              {...register('confirmPassword')}
-            />
-
             {error && <p className="text-sm text-error">{error}</p>}
 
             <Button type="submit" isLoading={isSubmitting} className="w-full">
@@ -132,17 +112,7 @@ export default function RegisterPage() {
           </form>
         )}
 
-        <p className="mt-6 text-center text-xs text-text-tertiary">
-          Al crear una cuenta aceptas nuestros{' '}
-          <Link to="/terms" className="underline hover:text-text-secondary">
-            Términos
-          </Link>{' '}
-          y nuestra{' '}
-          <Link to="/privacy" className="underline hover:text-text-secondary">
-            Política de Privacidad
-          </Link>
-          .
-        </p>
+        <TermsLine />
 
         <div className="mt-4 text-center">
           <span className="text-base text-text-secondary">

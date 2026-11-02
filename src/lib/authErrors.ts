@@ -25,6 +25,7 @@ const COOKIES_HINT = 'Permite las cookies para oqupa.com o sal del modo privado 
 const OURS = 'Hubo un problema de nuestro lado. Intenta de nuevo en un momento.'
 const NOT_AVAILABLE = 'Esta forma de entrar no está disponible en este momento. Escríbenos a admin@oqupa.com.'
 const WRONG_ADDRESS = 'Abre Oqupa desde su dirección oficial, oqupa.com, e intenta de nuevo.'
+const WEAK_PASSWORD = 'La contraseña es muy débil. Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.'
 const PROFILE_REFUSED = 'No pudimos guardar tu perfil. Cierra sesión, vuelve a entrar e intenta de nuevo.'
 
 /**
@@ -154,7 +155,7 @@ export function getLoginAuthError(error: unknown): AuthErrorInfo {
     case 'auth/too-many-requests':
       return { message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.', isRetryable: false }
     case 'auth/user-disabled':
-      return { message: 'Esta cuenta ha sido desactivada.', isRetryable: false }
+      return { message: DISABLED, isRetryable: false }
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     case 'auth/invalid-email':
@@ -185,15 +186,9 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
     case 'auth/invalid-email':
       return { message: 'Ingresa un correo válido.', isRetryable: true }
     case 'auth/weak-password':
-      return {
-        message: 'La contraseña es muy débil. Usa al menos 6 caracteres.',
-        isRetryable: true,
-      }
+      return { message: WEAK_PASSWORD, isRetryable: true }
     case 'auth/operation-not-allowed':
-      return {
-        message: 'El registro con correo y contraseña está deshabilitado. Contacta a soporte.',
-        isRetryable: false,
-      }
+      return { message: NOT_AVAILABLE, isRetryable: false }
     case 'auth/too-many-requests':
       return {
         message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.',
@@ -205,7 +200,7 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
         isRetryable: true,
       }
     case 'auth/missing-password':
-      return { message: 'Crea una contraseña de al menos 6 caracteres.', isRetryable: true }
+      return { message: 'Crea una contraseña de al menos 8 caracteres con mayúscula, minúscula, número y símbolo.', isRetryable: true }
     case 'auth/web-storage-unsupported':
       return { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false }
     case 'auth/internal-error':
