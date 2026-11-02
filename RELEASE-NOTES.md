@@ -4,6 +4,16 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## Unreleased — on staging, waiting for the production yes
+
+### Legal
+- Privacidad no longer lists "Recordatorios de expiración de anuncios" among the push notifications: listings never expire and no such reminder is sent (ADR-014). Its "Última actualización" date moves with this change.
+
+### Bug Fixes
+- The owner dashboard no longer says "N caducan en menos de 7 días" (listings never expire, ADR-014); it says how many listings are not shown on the map.
+
+---
+
 ## 2026-11-01 (evening) — Legal dates update themselves
 
 ### Legal
