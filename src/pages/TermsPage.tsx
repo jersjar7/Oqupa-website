@@ -159,7 +159,7 @@ export default function TermsPage() {
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
-              <strong>Boosts:</strong> permiten destacar un anuncio dentro de
+              <strong>Destacados:</strong> permiten destacar un anuncio dentro de
               los resultados de búsqueda durante un período determinado, por una
               tarifa fija indicada en la aplicación al momento de la compra.
             </li>
@@ -189,7 +189,7 @@ export default function TermsPage() {
             8. Política de Reembolsos
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Puedes solicitar el reembolso de un boost dentro de las{' '}
+            Puedes solicitar el reembolso de un destacado dentro de las{' '}
             <strong>48 horas</strong> posteriores a la compra, siempre que el
             servicio no haya sido consumido en su totalidad. Las solicitudes de
             reembolso se realizan desde la aplicación o enviando un correo a{' '}
@@ -217,18 +217,18 @@ export default function TermsPage() {
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa permite a usuarios verificados solicitar acceso al programa de
-            asesores inmobiliarios. Al ser aprobado, podrás reclamar leads
+            agentes inmobiliarios. Al ser aprobado, podrás reclamar oportunidades
             disponibles y contactar a usuarios interesados en propiedades. Los
             asesores se comprometen a:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>
               Proporcionar un servicio profesional, honesto y respetuoso a los
-              usuarios cuyos leads sean reclamados.
+              usuarios cuyas oportunidades reclames.
             </li>
             <li>
               No utilizar los datos de contacto obtenidos para fines distintos a
-              la atención del lead específico.
+              la atención de esa oportunidad específica.
             </li>
             <li>
               Cumplir con la legislación peruana aplicable a la actividad
@@ -238,7 +238,7 @@ export default function TermsPage() {
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa se reserva el derecho de revocar el acceso al programa ante
             quejas razonables, comportamiento no profesional o uso indebido de
-            la información de los leads.
+            la información de las oportunidades.
           </p>
         </section>
 
