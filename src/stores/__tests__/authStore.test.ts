@@ -34,6 +34,10 @@ vi.mock('@/lib/firebase', () => ({
   db: {},
 }))
 
+// The repair path (hostile review 2026-11-02, item 1b).
+const mockRepair = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/profileRepair', () => ({ repairMissingProfile: mockRepair }))
+
 // ── BroadcastChannel mock ───────────────────────────────────────────────────
 
 const channelMessages: { type: string }[] = []
@@ -62,6 +66,7 @@ vi.stubGlobal('BroadcastChannel', MockBroadcastChannel)
 // Dynamic import so mocks are in place first
 const { useAuthStore } = await import('../authStore')
 const { getDoc, updateDoc } = await import('firebase/firestore')
+const { accountCreation } = await import('@/lib/accountCreation')
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -682,5 +687,57 @@ describe('authStore', () => {
       expect(state.isInitialized).toBe(false)
       expect(state._unsubscribe).toBeNull()
     })
+  })
+})
+
+// Hostile review 2026-11-02, item 1b — ADR-035's open follow-up. An email
+// account whose profile was never saved (offline at the moment of sign-up)
+// was stuck: every name save failed. Signing in now repairs it, the way
+// Google and Apple already do, and the setup steps continue.
+describe('authStore — a missing profile is repaired at sign-in', () => {
+  beforeEach(() => {
+    useAuthStore.getState().reset()
+    mockRepair.mockReset()
+    accountCreation.end()
+    mockAuth.authStateReady.mockImplementation(() => new Promise<void>((resolve) => {
+      authStateReadyResolve = resolve
+    }))
+    ;(getDoc as Mock).mockReset()
+  })
+
+  const passwordUser = { uid: 'orphan', email: 'o@x.com', providerData: [{ providerId: 'password' }] }
+
+  it('creates the minimal profile and continues with it', async () => {
+    ;(getDoc as Mock)
+      .mockResolvedValueOnce(makeFirestoreDoc(false))
+      .mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'o@x.com', isActive: true }))
+    mockRepair.mockResolvedValue(undefined)
+    useAuthStore.getState().initialize()
+    await resolveAuthStateReady()
+    await fireAuthStateChanged(passwordUser)
+    expect(mockRepair).toHaveBeenCalledWith(passwordUser)
+    expect(useAuthStore.getState().user?.id).toBe('orphan')
+    expect(useAuthStore.getState().user?.name).toBeUndefined() // → the name step
+  })
+
+  it('never repairs while the sign-up itself is still saving the profile', async () => {
+    accountCreation.begin()
+    ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(false))
+    useAuthStore.getState().initialize()
+    await resolveAuthStateReady()
+    await fireAuthStateChanged(passwordUser)
+    expect(mockRepair).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().user).toBeNull()
+    accountCreation.end()
+  })
+
+  it('a failed repair leaves the person signed in without a profile, as before', async () => {
+    ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(false))
+    mockRepair.mockRejectedValue({ code: 'permission-denied' })
+    useAuthStore.getState().initialize()
+    await resolveAuthStateReady()
+    await fireAuthStateChanged(passwordUser)
+    expect(useAuthStore.getState().user).toBeNull()
+    expect(useAuthStore.getState().isInitialized).toBe(true)
   })
 })

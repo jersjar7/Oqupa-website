@@ -9,13 +9,15 @@ import { getRegisterAuthError, getSocialSignInError } from '@/lib/authErrors'
 import { Button, Input } from '@/app/components/ui'
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@/app/features/listings/contactFunnel'
-import { createEmailAccount } from '../lib/createEmailAccount'
+import { createEmailAccount, isProfileSaveFailure } from '../lib/createEmailAccount'
+import ProfileSaveRetry from '../components/ProfileSaveRetry'
 import TermsLine from '../components/TermsLine'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState<string | null>(null)
+  const [profileSaveFailed, setProfileSaveFailed] = useState(false)
   // Google first, email one tap away — the same screen as sign-in and the
   // app's (email sign-up fix, step 1). Someone who already typed their email
   // on the sign-in screen gets the form open.
@@ -40,6 +42,10 @@ export default function RegisterPage() {
       await createEmailAccount(data.email, data.password)
       navigate('/app/verify', { replace: true })
     } catch (err) {
+      if (isProfileSaveFailure(err)) {
+        setProfileSaveFailed(true)
+        return
+      }
       const errorInfo = getRegisterAuthError(err)
       setError(errorInfo.message)
       toast.error(errorInfo.message)
@@ -105,6 +111,7 @@ export default function RegisterPage() {
             <PasswordRequirements password={passwordValue} />
 
             {error && <p className="text-sm text-error">{error}</p>}
+            {profileSaveFailed && <ProfileSaveRetry onDone={() => navigate('/app/verify', { replace: true })} />}
 
             <Button type="submit" isLoading={isSubmitting} className="w-full">
               Crear cuenta

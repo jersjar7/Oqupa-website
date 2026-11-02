@@ -13,7 +13,8 @@ import { CONTACT_GATE_STEPS, logContactMilestone, pendingContactErrand } from '@
 import PasswordRequirements from '@/app/components/ui/PasswordRequirements'
 import { passwordNeedsSentence } from '@/lib/passwordRules'
 import { getRegisterAuthError } from '@/lib/authErrors'
-import { createEmailAccount } from '../lib/createEmailAccount'
+import { createEmailAccount, isProfileSaveFailure } from '../lib/createEmailAccount'
+import ProfileSaveRetry from '../components/ProfileSaveRetry'
 import TermsLine from '../components/TermsLine'
 
 // One door for everyone (docs/new-user-navigation-path.md, step 6): Google is
@@ -44,6 +45,7 @@ export default function PasswordLoginPage() {
   const [googleBusy, setGoogleBusy] = useState(false)
   const [creating, setCreating] = useState(false)
   const [showRules, setShowRules] = useState(false)
+  const [profileSaveFailed, setProfileSaveFailed] = useState(false)
   const {
     register,
     handleSubmit,
@@ -111,6 +113,11 @@ export default function PasswordLoginPage() {
       await createEmailAccount(email.trim(), password)
       navigate('/app/verify', { replace: true })
     } catch (err) {
+      if (isProfileSaveFailure(err)) {
+        setOfferWaysForward(false)
+        setProfileSaveFailed(true)
+        return
+      }
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined
       // The address has an account after all, so the sign-in failed on the
       // password — the ordinary typo, said as one (as the app does).
@@ -179,6 +186,7 @@ export default function PasswordLoginPage() {
             />
             {error && <p className="text-sm text-error">{error}</p>}
             {showRules && <PasswordRequirements password={typedPassword} />}
+            {profileSaveFailed && <ProfileSaveRetry onDone={() => navigate('/app/verify', { replace: true })} />}
             {offerWaysForward && (
               <div className="rounded-xl bg-background-secondary/60 p-3 text-base">
                 <button

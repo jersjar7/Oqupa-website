@@ -70,6 +70,25 @@ function newAccountAttribution(credential: UserCredential, door: SignupDoor) {
     : {}
 }
 
+function newEmailProfile(email: string | null, attribution?: ReturnType<typeof signupAttribution>) {
+  const now = new Date()
+  const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return {
+    email,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    isActive: true,
+    isPhoneVerified: false,
+    isIdentityVerified: false,
+    isVerifiedRealtor: false,
+    claimsThisMonth: 0,
+    claimMonth,
+    authProvider: 'password',
+    // Where this account came from — write-once in the rules (A12b).
+    ...(attribution ? { signupAttribution: attribution } : {}),
+  }
+}
+
 // Store for phone verification flow
 let recaptchaVerifier: RecaptchaVerifier | null = null
 
@@ -82,25 +101,15 @@ export const authService = {
     )
     const user = credential.user
 
-    // Create Firestore user document
-    const now = new Date()
-    const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
+    // Create Firestore user document. A failure here leaves an account with
+    // no profile; it is marked so the page can stay and retry
+    // (saveNewEmailProfile), hostile review 2026-11-02 item 1a.
     const attribution = signupAttribution('email')
-    await createUserDocument(user.uid, {
-      email: user.email,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      isActive: true,
-      isPhoneVerified: false,
-      isIdentityVerified: false,
-      isVerifiedRealtor: false,
-      claimsThisMonth: 0,
-      claimMonth,
-      authProvider: 'password',
-      // Where this account came from — write-once in the rules (A12b).
-      signupAttribution: attribution,
-    })
+    try {
+      await createUserDocument(user.uid, newEmailProfile(user.email, attribution))
+    } catch (error) {
+      throw Object.assign(error as object, { profileSaveFailed: true })
+    }
 
     AnalyticsLogger.registrationCompleted({
       campaign: attribution.lastCampaign ?? attribution.firstCampaign ?? null,
@@ -269,6 +278,13 @@ export const authService = {
       contactInfo,
       updatedAt: serverTimestamp(),
     })
+  },
+
+  /** Retries saving the profile of the account just created (see above). */
+  async saveNewEmailProfile() {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await createUserDocument(user.uid, newEmailProfile(user.email, signupAttribution('email')))
   },
 
   async changePassword(newPassword: string) {

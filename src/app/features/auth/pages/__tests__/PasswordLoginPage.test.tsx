@@ -9,6 +9,7 @@ import { MemoryRouter } from "react-router-dom";
 const mockAuthService = vi.hoisted(() => ({
   loginWithEmailAndPassword: vi.fn(),
   registerWithEmailAndPassword: vi.fn(),
+  saveNewEmailProfile: vi.fn(),
   sendEmailVerificationToCurrentUser: vi.fn(),
   signInWithGoogle: vi.fn(),
   getSignInMethods: vi.fn(),
@@ -32,6 +33,11 @@ vi.mock("@/app/components/ui", () => ({
   ),
 }));
 
+
+// The store the account helper refreshes once the profile is saved.
+vi.mock("@/stores/authStore", () => ({
+  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve() }) },
+}))
 
 // Metrics plan A10: the contact-funnel helpers, so these tests see which
 // milestones the page reports (the helpers themselves are tested on their own).
@@ -331,5 +337,28 @@ describe("PasswordLoginPage — feature audit 2026-11-02", () => {
     expect(screen.getByText(/no coinciden/i)).toBeDefined();
     expect(screen.getAllByRole("link", { name: /olvidaste tu contraseña/i }).length).toBeGreaterThan(0);
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+});
+
+describe("PasswordLoginPage — offline when 'Crea tu cuenta con este correo' creates it", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: "auth/invalid-credential" });
+    mockAuthService.registerWithEmailAndPassword.mockRejectedValue(
+      Object.assign(new Error("offline"), { code: "unavailable", profileSaveFailed: true }),
+    );
+    mockAuthService.saveNewEmailProfile.mockResolvedValue(undefined);
+    mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined);
+  });
+
+  it("stays, says why, and Reintentar finishes it", async () => {
+    renderPage();
+    openEmail();
+    fillForm("nueva@example.com", "Contraseña 1!");
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /crea tu cuenta con este correo/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /reintentar/i }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/app/verify", { replace: true }));
+    expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled();
   });
 });

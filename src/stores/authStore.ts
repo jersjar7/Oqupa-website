@@ -5,6 +5,8 @@ import { auth, db } from '@/lib/firebase'
 import type { User } from '@/types/user'
 import { profileEmailToSync } from '@/lib/emailChange'
 import type { ContactTimeSlot, SupportedCountryCode } from '@/types/enums'
+import { accountCreation } from '@/lib/accountCreation'
+import { repairMissingProfile } from '@/lib/profileRepair'
 
 interface AuthState {
   firebaseUser: FirebaseUser | null
@@ -109,7 +111,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (firebaseUser) {
           set({ firebaseUser, isLoading: true })
           try {
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+            let userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+            // An email account with no profile (its sign-up could not save
+            // one): create the minimal profile now and let the setup steps
+            // continue, as Google and Apple sign-in already do. Never while
+            // the sign-up itself is still saving it. Hostile review
+            // 2026-11-02, item 1b. A refused repair leaves things as before.
+            if (
+              !userDoc.exists() &&
+              !accountCreation.isInFlight() &&
+              (firebaseUser.providerData ?? []).some((p) => p.providerId === 'password')
+            ) {
+              try {
+                await repairMissingProfile(firebaseUser)
+                userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+              } catch {
+                /* falls through to the no-profile state below */
+              }
+            }
             if (userDoc.exists()) {
               let user = firestoreDocToUser(
                 firebaseUser.uid,

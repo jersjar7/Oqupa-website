@@ -14,6 +14,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 const mockAuthService = vi.hoisted(() => ({
   registerWithEmailAndPassword: vi.fn(),
+  saveNewEmailProfile: vi.fn(),
   sendEmailVerificationToCurrentUser: vi.fn(),
   signInWithGoogle: vi.fn(),
 }))
@@ -56,6 +57,11 @@ vi.mock('@/app/components/ui', () => ({
 
 // ── Import after mocks ──────────────────────────────────────────────────────
 
+
+// The store the account helper refreshes once the profile is saved.
+vi.mock('@/stores/authStore', () => ({
+  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve() }) },
+}))
 
 // Metrics plan A10: the contact-funnel helpers, so these tests see which
 // milestones the page reports (the helpers themselves are tested on their own).
@@ -338,5 +344,39 @@ describe('RegisterPage — feature audit 2026-11-02', () => {
     renderPage()
     fillForm({ password: 'a' })
     expect(screen.getByText('una mayúscula')).toBeDefined()
+  })
+})
+
+// Hostile review 2026-11-02, item 1a — the orphan-account reproduction: the
+// account is created, the profile save fails (offline). The page stays,
+// says why, and "Reintentar" finishes the job; the email waits for it.
+describe('RegisterPage — offline at the moment the account is created', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockAuthService.registerWithEmailAndPassword.mockRejectedValue(
+      Object.assign(new Error('offline'), { code: 'unavailable', profileSaveFailed: true }),
+    )
+    mockAuthService.sendEmailVerificationToCurrentUser.mockResolvedValue(undefined)
+  })
+
+  it('stays, says why, and sends no email yet', async () => {
+    renderPage()
+    fillForm()
+    fireEvent.submit(document.querySelector('form')!)
+    await waitFor(() => expect(screen.getByRole('button', { name: /reintentar/i })).toBeDefined())
+    expect(screen.getByText(/tu cuenta quedó creada/i)).toBeDefined()
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(mockAuthService.sendEmailVerificationToCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('"Reintentar" saves the profile, sends the email and moves on', async () => {
+    mockAuthService.saveNewEmailProfile.mockResolvedValue(undefined)
+    renderPage()
+    fillForm()
+    fireEvent.submit(document.querySelector('form')!)
+    fireEvent.click(await screen.findByRole('button', { name: /reintentar/i }))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/app/verify', { replace: true }))
+    expect(mockAuthService.saveNewEmailProfile).toHaveBeenCalled()
+    expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled()
   })
 })

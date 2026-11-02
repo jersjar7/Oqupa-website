@@ -229,6 +229,26 @@ describe('authService', () => {
       expect(retry.authProvider).toBe('password')
     })
 
+    // Hostile review 2026-11-02, item 1a: the page must know the ACCOUNT
+    // exists and only the profile failed, so it can stay and retry.
+    it('marks a failed profile save as such', async () => {
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      setDocMock.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'unavailable' }))
+      await expect(
+        authService.registerWithEmailAndPassword('user@test.com', 'pass123'),
+      ).rejects.toMatchObject({ code: 'unavailable', profileSaveFailed: true })
+    })
+
+    it('saveNewEmailProfile writes the same profile for the signed-in account', async () => {
+      _currentUser = makeUser('uid-7')
+      await authService.saveNewEmailProfile()
+      const payload = setDocMock.mock.calls[setDocMock.mock.calls.length - 1]![1]
+      expect(payload.authProvider).toBe('password')
+      expect(payload.isPhoneVerified).toBe(false)
+      expect(payload.email).toBe('uid-7@test.com')
+    })
+
     it('does not retry a failure that has nothing to do with the attribution', async () => {
       const user = makeUser('uid-1')
       createUserMock.mockResolvedValue(makeCredential(user))
