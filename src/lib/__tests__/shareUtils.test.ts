@@ -191,7 +191,9 @@ describe('shareListing', () => {
     expect(result).toBe('shared')
   })
 
-  it('returns "failed" when navigator.share rejects with AbortError', async () => {
+  // Audit 2026-11-02: a cancel was reported as 'failed', so the share window
+  // could not tell "you cancelled" from "it failed". Was 'failed'.
+  it('returns "cancelled" when navigator.share rejects with AbortError', async () => {
     const abort = new Error('User cancelled')
     abort.name = 'AbortError'
     vi.stubGlobal('navigator', {
@@ -199,7 +201,7 @@ describe('shareListing', () => {
       clipboard: { writeText: vi.fn() },
     })
     const result = await shareListing(baseParams)
-    expect(result).toBe('failed')
+    expect(result).toBe('cancelled')
   })
 
   it('falls back to clipboard when navigator.share is not available', async () => {
