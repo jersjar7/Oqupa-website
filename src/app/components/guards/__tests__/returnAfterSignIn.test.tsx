@@ -6,6 +6,7 @@
 // redirect), and a deliberate Salir does not set a way back.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 
 vi.mock('@/lib/firebase', () => ({ auth: {}, db: {}, functions: {}, storage: {} }))
@@ -17,6 +18,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { watchDraftOwner } from '@/stores/draftOwnerWatch'
 import { noteDeliberateSignOut, safeAppPath } from '@/lib/returnPath'
+import { setReturnUrl } from '@/lib/utils'
 
 function Where() {
   const l = useLocation()
@@ -96,6 +98,29 @@ describe('signed out in the wizard, back in the wizard after signing in', () => 
     renderApp({ pathname: '/app/login', state: { from: '//evil.example/app/x' } })
     await act(async () => signIn('ana'))
     expect(where()).toBe('/app')
+  })
+})
+
+describe('the way back is read once per sign-in (React renders twice in development)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionEnds()
+  })
+
+  it('in StrictMode, signing in still goes to the stored page', async () => {
+    setReturnUrl('/app/listings/new')
+    render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/app/login']}>
+          <Routes>
+            <Route path="/app/login" element={<GuestGuard><p>login</p></GuestGuard>} />
+            <Route path="*" element={<Where />} />
+          </Routes>
+        </MemoryRouter>
+      </StrictMode>,
+    )
+    await act(async () => signIn('ana'))
+    expect(where()).toBe('/app/listings/new')
   })
 })
 

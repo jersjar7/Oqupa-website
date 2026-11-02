@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
@@ -12,6 +12,7 @@ interface GuestGuardProps {
 export default function GuestGuard({ children }: GuestGuardProps) {
   const { firebaseUser, user, isLoading, isInitialized } = useAuthStore()
   const location = useLocation()
+  const destinationRef = useRef<{ uid: string; to: string } | null>(null)
 
   // Bounced here by a guard (the session ended): once signed in, go back
   // where they were — a same-site /app page only (hostile review #3).
@@ -32,7 +33,13 @@ export default function GuestGuard({ children }: GuestGuardProps) {
   if (firebaseUser) {
     const fullyVerified =
       firebaseUser.emailVerified && user?.name && user?.isPhoneVerified
-    const destination = fullyVerified ? (consumeReturnUrl() ?? '/app') : '/app/verify'
+    // Read the stored way back ONCE per sign-in: reading it consumes it, and a
+    // second render before the redirect (React renders twice in development)
+    // found it gone and sent the person to the dashboard instead.
+    if (fullyVerified && destinationRef.current?.uid !== firebaseUser.uid) {
+      destinationRef.current = { uid: firebaseUser.uid, to: consumeReturnUrl() ?? '/app' }
+    }
+    const destination = fullyVerified ? destinationRef.current!.to : '/app/verify'
     return <Navigate to={destination} state={{ from: location }} replace />
   }
 
