@@ -36,6 +36,12 @@ export default function CreateListingPage() {
     if (isEditMode) reset()
   }, [isEditMode, reset])
 
+  // A draft that was already published (the person left during publishing,
+  // or in the moment "¡PUBLICADO!" showed) is done: start a fresh one.
+  useEffect(() => {
+    if (useListingFormStore.getState().publishedListingId) reset()
+  }, [reset])
+
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       {/* Title lives in the Topbar via useSetPageMeta */}

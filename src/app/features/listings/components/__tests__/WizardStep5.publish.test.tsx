@@ -107,6 +107,13 @@ vi.mock('@/components/ShareFormatModal', () => ({ default: () => null }))
 vi.mock('@/lib/analytics', () => ({
   AnalyticsLogger: new Proxy({}, { get: () => () => {} }),
 }))
+const toastMock = vi.hoisted(() => {
+  const fn = vi.fn() as ReturnType<typeof vi.fn> & { success: unknown; error: unknown }
+  fn.success = vi.fn()
+  fn.error = vi.fn()
+  return fn
+})
+vi.mock('sonner', () => ({ toast: toastMock }))
 
 class FakeXHR {
   static count = 0
@@ -201,6 +208,7 @@ beforeEach(() => {
     matches: false, media: q, addEventListener() {}, removeEventListener() {},
     addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false,
   }))
+  toastMock.mockClear()
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
   sessionStorage.clear()
@@ -335,12 +343,15 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     expect(net.commits.filter((c) => c.some((p) => p.startsWith('listings/')))).toHaveLength(1)
   })
 
-  it('a wizard reopened on an already-published draft does not publish it again', async () => {
+  it('a wizard reopened on an already-published draft does not publish it again, nor jump to it', async () => {
     useListingFormStore.getState().markPublished('listing_already')
     renderStep()
     fireEvent.submit(document.querySelector('form')!)
-    await new Promise((r) => setTimeout(r, 100))
+    // Longer than the full-bar + "¡PUBLICADO!" sequence (300 + 600 ms).
+    await new Promise((r) => setTimeout(r, 1500))
     expect(net.commits).toHaveLength(0)
+    expect(screen.queryByTestId('where')).toBeNull()
+    expect(screen.queryByText('¡PUBLICADO!')).toBeNull()
   })
 
   it('warns before leaving only while publishing', async () => {
@@ -359,5 +370,136 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     handler(e)
     expect(e.defaultPrevented).toBe(true)
     expect(removed.mock.calls.some(([t, h]) => t === 'beforeunload' && h === handler)).toBe(false)
+  })
+
+  it('the error is announced: the message is an alert', async () => {
+    net.putBehaviour = () => 'fail'
+    renderStep()
+    fireEvent.click(publishButton())
+    const alert = await screen.findByRole('alert', {}, { timeout: 3000 })
+    expect(alert.textContent).toBe(MESSAGE)
+  })
+})
+
+describe('WizardStep5 — a save that lands after its time limit', () => {
+  async function lateFirstSave() {
+    const fs = await import('firebase/firestore')
+    const realRun = fs.runTransaction as unknown as (...a: unknown[]) => Promise<unknown>
+    let first = true
+    vi.spyOn(fs, 'runTransaction').mockImplementation(((...args: unknown[]) => {
+      if (!first) return realRun(...args)
+      first = false
+      // Lands 25 s later — after the wizard gave up at 20 s.
+      return new Promise((r) => setTimeout(r, 25000)).then(() => realRun(...args))
+    }) as never)
+  }
+
+  it('unchanged draft: the retry is a normal success on the one listing', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await lateFirstSave()
+    const id = useListingFormStore.getState().publishId
+    renderStep()
+    fireEvent.click(publishButton())
+    await act(async () => { await vi.advanceTimersByTimeAsync(21000) })
+    expect(await screen.findByText(MESSAGE)).toBeTruthy()
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    expect(ids('listings').size).toBe(1) // the late save landed
+
+    fireEvent.click(publishButton())
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`))
+    expect(net.commits.filter((c) => c.some((p) => p.startsWith('listings/')))).toHaveLength(1)
+    expect(toastMock).not.toHaveBeenCalled()
+  })
+
+  it('draft changed after the late save: lands on the existing listing and says so honestly', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await lateFirstSave()
+    const id = useListingFormStore.getState().publishId
+    renderStep()
+    fireEvent.click(publishButton())
+    await act(async () => { await vi.advanceTimersByTimeAsync(21000) })
+    expect(await screen.findByText(MESSAGE)).toBeTruthy()
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    expect(ids('listings').size).toBe(1)
+
+    act(() => {
+      useListingFormStore.getState().updateData({
+        description: 'Terreno amplio, ahora con una descripción corregida y más larga',
+      })
+    })
+    fireEvent.click(publishButton())
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`))
+    expect(toastMock).toHaveBeenCalledWith(
+      'Tu anuncio ya se había publicado. Puedes editarlo aquí.',
+      expect.objectContaining({ action: expect.objectContaining({ label: expect.any(String) }) }),
+    )
+    // Not presented as a fresh save.
+    expect(screen.queryByText('¡PUBLICADO!')).toBeNull()
+    expect(net.commits.filter((c) => c.some((p) => p.startsWith('listings/')))).toHaveLength(1)
+  })
+})
+
+describe('WizardStep5 — blocked storage', () => {
+  function blockStorage() {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('no', 'SecurityError') })
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new DOMException('no', 'SecurityError') })
+  }
+
+  it('publishing still succeeds and lands on the listing — no false error', async () => {
+    blockStorage()
+    const id = useListingFormStore.getState().publishId
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`), { timeout: 3000 })
+    expect(ids('listings').size).toBe(1)
+  })
+
+  it('if the identity could not be stored, leaving stays guarded after an error too', async () => {
+    blockStorage()
+    net.putBehaviour = () => 'fail'
+    const added = vi.spyOn(window, 'addEventListener')
+    const removed = vi.spyOn(window, 'removeEventListener')
+    renderStep()
+    fireEvent.click(publishButton())
+    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    const handlers = added.mock.calls.filter(([t]) => t === 'beforeunload').map(([, h]) => h)
+    const active = handlers.filter((h) => !removed.mock.calls.some(([t, r]) => t === 'beforeunload' && r === h))
+    expect(active.length).toBeGreaterThan(0)
+  })
+
+  it('when the identity WAS stored, the guard ends with the error', async () => {
+    net.putBehaviour = () => 'fail'
+    const added = vi.spyOn(window, 'addEventListener')
+    const removed = vi.spyOn(window, 'removeEventListener')
+    renderStep()
+    fireEvent.click(publishButton())
+    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    const handlers = added.mock.calls.filter(([t]) => t === 'beforeunload').map(([, h]) => h)
+    const active = handlers.filter((h) => !removed.mock.calls.some(([t, r]) => t === 'beforeunload' && r === h))
+    expect(active).toHaveLength(0)
+  })
+})
+
+describe('WizardStep5 — a draft left by another account', () => {
+  it('a draft claimed by another account is published under a fresh identity', async () => {
+    const old = useListingFormStore.getState().claimPublishIdentity('someone-else')
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    expect([...ids('listings')][0]).not.toBe(`listings/listing_${old}`)
+  })
+
+  it('ids already taken by another account: a fresh identity and one automatic retry, no error shown', async () => {
+    const id = useListingFormStore.getState().publishId
+    net.docs.set(`listings/listing_${id}`, { ownerId: 'someone-else' })
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(screen.getByTestId('where')).toBeTruthy(), { timeout: 3000 })
+    const mine = [...net.docs.entries()].filter(([p, d]) => p.startsWith('listings/') && d.ownerId === 'owner-1')
+    expect(mine).toHaveLength(1)
+    expect(mine[0]![0]).not.toBe(`listings/listing_${id}`)
+    expect(screen.queryByText(MESSAGE)).toBeNull()
   })
 })

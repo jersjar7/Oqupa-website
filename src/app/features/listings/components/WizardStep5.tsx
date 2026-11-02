@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
@@ -9,7 +10,13 @@ import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
-import { publishListing, PUBLISH_FAILED_MESSAGE, type ListingDoc, type PropertyDoc } from '@/services/publishService'
+import {
+  publishListing,
+  PublishError,
+  PUBLISH_FAILED_MESSAGE,
+  type ListingDoc,
+  type PropertyDoc,
+} from '@/services/publishService'
 import { Button, Input, InfoTip, FillingButton } from '@/app/components/ui'
 import type { FillStatus } from '@/app/components/ui/FillingButton'
 import RevealField from './RevealField'
@@ -21,6 +28,9 @@ import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
+
+/** Shown when the draft was changed after an earlier attempt had already landed. */
+export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
 
 function formatPriceDisplay(amount: number | undefined, currency: Currency): string {
   if (amount == null || isNaN(amount)) return ''
@@ -34,32 +44,41 @@ export default function WizardStep5() {
   const { user } = useAuthStore()
   const {
     data, prevStep, isEditMode, editListingId, editPropertyId, reset,
-    publishId, recordUploadedPhoto, persistDraft, markPublished, publishedListingId,
+    recordUploadedPhoto, persistDraft, markPublished, claimPublishIdentity, renewPublishIdentity,
   } = useListingFormStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
-  // The new-listing publish (ADR-043). A draft already published cannot
-  // publish again: the button stays done and the person moves on.
-  const [publishStatus, setPublishStatus] = useState<FillStatus>(
-    publishedListingId ? 'done' : 'idle',
-  )
+  // The new-listing publish (ADR-043). Always starts idle: a draft that is
+  // already published is cleared by CreateListingPage and refused by
+  // publishNew — mounting must never replay "¡PUBLICADO!" and jump to it.
+  const [publishStatus, setPublishStatus] = useState<FillStatus>('idle')
+  // False when storage refused the draft's identity (private mode, full).
+  const [identityStored, setIdentityStored] = useState(true)
   const [publishProgress, setPublishProgress] = useState(0)
   // Set synchronously on the first click, so a second click that lands
   // before React re-renders cannot start a second publish.
   const publishingRef = useRef(false)
 
   // Leaving while photos and the listing are on their way would lose them.
+  //
+  // If the identity could not be stored, a refresh would come back with a
+  // NEW identity while an earlier save may still land (a timed-out save can
+  // commit later) — a duplicate. We chose to keep publishing with the
+  // identity held in memory rather than refuse to publish, and instead keep
+  // this warning up for the whole publish, errors included, until it
+  // succeeds or the person leaves on purpose.
+  const guardLeaving = publishStatus === 'filling' || (publishStatus === 'error' && !identityStored)
   useEffect(() => {
-    if (publishStatus !== 'filling') return
+    if (!guardLeaving) return
     const warn = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
     }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [publishStatus])
+  }, [guardLeaving])
 
   const {
     register,
@@ -291,8 +310,11 @@ export default function WizardStep5() {
     setSubmitError(null)
     setPublishProgress(0)
     setPublishStatus('filling')
-    // The identity must be stored with the draft before anything is sent.
-    persistDraft()
+    // The identity, claimed for this account (a draft another account left
+    // in this browser gets a fresh one), stored with the draft before
+    // anything is sent.
+    let publishId = claimPublishIdentity(user.id)
+    setIdentityStored(persistDraft())
 
     const now = new Date()
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -300,8 +322,8 @@ export default function WizardStep5() {
     const arrivedFrom = attributionForListing()
 
     try {
-      const outcome = await publishListing({
-        publishId,
+      const attempt = (id: string) => publishListing({
+        publishId: id,
         photos: data.photos,
         uploadedPhotos: useListingFormStore.getState().uploadedPhotos,
         onPhotoUploaded: recordUploadedPhoto,
@@ -390,6 +412,34 @@ export default function WizardStep5() {
           return { property, listing }
         },
       })
+
+      let outcome
+      try {
+        outcome = await attempt(publishId)
+      } catch (err) {
+        // The ids belong to another account: not a connection problem.
+        // Take a fresh identity and try once more, without telling anyone.
+        if (!(err instanceof PublishError) || err.kind !== 'id-taken') throw err
+        publishId = renewPublishIdentity(user.id)
+        setIdentityStored(persistDraft())
+        outcome = await attempt(publishId)
+      }
+
+      if (outcome.contentChanged) {
+        // An earlier attempt landed after its time limit, and the draft was
+        // changed since. Those changes are NOT in the listing: say so, and
+        // take the person to the listing that exists, where they can edit.
+        const listingId = outcome.listingId
+        markPublished(listingId)
+        void queryClient.invalidateQueries({ queryKey: ['listings'] })
+        toast(ALREADY_PUBLISHED_NOTICE, {
+          duration: 10000,
+          action: { label: 'Editar', onClick: () => navigate(`/app/listings/${listingId}/edit`) },
+        })
+        navigate(`/property/${listingId}`, { replace: true })
+        reset()
+        return
+      }
 
       // Saved. The draft goes now — not when some dialog closes — so a
       // refresh, a back button or a second tab cannot publish it again.
@@ -513,7 +563,7 @@ export default function WizardStep5() {
         <div className="space-y-6">
           {/* Submit error */}
           {submitError && (
-            <p className="text-sm text-error">{submitError}</p>
+            <p role="alert" className="text-sm text-error">{submitError}</p>
           )}
 
           {/* Edit mode: what is being saved */}
