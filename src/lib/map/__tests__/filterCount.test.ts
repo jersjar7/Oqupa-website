@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import { activeFilterCount } from '../filterCount'
 
-const base = { operationType: 'venta' as const, rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null }
+const base = { operationType: 'venta' as const, rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'USD' as const }
 
 describe('activeFilterCount', () => {
   it('none', () => expect(activeFilterCount(base)).toBe(0))

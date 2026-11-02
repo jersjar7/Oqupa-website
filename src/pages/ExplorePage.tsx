@@ -17,7 +17,7 @@ import MapFilterBar from '@/components/explore/MapFilterBar'
 import { activeFilterCount, filtersDoneLabel } from '@/lib/map/filterCount'
 import { MAP_FILTERS_Z } from '@/lib/map/mapView'
 import { listingsInsideBounds } from '@/lib/map/listLogic'
-import { penPerUsdForThisVisit } from '@/lib/map/exchangeRates'
+import { penPerUsdForThisVisit, penPerUsdRightNow } from '@/lib/map/exchangeRates'
 import type { Bounds } from '@/lib/map/mapPoint'
 import MobileListingSheet from '@/components/explore/MobileListingSheet'
 import { thumbnail } from '@/lib/imageUrl'
@@ -69,7 +69,11 @@ export default function ExplorePage() {
     propertyTypes: [],
     priceMin: null,
     priceMax: null,
+    priceCurrency: 'USD',
   })
+  // The visit's soles-per-dollar rate, for comparing a typed price with
+  // listings priced in the other currency (audit 2026-11-02, top item 11).
+  const [penPerUsd, setPenPerUsd] = useState(penPerUsdRightNow)
   const [mapBounds, setMapBounds] = useState<Bounds | null>(null)
   const {
     data: items,
@@ -81,7 +85,7 @@ export default function ExplorePage() {
     hitPageCeiling,
     refetch,
   } = useExploreListings(filters.operationType)
-  const { filtered, visible, total } = useMapFilters(items, filters, mapBounds)
+  const { filtered, visible, total } = useMapFilters(items, filters, mapBounds, penPerUsd)
   // filter_applied / search_no_results (metrics plan A12a). Counts every
   // matching listing, not just those in view, as the app does — so it waits
   // until the whole catalogue for this operation has loaded.
@@ -147,7 +151,11 @@ export default function ExplorePage() {
   // The visit's exchange rate, fetched once in the background as the page opens
   // so the list's price sorts already have it (ADR-031 item 19).
   useEffect(() => {
-    void penPerUsdForThisVisit()
+    let alive = true
+    void penPerUsdForThisVisit().then((rate) => alive && setPenPerUsd(rate))
+    return () => {
+      alive = false
+    }
   }, [])
 
   useEffect(() => {

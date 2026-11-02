@@ -15,6 +15,7 @@ interface ItemOverrides {
   propertyType?: string
   rentalDurationType?: string
   price?: number
+  currency?: 'PEN' | 'USD'
   lat?: number
   lng?: number
   displayLat?: number | undefined
@@ -24,7 +25,7 @@ interface ItemOverrides {
 function item(overrides: ItemOverrides = {}): ListingWithProperty {
   return {
     listing: {
-      price: { amount: overrides.price ?? 100_000, currency: 'PEN' },
+      price: { amount: overrides.price ?? 100_000, currency: overrides.currency ?? 'PEN' },
       displayLatitude: overrides.displayLat,
       displayLongitude: overrides.displayLng,
     },
@@ -46,6 +47,7 @@ const NO_FILTERS: MapFilters = {
   propertyTypes: [],
   priceMin: null,
   priceMax: null,
+  priceCurrency: 'PEN',
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -210,6 +212,7 @@ describe('useMapFilters', () => {
         propertyTypes: ['casa'],
         priceMin: 100_000,
         priceMax: null,
+        priceCurrency: 'PEN',
       }
 
       const { result } = renderHook(() =>
@@ -331,6 +334,55 @@ describe('useMapFilters', () => {
 
       expect(result.current.filtered).toHaveLength(1)
       expect(result.current.total).toBe(5)
+    })
+  })
+
+  // Audit 2026-11-02, top item 11: soles and dollars were compared as bare
+  // numbers. Now the boxes are in one currency (chosen, dollars by default as
+  // in the app) and each listing is compared in its own currency, converting
+  // the typed amounts at the visit's rate — the app's displayListings rule.
+  describe('filtered — price currency', () => {
+    const RATE = 3.5
+
+    it('converts a dollar range into soles for a soles listing', () => {
+      // US$ 0–50,000 = S/ 0–175,000 at 3.5
+      const solesCheap = item({ price: 150_000, currency: 'PEN' })
+      const solesDear = item({ price: 200_000, currency: 'PEN' })
+      const filters: MapFilters = { ...NO_FILTERS, priceMax: 50_000, priceCurrency: 'USD' }
+
+      const { result } = renderHook(() => useMapFilters([solesCheap, solesDear], filters, null, RATE))
+
+      expect(result.current.filtered).toEqual([solesCheap])
+    })
+
+    it('converts a soles range into dollars for a dollar listing', () => {
+      // S/ 0–200,000 = US$ 0–57,142 at 3.5
+      const dollarsCheap = item({ price: 50_000, currency: 'USD' })
+      const dollarsDear = item({ price: 190_000, currency: 'USD' })
+      const filters: MapFilters = { ...NO_FILTERS, priceMax: 200_000, priceCurrency: 'PEN' }
+
+      const { result } = renderHook(() => useMapFilters([dollarsCheap, dollarsDear], filters, null, RATE))
+
+      expect(result.current.filtered).toEqual([dollarsCheap])
+    })
+
+    it('compares a listing in the same currency as the boxes directly', () => {
+      const dollars = item({ price: 120_000, currency: 'USD' })
+      const filters: MapFilters = { ...NO_FILTERS, priceMin: 100_000, priceMax: 150_000, priceCurrency: 'USD' }
+
+      const { result } = renderHook(() => useMapFilters([dollars], filters, null, RATE))
+
+      expect(result.current.filtered).toEqual([dollars])
+    })
+
+    it('uses the default rate when none is given', () => {
+      // US$ 41,000 at the default 3.75 = S/ 153,750: a S/ 150,000 listing is below it
+      const soles = item({ price: 150_000, currency: 'PEN' })
+      const filters: MapFilters = { ...NO_FILTERS, priceMin: 41_000, priceCurrency: 'USD' }
+
+      const { result } = renderHook(() => useMapFilters([soles], filters))
+
+      expect(result.current.filtered).toEqual([])
     })
   })
 })

@@ -27,6 +27,7 @@ const NO_FILTERS: MapFilters = {
   propertyTypes: [],
   priceMin: null,
   priceMax: null,
+  priceCurrency: 'USD',
 }
 
 interface Props {
@@ -140,6 +141,7 @@ describe('useFilterAnalytics', () => {
           propertyTypes: ['terreno', 'casa'],
           priceMin: 500,
           priceMax: null,
+          priceCurrency: 'PEN',
         },
         resultCount: 3,
       })

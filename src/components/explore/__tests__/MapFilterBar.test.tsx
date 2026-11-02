@@ -9,7 +9,7 @@ import MapFilterBar from '../MapFilterBar'
 import type { MapFilters } from '@/types/explore'
 
 function Harness({ start }: { start?: Partial<MapFilters> }) {
-  const [filters, setFilters] = useState<MapFilters>({ operationType: 'venta', rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, ...start })
+  const [filters, setFilters] = useState<MapFilters>({ operationType: 'venta', rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'USD', ...start })
   return (
     <>
       <MapFilterBar filters={filters} setFilters={setFilters} />
@@ -32,6 +32,14 @@ describe('MapFilterBar', () => {
     expect(screen.getByRole('button', { name: 'Casa' })).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: /listo/i }))
     expect(screen.queryByLabelText('Precio mínimo')).toBeNull()
+  })
+  it('the price is typed in dollars by default and can switch to soles (audit 2026-11-02)', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('button', { name: /filtros/i }))
+    expect(screen.getByRole('radio', { name: 'Dólares (US$)' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByLabelText('Precio mínimo').getAttribute('placeholder')).toBe('Mín US$')
+    fireEvent.click(screen.getByRole('radio', { name: 'Soles (S/)' }))
+    expect(screen.getByLabelText('Precio máximo').getAttribute('placeholder')).toBe('Máx S/')
   })
   it('the open panel does not repeat Venta / Alquiler or the count', () => {
     render(<Harness />)
