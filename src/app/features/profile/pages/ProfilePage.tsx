@@ -306,7 +306,7 @@ export default function ProfilePage() {
                   className={`h-4 w-4 ${user.isPhoneVerified ? 'text-success' : 'text-text-tertiary'}`}
                 />
                 <span className="text-sm text-text-secondary">
-                  Teléfono {user.isPhoneVerified ? 'verificado' : 'no verificado'}
+                  {user.isPhoneVerified ? 'Teléfono verificado' : 'Teléfono sin verificar'}
                 </span>
               </div>
               {!user.isPhoneVerified && phoneMode === 'idle' && (

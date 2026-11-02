@@ -6,10 +6,11 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
+const account = vi.hoisted(() => ({ phoneVerified: true }))
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: () => ({
     user: {
-      id: 'u1', name: 'Ana Pérez', email: 'ana@example.com', isPhoneVerified: true, isIdentityVerified: false,
+      id: 'u1', name: 'Ana Pérez', email: 'ana@example.com', isPhoneVerified: account.phoneVerified, isIdentityVerified: false,
       isVerifiedRealtor: false, realtorApplicationStatus: null, createdAt: new Date('2026-01-01'),
       contactInfo: { whatsappPhoneNumber: '+51912345678', countryCode: 'PE', preferredContactTime: 'anytime', additionalNotes: '' },
     },
@@ -48,5 +49,16 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Eliminar cuenta/i }))
     expect(screen.getByText('Tus guardados e historial de visitas')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/favoritos/)
+  })
+  // Same words as the app's chip (feature audit 2026-11-02).
+  it('an unverified phone reads "Teléfono sin verificar"', () => {
+    account.phoneVerified = false
+    try {
+      renderPage()
+      expect(screen.getByText('Teléfono sin verificar')).toBeTruthy()
+      expect(screen.queryByText(/no verificado/)).toBeNull()
+    } finally {
+      account.phoneVerified = true
+    }
   })
 })
