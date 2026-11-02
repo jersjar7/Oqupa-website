@@ -170,7 +170,7 @@ describe('the owner, on their own listing', () => {
   it('sees a deactivated listing, with a note that only they can see it', () => {
     show('deactivated', 'owner-only', 'owner-1')
     renderPage()
-    expect(screen.queryByText('Propiedad no encontrada')).toBeNull()
+    expect(screen.queryByText('Esta propiedad ya no está publicada')).toBeNull()
     expect(screen.getByRole('status').textContent).toContain(
       'Esta publicación está desactivada. Solo tú puedes verla.',
     )

@@ -126,7 +126,7 @@ describe('the loading -> loaded transition', () => {
     )
 
     expect(screen.queryByText(/Cargando propiedad/i)).toBeNull()
-    expect(screen.queryByText(/Propiedad no encontrada/i)).toBeNull()
+    expect(screen.queryByText(/Esta propiedad ya no está publicada/i)).toBeNull()
     // The district appears in more than one place (heading, location line) —
     // any of them is proof the real page rendered instead of a fallback.
     expect(screen.getAllByText(/Castilla/i).length).toBeGreaterThan(0)
@@ -137,6 +137,8 @@ describe('the loading -> loaded transition', () => {
     mockProperty.listing = null
     mockProperty.property = null
     renderPage()
-    expect(screen.getByText(/Propiedad no encontrada/i)).toBeTruthy()
+    // Audit 2026-11-02: the not-found state now says the listing is no longer
+    // published and opens the map (was "Propiedad no encontrada").
+    expect(screen.getByText(/Esta propiedad ya no está publicada/i)).toBeTruthy()
   })
 })
