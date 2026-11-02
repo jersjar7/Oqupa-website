@@ -399,3 +399,9 @@ describe('registerSchema — passwords in Spanish (ADR-046 #7, #9)', () => {
     expect(registerSchema.safeParse({ email: 'a@b.co', password: 'Abcdef1!' }).success).toBe(true)
   })
 })
+
+describe('registerSchema — accented capitals count (decision 2026-11-02)', () => {
+  it('accepts "Ñandú123!"', () => {
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'Ñandú123!' }).success).toBe(true)
+  })
+})

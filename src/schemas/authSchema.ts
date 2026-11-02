@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PASSWORD_LOWERCASE, PASSWORD_UPPERCASE } from '@/lib/passwordRules'
 
 export const loginSchema = z.object({
   email: z
@@ -14,8 +15,8 @@ export type LoginFormData = z.infer<typeof loginSchema>
 const passwordSchema = z
   .string()
   .min(8, 'La contraseña debe tener al menos 8 caracteres')
-  .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
-  .regex(/[a-z]/, 'Debe incluir al menos una minúscula')
+  .regex(PASSWORD_UPPERCASE, 'Debe incluir al menos una mayúscula')
+  .regex(PASSWORD_LOWERCASE, 'Debe incluir al menos una minúscula')
   .regex(/\d/, 'Debe incluir al menos un número')
   .regex(/[!@#$%^&*()_+\-=[\]{};:"\\|,.<>/?`~]/, 'Debe incluir al menos un símbolo')
 

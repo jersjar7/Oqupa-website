@@ -4,6 +4,10 @@
 // here. The app says the same words: lib/utils/validators/password_validator.dart.
 
 export const PASSWORD_SYMBOL = /[!@#$%^&*()_+\-=[\]{};:"\\|,.<>/?`~]/
+// Spanish capitals and small letters count (decision 2026-11-02): "Ñandú123!"
+// has its capital. The app uses the same classes.
+export const PASSWORD_UPPERCASE = /[A-ZÁÉÍÓÚÜÑ]/
+export const PASSWORD_LOWERCASE = /[a-záéíóúüñ]/
 
 export interface PasswordRule {
   label: string
@@ -12,8 +16,8 @@ export interface PasswordRule {
 
 export const PASSWORD_RULES: readonly PasswordRule[] = [
   { label: '8 letras o más', met: (pw) => pw.length >= 8 },
-  { label: 'una mayúscula', met: (pw) => /[A-Z]/.test(pw) },
-  { label: 'una minúscula', met: (pw) => /[a-z]/.test(pw) },
+  { label: 'una mayúscula', met: (pw) => PASSWORD_UPPERCASE.test(pw) },
+  { label: 'una minúscula', met: (pw) => PASSWORD_LOWERCASE.test(pw) },
   { label: 'un número', met: (pw) => /\d/.test(pw) },
   { label: 'un símbolo', met: (pw) => PASSWORD_SYMBOL.test(pw) },
 ]

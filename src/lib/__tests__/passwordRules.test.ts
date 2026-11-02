@@ -30,3 +30,10 @@ describe('password rules in words', () => {
     expect(passwordNeedsSentence('ABCDEFG1!')).toBe('Tu contraseña necesita una minúscula.')
   })
 })
+
+// Decision 2026-11-02 (hostile review follow-up): an accented capital is a capital.
+describe('accented capitals count as "una mayúscula"', () => {
+  it.each(['Ñandú123!', 'Árbol#2026', 'Éxito 12!', 'Ícaro1234!', 'Óscar123!', 'Último12!'])('%j meets the rule', (pw) => {
+    expect(missingPasswordRules(pw)).toEqual([])
+  })
+})
