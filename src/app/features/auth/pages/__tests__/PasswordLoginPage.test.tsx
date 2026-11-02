@@ -36,7 +36,7 @@ vi.mock("@/app/components/ui", () => ({
 
 // The store the account helper refreshes once the profile is saved.
 vi.mock("@/stores/authStore", () => ({
-  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve() }) },
+  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve(), ensureProfile: () => Promise.resolve() }) },
 }))
 
 // Metrics plan A10: the contact-funnel helpers, so these tests see which
@@ -376,7 +376,28 @@ describe("PasswordLoginPage — how password-less accounts get in", () => {
     fillForm("ana@example.com", "Algo123!");
     fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
     await waitFor(() => expect(screen.getByText(/no coinciden/i)).toBeDefined());
-    expect(screen.getByText("¿Entraste antes con Google? Usa «Continuar con Google».")).toBeDefined();
+    // Second review 2026-11-02, item 6: the same words as the app.
+    expect(screen.getByText(/¿Entraste antes con Google o Apple\?/)).toBeDefined();
     expect(screen.getByText(/entrabas con enlace por correo/i)).toBeDefined();
+  });
+});
+
+// Second review 2026-11-02, item 6: a failure after "Crea tu cuenta con este
+// correo" that is not about the address or password is said on its own.
+describe("PasswordLoginPage — a connection failure after creating in place", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: "auth/invalid-credential" });
+    mockAuthService.registerWithEmailAndPassword.mockRejectedValue({ code: "auth/network-request-failed" });
+  });
+  it("is said alone, without the create button and hints", async () => {
+    renderPage();
+    openEmail();
+    fillForm("nueva@example.com", "Contraseña 1!");
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /crea tu cuenta con este correo/i }));
+    await waitFor(() => expect(screen.getByText(/conexión a internet/i)).toBeDefined());
+    expect(screen.queryByRole("button", { name: /crea tu cuenta con este correo/i })).toBeNull();
+    expect(screen.queryByText(/Google o Apple/)).toBeNull();
   });
 });

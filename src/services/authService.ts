@@ -38,6 +38,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
+import { createProfileIfAbsent } from '@/lib/profileRepair'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
 
@@ -280,11 +281,15 @@ export const authService = {
     })
   },
 
-  /** Retries saving the profile of the account just created (see above). */
+  /**
+   * Retries saving the profile of the account just created (see above).
+   * Create-only: if the first save landed after all, it is done — never
+   * rewritten (second review 2026-11-02, item 4).
+   */
   async saveNewEmailProfile() {
     const user = auth.currentUser
     if (!user) throw new Error('No authenticated user')
-    await createUserDocument(user.uid, newEmailProfile(user.email, signupAttribution('email')))
+    await createProfileIfAbsent(user.uid, newEmailProfile(user.email), signupAttribution('email'))
   },
 
   async changePassword(newPassword: string) {

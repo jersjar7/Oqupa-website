@@ -60,7 +60,7 @@ vi.mock('@/app/components/ui', () => ({
 
 // The store the account helper refreshes once the profile is saved.
 vi.mock('@/stores/authStore', () => ({
-  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve() }) },
+  useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve(), ensureProfile: () => Promise.resolve() }) },
 }))
 
 // Metrics plan A10: the contact-funnel helpers, so these tests see which

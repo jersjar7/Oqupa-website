@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { retryNewProfile } from '../lib/createEmailAccount'
+import { accountCreation } from '@/lib/accountCreation'
+import { useAuthStore } from '@/stores/authStore'
 
 export const PROFILE_SAVE_FAILED =
   'Tu cuenta quedó creada, pero no pudimos guardar tus datos. Revisa tu internet y toca «Reintentar».'
@@ -12,6 +14,16 @@ export const PROFILE_SAVE_FAILED =
 export default function ProfileSaveRetry({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false)
   const [failedAgain, setFailedAgain] = useState(false)
+  // Leaving this page (any navigation) lets go of the page hold and asks the
+  // store to repair the profile — never stuck without one (second review
+  // 2026-11-02, item 2).
+  useEffect(
+    () => () => {
+      accountCreation.end()
+      void useAuthStore.getState().ensureProfile().catch(() => {})
+    },
+    [],
+  )
   return (
     <div className="rounded-xl bg-background-secondary/60 p-3" role="alert">
       <p className="text-base text-error">{PROFILE_SAVE_FAILED}</p>

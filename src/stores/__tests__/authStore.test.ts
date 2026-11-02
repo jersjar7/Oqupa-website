@@ -741,3 +741,31 @@ describe('authStore — a missing profile is repaired at sign-in', () => {
     expect(useAuthStore.getState().isInitialized).toBe(true)
   })
 })
+
+// Second review 2026-11-02, item 2: someone who leaves the "Reintentar" page
+// must not stay unrepaired. ensureProfile() runs the repair on demand.
+describe('authStore.ensureProfile', () => {
+  beforeEach(() => {
+    useAuthStore.getState().reset()
+    mockRepair.mockReset()
+    accountCreation.end()
+    ;(getDoc as Mock).mockReset()
+  })
+
+  it('repairs a signed-in email account that has no profile', async () => {
+    useAuthStore.setState({ firebaseUser: { uid: 'orphan', email: 'o@x.com', providerData: [{ providerId: 'password' }] } as never, user: null })
+    ;(getDoc as Mock).mockResolvedValueOnce(makeFirestoreDoc(true, { email: 'o@x.com' }))
+    mockRepair.mockResolvedValue(undefined)
+    await useAuthStore.getState().ensureProfile()
+    expect(mockRepair).toHaveBeenCalled()
+    expect(useAuthStore.getState().user?.id).toBe('orphan')
+  })
+
+  it('does nothing while an account creation is still saving', async () => {
+    accountCreation.begin()
+    useAuthStore.setState({ firebaseUser: { uid: 'orphan', email: 'o@x.com', providerData: [{ providerId: 'password' }] } as never, user: null })
+    await useAuthStore.getState().ensureProfile()
+    expect(mockRepair).not.toHaveBeenCalled()
+    accountCreation.end()
+  })
+})

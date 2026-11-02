@@ -7,7 +7,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('@/services/authService', () => ({ authService: {} }))
-vi.mock('@/stores/authStore', () => ({ useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve() }) } }))
+vi.mock('@/stores/authStore', () => ({ useAuthStore: { getState: () => ({ refreshUser: () => Promise.resolve(), ensureProfile: () => Promise.resolve() }) } }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 vi.mock('@/app/features/listings/contactFunnel', () => ({
   CONTACT_GATE_STEPS: { signedIn: 'signed_in' },

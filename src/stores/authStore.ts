@@ -17,6 +17,8 @@ interface AuthState {
   initialize: () => void
   refreshUser: () => Promise<void>
   refreshFirebaseUser: () => Promise<FirebaseUser | null>
+  /** Repairs a signed-in email account with no profile (second review item 2). */
+  ensureProfile: () => Promise<void>
   setUser: (user: User | null) => void
   reset: () => void
 }
@@ -86,6 +88,18 @@ function firestoreDocToUser(
   }
 }
 
+/** Repairs a missing profile when allowed; true if it ran without error. */
+async function tryRepair(firebaseUser: FirebaseUser): Promise<boolean> {
+  if (accountCreation.isInFlight()) return false
+  if (!(firebaseUser.providerData ?? []).some((p) => p.providerId === 'password')) return false
+  try {
+    await repairMissingProfile(firebaseUser)
+    return true
+  } catch {
+    return false
+  }
+}
+
 // jsdom always has BroadcastChannel; null branch guards against non-browser environments
 /* v8 ignore start */
 const authChannel = typeof BroadcastChannel !== 'undefined'
@@ -117,17 +131,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             // continue, as Google and Apple sign-in already do. Never while
             // the sign-up itself is still saving it. Hostile review
             // 2026-11-02, item 1b. A refused repair leaves things as before.
-            if (
-              !userDoc.exists() &&
-              !accountCreation.isInFlight() &&
-              (firebaseUser.providerData ?? []).some((p) => p.providerId === 'password')
-            ) {
-              try {
-                await repairMissingProfile(firebaseUser)
-                userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-              } catch {
-                /* falls through to the no-profile state below */
-              }
+            if (!userDoc.exists() && (await tryRepair(firebaseUser))) {
+              userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
             }
             if (userDoc.exists()) {
               let user = firestoreDocToUser(
@@ -189,6 +194,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ _unsubscribe: unsubscribe })
     })
+  },
+
+  ensureProfile: async () => {
+    const { firebaseUser, user } = get()
+    if (!firebaseUser || user) return
+    if (!(await tryRepair(firebaseUser))) return
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+    if (userDoc.exists()) {
+      set({ user: firestoreDocToUser(firebaseUser.uid, userDoc.data() as Record<string, unknown>) })
+    }
   },
 
   refreshUser: async () => {

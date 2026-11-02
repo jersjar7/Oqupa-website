@@ -120,8 +120,15 @@ export default function PasswordLoginPage() {
       }
       const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined
       // The address has an account after all, so the sign-in failed on the
-      // password — the ordinary typo, said as one (as the app does).
-      setError(code === 'auth/email-already-in-use' ? MISMATCH : getRegisterAuthError(err).message)
+      // password — the ordinary typo, said as one (as the app does). Any
+      // other failure (connection, disabled…) is said on its own, without
+      // the create button and hints (second review 2026-11-02, item 6).
+      if (code === 'auth/email-already-in-use') {
+        setError(MISMATCH)
+      } else {
+        setOfferWaysForward(false)
+        setError(getRegisterAuthError(err).message)
+      }
     } finally {
       setCreating(false)
     }
@@ -204,7 +211,7 @@ export default function PasswordLoginPage() {
                   ¿Olvidaste tu contraseña?
                 </Link>
                 <p className="mt-1 text-sm text-text-secondary">
-                  ¿Entraste antes con Google? Usa «Continuar con Google».
+                  ¿Entraste antes con Google o Apple? Usa «Continuar con Google»; con Apple, entra desde la app de Oqupa.
                 </p>
                 <p className="mt-1 text-sm text-text-secondary">
                   ¿Entrabas con enlace por correo? Esa cuenta aún no tiene contraseña:

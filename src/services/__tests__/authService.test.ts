@@ -91,6 +91,10 @@ vi.mock('firebase/auth', () => ({
   },
 }))
 
+// The create-only writer (second review 2026-11-02, item 4).
+const createIfAbsentMock = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/profileRepair', () => ({ createProfileIfAbsent: createIfAbsentMock }))
+
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
   setDoc: (...args: unknown[]) => setDocMock(...args),
@@ -240,13 +244,23 @@ describe('authService', () => {
       ).rejects.toMatchObject({ code: 'unavailable', profileSaveFailed: true })
     })
 
-    it('saveNewEmailProfile writes the same profile for the signed-in account', async () => {
+    it('saveNewEmailProfile CREATES the same profile, never over an existing one', async () => {
       _currentUser = makeUser('uid-7')
+      createIfAbsentMock.mockResolvedValueOnce('created')
       await authService.saveNewEmailProfile()
-      const payload = setDocMock.mock.calls[setDocMock.mock.calls.length - 1]![1]
+      const [uid, payload] = createIfAbsentMock.mock.calls[createIfAbsentMock.mock.calls.length - 1]!
+      expect(uid).toBe('uid-7')
       expect(payload.authProvider).toBe('password')
       expect(payload.isPhoneVerified).toBe(false)
       expect(payload.email).toBe('uid-7@test.com')
+    })
+
+    // Item 4: the first save may have landed after all — then the retry is
+    // simply done (it used to rewrite the profile and be refused forever).
+    it('saveNewEmailProfile treats a profile that already exists as done', async () => {
+      _currentUser = makeUser('uid-8')
+      createIfAbsentMock.mockResolvedValueOnce('existed')
+      await expect(authService.saveNewEmailProfile()).resolves.toBeUndefined()
     })
 
     it('does not retry a failure that has nothing to do with the attribution', async () => {
