@@ -145,7 +145,7 @@ export default function PasswordLoginPage() {
                   to={`/app/register${typedEmail ? `?email=${encodeURIComponent(typedEmail)}` : ''}`}
                   className="block font-medium text-secondary hover:text-secondary-hover"
                 >
-                  ¿Nueva en Oqupa? Crea tu cuenta con este correo
+                  ¿Primera vez en Oqupa? Crea tu cuenta con este correo
                 </Link>
                 <Link
                   to="/app/forgot-password"
@@ -167,7 +167,7 @@ export default function PasswordLoginPage() {
 
         <div className="mt-8 text-center text-sm text-text-secondary">
           <Link to="/app/register" className="text-secondary hover:text-secondary-hover">
-            ¿Nueva en Oqupa? Crea tu cuenta
+            ¿Primera vez en Oqupa? Crea tu cuenta
           </Link>
           {showEmail && (
             <>
