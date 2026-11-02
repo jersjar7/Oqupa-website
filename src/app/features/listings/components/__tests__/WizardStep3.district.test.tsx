@@ -67,3 +67,42 @@ describe('WizardStep3 — the district', () => {
     expect(screen.getByText('Veintiséis de Octubre, Piura, Piura')).toBeDefined()
   })
 })
+
+// ADR-043 step 3, bug 2: ATRÁS on Ubicación keeps the pin and the address.
+describe('WizardStep3 — ATRÁS', () => {
+  beforeEach(() => {
+    window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
+    Element.prototype.scrollIntoView = vi.fn()
+    sessionStorage.clear()
+    useListingFormStore.getState().reset?.()
+    useListingFormStore.getState().setStep(3)
+    pinRef.onChange = null
+    resolverMock.districtForPin.mockReset()
+  })
+
+  it('keeps the pin, the street and the district', async () => {
+    resolverMock.districtForPin.mockReturnValue(findDistrict('Castilla'))
+    const { unmount } = render(<WizardStep3 />)
+    await waitFor(() => expect(pinRef.onChange).not.toBeNull())
+    await act(async () => pinRef.onChange!(-5.1738, -80.609))
+    await waitFor(() => expect(screen.getByText('Castilla, Piura, Piura')).toBeDefined())
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Av. Grau 123' } })
+    fireEvent.click(screen.getByRole('button', { name: /atrás/i }))
+    expect(useListingFormStore.getState().step).toBe(2)
+    unmount()
+
+    const d = useListingFormStore.getState().data
+    expect([d.latitude, d.longitude, d.calle, d.distrito]).toEqual([-5.1738, -80.609, 'Av. Grau 123', 'Castilla'])
+    useListingFormStore.getState().setStep(3)
+    render(<WizardStep3 />)
+    expect((screen.getByLabelText('Dirección') as HTMLInputElement).value).toBe('Av. Grau 123')
+    expect(screen.getByText('Castilla, Piura, Piura')).toBeDefined()
+  })
+
+  it('without a pin, the map\'s starting point is not saved as the person\'s address', async () => {
+    const { unmount } = render(<WizardStep3 />)
+    await waitFor(() => expect(pinRef.onChange).not.toBeNull())
+    unmount()
+    expect(useListingFormStore.getState().data.latitude).toBeNull()
+  })
+})

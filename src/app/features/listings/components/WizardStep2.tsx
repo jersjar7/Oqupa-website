@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { step2Schema, type Step2Data } from '@/schemas/listingSchema'
@@ -6,6 +7,26 @@ import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { Button, Input } from '@/app/components/ui'
 import RevealField from './RevealField'
 import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
+import { parseCount, parseLocaleNumber } from '@/lib/localeNumber'
+import { editAwareResolver } from '../editLimits'
+
+/** A finite number, or null — what the draft can keep of a half-typed box. */
+const kept = (n: number | null | undefined): number | null =>
+  typeof n === 'number' && Number.isFinite(n) ? n : null
+
+// The boxes are text so "120,5" can be typed; a default value arrives as a number.
+const readArea = (v: unknown) => (typeof v === 'number' ? v : parseLocaleNumber(String(v ?? '')))
+const readCount = (v: unknown) => (typeof v === 'number' ? v : parseCount(String(v ?? '')))
+
+/** What the draft keeps of the page as it stands, checked or not. */
+const asDraft = (v: Partial<Step2Data>) => ({
+  description: v.description ?? '',
+  totalAreaInSquareMeters: kept(v.totalAreaInSquareMeters),
+  bedroomCount: kept(v.bedroomCount),
+  bathroomCount: kept(v.bathroomCount),
+  availableParkingSpaces: kept(v.availableParkingSpaces) ?? 0,
+  hasPrivateBathroom: v.hasPrivateBathroom ?? false,
+})
 
 export default function WizardStep2() {
   const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
@@ -18,9 +39,10 @@ export default function WizardStep2() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<Step2Data>({
-    resolver: zodResolver(step2Schema),
+    resolver: editAwareResolver(zodResolver(step2Schema)),
     defaultValues: {
       propertyType: data.propertyType,
       description: data.description,
@@ -39,11 +61,19 @@ export default function WizardStep2() {
   const bathrooms = watch('bathroomCount')
   const hasPrivateBathroom = watch('hasPrivateBathroom')
 
-  const areaFilled = typeof area === 'number' && area > 0
-  const roomsFilled = !hasRooms || (
-    typeof bedrooms === 'number' && bedrooms > 0 &&
-    typeof bathrooms === 'number' && bathrooms > 0
-  )
+  // "Filled" means something was typed. Whether it is right is for the check
+  // on CONTINUAR, which explains in Spanish — a box that silently keeps the
+  // next field hidden explains nothing (0 dormitorios used to do exactly that).
+  const typed = (v: unknown) => v !== null && v !== undefined
+  const areaFilled = typed(area)
+  const roomsFilled = !hasRooms || (typed(bedrooms) && typed(bathrooms))
+
+  // Everything typed goes into the draft as it is typed, so ATRÁS (or the
+  // browser's back button) and coming back find it all still there.
+  useEffect(() => {
+    const sub = watch((v) => updateData(asDraft(v as Partial<Step2Data>)))
+    return () => sub.unsubscribe()
+  }, [watch, updateData])
 
   const { isRevealed, wasInitial } = useRevealedFields(
     {
@@ -56,13 +86,20 @@ export default function WizardStep2() {
     isEditMode
   )
 
+  function goBack() {
+    // What is on screen, checked or not, stays in the draft.
+    updateData(asDraft(getValues()))
+    prevStep()
+  }
+
   function onSubmit(formData: Step2Data) {
     updateData({
       description: formData.description,
       totalAreaInSquareMeters: formData.totalAreaInSquareMeters,
       bedroomCount: hasRooms ? formData.bedroomCount : null,
       bathroomCount: hasRooms ? formData.bathroomCount : null,
-      availableParkingSpaces: formData.availableParkingSpaces,
+      // An empty box means no parking.
+      availableParkingSpaces: formData.availableParkingSpaces ?? 0,
       propertyAmenities: formData.propertyAmenities,
       hasPrivateBathroom: isRoom ? (formData.hasPrivateBathroom ?? false) : false,
     })
@@ -103,11 +140,12 @@ export default function WizardStep2() {
       >
         <Input
           label="Área total (m²)"
-          type="number"
+          type="text"
+          inputMode="decimal"
           placeholder="Ej: 120"
           hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
           error={errors.totalAreaInSquareMeters?.message}
-          {...register('totalAreaInSquareMeters', { valueAsNumber: true })}
+          {...register('totalAreaInSquareMeters', { setValueAs: readArea })}
         />
       </RevealField>
 
@@ -117,17 +155,19 @@ export default function WizardStep2() {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Dormitorios"
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="Ej: 3"
               error={errors.bedroomCount?.message}
-              {...register('bedroomCount', { valueAsNumber: true })}
+              {...register('bedroomCount', { setValueAs: readCount })}
             />
             <Input
               label="Baños"
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="Ej: 2"
               error={errors.bathroomCount?.message}
-              {...register('bathroomCount', { valueAsNumber: true })}
+              {...register('bathroomCount', { setValueAs: readCount })}
             />
           </div>
         </RevealField>
@@ -146,8 +186,8 @@ export default function WizardStep2() {
                   onClick={() => setValue('hasPrivateBathroom', value)}
                   className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                     hasPrivateBathroom === value
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border text-text-secondary hover:border-primary/30'
+                      ? 'border-secondary bg-secondary-pale text-secondary'
+                      : 'border-border text-text-secondary hover:border-secondary/30'
                   }`}
                 >
                   {value ? 'Sí' : 'No'}
@@ -163,14 +203,15 @@ export default function WizardStep2() {
         <div className="space-y-6">
           <Input
             label="Estacionamientos (opcional)"
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="0"
             error={errors.availableParkingSpaces?.message}
-            {...register('availableParkingSpaces', { valueAsNumber: true })}
+            {...register('availableParkingSpaces', { setValueAs: readCount })}
           />
 
           <div className="flex gap-3">
-            <Button type="button" variant="text" onClick={prevStep} className="flex-1">
+            <Button type="button" variant="text" onClick={goBack} className="flex-1">
               Atrás
             </Button>
             <Button type="submit" className="flex-1">

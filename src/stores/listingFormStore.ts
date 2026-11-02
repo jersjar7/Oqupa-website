@@ -81,6 +81,29 @@ interface ListingFormState {
    * storage, nothing re-saves it, and the wizard cannot publish again.
    */
   publishedListingId: string | null
+  /**
+   * True while the wizard must not change page — publishing or saving. The
+   * browser's back button is held on the page meanwhile.
+   */
+  navigationLocked: boolean
+  setNavigationLocked: (locked: boolean) => void
+  /**
+   * The account this draft belongs to (hostile review #1). Another account
+   * opening the wizard on the same computer gets a clean draft and a fresh
+   * identity — never someone else's photos, address or ids.
+   */
+  draftOwnerId: string | null
+  /** Opening the wizard as `uid`: keep the draft if it is theirs, else drop it. */
+  adoptDraftFor: (uid: string) => void
+  /** Drops the draft from memory and from this tab's storage (Salir). */
+  discardDraft: () => void
+  /**
+   * Editing: the listing as it was loaded. New limits apply only to fields
+   * the owner changes, so an older listing over them stays editable
+   * (hostile review #6).
+   */
+  editBaseline: Partial<ListingFormData> | null
+  markEditBaseline: () => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
@@ -134,6 +157,7 @@ const STORAGE_KEY = 'oqupa-listing-form'
 
 interface SavedDraft extends Partial<ListingFormData> {
   step?: number
+  draftOwnerId?: string | null
   publishId?: string
   uploadedPhotos?: Record<string, PhotoUploadResult>
   publishOwnerId?: string | null
@@ -166,6 +190,7 @@ function saveToSession(
     publishId: string
     uploadedPhotos: Record<string, PhotoUploadResult>
     publishOwnerId: string | null
+    draftOwnerId: string | null
   },
 ): boolean {
   try {
@@ -181,11 +206,35 @@ function saveToSession(
   }
 }
 
+// The account signed in on this tab, told by draftOwnerWatch. A draft is
+// stamped with it the moment it is started or typed into, so it is never
+// left without an owner (second hostile review #1).
+let currentAccount: string | null = null
+
+/** Who the store believes is signed in (null: nobody). */
+export function getDraftAccount(): string | null {
+  return currentAccount
+}
+
+/** Who is signed in now (null: nobody). Called by the sign-in watcher. */
+export function setDraftAccount(uid: string | null): void {
+  currentAccount = uid
+}
+
+/** Nothing typed, chosen or uploaded: there is nothing anyone could inherit. */
+function isEmptyDraft(step: number, data: ListingFormData, uploads: Record<string, unknown>): boolean {
+  if (step !== 1 || data.photos.length > 0 || Object.keys(uploads).length > 0) return false
+  const { photos: _p, ...rest } = data
+  const { photos: _q, ...initial } = INITIAL_DATA
+  return JSON.stringify(rest) === JSON.stringify(initial)
+}
+
 export const useListingFormStore = create<ListingFormState>((set, get) => {
   const {
     publishId: savedPublishId,
     uploadedPhotos: savedUploads,
     publishOwnerId: savedOwner,
+    draftOwnerId: savedDraftOwner,
     ...saved
   } = loadFromSession()
 
@@ -194,10 +243,15 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
   const save = (step: number, data: ListingFormData): boolean => {
     const s = get()
     if (s.publishedListingId) return false
+    // Editing is never stored as a draft: it holds the listing's true
+    // (possibly hidden) address and belongs to no draft owner. A reload of
+    // the edit page loads the listing again from the server (review #2).
+    if (s.isEditMode) return false
     return saveToSession(step, data, {
       publishId: s.publishId,
       uploadedPhotos: s.uploadedPhotos,
       publishOwnerId: s.publishOwnerId,
+      draftOwnerId: s.draftOwnerId,
     })
   }
 
@@ -212,6 +266,35 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
     uploadedPhotos: savedUploads ?? {},
     publishOwnerId: savedOwner ?? null,
     publishedListingId: null,
+    navigationLocked: false,
+    draftOwnerId: savedDraftOwner ?? null,
+
+    adoptDraftFor: (uid) => {
+      currentAccount = uid
+      const s = get()
+      if (s.isEditMode) return
+      // A draft saved before owners were recorded goes by who claimed its ids.
+      const owner = s.draftOwnerId ?? s.publishOwnerId
+      // Someone else's — or nobody's but not empty, which cannot be told
+      // apart from someone else's: dropped, fresh ids (reset stamps `uid`).
+      const foreign = owner ? owner !== uid : !isEmptyDraft(s.step, s.data, s.uploadedPhotos)
+      if (foreign) {
+        get().reset()
+        return
+      }
+      if (s.draftOwnerId !== uid) set({ draftOwnerId: uid })
+    },
+
+    discardDraft: () => {
+      // Signing out on purpose: nobody is signed in on this tab any more.
+      currentAccount = null
+      get().reset()
+    },
+
+    editBaseline: null,
+    markEditBaseline: () => set({ editBaseline: { ...get().data } }),
+
+    setNavigationLocked: (locked) => set({ navigationLocked: locked }),
 
     setStep: (step) => {
       const dir = step >= get().step ? 1 : -1
@@ -233,7 +316,10 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
 
     updateData: (partial) => {
       const updated = { ...get().data, ...partial }
-      set({ data: updated })
+      const s = get()
+      // The first typing into an ownerless draft stamps the signed-in account.
+      const stamp = !s.isEditMode && s.draftOwnerId == null && currentAccount ? { draftOwnerId: currentAccount } : {}
+      set({ data: updated, ...stamp })
       save(get().step, updated)
     },
 
@@ -255,6 +341,10 @@ export const useListingFormStore = create<ListingFormState>((set, get) => {
         uploadedPhotos: {},
         publishOwnerId: null,
         publishedListingId: null,
+        navigationLocked: false,
+        // A fresh draft belongs to whoever is signed in on this tab.
+        draftOwnerId: currentAccount,
+        editBaseline: null,
       })
     },
 

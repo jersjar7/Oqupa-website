@@ -8,10 +8,17 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { DepartamentoBorder } from '@/lib/map/departamentoBorder'
 import { addDepartamentoBorder } from '@/components/explore/mapbox/mapLayers'
 import { MAPBOX_DEFAULT_ZOOM } from '@/components/explore/mapbox/mapCamera'
-import { pointerWords, usePointerKind } from '@/lib/pointerWords'
+import { currentPointerKind, pointerWords, usePointerKind } from '@/lib/pointerWords'
 
 const MAPBOX_STYLE = 'mapbox://styles/mapbox/standard'
 const TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string | undefined) ?? ''
+
+/** Mapbox's own overlay while one finger tries to move the map. */
+const TWO_FINGER_LOCALE = {
+  'TouchPanBlocker.Message': 'Usa dos dedos para mover el mapa',
+  'ScrollZoomBlocker.CtrlMessage': 'Usa Ctrl + rueda para acercar el mapa',
+  'ScrollZoomBlocker.CmdMessage': 'Usa ⌘ + rueda para acercar el mapa',
+}
 
 interface LocationPickerProps {
   latitude: number | null
@@ -33,6 +40,10 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
   const latest = useRef(onChange)
   latest.current = onChange
   const hasPosition = latitude != null && longitude != null
+  // The last place the pin was accepted at: a pin dropped outside Piura goes
+  // back there instead of staying where it was refused.
+  const lastValid = useRef<[number, number] | null>(null)
+  lastValid.current = hasPosition ? [longitude!, latitude!] : null
 
   const tryPlace = async (lat: number, lng: number) => {
     let inside = true
@@ -43,6 +54,13 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     }
     if (!inside) {
       setOutsideBoundary(true)
+      if (lastValid.current) {
+        markerRef.current?.setLngLat(lastValid.current)
+      } else {
+        // No valid place to go back to: the refused pin leaves the map.
+        markerRef.current?.remove()
+        markerRef.current = null
+      }
       return
     }
     setOutsideBoundary(false)
@@ -54,11 +72,16 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
   useEffect(() => {
     if (!token || !containerRef.current) return
     mapboxgl.accessToken = token
+    // On a phone the map sits in a page that scrolls: one finger scrolls the
+    // page, two fingers move the map (before, the map took every swipe and
+    // the page could not be scrolled past it).
+    const touch = currentPointerKind() === 'touch'
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: MAPBOX_STYLE,
       center: hasPosition ? [longitude!, latitude!] : [PIURA_CENTER.lng, PIURA_CENTER.lat],
       zoom: hasPosition ? 15 : MAPBOX_DEFAULT_ZOOM,
+      ...(touch ? { cooperativeGestures: true, locale: TWO_FINGER_LOCALE } : {}),
     })
     mapRef.current = map
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right')
@@ -103,6 +126,9 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
         <p className="mt-2 text-xs text-error">
           Fuera de zona permitida — selecciona una ubicación dentro del departamento de Piura
         </p>
+      )}
+      {pointer === 'touch' && (
+        <p className="mt-2 text-xs text-text-tertiary">Usa dos dedos para mover el mapa.</p>
       )}
       {hasPosition && !outsideBoundary && (
         <p className="mt-2 text-xs text-text-tertiary">

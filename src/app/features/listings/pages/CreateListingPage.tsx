@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
@@ -29,18 +29,23 @@ export default function CreateListingPage() {
     title: 'Crear Publicación',
     subtitle: 'Completa los datos de tu propiedad',
   })
-  const { step, direction, isEditMode, reset } = useListingFormStore()
+  const { step, direction, reset } = useListingFormStore()
 
-  // Reset if coming from edit mode (only on mount)
-  useEffect(() => {
-    if (isEditMode) reset()
-  }, [isEditMode, reset])
-
-  // A draft that was already published (the person left during publishing,
-  // or in the moment "¡PUBLICADO!" showed) is done: start a fresh one.
-  useEffect(() => {
-    if (useListingFormStore.getState().publishedListingId) reset()
-  }, [reset])
+  // Opened over an edit, or over a draft that was already published (the
+  // person left during publishing, or in the moment "¡PUBLICADO!" showed):
+  // start a fresh one — before anything is painted, so the old page (an
+  // edit's address included) never flashes on screen (third review #1).
+  const [staleAtOpen] = useState(() => {
+    const s = useListingFormStore.getState()
+    return s.isEditMode || Boolean(s.publishedListingId)
+  })
+  const [fresh, setFresh] = useState(!staleAtOpen)
+  useLayoutEffect(() => {
+    if (!staleAtOpen) return
+    reset()
+    setFresh(true)
+  }, [staleAtOpen, reset])
+  if (!fresh) return null
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">

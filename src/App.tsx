@@ -25,6 +25,7 @@ import AuthPipelinePage from '@/app/features/auth/pages/AuthPipelinePage'
 import AuthGuard from '@/app/components/guards/AuthGuard'
 import GuestGuard from '@/app/components/guards/GuestGuard'
 import VerifiedGuard from '@/app/components/guards/VerifiedGuard'
+import WizardBackButton from '@/app/features/listings/components/WizardBackButton'
 import DashboardPage from '@/app/features/dashboard/pages/DashboardPage'
 import ListingsPage from '@/app/features/listings/pages/ListingsPage'
 import CreateListingPage from '@/app/features/listings/pages/CreateListingPage'
@@ -118,8 +119,9 @@ export default function App() {
           }>
             <Route index element={<VerifiedGuard><DashboardPage /></VerifiedGuard>} />
             <Route path="listings" element={<VerifiedGuard><ListingsPage /></VerifiedGuard>} />
-            <Route path="listings/new" element={<VerifiedGuard><CreateListingPage /></VerifiedGuard>} />
-            <Route path="listings/:id/edit" element={<VerifiedGuard><EditListingPage /></VerifiedGuard>} />
+            {/* WizardBackButton: the browser's back button moves one wizard page (ADR-043 step 3). */}
+            <Route path="listings/new" element={<VerifiedGuard><CreateListingPage /><WizardBackButton /></VerifiedGuard>} />
+            <Route path="listings/:id/edit" element={<VerifiedGuard><EditListingPage /><WizardBackButton forEdit /></VerifiedGuard>} />
             <Route path="listings/:id/agent-edit" element={<VerifiedGuard><AgentEditListingPage /></VerifiedGuard>} />
             <Route path="listings/:id/agents" element={<VerifiedGuard><InterestedAgentsPage /></VerifiedGuard>} />
             <Route path="profile" element={<ProfilePage />} />
