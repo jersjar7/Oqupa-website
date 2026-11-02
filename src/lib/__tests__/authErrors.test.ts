@@ -456,3 +456,17 @@ describe('audit 2026-11-02 — the password sentences name the real rule', () =>
     expect(getRegisterAuthError({ code: 'auth/missing-password' }).message).not.toMatch(/6/)
   })
 })
+
+describe('audit 2026-11-02 — phone hand-over refusals read as what happened', () => {
+  it('the account already has a number', () => {
+    expect(getPhoneAuthError({ code: 'oqupa/caller-has-phone' }).message).toBe('Tu cuenta ya tiene un número verificado.')
+  })
+  it('the holder changed mid-way', () => {
+    expect(getPhoneAuthError({ code: 'oqupa/phone-holder-changed' }).message).toBe(
+      'Algo cambió mientras verificábamos. Pide un código nuevo e intenta otra vez.',
+    )
+  })
+  it('the server could not save the number', () => {
+    expect(getPhoneAuthError({ code: 'functions/internal' }).message).toBe('No pudimos guardar tu número. Intenta de nuevo.')
+  })
+})
