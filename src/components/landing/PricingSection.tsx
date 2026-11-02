@@ -97,7 +97,7 @@ export default function PricingSection() {
             </h2>
             <p className="font-sans font-normal mt-4 text-lg leading-relaxed text-text-secondary">
               En Oqupa creemos que publicar tu propiedad no debería tener costo.
-              Nuestro servicio es completamente gratuito para propietarios y
+              Nuestro servicio es completamente gratuito para dueños y
               agentes.
             </p>
           </div>

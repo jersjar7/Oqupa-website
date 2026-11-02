@@ -28,7 +28,7 @@ export function ownerCardFor(listing: Listing): OwnerCardData | null {
   if (listing.assignmentStatus === 'accepted' && listing.assignedRealtorId) return null
   const name = listing.ownerDisplayName?.trim()
   return {
-    name: name ? name : 'Propietario',
+    name: name ? name : 'Dueño',
     photoKey: listing.ownerPhotoKey || null,
     isVerified: Boolean(listing.ownerIsVerified),
     memberSinceYear: listing.ownerMemberSinceYear ?? null,
@@ -40,8 +40,8 @@ export function OwnerCard({ listing }: { listing: Listing }) {
   if (!data) return null
 
   const subtitle = data.memberSinceYear
-    ? `Propietario · Miembro desde ${data.memberSinceYear}`
-    : 'Propietario'
+    ? `Dueño · Miembro desde ${data.memberSinceYear}`
+    : 'Dueño'
 
   return (
     <section aria-label="Publicado por" className="rounded-xl border border-border bg-surface p-4">

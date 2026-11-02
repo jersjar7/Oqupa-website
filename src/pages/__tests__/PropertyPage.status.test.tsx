@@ -162,7 +162,7 @@ describe('an active listing', () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith('Esta publicación ya no está disponible.'),
     )
-    expect(screen.queryByText(/Escríbele al propietario/i, { selector: 'h3' })).toBeNull()
+    expect(screen.queryByText(/Escríbele al dueño/i, { selector: 'h3' })).toBeNull()
   })
 })
 

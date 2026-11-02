@@ -63,6 +63,6 @@ describe('ClaimedLeadCard — contacting the owner', () => {
     getListingContactMock.mockRejectedValue(new Error('offline'))
     setup()
     fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith('No se pudo obtener el contacto del propietario.'))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith('No se pudo obtener el contacto del dueño.'))
   })
 })

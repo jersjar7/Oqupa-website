@@ -85,7 +85,7 @@ export default function ClaimedLeadCard({
       toast.error(
         error instanceof ContactDenied && error.reason === 'listing-not-available'
           ? 'Esta publicación ya no está disponible.'
-          : 'No se pudo obtener el contacto del propietario.',
+          : 'No se pudo obtener el contacto del dueño.',
       )
     } finally {
       setOpening(false)

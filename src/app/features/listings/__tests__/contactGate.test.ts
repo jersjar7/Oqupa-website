@@ -8,7 +8,7 @@ describe('contactGateCopy', () => {
   it('visitor: says why, says it is free, offers to create an account', () => {
     const c = contactGateCopy({ signedIn: false, emailVerified: false })
     expect(c.body).toBe(
-      'Para escribirle al propietario, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
+      'Para escribirle al dueño, crea tu cuenta y verifica tu número. Es gratis y toma unos minutos.',
     )
     expect(c.primary).toEqual({ label: 'CREA TU CUENTA', to: '/app/login' })
     expect(c.secondary).toEqual({ label: 'Ya tengo cuenta', to: '/app/login' })
@@ -17,7 +17,7 @@ describe('contactGateCopy', () => {
 
   it('signed in but phone unverified: asks only for the phone, once', () => {
     const c = contactGateCopy({ signedIn: true, emailVerified: true })
-    expect(c.body).toBe('Para escribirle al propietario, verifica tu número. Solo esta vez.')
+    expect(c.body).toBe('Para escribirle al dueño, verifica tu número. Solo esta vez.')
     expect(c.primary).toEqual({ label: 'VERIFICAR NÚMERO', to: '/app/verify' })
     expect(c.secondary).toBeNull()
   })
@@ -26,14 +26,14 @@ describe('contactGateCopy', () => {
     // Hostile review 2026-08-26: /app/verify walks this person through email
     // (and possibly name) before the phone, so "Solo esta vez" would be false.
     const c = contactGateCopy({ signedIn: true, emailVerified: false })
-    expect(c.body).toBe('Para escribirle al propietario, termina de verificar tu cuenta.')
+    expect(c.body).toBe('Para escribirle al dueño, termina de verificar tu cuenta.')
     expect(c.primary).toEqual({ label: 'VERIFICAR CUENTA', to: '/app/verify' })
     expect(c.secondary).toBeNull()
   })
 
   it('the title talks about the action, not about verification', () => {
-    expect(contactGateCopy({ signedIn: false, emailVerified: false }).title).toBe('Escríbele al propietario')
-    expect(contactGateCopy({ signedIn: true, emailVerified: true }).title).toBe('Escríbele al propietario')
+    expect(contactGateCopy({ signedIn: false, emailVerified: false }).title).toBe('Escríbele al dueño')
+    expect(contactGateCopy({ signedIn: true, emailVerified: true }).title).toBe('Escríbele al dueño')
   })
 })
 
@@ -66,7 +66,7 @@ describe('the phone was never really linked', () => {
       phoneNeedsReverification: true,
     })
     expect(c.body).toBe(
-      'Para escribirle al propietario, verifica tu número otra vez.',
+      'Para escribirle al dueño, verifica tu número otra vez.',
     )
     // ?reverify=phone is load-bearing, not decoration. /app/verify computes
     // what is owed from users/{uid}.isPhoneVerified — the very flag the server
@@ -93,7 +93,7 @@ describe('the phone was never really linked', () => {
   it('leaves the ordinary cases untouched', () => {
     const c = contactGateCopy({ signedIn: true, emailVerified: true })
     expect(c.body).toBe(
-      'Para escribirle al propietario, verifica tu número. Solo esta vez.',
+      'Para escribirle al dueño, verifica tu número. Solo esta vez.',
     )
   })
 })

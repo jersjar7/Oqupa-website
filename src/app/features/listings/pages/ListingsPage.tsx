@@ -35,7 +35,7 @@ export type { Tab }
 
 const TAB_SUBTITLES: Record<Tab, string> = {
   propias:   'Propiedades que publicaste. Gestiónalas, destácalas y compártelas.',
-  asignadas: 'Propiedades donde aceptaste ser el agente. Trabaja con el propietario para cerrar la venta o alquiler.',
+  asignadas: 'Propiedades donde aceptaste ser el agente. Trabaja con el dueño para cerrar la venta o alquiler.',
 }
 
 // ---------------------------------------------------------------------------
@@ -279,12 +279,12 @@ function AsignadasPane({
       <div className="mt-8 rounded-lg border border-dashed border-border bg-background-secondary/40 p-8 text-center">
         <p className="font-serif text-[22px] text-text-primary">Aún no gestionas propiedades como agente</p>
         <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
-          Las propiedades aparecen aquí cuando aceptas una invitación del propietario.
+          Las propiedades aparecen aquí cuando aceptas una invitación del dueño.
           Para recibir invitaciones, primero reclama una oportunidad en{' '}
           <Link to="/app/leads" className="font-medium text-secondary underline-offset-2 hover:underline">
             Oportunidades
           </Link>
-          . Si el propietario te elige, verás la invitación en{' '}
+          . Si el dueño te elige, verás la invitación en{' '}
           <Link to="/app/leads?tab=invitaciones" className="font-medium text-secondary underline-offset-2 hover:underline">
             Invitaciones
           </Link>

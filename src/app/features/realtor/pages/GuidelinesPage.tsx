@@ -9,7 +9,7 @@ import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 const AGENT_TIPS: [string, string][] = [
   [
     'Firmen un acuerdo por escrito',
-    'Antes de trabajar, acuerda comisiones y condiciones por escrito con el propietario y guarda tu propia copia. Si más adelante te quitan la asignación en la app, tu acuerdo firmado es tu respaldo.',
+    'Antes de trabajar, acuerda comisiones y condiciones por escrito con el dueño y guarda tu propia copia. Si más adelante te quitan la asignación en la app, tu acuerdo firmado es tu respaldo.',
   ],
   ['Sé profesional y claro', 'Preséntate con transparencia y explica cómo puedes ayudar. La confianza cierra tratos.'],
   ['Contacta a tiempo', 'El primer agente en comunicarse suele tener ventaja. No dejes enfriar la oportunidad.'],
@@ -43,7 +43,7 @@ export default function GuidelinesPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <p className="text-base leading-relaxed text-text-secondary">
-        Oqupa conecta a propietarios y agentes inmobiliarios. Estas son buenas prácticas para que tu experiencia sea segura y clara.
+        Oqupa conecta a dueños y agentes inmobiliarios. Estas son buenas prácticas para que tu experiencia sea segura y clara.
       </p>
 
       <div className="mt-6 flex gap-3 rounded-2xl border border-border bg-white p-4 shadow-light">
@@ -57,7 +57,7 @@ export default function GuidelinesPage() {
       </div>
 
       <Tips heading="Para agentes" tips={AGENT_TIPS} />
-      <Tips heading="Para propietarios" tips={OWNER_TIPS} />
+      <Tips heading="Para dueños" tips={OWNER_TIPS} />
 
       <div className="mt-8 flex gap-3 rounded-2xl border border-secondary/30 bg-secondary/5 p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-secondary" aria-hidden="true" />

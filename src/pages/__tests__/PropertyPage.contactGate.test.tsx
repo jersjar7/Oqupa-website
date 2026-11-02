@@ -108,7 +108,7 @@ async function openGateWith(reason: ContactDenialReason) {
   getListingContactMock.mockRejectedValue(new ContactDenied(reason))
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
-  await screen.findByText(/Escríbele al propietario/i, { selector: 'h3' })
+  await screen.findByText(/Escríbele al dueño/i, { selector: 'h3' })
 }
 
 beforeEach(() => {

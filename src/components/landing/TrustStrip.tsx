@@ -51,7 +51,7 @@ const TRUST_CARDS = [
   {
     title: 'Información transparente y confiable',
     description:
-      'Datos claros, fotos reales y contacto directo con propietarios y agentes verificados.',
+      'Datos claros, fotos reales y contacto directo con dueños y agentes verificados.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
