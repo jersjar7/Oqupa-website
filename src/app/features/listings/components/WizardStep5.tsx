@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -30,6 +30,11 @@ import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
 import { normalizedAddressOnEdit, publicLocationOnEdit } from '../editLocation'
 import { coverMicroThumbOnEdit } from '../editMedia'
+import { setReturnUrl } from '@/lib/utils'
+
+/** Shown when PUBLICAR is pressed after the sign-in ended (ADR-043 step 3, bug 17). */
+export const SESSION_CLOSED_NOTICE = 'Tu sesión se cerró. Inicia sesión para publicar.'
+const SESSION_CLOSED_NOTICE_EDIT = 'Tu sesión se cerró. Inicia sesión para guardar los cambios.'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
@@ -42,6 +47,7 @@ function formatAmount(amount: number | null | undefined): string {
 
 export default function WizardStep5() {
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const {
@@ -51,6 +57,8 @@ export default function WizardStep5() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // The sign-in ended before or during PUBLICAR: offer INICIAR SESIÓN.
+  const [sessionClosed, setSessionClosed] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   // The new-listing publish (ADR-043). Always starts idle: a draft that is
   // already published is cleared by CreateListingPage and refused by
@@ -143,8 +151,24 @@ export default function WizardStep5() {
     isEditMode
   )
 
+  // INICIAR SESIÓN: keep the draft in this tab, remember to come back here,
+  // and go to the sign-in page (which returns here once signed in).
+  function signInAgain() {
+    persistDraft()
+    setReturnUrl(`${location.pathname}${location.search}`)
+    navigate('/app/login')
+  }
+
   async function onSubmit(formData: Step4Data) {
-    if (!user) return
+    // Signed out in the middle of the wizard. This used to do nothing at all.
+    // (A sign-in that ends during the publish itself is caught by the
+    // publish engine, with its own message; INICIAR SESIÓN is offered then too.)
+    if (!user) {
+      setSessionClosed(true)
+      setSubmitError(isEditMode ? SESSION_CLOSED_NOTICE_EDIT : SESSION_CLOSED_NOTICE)
+      return
+    }
+    setSessionClosed(false)
 
     // Pre-submission validation of all steps
     // Merge formData (current Step 5 values) since they haven't been saved to the store yet
@@ -483,6 +507,7 @@ export default function WizardStep5() {
       // One Spanish sentence saying what went wrong. The retry reuses the
       // same identity and skips the photos that already arrived.
       setSubmitError(err instanceof PublishError ? err.message : PUBLISH_ERROR_MESSAGES.other)
+      setSessionClosed(err instanceof PublishError && err.failure === 'session')
       setPublishStatus('error')
     }
   }
@@ -603,6 +628,11 @@ export default function WizardStep5() {
           {/* Submit error */}
           {submitError && (
             <p role="alert" className="text-sm text-error">{submitError}</p>
+          )}
+          {sessionClosed && (
+            <Button type="button" onClick={signInAgain} className="w-full">
+              Iniciar sesión
+            </Button>
           )}
 
           {/* Edit mode: what is being saved */}

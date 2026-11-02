@@ -3,7 +3,7 @@
 // "Continuar con correo" reveals the form. A mismatch offers both ways forward,
 // because production hides whether an email has an account.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 const mockAuthService = vi.hoisted(() => ({
