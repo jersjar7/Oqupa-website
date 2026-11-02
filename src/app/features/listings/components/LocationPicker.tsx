@@ -54,7 +54,13 @@ export function LocationPickerMap({ token, latitude, longitude, onChange }: Loca
     }
     if (!inside) {
       setOutsideBoundary(true)
-      if (lastValid.current) markerRef.current?.setLngLat(lastValid.current)
+      if (lastValid.current) {
+        markerRef.current?.setLngLat(lastValid.current)
+      } else {
+        // No valid place to go back to: the refused pin leaves the map.
+        markerRef.current?.remove()
+        markerRef.current = null
+      }
       return
     }
     setOutsideBoundary(false)

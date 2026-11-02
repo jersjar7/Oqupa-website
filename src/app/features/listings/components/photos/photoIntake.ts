@@ -29,11 +29,15 @@ export async function isUsablePhoto(file: File): Promise<boolean> {
 
 /** Splits the chosen files into the ones this browser can use and the rest. */
 export async function sortChosenPhotos(files: File[]): Promise<{ usable: File[]; unusable: number }> {
-  const checks = await Promise.all(files.map(isUsablePhoto))
-  return {
-    usable: files.filter((_, i) => checks[i]),
-    unusable: checks.filter((ok) => !ok).length,
+  // One at a time: decoding many full-size photos at once can exhaust a
+  // phone's memory (hostile review #7).
+  const usable: File[] = []
+  let unusable = 0
+  for (const file of files) {
+    if (await isUsablePhoto(file)) usable.push(file)
+    else unusable++
   }
+  return { usable, unusable }
 }
 
 /**

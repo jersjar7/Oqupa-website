@@ -5,16 +5,16 @@ import { render, screen, act, waitFor } from '@testing-library/react'
 
 const mb = vi.hoisted(() => {
   const handlers: Record<string, (e: unknown) => void> = {}
-  const markers: { lngLat: [number, number]; dragend?: () => void }[] = []
+  const markers: { lngLat: [number, number]; dragend?: () => void; removed?: boolean }[] = []
   const mapOptions: Record<string, unknown>[] = []
   class FakeMarker {
-    entry: { lngLat: [number, number]; dragend?: () => void } = { lngLat: [0, 0] }
+    entry: { lngLat: [number, number]; dragend?: () => void; removed?: boolean } = { lngLat: [0, 0] }
     constructor() { markers.push(this.entry) }
     setLngLat(ll: [number, number]) { this.entry.lngLat = ll; return this }
     addTo() { return this }
     on(ev: string, cb: () => void) { if (ev === 'dragend') this.entry.dragend = cb; return this }
     getLngLat() { return { lng: this.entry.lngLat[0], lat: this.entry.lngLat[1] } }
-    remove() {}
+    remove() { this.entry.removed = true }
   }
   class FakeMap {
     constructor(opts: Record<string, unknown>) { mapOptions.push(opts) }
@@ -61,6 +61,28 @@ describe('LocationPicker — a pin dragged outside Piura goes back', () => {
     await waitFor(() => expect(screen.getByText(/Fuera de zona permitida/)).toBeDefined())
     expect(onChange).not.toHaveBeenCalled()
     expect(m.lngLat).toEqual([-80.63, -5.19])
+  })
+})
+
+describe('LocationPicker — a first pin outside Piura (review #7)', () => {
+  beforeEach(() => {
+    mb.markers.length = 0
+    pointer('mouse')
+  })
+
+  it('with no earlier valid place, the refused pin is taken off the map', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(<LocationPickerMap token="pk.test" latitude={-5.19} longitude={-80.63} onChange={onChange} />)
+    await waitFor(() => expect(mb.markers.length).toBeGreaterThan(0))
+    // The place is cleared (no valid pin any more)…
+    rerender(<LocationPickerMap token="pk.test" latitude={null} longitude={null} onChange={onChange} />)
+    const m = mb.markers[mb.markers.length - 1]!
+    // …and the pin is then dropped outside Piura.
+    m.lngLat = [-77.04, -12.04]
+    await act(async () => m.dragend!())
+    await waitFor(() => expect(screen.getByText(/Fuera de zona permitida/)).toBeDefined())
+    expect(m.removed).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
   })
 })
 
