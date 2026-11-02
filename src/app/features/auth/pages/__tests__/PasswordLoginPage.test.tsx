@@ -362,3 +362,21 @@ describe("PasswordLoginPage — offline when 'Crea tu cuenta con este correo' cr
     expect(mockAuthService.sendEmailVerificationToCurrentUser).toHaveBeenCalled();
   });
 });
+
+// Hostile review 2026-11-02, item 6 — same two lines as the app, on every
+// mismatch (reveals nothing, ADR-026).
+describe("PasswordLoginPage — how password-less accounts get in", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthService.loginWithEmailAndPassword.mockRejectedValue({ code: "auth/invalid-credential" });
+  });
+  it("the mismatch mentions Google and the email link", async () => {
+    renderPage();
+    openEmail();
+    fillForm("ana@example.com", "Algo123!");
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await waitFor(() => expect(screen.getByText(/no coinciden/i)).toBeDefined());
+    expect(screen.getByText("¿Entraste antes con Google? Usa «Continuar con Google».")).toBeDefined();
+    expect(screen.getByText(/entrabas con enlace por correo/i)).toBeDefined();
+  });
+});

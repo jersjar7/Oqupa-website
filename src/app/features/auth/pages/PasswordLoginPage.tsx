@@ -204,6 +204,9 @@ export default function PasswordLoginPage() {
                   ¿Olvidaste tu contraseña?
                 </Link>
                 <p className="mt-1 text-sm text-text-secondary">
+                  ¿Entraste antes con Google? Usa «Continuar con Google».
+                </p>
+                <p className="mt-1 text-sm text-text-secondary">
                   ¿Entrabas con enlace por correo? Esa cuenta aún no tiene contraseña:
                   créala con &ldquo;¿Olvidaste tu contraseña?&rdquo;.
                 </p>
