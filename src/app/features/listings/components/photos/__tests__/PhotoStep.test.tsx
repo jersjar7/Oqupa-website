@@ -64,4 +64,94 @@ describe('PhotoStep — ATRÁS', () => {
   })
 })
 
-export { MAX_PHOTOS }
+function heic(name: string) {
+  return new File(['x'], name, { type: 'image/heic' })
+}
+
+function preload(n: number) {
+  useListingFormStore.getState().updateData({ photos: Array.from({ length: n }, (_, i) => jpg(`p${i}.jpg`)) })
+}
+
+describe('PhotoStep — over the maximum', () => {
+  it('says how many fitted and which were added', async () => {
+    preload(MAX_PHOTOS - 2)
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg'), jpg('d.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(MAX_PHOTOS))
+    expect(screen.getByText('Solo cabían 2 fotos más; agregamos las primeras 2.')).toBeTruthy()
+  })
+
+  it('one more: singular', async () => {
+    preload(MAX_PHOTOS - 1)
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(MAX_PHOTOS))
+    expect(screen.getByText('Solo cabía 1 foto más; agregamos la primera.')).toBeTruthy()
+  })
+
+  it('nothing to say when everything fits', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(2))
+    expect(screen.queryByText(/Solo cab/)).toBeNull()
+  })
+})
+
+describe('PhotoStep — photos this browser cannot use (iPhone HEIC in Chrome)', () => {
+  it('a single unusable photo is refused at once, in Spanish', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([heic('IMG_0001.HEIC')]))
+    expect(await screen.findByText('Esta foto no se puede usar. Elige otra foto.')).toBeTruthy()
+    expect(tiles()).toHaveLength(0)
+  })
+
+  it('the good ones are added, and it says how many were skipped', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), heic('b.heic'), heic('c.heic')]))
+    await waitFor(() => expect(tiles()).toHaveLength(1))
+    expect(screen.getByText('2 fotos no se pueden usar y no las agregamos. Elige otras fotos.')).toBeTruthy()
+  })
+
+  it('one skipped: singular', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), heic('b.heic')]))
+    await waitFor(() => expect(tiles()).toHaveLength(1))
+    expect(screen.getByText('1 foto no se puede usar y no la agregamos. Elige otra foto.')).toBeTruthy()
+  })
+
+  it('a browser that can open HEIC (Safari) keeps it', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => ({ close() {} })))
+    render(<PhotoStep />)
+    await act(async () => choose([heic('IMG_0001.HEIC')]))
+    await waitFor(() => expect(tiles()).toHaveLength(1))
+    expect(screen.queryByText(/no se puede usar/)).toBeNull()
+  })
+
+  it('a browser that cannot open it refuses it', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => { throw new Error('decode') }))
+    render(<PhotoStep />)
+    await act(async () => choose([heic('IMG_0001.HEIC')]))
+    expect(await screen.findByText('Esta foto no se puede usar. Elige otra foto.')).toBeTruthy()
+  })
+})
+
+describe('PhotoStep — previews are released from memory', () => {
+  it('a removed photo\'s preview is released', async () => {
+    render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(3))
+    const before = [...created]
+    fireEvent.click(screen.getAllByRole('button', { name: /^Eliminar foto 1/ })[0]!)
+    await waitFor(() => expect(tiles()).toHaveLength(2))
+    expect(revoked).toHaveLength(1)
+    expect(before).toContain(revoked[0])
+  })
+
+  it('leaving the page releases every preview', async () => {
+    const { unmount } = render(<PhotoStep />)
+    await act(async () => choose([jpg('a.jpg'), jpg('b.jpg')]))
+    await waitFor(() => expect(tiles()).toHaveLength(2))
+    unmount()
+    expect(new Set(revoked)).toEqual(new Set(created))
+  })
+})

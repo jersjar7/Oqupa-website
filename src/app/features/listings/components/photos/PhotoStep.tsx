@@ -4,6 +4,8 @@ import { Button } from '@/app/components/ui'
 import { usePhotoQueue } from './usePhotoQueue'
 import PhotoGrid from './PhotoGrid'
 import { minPhotosFor } from './minPhotos'
+import { MAX_PHOTOS } from './usePhotoQueue'
+import { photoIntakeNotice, sortChosenPhotos } from './photoIntake'
 
 export default function PhotoStep() {
   const { data, updateData, nextStep, prevStep, isEditMode } = useListingFormStore()
@@ -14,6 +16,17 @@ export default function PhotoStep() {
     photos: data.photos,
   })
   const [photoError, setPhotoError] = useState<string | null>(null)
+  // What happened to photos that were chosen but not added (too many, or a
+  // kind this browser cannot open).
+  const [intakeNotice, setIntakeNotice] = useState<string | null>(null)
+
+  async function addChosen(files: File[]) {
+    setPhotoError(null)
+    const { usable, unusable } = await sortChosenPhotos(files)
+    const room = MAX_PHOTOS - queue.items.length
+    setIntakeNotice(photoIntakeNotice({ chosen: files.length, unusable, room, max: MAX_PHOTOS }))
+    queue.addFiles(usable)
+  }
 
   // The photos and their order go into the draft as they change, so ATRÁS
   // (or the browser's back button) and coming back find every photo still
@@ -49,13 +62,10 @@ export default function PhotoStep() {
       <PhotoGrid
         items={queue.items}
         previewUrls={queue.previewUrls}
-        onAddFiles={(files) => {
-          queue.addFiles(files)
-          setPhotoError(null)
-        }}
+        onAddFiles={(files) => void addChosen(files)}
         onRemove={queue.remove}
         onReorder={queue.reorder}
-        photoError={photoError}
+        photoError={photoError ?? intakeNotice}
         canContinue={canContinue}
         minPhotos={MIN_PHOTOS}
       />
