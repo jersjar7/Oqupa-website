@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Info, Upload, X, Loader2 } from 'lucide-react'
+import { ArrowLeft, Info, X, Loader2 } from 'lucide-react'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useListingDetails } from '@/hooks/useListings'
-import { storageService } from '@/services/storageService'
 import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Spinner } from '@/app/components/ui'
 import { callableErrorMessage } from '@/lib/friendlyErrors'
@@ -17,28 +16,13 @@ export default function AgentEditListingPage() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const { data: result, isLoading, error } = useListingDetails(id)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [description, setDescription] = useState('')
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([])
-  const [newPhotos, setNewPhotos] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [initialized, setInitialized] = useState(false)
-
-  // Memoize blob URLs to avoid creating new ones on every render and enable cleanup
-  const newPhotoPreviewUrls = useMemo(
-    () => newPhotos.map((file) => URL.createObjectURL(file)),
-    [newPhotos],
-  )
-
-  // Revoke blob URLs on cleanup to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      newPhotoPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [newPhotoPreviewUrls])
 
   // Pre-fill form with existing data
   useEffect(() => {
@@ -54,21 +38,11 @@ export default function AgentEditListingPage() {
     const origRefs = result.property.media.photoKeys ?? result.property.media.propertyPhotoUrls
     const refsChanged = existingPhotoUrls.length !== origRefs.length ||
       existingPhotoUrls.some((ref, i) => ref !== origRefs[i])
-    return descChanged || refsChanged || newPhotos.length > 0
+    return descChanged || refsChanged
   })()
 
   const handleRemoveExisting = (index: number) => {
     setExistingPhotoUrls(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleRemoveNew = (index: number) => {
-    setNewPhotos(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
-    setNewPhotos(prev => [...prev, ...files])
-    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleSubmit = async () => {
@@ -77,7 +51,7 @@ export default function AgentEditListingPage() {
       setSubmitError('La descripción no puede estar vacía')
       return
     }
-    if (existingPhotoUrls.length === 0 && newPhotos.length === 0) {
+    if (existingPhotoUrls.length === 0) {
       setSubmitError('Debes tener al menos una foto')
       return
     }
@@ -87,18 +61,7 @@ export default function AgentEditListingPage() {
     setSubmitError('')
 
     try {
-      let finalPhotoUrls = [...existingPhotoUrls]
-
-      // Upload new photos if any
-      if (newPhotos.length > 0) {
-        setSubmitStatus('Subiendo fotos...')
-        const uploadResults = await storageService.uploadMultiplePropertyPhotos(
-          result.property.id,
-          newPhotos,
-          (p) => setSubmitStatus(`Subiendo fotos... (${Math.round(p)}%)`)
-        )
-        finalPhotoUrls = [...finalPhotoUrls, ...uploadResults.map(r => r.objectKey)]
-      }
+      const finalPhotoUrls = [...existingPhotoUrls]
 
       setSubmitStatus('Guardando cambios...')
 
@@ -188,7 +151,7 @@ export default function AgentEditListingPage() {
       <div className="mb-6 flex items-start gap-2 rounded-lg border border-secondary/30 bg-secondary/10 p-3">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" />
         <p className="text-sm text-text-primary">
-          Como agente asignado, puedes editar la descripción y las fotos.
+          Como agente asignado, puedes editar la descripción y quitar fotos.
         </p>
       </div>
 
@@ -244,47 +207,9 @@ export default function AgentEditListingPage() {
                   )}
                 </div>
               ))}
-
-              {/* New photos */}
-              {newPhotos.map((_file, index) => (
-                <div key={`new-${index}`} className="group relative aspect-square">
-                  <img
-                    src={newPhotoPreviewUrls[index]}
-                    alt={`Nueva foto ${index + 1}`}
-                    className="h-full w-full rounded-lg object-cover"
-                  />
-                  <button
-                    onClick={() => handleRemoveNew(index)}
-                    aria-label={`Eliminar foto nueva ${index + 1}`}
-                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
-                  >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-error text-white shadow-light">
-                      <X className="h-4 w-4" />
-                    </span>
-                  </button>
-                </div>
-              ))}
-
-              {/* Add button */}
-              {existingPhotoUrls.length + newPhotos.length < 20 && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Agregar foto"
-                  className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-separator text-text-tertiary transition-colors hover:border-primary hover:text-primary"
-                >
-                  <Upload className="h-6 w-6" />
-                </button>
-              )}
             </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleAddPhotos}
-              className="hidden"
-            />
+            {/* getUploadUrl is owner-only for now (review 2026-11-02). */}
+            <p className="mt-3 text-sm text-text-secondary">Por ahora solo el dueño puede agregar fotos nuevas.</p>
           </div>
 
           {/* Error */}
