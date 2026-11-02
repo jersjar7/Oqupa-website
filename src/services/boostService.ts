@@ -18,7 +18,7 @@ import type {
   Payment,
   PaymentDocStatus,
 } from '@/types/boost'
-import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS } from '@/types/boost'
+import { DEFAULT_BOOST_TIERS as FALLBACK_TIERS, ON_SALE_BOOST_TIER } from '@/types/boost'
 
 // Timestamp converter
 function toDate(value: unknown): Date {
@@ -67,23 +67,18 @@ export const boostService = {
       if (configDoc.exists()) {
         const data = configDoc.data() as Record<string, unknown>
         const boostTiers = data['boostTiers'] as Record<string, Record<string, unknown>> | undefined
-        if (boostTiers) {
-          const tiers: BoostTierConfiguration[] = []
-          const tierKeys: BoostTier[] = ['sevenDays', 'fifteenDays', 'thirtyDays']
-          for (const tierKey of tierKeys) {
-            const tierData = boostTiers[tierKey]
-            if (tierData) {
-              const feeInCentimos = (tierData['feeInCentimos'] as number) ?? 0
-              tiers.push({
-                tier: tierKey,
-                durationDays: (tierData['durationDays'] as number) ?? 0,
-                feeInSoles: feeInCentimos / 100,
-                feeInCentimos,
-                displayName: (tierData['displayName'] as string) ?? tierKey,
-              })
-            }
-          }
-          if (tiers.length === 3) return tiers
+        // Only the tier on sale is offered, whatever else the config lists
+        // (one boost only, ADR-042).
+        const tierData = boostTiers?.[ON_SALE_BOOST_TIER]
+        if (tierData) {
+          const feeInCentimos = (tierData['feeInCentimos'] as number) ?? 0
+          return [{
+            tier: ON_SALE_BOOST_TIER,
+            durationDays: (tierData['durationDays'] as number) ?? 0,
+            feeInSoles: feeInCentimos / 100,
+            feeInCentimos,
+            displayName: (tierData['displayName'] as string) ?? ON_SALE_BOOST_TIER,
+          }]
         }
       }
     } catch (err) {

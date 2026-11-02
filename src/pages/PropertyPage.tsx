@@ -22,7 +22,7 @@ import {
 import { PROPERTY_TYPE_LABELS } from '@/types/enums'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import { AnalyticsLogger, priceBandFor, type ListingSegmentParams } from '@/lib/analytics'
-import { AnimatedImage } from '@/app/components/ui'
+import { AnimatedImage, Button } from '@/app/components/ui'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import PublishedSharePrompt from '@/components/PublishedSharePrompt'
 import { useJustPublished } from '@/hooks/useJustPublished'
@@ -696,20 +696,17 @@ export default function PropertyPage() {
                   </div>
                 </div>
               ) : (
-                // Boost CTA for owner
+                // Boost for owner: available, not promoted (ADR-042, ADR-043
+                // D17) — a plain secondary button, not an amber call to action.
                 <BoostPurchaseFlow
                   listingId={listing.id}
                   placement="listing_page"
                   onSuccess={() => {}}
                 >
                   {(openFlow) => (
-                    <button
-                      onClick={openFlow}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover"
-                    >
-                      <Sparkles className="h-5 w-5" />
+                    <Button onClick={openFlow} className="w-full">
                       Destacar mi propiedad
-                    </button>
+                    </Button>
                   )}
                 </BoostPurchaseFlow>
               )

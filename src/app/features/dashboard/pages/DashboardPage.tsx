@@ -37,7 +37,7 @@ import StatCard from '../components/StatCard'
 import RecentActivity from '../components/RecentActivity'
 import {
   nextClaimResetText, countExpiringSoon, countPublishedSince,
-  spendThisMonthSoles, buildSubtitle,
+  spendThisMonthSoles, buildSubtitle, boostedKpiSubtitle,
 } from './dashboardHelpers'
 
 // ---------------------------------------------------------------------------
@@ -96,11 +96,11 @@ function OwnerKpis({ userId }: { userId: string | undefined }) {
         ? 'Crea tu primer anuncio para empezar'
         : undefined
 
-  const boostedSub = (() => {
-    const ratio = listings.length > 0 ? `${boosted} de ${listings.length} anuncios` : 'Activa uno para destacar'
-    const spend = monthlySpend > 0 ? ` · S/ ${monthlySpend.toFixed(2)} este mes` : ''
-    return boosted > 0 || monthlySpend > 0 ? ratio + spend : 'Activa uno para destacar'
-  })()
+  const boostedSub = boostedKpiSubtitle({
+    boosted,
+    total: listings.length,
+    monthlySpendSoles: monthlySpend,
+  })
 
   const viewsSub = totalViews > 0
     ? 'Acumuladas en todos tus anuncios'
