@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 /**
- * ClaimedLeadCard — vertical property card used on Oportunidades → En Espera
+ * ClaimedLeadCard — vertical property card used on Oportunidades → En espera
  * for claims the agent is still waiting on the owner to decide. Shares its
  * shape with ListingCard and AgentAssignmentCard so all tabs render a
  * uniform grid.

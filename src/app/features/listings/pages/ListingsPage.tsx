@@ -14,7 +14,7 @@
  * clicks "Aceptar" on an invitation.
  *
  * Legacy `?tab=reclamadas` links (older dashboards or bookmarks) redirect
- * to the Oportunidades → En Espera tab.
+ * to the Oportunidades → En espera tab.
  */
 import { useEffect, useMemo } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -47,7 +47,7 @@ export default function ListingsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Legacy `?tab=reclamadas` → Oportunidades → En Espera. Run once on mount.
+  // Legacy `?tab=reclamadas` → Oportunidades → En espera. Run once on mount.
   useEffect(() => {
     if (searchParams.get('tab') === 'reclamadas') {
       navigate('/app/leads?tab=en-espera', { replace: true })

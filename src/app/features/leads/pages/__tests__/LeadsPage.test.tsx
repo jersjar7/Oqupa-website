@@ -24,6 +24,15 @@ vi.mock('@/hooks/useRealtorLeads', () => ({
 import LeadsPage from '../LeadsPage'
 
 describe('LeadsPage', () => {
+  // Same pipeline words as the app (feature audit 2026-11-02; the app pins
+  // them in agent_pipeline_words_test.dart).
+  it('the tabs are Disponibles, En espera and Invitaciones', () => {
+    state.assignments = q()
+    render(<MemoryRouter><LeadsPage /></MemoryRouter>)
+    const tabs = screen.getAllByRole('tab').map((t) => t.textContent?.replace(/\d+/g, '').trim())
+    expect(tabs).toEqual(['Disponibles', 'En espera', 'Invitaciones'])
+  })
+
   it('links to Buenas prácticas', () => {
     state.assignments = q()
     render(<MemoryRouter><LeadsPage /></MemoryRouter>)

@@ -3,7 +3,7 @@
  *
  * Three flat tabs:
  *   - Disponibles  — listings open for claim. Click to claim.
- *   - En Espera    — my claims where the owner is still deciding.
+ *   - En espera    — my claims where the owner is still deciding.
  *   - Invitaciones — owner picked me; I accept or decline here.
  *
  * Once the agent clicks "Aceptar" on an invitation, the claim resolves and
@@ -154,7 +154,7 @@ function TabBar({
         Disponibles <CountChip n={counts.disponibles} active={tab === 'disponibles'} />
       </TabButton>
       <TabButton active={tab === 'en-espera'} onClick={() => onChange('en-espera')}>
-        En Espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
+        En espera <CountChip n={counts['en-espera']} active={tab === 'en-espera'} />
       </TabButton>
       <TabButton
         active={tab === 'invitaciones'}
@@ -305,7 +305,7 @@ function DisponiblesPane({
             </div>
             <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
             <p className="mt-3 text-sm text-text-secondary">
-              Tu reclamo aparecerá en <span className="font-medium">En Espera</span> hasta
+              Tu reclamo aparecerá en <span className="font-medium">En espera</span> hasta
               que el dueño decida. Si te elige, verás la invitación en{' '}
               <span className="font-medium">Invitaciones</span>.
             </p>
@@ -325,7 +325,7 @@ function DisponiblesPane({
 }
 
 // ---------------------------------------------------------------------------
-// En Espera pane — claims waiting for owner decision
+// En espera pane — claims waiting for owner decision
 // ---------------------------------------------------------------------------
 function EnEsperaPane({
   userId, query,
