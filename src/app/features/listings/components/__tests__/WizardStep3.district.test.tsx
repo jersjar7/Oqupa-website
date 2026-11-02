@@ -74,6 +74,7 @@ describe('WizardStep3 — ATRÁS', () => {
     window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
     Element.prototype.scrollIntoView = vi.fn()
     sessionStorage.clear()
+    localStorage.clear()
     useListingFormStore.getState().reset?.()
     useListingFormStore.getState().setStep(3)
     pinRef.onChange = null

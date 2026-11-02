@@ -23,7 +23,7 @@ function renderStep() {
 }
 
 const priceBox = () => screen.getByPlaceholderText(/^Ej:/) as HTMLInputElement
-const savedDraft = () => JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
+const savedDraft = () => JSON.parse(localStorage.getItem('oqupa-listing-form') ?? '{}')
 
 describe('WizardStep5 — Precio', () => {
   beforeEach(() => {

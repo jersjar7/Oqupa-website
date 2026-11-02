@@ -89,7 +89,7 @@ describe('WizardStep5 — the session closed before PUBLICAR', () => {
     expect(consumeReturnUrl()).toBeNull()
     const wayBack = JSON.parse(localStorage.getItem('oqupa_bouncedFrom') ?? '{}')
     expect([wayBack.url, wayBack.uid]).toEqual(['/app/listings/new', 'owner-1'])
-    const saved = JSON.parse(sessionStorage.getItem('oqupa-listing-form') ?? '{}')
+    const saved = JSON.parse(localStorage.getItem('oqupa-listing-form') ?? '{}')
     expect(saved.description).toBe('Terreno amplio con todos los servicios cerca de la avenida')
     expect(saved.amount).toBe(50000)
     expect(saved.step).toBe(5)

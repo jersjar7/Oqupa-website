@@ -9,12 +9,14 @@ const photo = { objectKey: 'property-photos/p/1-0.webp', blurHash: 'LKO2', micro
 describe('listingFormStore — publish identity (ADR-043)', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     store().reset()
   })
 
   afterEach(() => {
     vi.resetModules()
     sessionStorage.clear()
+    localStorage.clear()
   })
 
   it('a draft has an identity from the moment the wizard opens', () => {
@@ -23,7 +25,7 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
 
   it('the identity is stored WITH the draft', () => {
     store().updateData({ description: 'x' })
-    const saved = JSON.parse(sessionStorage.getItem(KEY)!)
+    const saved = JSON.parse(localStorage.getItem(KEY)!)
     expect(saved.publishId).toBe(store().publishId)
   })
 
@@ -37,7 +39,7 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
 
   it('photos already uploaded are kept with the draft and survive a refresh', async () => {
     store().recordUploadedPhoto('a.jpg:3:5', photo)
-    expect(JSON.parse(sessionStorage.getItem(KEY)!).uploadedPhotos).toEqual({ 'a.jpg:3:5': photo })
+    expect(JSON.parse(localStorage.getItem(KEY)!).uploadedPhotos).toEqual({ 'a.jpg:3:5': photo })
     vi.resetModules()
     const { useListingFormStore: fresh } = await import('../listingFormStore')
     expect(fresh.getState().uploadedPhotos).toEqual({ 'a.jpg:3:5': photo })
@@ -62,7 +64,7 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
     it('clears the draft from storage the moment the write succeeds', () => {
       store().updateData({ description: 'x' })
       store().markPublished('listing_1_abcdefg')
-      expect(sessionStorage.getItem(KEY)).toBeNull()
+      expect(localStorage.getItem(KEY)).toBeNull()
       expect(store().publishedListingId).toBe('listing_1_abcdefg')
     })
 
@@ -71,7 +73,7 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
       store().updateData({ description: 'late keystroke' })
       store().nextStep()
       store().recordUploadedPhoto('late', photo)
-      expect(sessionStorage.getItem(KEY)).toBeNull()
+      expect(localStorage.getItem(KEY)).toBeNull()
     })
 
     it('a refresh after success opens an EMPTY wizard', async () => {
@@ -125,7 +127,7 @@ describe('listingFormStore — publish identity (ADR-043)', () => {
     it('the first publisher claims it, and it is stored', () => {
       const id = store().publishId
       expect(store().claimPublishIdentity('u1')).toBe(id)
-      expect(JSON.parse(sessionStorage.getItem(KEY)!).publishOwnerId).toBe('u1')
+      expect(JSON.parse(localStorage.getItem(KEY)!).publishOwnerId).toBe('u1')
     })
 
     it('the same account keeps it', () => {

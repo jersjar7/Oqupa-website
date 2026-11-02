@@ -27,6 +27,7 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 describe('CreateListingPage over a draft that was already published', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
     navigate.mockReset()
     useListingFormStore.getState().reset()
   })

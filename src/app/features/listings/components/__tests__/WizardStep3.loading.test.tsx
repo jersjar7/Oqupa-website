@@ -25,6 +25,7 @@ describe('WizardStep3 — while the district loads', () => {
     window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
     Element.prototype.scrollIntoView = vi.fn()
     sessionStorage.clear()
+    localStorage.clear()
     useListingFormStore.getState().reset()
     pinRef.onChange = null
     loader.resolve = null

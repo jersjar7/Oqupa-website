@@ -351,7 +351,7 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     fireEvent.click(publishButton())
     await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
     // Cleared the moment the write succeeded — not when a dialog closes.
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
     expect((await screen.findAllByText('¡PUBLICADO!', {}, { timeout: 2000 })).length).toBeGreaterThan(0)
     await waitFor(() =>
       expect(screen.getByTestId('where').textContent).toBe(`/property/listing_${id}`), { timeout: 3000 })

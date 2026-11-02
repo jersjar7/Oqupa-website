@@ -984,10 +984,10 @@ describe('logout clears the publishing draft', () => {
     useListingFormStore.getState().reset()
     useListingFormStore.getState().adoptDraftFor('ana')
     useListingFormStore.getState().updateData({ description: 'Casa de Ana en Castilla' })
-    expect(sessionStorage.getItem('oqupa-listing-form')).not.toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).not.toBeNull()
     await authService.logout()
     expect(useListingFormStore.getState().data.description).toBe('')
-    expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
+    expect(localStorage.getItem('oqupa-listing-form')).toBeNull()
   })
 })
 
