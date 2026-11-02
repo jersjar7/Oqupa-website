@@ -17,4 +17,11 @@ describe('legal pages words', () => {
     expect(text).not.toMatch(/\bleads?\b/i)
     expect(text).not.toMatch(/token FCM/)
   })
+
+  it('Términos says "agentes inmobiliarios", never "asesores" (review 2026-11-02)', () => {
+    render(<MemoryRouter><TermsPage /></MemoryRouter>)
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/asesor/i)
+    expect(text).toMatch(/Programa de Agentes Inmobiliarios/)
+  })
 })

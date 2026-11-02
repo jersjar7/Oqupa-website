@@ -213,13 +213,13 @@ export default function TermsPage() {
         {/* 9 */}
         <section>
           <h2 className="font-serif text-xl font-normal text-text-primary">
-            9. Programa de Asesores Inmobiliarios
+            9. Programa de Agentes Inmobiliarios
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
             Oqupa permite a usuarios verificados solicitar acceso al programa de
             agentes inmobiliarios. Al ser aprobado, podrás reclamar oportunidades
             disponibles y contactar a usuarios interesados en propiedades. Los
-            asesores se comprometen a:
+            agentes se comprometen a:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-6 text-text-secondary leading-relaxed">
             <li>

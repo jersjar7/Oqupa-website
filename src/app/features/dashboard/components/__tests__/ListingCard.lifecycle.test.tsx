@@ -81,4 +81,12 @@ describe('ListingCard — lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sí, volver a publicar' }))
     expect(toggleMutate).toHaveBeenCalledWith({ listingId: 'L1', currentStatus: 'deactivated' }, expect.anything())
   })
+
+  // Review 2026-11-02: an old 'expired' listing reads Desactivado (ADR-014),
+  // so it gets the same actions.
+  it('an expired listing can be put back and deleted, like a deactivated one', () => {
+    setup('expired')
+    expect(screen.getByRole('button', { name: /Volver a publicar/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Eliminar/ })).toBeTruthy()
+  })
 })

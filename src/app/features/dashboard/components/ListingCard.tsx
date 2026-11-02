@@ -82,12 +82,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const isClosed = listing.status === 'sold' || listing.status === 'rented'
   // Sold / rented listings can be published again, as in the app.
-  const canToggle = listing.status === 'active' || listing.status === 'deactivated' || isClosed
+  // An old 'expired' reads Desactivado (ADR-014) and gets its actions.
+  const isOff = listing.status === 'deactivated' || listing.status === 'expired'
+  const canToggle = listing.status === 'active' || isOff || isClosed
   // Same rule and wording as the app: only an active listing, and only the
   // action that matches how it is offered.
   const isRental = property.operationType === 'alquiler'
   const canClose = listing.status === 'active'
-  const canDelete = listing.status === 'deactivated' || isClosed
+  const canDelete = isOff || isClosed
   // Deactivating does not pause a boost: the expiry job ignores status, so the
   // paid days keep running and nothing is returned. A boosted listing asks
   // first and says so; an unboosted one has nothing to lose.
