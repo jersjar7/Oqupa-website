@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
 import { consumeReturnUrl } from '@/lib/utils'
-import { rememberBouncedFrom } from '@/lib/returnPath'
+import { consumeBouncedFor, rememberBouncedFrom } from '@/lib/returnPath'
 
 interface GuestGuardProps {
   children: React.ReactNode
@@ -37,7 +37,11 @@ export default function GuestGuard({ children }: GuestGuardProps) {
     // second render before the redirect (React renders twice in development)
     // found it gone and sent the person to the dashboard instead.
     if (fullyVerified && destinationRef.current?.uid !== firebaseUser.uid) {
-      destinationRef.current = { uid: firebaseUser.uid, to: consumeReturnUrl() ?? '/app' }
+      // An errand (contacting a seller…) wins; a way back stored when this
+      // same account's session ended comes next; anyone else gets nothing.
+      const errand = consumeReturnUrl()
+      const bounced = consumeBouncedFor(firebaseUser.uid)
+      destinationRef.current = { uid: firebaseUser.uid, to: errand ?? bounced ?? '/app' }
     }
     const destination = fullyVerified ? destinationRef.current!.to : '/app/verify'
     return <Navigate to={destination} state={{ from: location }} replace />

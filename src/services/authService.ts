@@ -503,8 +503,10 @@ export const authService = {
     const deleteUserAccount = httpsCallable(functions, 'deleteUserAccount')
     await deleteUserAccount({})
     clearPendingEmailChange()
-    // A deleted account's publishing draft goes with it.
+    // A deleted account's publishing draft goes with it, and no tab keeps a
+    // way back for it (second hostile review #4).
     useListingFormStore.getState().discardDraft()
+    noteDeliberateSignOut()
     await signOut(auth)
   },
 

@@ -77,11 +77,14 @@ describe('signed out in the wizard, back in the wizard after signing in', () => 
     expect(useListingFormStore.getState().step).toBe(5)
   })
 
-  it('another account signs in: back in the wizard, but a clean one', async () => {
+  // Changed (second hostile review #3): this used to expect the other
+  // account to be sent into the wizard too. The way back now belongs to the
+  // account that was bounced; anyone else lands on their own panel.
+  it('another account signs in: no way back for them, and no draft', async () => {
     renderApp('/app/listings/new')
     await act(async () => sessionEnds())
     await act(async () => signIn('beto'))
-    expect(where()).toBe('/app/listings/new')
+    expect(where()).toBe('/app')
     expect(useListingFormStore.getState().data.description).toBe('')
   })
 
@@ -98,6 +101,35 @@ describe('signed out in the wizard, back in the wizard after signing in', () => 
     renderApp({ pathname: '/app/login', state: { from: '//evil.example/app/x' } })
     await act(async () => signIn('ana'))
     expect(where()).toBe('/app')
+  })
+})
+
+describe('second hostile review #3: the way back across tabs', () => {
+  let stop = () => {}
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    signIn('ana')
+    stop = watchDraftOwner()
+  })
+  afterEach(() => stop())
+
+  it('Salir in ANOTHER tab: this tab stores no way back', async () => {
+    renderApp('/app/listings/new')
+    // The other tab signed out on purpose (shared storage), then Firebase
+    // ended the session here too.
+    localStorage.setItem('oqupa_signedOutOnPurposeAt', String(Date.now()))
+    await act(async () => sessionEnds())
+    await act(async () => signIn('ana'))
+    expect(where()).toBe('/app')
+  })
+
+  it('Salir clears a way back already stored', async () => {
+    renderApp('/app/listings/new')
+    await act(async () => sessionEnds())
+    expect(localStorage.getItem('oqupa_bouncedFrom')).not.toBeNull()
+    noteDeliberateSignOut()
+    expect(localStorage.getItem('oqupa_bouncedFrom')).toBeNull()
   })
 })
 
@@ -129,11 +161,14 @@ describe('safeAppPath (no open redirect)', () => {
     expect(safeAppPath({ pathname: '/app/listings/new', search: '', hash: '' })).toBe('/app/listings/new')
     expect(safeAppPath('/app/listings/abc/edit?x=1')).toBe('/app/listings/abc/edit?x=1')
     expect(safeAppPath('/app')).toBe('/app')
+    expect(safeAppPath('/APP/listings/new')).toBe('/APP/listings/new')
   })
   it('refuses everything else', () => {
     for (const bad of [
       '//evil.example', 'https://evil.example/app', '/\\evil.example', '/explorar', '/application',
       '/app/login', '/app/register', '/app/verify', '/app/forgot-password', '/app/auth/x',
+      // The router matches paths case-insensitively, so this check does too.
+      '/app/LOGIN', '/APP/Login', '/app/Verify', '/App/Register',
       'javascript:alert(1)', '', null, undefined, 42, { pathname: '//evil.example' },
     ]) {
       expect(safeAppPath(bad), String(bad)).toBeNull()

@@ -921,3 +921,16 @@ describe('logout clears the publishing draft', () => {
     expect(sessionStorage.getItem('oqupa-listing-form')).toBeNull()
   })
 })
+
+// Second hostile review #4: deleting the account is a deliberate sign-out —
+// no tab may store a way back for it.
+describe('deleteAccount notes a deliberate sign-out', () => {
+  it('marks it for every tab and drops a stored way back', async () => {
+    localStorage.setItem('oqupa_bouncedFrom', JSON.stringify({ url: '/app/listings/new', at: Date.now(), uid: 'u1' }))
+    callableInvokerMock.mockResolvedValueOnce({ data: {} })
+    signOutMock.mockResolvedValueOnce(undefined)
+    await authService.deleteAccount()
+    expect(Number(localStorage.getItem('oqupa_signedOutOnPurposeAt'))).toBeGreaterThan(0)
+    expect(localStorage.getItem('oqupa_bouncedFrom')).toBeNull()
+  })
+})

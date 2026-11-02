@@ -1,5 +1,6 @@
 import { useAuthStore } from './authStore'
 import { setDraftAccount, useListingFormStore } from './listingFormStore'
+import { noteSignedInAccount } from '@/lib/returnPath'
 
 /**
  * Keeps the publishing draft with the account that started it (hostile
@@ -18,6 +19,8 @@ export function watchDraftOwner(): () => void {
   // also runs before the wizard can show a draft that is not theirs.
   const adopt = (uid: string | null) => {
     setDraftAccount(uid)
+    // Whose way back a bounce to the sign-in page would be.
+    noteSignedInAccount(uid)
     if (!uid) return
     const form = useListingFormStore.getState()
     if (form.isEditMode) return
