@@ -1,32 +1,40 @@
-import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { Modal, Spinner } from '@/app/components/ui'
 import { useBoostTiers } from '@/hooks/useBoost'
-import type { BoostTier, BoostTierConfiguration } from '@/types/boost'
+import { DEFAULT_BOOST_TIERS, ON_SALE_BOOST_TIER } from '@/types/boost'
+import type { BoostTier } from '@/types/boost'
 
 interface BoostTierSelectionModalProps {
   isOpen: boolean
-  /** Receives the tier highlighted at closing, for `boost_checkout_abandoned`. */
+  /** Receives the tier on offer at closing, for `boost_checkout_abandoned`. */
   onClose: (highlightedTier: BoostTier) => void
   onConfirm: (tier: BoostTier) => void
   isProcessing: boolean
+  /** A sentence shown above the offer, e.g. why an older choice was refused. */
+  notice?: string
 }
 
+/**
+ * One boost only — 30 days at S/ 29.90 (ADR-042, ADR-043 D16/D17). A single
+ * confirmation, not a choice: no tier cards and no "most popular" / "best
+ * value" badges (with one option they were untrue). Kept quiet: no nudges.
+ */
 export default function BoostTierSelectionModal({
   isOpen,
   onClose,
   onConfirm,
   isProcessing,
+  notice,
 }: BoostTierSelectionModalProps) {
   const { data: tiers, isLoading: isLoadingTiers } = useBoostTiers()
-  const [selectedTier, setSelectedTier] = useState<BoostTier>('fifteenDays')
-
-  const selectedConfig = tiers?.find((t) => t.tier === selectedTier)
+  const offer =
+    tiers?.find((t) => t.tier === ON_SALE_BOOST_TIER) ??
+    DEFAULT_BOOST_TIERS.find((t) => t.tier === ON_SALE_BOOST_TIER)!
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose(selectedTier)}>
+    <Modal isOpen={isOpen} onClose={() => onClose(offer.tier)}>
       <div className="text-center">
-        <h2 className="font-sans text-[28px] font-medium text-secondary">
+        <h2 className="font-serif text-[28px] font-normal text-secondary">
           Destaca tu publicación
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
@@ -34,21 +42,22 @@ export default function BoostTierSelectionModal({
         </p>
       </div>
 
-      {/* Tier cards */}
-      <div className="mt-6 space-y-3">
+      {notice && (
+        <p role="alert" className="mt-6 rounded-xl bg-cream-strong px-4 py-3 text-center text-sm text-text-primary">
+          {notice}
+        </p>
+      )}
+
+      {/* The one boost */}
+      <div className="mt-6 rounded-xl border border-border bg-white px-4 py-5 text-center">
         {isLoadingTiers ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center">
             <Spinner size="md" />
           </div>
         ) : (
-          tiers?.map((tier) => (
-            <TierCard
-              key={tier.tier}
-              config={tier}
-              isSelected={selectedTier === tier.tier}
-              onSelect={() => setSelectedTier(tier.tier)}
-            />
-          ))
+          <p className="font-serif text-[22px] font-normal text-secondary">
+            {`${offer.displayName} · S/ ${offer.feeInSoles.toFixed(2)}`}
+          </p>
         )}
       </div>
 
@@ -76,9 +85,9 @@ export default function BoostTierSelectionModal({
 
       {/* CTA button */}
       <button
-        onClick={() => onConfirm(selectedTier)}
+        onClick={() => onConfirm(offer.tier)}
         disabled={isProcessing || isLoadingTiers}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 text-base font-bold uppercase tracking-wider text-ink transition-colors hover:bg-boost-hover disabled:bg-separator disabled:text-text-secondary"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-boost px-6 py-4 font-sans text-base font-bold uppercase tracking-[1px] text-ink transition-colors hover:bg-boost-hover disabled:bg-separator disabled:text-text-secondary"
       >
         {isProcessing ? (
           <>
@@ -88,10 +97,7 @@ export default function BoostTierSelectionModal({
         ) : (
           <>
             <Sparkles className="h-5 w-5" />
-            <span>
-              Confirmar y Pagar
-              {selectedConfig ? ` — S/. ${selectedConfig.feeInSoles.toFixed(2)}` : ''}
-            </span>
+            <span>CONFIRMAR Y PAGAR</span>
           </>
         )}
       </button>
@@ -102,68 +108,5 @@ export default function BoostTierSelectionModal({
         Reembolsos disponibles dentro de 48 horas.
       </p>
     </Modal>
-  )
-}
-
-function TierCard({
-  config,
-  isSelected,
-  onSelect,
-}: {
-  config: BoostTierConfiguration
-  isSelected: boolean
-  onSelect: () => void
-}) {
-  const isPopular = config.tier === 'fifteenDays'
-  const isBestValue = config.tier === 'thirtyDays'
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-full items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors ${
-        isSelected
-          ? 'border-boost bg-boost/10'
-          : 'border-border bg-white hover:border-separator'
-      }`}
-    >
-      {/* Radio indicator */}
-      <div
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-          isSelected ? 'border-boost' : 'border-ink-tertiary'
-        }`}
-      >
-        {isSelected && (
-          <div className="h-3 w-3 rounded-full bg-boost" />
-        )}
-      </div>
-
-      {/* Tier info */}
-      <div className="flex flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-semibold text-text-primary">
-            {config.displayName}
-          </span>
-          {isPopular && (
-            <span className="rounded bg-boost/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-ink">
-              MÁS POPULAR
-            </span>
-          )}
-          {isBestValue && (
-            <span className="rounded bg-secondary/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-secondary">
-              MEJOR VALOR
-            </span>
-          )}
-        </div>
-        <span className="text-[11px] text-text-tertiary">
-          S/. {(config.feeInSoles / config.durationDays).toFixed(2)}/día
-        </span>
-      </div>
-
-      {/* Price */}
-      <span className="text-lg font-bold text-secondary">
-        S/. {config.feeInSoles.toFixed(2)}
-      </span>
-    </button>
   )
 }

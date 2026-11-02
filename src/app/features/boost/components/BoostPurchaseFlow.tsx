@@ -6,7 +6,8 @@ import StripePaymentModal from './StripePaymentModal'
 import { useCreateBoostPayment, useBoostTiers, usePollPaymentCompletion } from '@/hooks/useBoost'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { AnalyticsLogger, type BoostOfferPlacement } from '@/lib/analytics'
-import type { BoostTier } from '@/types/boost'
+import { DEFAULT_BOOST_TIERS, ON_SALE_BOOST_TIER } from '@/types/boost'
+import type { BoostTier, BoostTierConfiguration } from '@/types/boost'
 
 type FlowStep = 'closed' | 'tier-selection' | 'payment' | 'processing' | 'success' | 'error'
 
@@ -38,6 +39,8 @@ export default function BoostPurchaseFlow({
   const [clientSecret, setClientSecret] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string>('')
+  // Why the modal reopened on the 30-day option (a tier no longer sold).
+  const [tierNotice, setTierNotice] = useState<string | undefined>(undefined)
   const [selectedTier, setSelectedTier] = useState<BoostTier | null>(null)
   const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Set once this opening was abandoned at payment. Cancelling payment returns
@@ -53,6 +56,7 @@ export default function BoostPurchaseFlow({
   const openFlow = useCallback(() => {
     abandonedAtPayment.current = false
     track(() => AnalyticsLogger.boostOfferViewed(placement))
+    setTierNotice(undefined)
     setStep('tier-selection')
   }, [placement])
 
@@ -66,6 +70,7 @@ export default function BoostPurchaseFlow({
 
   const handleTierConfirm = useCallback(async (tier: BoostTier) => {
     track(() => AnalyticsLogger.boostTierSelected(tier))
+    setTierNotice(undefined)
     setSelectedTier(tier)
     try {
       const result = await createPayment.mutateAsync({ listingId, boostTier: tier })
@@ -73,12 +78,24 @@ export default function BoostPurchaseFlow({
       setPaymentId(result.paymentId)
       setStep('payment')
     } catch (err: unknown) {
+      if (isTierNotOnSale(err)) {
+        // One boost only (ADR-043 D16): back on the 30-day option, with the
+        // reason, so one tap continues. The price is re-read in case it moved.
+        const onSale = tiers?.find((t) => t.tier === ON_SALE_BOOST_TIER)
+          ?? DEFAULT_BOOST_TIERS.find((t) => t.tier === ON_SALE_BOOST_TIER)!
+        const notice = tierNotOnSaleMessage(err, onSale)
+        setTierNotice(notice)
+        setSelectedTier(null)
+        setStep('tier-selection')
+        void queryClient.invalidateQueries({ queryKey: ['config', 'boostTiers'] })
+        return
+      }
       const userMessage = mapErrorToSpanish(err)
       setErrorMessage(userMessage)
       setStep('error')
       toast.error(userMessage)
     }
-  }, [listingId, createPayment])
+  }, [listingId, createPayment, tiers, queryClient])
 
   const handleSuccessClose = useCallback(() => {
     if (autoCloseTimer.current) {
@@ -169,6 +186,7 @@ export default function BoostPurchaseFlow({
         isOpen={step === 'tier-selection'}
         onClose={handleTierClose}
         onConfirm={handleTierConfirm}
+        notice={tierNotice}
         isProcessing={createPayment.isPending}
       />
 
@@ -300,6 +318,31 @@ function track(send: () => void) {
   } catch {
     // Ignored on purpose.
   }
+}
+
+/**
+ * The server refused a tier that is no longer sold (7 or 15 days from an older
+ * page). Recognised only by code + details.reason, never by message text.
+ */
+function isTierNotOnSale(err: unknown): boolean {
+  const { code, details } = (err ?? {}) as { code?: unknown; details?: unknown }
+  return code === 'functions/invalid-argument'
+    && (details as { reason?: unknown } | null | undefined)?.reason === 'tierNotOnSale'
+}
+
+/** The server's exact Spanish sentence for that refusal. */
+const TIER_NOT_ON_SALE_SHAPE = /^Ahora el destacado es de \d+ días por S\/ \d+\.\d{2}\. Elige \d+ días para continuar\.$/
+
+/**
+ * What the owner reads for that refusal: the server's sentence when it is that
+ * exact Spanish sentence (it quotes today's price), otherwise the same sentence
+ * built from the tier on offer — never any other server text.
+ */
+function tierNotOnSaleMessage(err: unknown, onSale: BoostTierConfiguration): string {
+  const message = (err as { message?: unknown } | null | undefined)?.message
+  if (typeof message === 'string' && TIER_NOT_ON_SALE_SHAPE.test(message)) return message
+  const days = onSale.durationDays
+  return `Ahora el destacado es de ${days} días por S/ ${onSale.feeInSoles.toFixed(2)}. Elige ${days} días para continuar.`
 }
 
 /**
