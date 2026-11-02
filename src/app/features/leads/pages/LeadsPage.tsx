@@ -13,6 +13,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useAvailableLeads, useClaimedLeads, useClaimLead, useClaimStatus,
@@ -108,6 +109,14 @@ export default function LeadsPage() {
       <p className="mt-3 text-sm text-text-secondary">
         {TAB_SUBTITLES[tab]}
       </p>
+      {/* The app links its Buenas prácticas from here (ADR-046 #20). */}
+      <Link
+        to="/app/buenas-practicas"
+        className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-secondary hover:text-secondary-hover"
+      >
+        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        Buenas prácticas
+      </Link>
 
       {/* Panes */}
       <div className="mt-6">
