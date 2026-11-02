@@ -101,6 +101,30 @@ describe('contactService', () => {
       })
     })
 
+    // Feature audit 2026-11-02: a signed-in account with no saved profile is
+    // refused with the visitor's code and its own words. Told apart by the
+    // words, as the app does (contact_profile_incomplete_test.dart).
+    it('throws ContactDenied("profile-incomplete") when the server says the profile is missing', async () => {
+      callableFnMock.mockRejectedValue({
+        code: 'functions/unauthenticated',
+        message: 'Tu perfil no está completo. Vuelve a crear tu cuenta.',
+      })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'profile-incomplete',
+        code: 'unauthenticated',
+      })
+    })
+
+    it('a visitor is still needs-login', async () => {
+      callableFnMock.mockRejectedValue({
+        code: 'functions/unauthenticated',
+        message: 'Inicia sesión para ver el contacto.',
+      })
+      await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({
+        reason: 'needs-login',
+      })
+    })
+
     it('throws ContactDenied("needs-phone-verification") for failed-precondition error', async () => {
       callableFnMock.mockRejectedValue({ code: 'functions/failed-precondition' })
       await expect(contactService.getListingContact('listing-1')).rejects.toMatchObject({

@@ -176,3 +176,35 @@ describe('"Usar otra cuenta" on the contact window', () => {
     expect(screen.queryByText('PANTALLA DE INGRESO')).toBeNull()
   })
 })
+
+// Feature audit 2026-11-02, "Perfil no está completo": signed in, no saved
+// profile. It used to open "verifica tu número", whose phone step cannot save
+// into a missing profile. Now the window names what is missing; COMPLETAR MI
+// PERFIL signs out to the sign-in door (which repairs the profile) and keeps
+// this listing as the errand.
+describe('a signed-in account with no saved profile', () => {
+  async function openProfileWindow() {
+    mockAuth.user = null
+    getListingContactMock.mockRejectedValue(new ContactDenied('profile-incomplete'))
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /whatsapp/i }))
+    await screen.findByText('Completa tu perfil', { selector: 'h3' })
+  }
+
+  it('names what is missing, with COMPLETAR MI PERFIL — no "verifica tu número"', async () => {
+    await openProfileWindow()
+    expect(screen.getByText(/A tu cuenta le falta tu perfil: tu nombre y tu número\./)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'COMPLETAR MI PERFIL' })).toBeTruthy()
+    expect(screen.queryByText(/verifica tu número/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: /usar otra cuenta/i })).toBeNull()
+  })
+
+  it('COMPLETAR MI PERFIL signs out and opens the sign-in door, keeping this listing', async () => {
+    await openProfileWindow()
+    fireEvent.click(screen.getByRole('button', { name: 'COMPLETAR MI PERFIL' }))
+    await screen.findByText('PANTALLA DE INGRESO')
+    expect(logoutMock).toHaveBeenCalledOnce()
+    expect(peekReturnUrl()?.url).toBe('/property/listing_1#contactar')
+  })
+})
+
