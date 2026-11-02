@@ -6,7 +6,7 @@ import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, U
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
 import { LISTING_STATUS_TONE } from '@/lib/listingStatusTone'
-import { useToggleListingStatus, useDeleteListing, useMarkListingClosed } from '@/hooks/useListings'
+import { useToggleListingStatus, useDeleteListing, useMarkListingClosed, useSetRealtorHelp } from '@/hooks/useListings'
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
@@ -48,6 +48,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showCloseSurvey, setShowCloseSurvey] = useState(false)
   const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
+  const setRealtorHelp = useSetRealtorHelp()
+  const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
 
   const handleBoostSuccess = useCallback(
     ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
@@ -203,6 +205,53 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
                   : 'Esperando agentes...'}
               </Link>
             )}
+          </div>
+        )}
+
+        {/* Agent help (ADR-043 D10): offered here after publishing, off
+            until the owner turns it on. With an agent assigned the agents
+            page above handles it. */}
+        {listing.status === 'active' && !listing.assignedRealtorId && (
+          <div className="mt-2">
+            {listing.wantsRealtorHelp ? (
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center text-xs font-medium text-text-secondary underline underline-offset-2 hover:text-text-primary disabled:opacity-50"
+                disabled={setRealtorHelp.isPending}
+                onClick={() => setRealtorHelp.mutate({ listingId: listing.id, on: false })}
+              >
+                Desactivar ayuda de agentes
+              </button>
+            ) : (
+              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOffer(true)}>
+                <Users className="h-4 w-4" aria-hidden="true" />
+                Ayuda de agentes
+              </button>
+            )}
+          </div>
+        )}
+        {showRealtorHelpOffer && (
+          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
+            <p className="text-sm text-text-secondary">
+              {`Agentes verificados por Oqupa podrán ofrecerte ayuda para ${isRental ? 'alquilar' : 'vender'} tu propiedad. Oqupa no cobra comisiones por este servicio.`}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                variant="text"
+                isLoading={setRealtorHelp.isPending}
+                onClick={() =>
+                  setRealtorHelp.mutate(
+                    { listingId: listing.id, on: true },
+                    { onSuccess: () => setShowRealtorHelpOffer(false) },
+                  )
+                }
+              >
+                Sí, activar
+              </Button>
+              <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>
+                Cancelar
+              </Button>
+            </div>
           </div>
         )}
 

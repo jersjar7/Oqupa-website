@@ -98,3 +98,25 @@ export function useDeleteListing() {
     },
   })
 }
+
+/**
+ * Agent help, turned on or off by the owner from Mis Propiedades (ADR-043
+ * D10: it left the publishing wizard). Only the switch is written; the
+ * listing keeps its maximum of agents.
+ */
+export function useSetRealtorHelp() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ listingId, on }: { listingId: string; on: boolean }) => {
+      await firestoreService.updateListing(listingId, { wantsRealtorHelp: on })
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      toast.success(variables.on ? 'Ayuda de agentes activada' : 'Ayuda de agentes desactivada')
+    },
+    onError: (error) => {
+      toast.error(firestoreWriteErrorMessage(error))
+    },
+  })
+}
