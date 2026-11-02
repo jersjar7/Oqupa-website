@@ -31,7 +31,7 @@ export default function EditListingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data: result, isLoading, error } = useListingDetails(id)
-  const { step, direction, updateData, setStep, setEditMode, reset } =
+  const { step, direction, updateData, setStep, startEdit } =
     useListingFormStore()
   const [initialized, setInitialized] = useState(false)
 
@@ -62,8 +62,9 @@ export default function EditListingPage() {
       longitude: number
       calle: string
     } | null) {
-    reset()
-    setEditMode(listing.id, property.id)
+    // In memory only: the unfinished new-listing draft and its photos stay
+    // stored, untouched (hostile review 2026-11-02 #3).
+    startEdit(listing.id, property.id)
     updateData({
       propertyType: property.propertyType,
       operationType: property.operationType,

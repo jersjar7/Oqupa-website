@@ -54,7 +54,7 @@ export default function WizardStep5() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const {
-    data, prevStep, updateData, isEditMode, editListingId, editPropertyId, reset,
+    data, prevStep, updateData, isEditMode, editListingId, editPropertyId, reset, leaveEdit,
     recordUploadedPhoto, persistDraft, markPublished, claimPublishIdentity, renewPublishIdentity,
   } = useListingFormStore()
 
@@ -326,7 +326,8 @@ export default function WizardStep5() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
-      reset()
+      // Back to the stored new-listing draft, untouched by the edit.
+      leaveEdit()
       navigate('/app')
     } catch (err) {
       console.error('Submission error:', err)

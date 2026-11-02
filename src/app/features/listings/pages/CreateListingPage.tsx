@@ -29,22 +29,25 @@ export default function CreateListingPage() {
     title: 'Crear Publicación',
     subtitle: 'Completa los datos de tu propiedad',
   })
-  const { step, direction, reset } = useListingFormStore()
+  const { step, direction, reset, leaveEdit, draftVersion } = useListingFormStore()
 
   // Opened over an edit, or over a draft that was already published (the
   // person left during publishing, or in the moment "¡PUBLICADO!" showed):
   // start a fresh one — before anything is painted, so the old page (an
   // edit's address included) never flashes on screen (third review #1).
+  // An edit in memory goes back to the stored draft — never cleared: the
+  // unfinished new listing and its photos are kept (hostile review #3).
   const [staleAtOpen] = useState(() => {
     const s = useListingFormStore.getState()
-    return s.isEditMode || Boolean(s.publishedListingId)
+    return s.isEditMode ? 'edit' : s.publishedListingId ? 'published' : null
   })
   const [fresh, setFresh] = useState(!staleAtOpen)
   useLayoutEffect(() => {
     if (!staleAtOpen) return
-    reset()
+    if (staleAtOpen === 'edit') leaveEdit()
+    else reset()
     setFresh(true)
-  }, [staleAtOpen, reset])
+  }, [staleAtOpen, reset, leaveEdit])
   if (!fresh) return null
 
   return (
@@ -56,7 +59,7 @@ export default function CreateListingPage() {
 
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
-            key={step}
+            key={`${step}-${draftVersion}`}
             custom={direction}
             variants={stepVariants}
             initial="initial"

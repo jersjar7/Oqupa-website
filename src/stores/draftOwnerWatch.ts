@@ -1,5 +1,5 @@
 import { useAuthStore } from './authStore'
-import { setDraftAccount, useListingFormStore } from './listingFormStore'
+import { setDraftAccount, useListingFormStore, watchOtherTabs } from './listingFormStore'
 import { noteSignedInAccount } from '@/lib/returnPath'
 
 /**
@@ -29,7 +29,9 @@ export function watchDraftOwner(): () => void {
       // An edit holds the listing's true (possibly hidden) address: another
       // account never inherits it (third review #1). The same account
       // coming back after its session ended keeps it.
-      if (editAccount && editAccount !== uid) form.reset()
+      // Leaving it brings back the stored draft, which adoptDraftFor (inside
+      // leaveEdit) drops if it is not this account's.
+      if (editAccount && editAccount !== uid) form.leaveEdit()
       editAccount = uid
       return
     }
@@ -37,8 +39,14 @@ export function watchDraftOwner(): () => void {
     form.adoptDraftFor(uid)
   }
   adopt(useAuthStore.getState().firebaseUser?.uid ?? null)
-  return useAuthStore.subscribe((state, previous) => {
+  // The draft is shared by every tab: follow the others (review #2).
+  const stopTabs = watchOtherTabs()
+  const stopAuth = useAuthStore.subscribe((state, previous) => {
     const uid = state.firebaseUser?.uid ?? null
     if (uid !== (previous.firebaseUser?.uid ?? null)) adopt(uid)
   })
+  return () => {
+    stopTabs()
+    stopAuth()
+  }
 }
