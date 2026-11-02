@@ -161,17 +161,32 @@ describe('boostService', () => {
       expect(tiers[0]!.feeInSoles).toBe(20)
     })
 
-    it('defaults feeInCentimos, durationDays, and displayName to 0/tierKey when absent', async () => {
+    it('falls back field by field to the built-in 30-day tier when the config omits a field', async () => {
       getDocMock.mockResolvedValue(makeDocRef('pricing', {
         boostTiers: {
           thirtyDays: {},    // all numeric/string fields omitted
         },
       }))
       const tiers = await boostService.getBoostTierConfigurations()
-      expect(tiers).toHaveLength(1)
-      expect(tiers[0]!.feeInCentimos).toBe(0)    // ?? 0
-      expect(tiers[0]!.durationDays).toBe(0)      // ?? 0
-      expect(tiers[0]!.displayName).toBe('thirtyDays')   // ?? tierKey
+      expect(tiers).toEqual(DEFAULT_BOOST_TIERS)
+    })
+
+    it('keeps the fields the config does give', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: { thirtyDays: { feeInCentimos: 2490 } },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toEqual([
+        { tier: 'thirtyDays', durationDays: 30, feeInSoles: 24.9, feeInCentimos: 2490, displayName: '30 días' },
+      ])
+    })
+
+    it('ignores fields of the wrong type', async () => {
+      getDocMock.mockResolvedValue(makeDocRef('pricing', {
+        boostTiers: { thirtyDays: { feeInCentimos: '2490', durationDays: null, displayName: 7 } },
+      }))
+      const tiers = await boostService.getBoostTierConfigurations()
+      expect(tiers).toEqual(DEFAULT_BOOST_TIERS)
     })
   })
 

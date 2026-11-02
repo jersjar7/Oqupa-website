@@ -10,6 +10,8 @@ interface BoostTierSelectionModalProps {
   onClose: (highlightedTier: BoostTier) => void
   onConfirm: (tier: BoostTier) => void
   isProcessing: boolean
+  /** A sentence shown above the offer, e.g. why an older choice was refused. */
+  notice?: string
 }
 
 /**
@@ -22,6 +24,7 @@ export default function BoostTierSelectionModal({
   onClose,
   onConfirm,
   isProcessing,
+  notice,
 }: BoostTierSelectionModalProps) {
   const { data: tiers, isLoading: isLoadingTiers } = useBoostTiers()
   const offer =
@@ -38,6 +41,12 @@ export default function BoostTierSelectionModal({
           Aparece primero en búsquedas y destaca en el mapa
         </p>
       </div>
+
+      {notice && (
+        <p role="alert" className="mt-6 rounded-xl bg-cream-strong px-4 py-3 text-center text-sm text-text-primary">
+          {notice}
+        </p>
+      )}
 
       {/* The one boost */}
       <div className="mt-6 rounded-xl border border-border bg-white px-4 py-5 text-center">
@@ -88,7 +97,7 @@ export default function BoostTierSelectionModal({
         ) : (
           <>
             <Sparkles className="h-5 w-5" />
-            <span>Confirmar y pagar</span>
+            <span>CONFIRMAR Y PAGAR</span>
           </>
         )}
       </button>

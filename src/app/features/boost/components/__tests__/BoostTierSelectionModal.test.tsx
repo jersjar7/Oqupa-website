@@ -32,10 +32,10 @@ import BoostTierSelectionModal from '../BoostTierSelectionModal'
 
 const THIRTY = { tier: 'thirtyDays', durationDays: 30, feeInSoles: 29.9, feeInCentimos: 2990, displayName: '30 días' }
 
-function setup() {
+function setup(notice?: string) {
   const onClose = vi.fn()
   const onConfirm = vi.fn()
-  render(<BoostTierSelectionModal isOpen onClose={onClose} onConfirm={onConfirm} isProcessing={false} />)
+  render(<BoostTierSelectionModal isOpen onClose={onClose} onConfirm={onConfirm} isProcessing={false} notice={notice} />)
   return { onClose, onConfirm }
 }
 
@@ -71,6 +71,26 @@ describe('BoostTierSelectionModal — one boost, a single confirmation', () => {
     expect(heading.className).toContain('font-serif')
     expect(heading.className).toContain('font-normal')
     expect(heading.className).not.toMatch(/font-sans|font-medium|font-bold/)
+  })
+
+  it('the confirm button reads CONFIRMAR Y PAGAR — Gotham Bold, uppercase, tracked 1px (ADR-038)', () => {
+    setup()
+    const button = screen.getByRole('button', { name: /CONFIRMAR Y PAGAR/ })
+    expect(button.textContent?.trim()).toBe('CONFIRMAR Y PAGAR')
+    for (const cls of ['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]']) {
+      expect(button.className).toContain(cls)
+    }
+  })
+
+  it('shows a notice above the offer when there is one, and none otherwise', () => {
+    setup('Ahora el destacado es de 30 días por S/ 29.90. Elige 30 días para continuar.')
+    expect(screen.getByRole('alert').textContent)
+      .toBe('Ahora el destacado es de 30 días por S/ 29.90. Elige 30 días para continuar.')
+  })
+
+  it('shows no notice by default', () => {
+    setup()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('confirming buys 30 days and does not close', () => {

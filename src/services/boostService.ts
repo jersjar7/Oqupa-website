@@ -68,16 +68,21 @@ export const boostService = {
         const data = configDoc.data() as Record<string, unknown>
         const boostTiers = data['boostTiers'] as Record<string, Record<string, unknown>> | undefined
         // Only the tier on sale is offered, whatever else the config lists
-        // (one boost only, ADR-042).
+        // (one boost only, ADR-042). Each field the config gives (with the
+        // right type) wins; a missing one keeps the built-in value, as the
+        // app and the server do.
         const tierData = boostTiers?.[ON_SALE_BOOST_TIER]
         if (tierData) {
-          const feeInCentimos = (tierData['feeInCentimos'] as number) ?? 0
+          const builtIn = FALLBACK_TIERS.find((t) => t.tier === ON_SALE_BOOST_TIER)!
+          const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+          const feeInCentimos = num(tierData['feeInCentimos'], builtIn.feeInCentimos)
+          const displayName = tierData['displayName']
           return [{
             tier: ON_SALE_BOOST_TIER,
-            durationDays: (tierData['durationDays'] as number) ?? 0,
+            durationDays: num(tierData['durationDays'], builtIn.durationDays),
             feeInSoles: feeInCentimos / 100,
             feeInCentimos,
-            displayName: (tierData['displayName'] as string) ?? ON_SALE_BOOST_TIER,
+            displayName: typeof displayName === 'string' && displayName ? displayName : builtIn.displayName,
           }]
         }
       }
