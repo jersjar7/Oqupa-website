@@ -24,7 +24,6 @@ function defaultMetaForPath(pathname: string): { title: string; subtitle?: strin
   if (pathname === '/app/equipo')                       return { title: 'Ing. de Software', subtitle: 'Tareas del equipo y en qué trabaja cada quien.' }
   if (pathname === '/app/verify')                       return { title: 'Verificación',  subtitle: 'Completa la verificación de tu cuenta.' }
   if (pathname === '/app/lists')                        return { title: 'Guardados' }
-  if (pathname.startsWith('/app/lists/'))               return { title: 'Lista' }
   return { title: 'Oqupa' }
 }
 
