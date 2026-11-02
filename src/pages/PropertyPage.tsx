@@ -270,6 +270,14 @@ export default function PropertyPage() {
   // COPIAR beside WhatsApp (ADR-046 #6). Same rule as above: a hook, so it
   // lives up here, above the early returns.
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null)
+  // Phone only: the WhatsApp address, offered as a button in the panel
+  // instead of leaving the page on its own (review 2026-11-02, decision).
+  const [revealedWhatsAppUrl, setRevealedWhatsAppUrl] = useState<string | null>(null)
+  // A different person signed in must not see the previous one's number.
+  useEffect(() => {
+    setRevealedPhone(null)
+    setRevealedWhatsAppUrl(null)
+  }, [firebaseUser?.uid])
   // SEO meta tags
   const metaTitle = useMemo(() => {
     if (!listing || !property) return 'Propiedad - Oqupa'
@@ -472,7 +480,13 @@ export default function PropertyPage() {
       // either way; it waits for the person to come back from WhatsApp.
       handedOff = true
       contactFollowUpCoordinator.contactHandedOff()
-      if (auto || isPhone()) {
+      if (isPhone()) {
+        // A phone shows the number panel first — WHATSAPP, LLAMAR, COPIAR —
+        // and never leaves the page on its own (review 2026-11-02).
+        setRevealedWhatsAppUrl(waUrl)
+        return
+      }
+      if (auto) {
         // Returning from the pipeline: no user gesture, so a new tab would be
         // blocked by the browser — go there directly instead.
         window.location.assign(waUrl)
@@ -700,7 +714,7 @@ export default function PropertyPage() {
                   <span className="font-medium text-text-primary">Consejo:</span> cuéntale cuándo te gustaría visitarla.
                 </p>
               </div>
-              {revealedPhone && <RevealedContact phone={revealedPhone} />}
+              {revealedPhone && <RevealedContact phone={revealedPhone} whatsappUrl={revealedWhatsAppUrl} />}
               </div>
             )}
 

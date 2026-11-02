@@ -115,7 +115,10 @@ beforeEach(() => {
   vi.spyOn(window, 'open').mockReturnValue(null)
 })
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 describe('after the gate: the number with LLAMAR and COPIAR (ADR-046 #6)', () => {
   it('shows the number once the server hands it over', async () => {
@@ -162,6 +165,54 @@ describe('after the gate: the number with LLAMAR and COPIAR (ADR-046 #6)', () =>
     renderPage()
     expect(document.body.textContent).not.toMatch(/ya incluye la dirección/)
     expect(document.body.textContent).toMatch(/Consejo: cuéntale cuándo te gustaría visitarla\./)
+  })
+})
+
+// Review 2026-11-02 (decision): on a phone the reveal shows the number panel
+// first — a big WHATSAPP button, LLAMAR and COPIAR — and never leaves the page
+// on its own.
+describe('after the reveal on a phone', () => {
+  it('shows the panel with WHATSAPP, LLAMAR and COPIAR and does not redirect', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }))
+    const assign = vi.fn()
+    vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign } as unknown as Location)
+    getListingContactMock.mockResolvedValue({ phone: '+51912345678', displayName: 'María López', contactRole: 'owner', counted: true })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /escríbele por whatsapp/i }))
+    await screen.findByText('+51 912 345 678')
+    expect(assign).not.toHaveBeenCalled()
+    expect(window.open).not.toHaveBeenCalled()
+    const wa = screen.getByRole('link', { name: /^WhatsApp$/i })
+    expect(wa.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/51912345678\?text=/)
+    expect(screen.getByRole('link', { name: 'Llamar' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copiar' })).toBeTruthy()
+    vi.unstubAllGlobals()
+  })
+
+  it('a computer still opens WhatsApp at once and shows no extra WhatsApp button', async () => {
+    getListingContactMock.mockResolvedValue({ phone: '+51912345678', displayName: null, contactRole: 'owner', counted: true })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /escríbele por whatsapp/i }))
+    await screen.findByText('+51 912 345 678')
+    expect(window.open).toHaveBeenCalled()
+    expect(screen.queryByRole('link', { name: /^WhatsApp$/i })).toBeNull()
+  })
+})
+
+describe('the revealed number belongs to who asked (review 2026-11-02)', () => {
+  it('is cleared when another person signs in', async () => {
+    mockAuth.firebaseUser = { uid: 'a', emailVerified: true }
+    getListingContactMock.mockResolvedValue({ phone: '+51912345678', displayName: null, contactRole: 'owner', counted: true })
+    const view = renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /escríbele por whatsapp/i }))
+    await screen.findByText('+51 912 345 678')
+    mockAuth.firebaseUser = { uid: 'b', emailVerified: true }
+    view.rerender(
+      <MemoryRouter initialEntries={['/property/listing_1']}>
+        <Routes><Route path="/property/:id" element={<PropertyPage />} /></Routes>
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(screen.queryByText('+51 912 345 678')).toBeNull())
   })
 })
 
