@@ -1,7 +1,7 @@
 // How many filters are on, for the Filtros buttons (UX review 2026-10-25).
 // Venta/Alquiler is not a filter here: it always has a value and is shown.
 import { describe, it, expect } from 'vitest'
-import { activeFilterCount } from '../filterCount'
+import { activeFilterCount, clearedFilters } from '../filterCount'
 
 const base = { operationType: 'venta' as const, rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'USD' as const }
 
@@ -22,5 +22,16 @@ describe('filtersDoneLabel', () => {
   it('Listo · N en venta / en alquiler', () => {
     expect(filtersDoneLabel(8, true)).toBe('Listo · 8 en venta')
     expect(filtersDoneLabel(1, false)).toBe('Listo · 1 en alquiler')
+  })
+})
+
+// "Limpiar" (audit 2026-11-02): every filter off, Venta/Alquiler and the
+// chosen price currency kept.
+describe('clearedFilters', () => {
+  it('turns every filter off and keeps the operation and the currency', () => {
+    const busy = { operationType: 'alquiler' as const, rentalDurationType: 'longTerm' as const, propertyTypes: ['casa'], priceMin: 1, priceMax: 9, priceCurrency: 'PEN' as const }
+    const out = clearedFilters(busy)
+    expect(out).toEqual({ operationType: 'alquiler', rentalDurationType: null, propertyTypes: [], priceMin: null, priceMax: null, priceCurrency: 'PEN' })
+    expect(activeFilterCount(out)).toBe(0)
   })
 })

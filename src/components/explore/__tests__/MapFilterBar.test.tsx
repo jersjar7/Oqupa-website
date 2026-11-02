@@ -41,6 +41,13 @@ describe('MapFilterBar', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Soles (S/)' }))
     expect(screen.getByLabelText('Precio máximo').getAttribute('placeholder')).toBe('Máx S/')
   })
+  it('Limpiar turns every filter off (audit 2026-11-02)', () => {
+    render(<Harness start={{ propertyTypes: ['casa'], priceMax: 5000 }} />)
+    fireEvent.click(screen.getByRole('button', { name: /filtros/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }))
+    expect(screen.getByRole('button', { name: 'Filtros' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Limpiar' })).toBeNull()
+  })
   it('the open panel does not repeat Venta / Alquiler or the count', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: /filtros/i }))
