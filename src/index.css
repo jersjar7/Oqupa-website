@@ -39,6 +39,9 @@
   --color-border: #E8E0D6;
   --color-separator: #D4CCC2;
   --color-footer-bg: #3A6A55;
+  /* Pale Pacific Green: the empty part of a filling button (ADR-043). Brand
+     green text on it is about 4.7:1. A fill, never a text colour. */
+  --color-secondary-pale: #D7E3DC;
 
   /* Typography */
   --font-sans: 'Gotham', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
