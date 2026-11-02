@@ -159,6 +159,8 @@ describe('WizardStep2 — description hint (D5)', () => {
     fireEvent.click(btn('Siguiente'))
     await waitFor(() => expect(screen.getByText('Escribe un poco más (faltan 16 letras)').className).toMatch(/text-error/))
     expect(useListingFormStore.getState().step).toBe(2)
+    // The first problem gets the focus (hostile review 2026-11-02).
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Descripción')))
   })
 })
 

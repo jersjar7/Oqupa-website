@@ -20,10 +20,19 @@ export interface AddressResult {
 interface MapboxFeature {
   id?: string
   geometry?: { coordinates?: [number, number] }
-  properties?: { mapbox_id?: string; feature_type?: string; name?: string; place_formatted?: string }
+  properties?: {
+    mapbox_id?: string
+    feature_type?: string
+    name?: string
+    place_formatted?: string
+    context?: { region?: { region_code_full?: string } }
+  }
 }
 
 export const MIN_SEARCH_LENGTH = 3
+
+/** The departamento de Piura in Mapbox's region codes. */
+const PIURA_REGION = 'PE-PIU'
 
 const inPiura = (lat: number, lng: number) =>
   lng >= PIURA_BBOX[0] && lng <= PIURA_BBOX[2] && lat >= PIURA_BBOX[1] && lat <= PIURA_BBOX[3]
@@ -51,6 +60,9 @@ export async function searchAddresses(
   for (const f of body.features ?? []) {
     const [lng, lat] = f.geometry?.coordinates ?? []
     if (typeof lat !== 'number' || typeof lng !== 'number' || !inPiura(lat, lng)) continue
+    // The box also covers parts of Tumbes, Lambayeque and Ecuador: only the
+    // departamento de Piura counts (hostile review 2026-11-02).
+    if (f.properties?.context?.region?.region_code_full !== PIURA_REGION) continue
     const type = f.properties?.feature_type ?? ''
     out.push({
       id: f.properties?.mapbox_id ?? f.id ?? `${lat},${lng}`,

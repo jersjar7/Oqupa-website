@@ -69,7 +69,7 @@ export default function FillingButton({
   const look = busy
     ? 'cursor-default border-secondary bg-secondary-pale text-secondary'
     : off
-      ? 'pointer-events-none border-black/20 text-black/20'
+      ? 'pointer-events-none border-border text-text-tertiary'
       : solid
         ? 'border-secondary bg-secondary text-white hover:border-secondary-hover hover:bg-secondary-hover active:scale-[0.97]'
         : 'border-secondary text-secondary hover:border-secondary-hover hover:text-secondary-hover active:scale-[0.97]'

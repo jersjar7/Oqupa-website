@@ -9,6 +9,7 @@ import { parseLocaleNumber } from '@/lib/localeNumber'
 import { bedroomsLabel } from '@/lib/roomCounts'
 import { editAwareResolver } from '../editLimits'
 import WizardNav from './WizardNav'
+import { focusFirstError } from '../useWizardPageChange'
 import WizardStepper from './WizardStepper'
 import WizardAmenities from './WizardAmenities'
 import { WIZARD_HEADING, choiceClass } from './wizardStyles'
@@ -107,7 +108,7 @@ export default function WizardStep2() {
     : null
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit, focusFirstError)} className="space-y-8">
       <section>
         <label htmlFor="description" className={`${WIZARD_HEADING} block`}>
           Descripción
@@ -115,6 +116,7 @@ export default function WizardStep2() {
         <textarea
           id="description"
           rows={5}
+          aria-invalid={descriptionError ? 'true' : undefined}
           placeholder="Cuenta cómo es tu propiedad: lo que más te gusta, qué hay cerca."
           className={`mt-3 w-full rounded-xl border bg-white px-4 py-2.5 text-base text-text-primary placeholder:text-text-tertiary transition-colors focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 ${
             descriptionError ? 'border-error' : 'border-border'
@@ -164,7 +166,7 @@ export default function WizardStep2() {
           />
         </div>
         {(errors.bedroomCount || errors.bathroomCount || errors.availableParkingSpaces) && (
-          <p className="mt-1.5 text-sm text-error">
+          <p data-wizard-error className="mt-1.5 text-sm text-error">
             {errors.bedroomCount?.message ?? errors.bathroomCount?.message ?? errors.availableParkingSpaces?.message}
           </p>
         )}
@@ -198,7 +200,7 @@ export default function WizardStep2() {
             onChange={(next) => setValue('propertyAmenities', next, { shouldValidate: Boolean(errors.propertyAmenities) })}
           />
         </div>
-        {errors.propertyAmenities && <p className="mt-1.5 text-sm text-error">{errors.propertyAmenities.message}</p>}
+        {errors.propertyAmenities && <p data-wizard-error className="mt-1.5 text-sm text-error">{errors.propertyAmenities.message}</p>}
       </section>
 
       <WizardNav onBack={prevStep} />

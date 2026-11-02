@@ -30,6 +30,11 @@ describe('the wizard follows the brand colour rules', () => {
       const offending = lines.filter((l) => ORANGE_TEXT.test(l))
       expect(offending).toEqual([])
     })
+    // Hostile review 2026-11-02: no stock black — the ink and border tokens.
+    it(`${name}: no stock black`, () => {
+      const lines = readFileSync(file, 'utf8').split('\n')
+      expect(lines.filter((l) => /(?<![\w-])(?:bg|text|border|ring)-black\b/.test(l))).toEqual([])
+    })
     it(`${name}: no small orange buttons, chips or badges`, () => {
       const lines = readFileSync(file, 'utf8').split('\n')
       const offending = lines.filter((l) => ORANGE_FILL.test(l))

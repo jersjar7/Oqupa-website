@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
@@ -8,6 +8,7 @@ import WizardStep2 from '../components/WizardStep2'
 import WizardStep3 from '../components/WizardStep3'
 import WizardStep4 from '../components/WizardStep4'
 import WizardStep5 from '../components/WizardStep5'
+import { useScrollTopOnPageChange } from '../useWizardPageChange'
 
 const stepVariants = {
   initial: (direction: number) => ({
@@ -30,6 +31,8 @@ export default function CreateListingPage() {
     subtitle: 'Completa los datos de tu propiedad',
   })
   const { step, direction, reset, leaveEdit, draftVersion } = useListingFormStore()
+  const top = useRef<HTMLDivElement>(null)
+  useScrollTopOnPageChange(step, top)
 
   // Opened over an edit, or over a draft that was already published (the
   // person left during publishing, or in the moment "¡PUBLICADO!" showed):
@@ -51,7 +54,7 @@ export default function CreateListingPage() {
   if (!fresh) return null
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+    <div ref={top} className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       {/* Title lives in the Topbar via useSetPageMeta */}
 
       <div className="mt-2">

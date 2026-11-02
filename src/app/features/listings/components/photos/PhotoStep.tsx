@@ -6,6 +6,7 @@ import { minPhotosFor } from './minPhotos'
 import { MAX_PHOTOS } from './usePhotoQueue'
 import { photoIntakeNotice, sortChosenPhotos } from './photoIntake'
 import WizardNav from '../WizardNav'
+import { focusFirstError } from '../../useWizardPageChange'
 import { WIZARD_HEADING } from '../wizardStyles'
 
 export default function PhotoStep() {
@@ -40,7 +41,8 @@ export default function PhotoStep() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (queue.items.length < MIN_PHOTOS) {
-      setPhotoError(`Sube al menos ${MIN_PHOTOS} fotos`)
+      setPhotoError(MIN_PHOTOS === 1 ? 'Sube al menos 1 foto' : `Sube al menos ${MIN_PHOTOS} fotos`)
+      focusFirstError()
       return
     }
     updateData(queue.toSubmitData())

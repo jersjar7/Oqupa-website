@@ -131,7 +131,7 @@ export function LocationPickerMap({ token, latitude, longitude, onChange, provis
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    if (!provisional || hasPosition) {
+    if (!provisional) {
       provisionalRef.current?.remove()
       provisionalRef.current = null
       return

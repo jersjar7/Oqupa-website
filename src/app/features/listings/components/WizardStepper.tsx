@@ -10,7 +10,7 @@ interface WizardStepperProps {
 }
 
 const STEP_BUTTON =
-  'flex h-12 w-12 items-center justify-center rounded-full border-[1.5px] border-secondary text-2xl font-medium leading-none text-secondary transition-colors hover:bg-secondary-pale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:border-black/20 disabled:text-black/20'
+  'flex h-12 w-12 items-center justify-center rounded-full border-[1.5px] border-secondary text-2xl font-medium leading-none text-secondary transition-colors hover:bg-secondary-pale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:border-border disabled:text-text-tertiary'
 
 /** − value + for a count (ADR-043 D4). No box to type into, so no typing mistakes. */
 export default function WizardStepper({ label, value, min, max, onChange, display }: WizardStepperProps) {

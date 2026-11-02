@@ -68,11 +68,18 @@ describe('PhotoGrid (D8)', () => {
     expect(p.onReorder).toHaveBeenCalledWith(2, 0)
   })
 
-  it('remove buttons are at least 48 px', () => {
+  // Hostile review 2026-11-02: the × sat on the picture, so a slightly-off
+  // tap meant to make a cover removed the photo. Removing is now its own
+  // 48 px row under the picture, never on it.
+  it('remove is a 48 px button under the picture, apart from the cover tap', () => {
     const p = props(three())
     render(<PhotoGrid {...p} />)
     const remove = screen.getByRole('button', { name: 'Eliminar foto 2' })
     expect(remove.className).toMatch(/\bh-12\b/)
+    expect(remove.textContent).toBe('Quitar')
+    const cover = screen.getByRole('button', { name: 'Hacer portada la foto 2' })
+    expect(cover.contains(remove)).toBe(false)
+    expect(remove.closest('[data-photo-picture]')).toBeNull()
     fireEvent.click(remove)
     expect(p.onRemove).toHaveBeenCalledWith(1)
   })
