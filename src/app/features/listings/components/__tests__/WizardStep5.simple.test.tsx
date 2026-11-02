@@ -35,21 +35,22 @@ describe('WizardStep5 — Precio (D9, D10)', () => {
     useListingFormStore.getState().setStep(5)
   })
 
-  it('the currency is two big buttons, S/ (chosen) and US$', () => {
+  // The buttons say the word too (Jerson, 2026-11-02): "S/ Soles", "US$ Dólares".
+  it('the currency is two big buttons, "S/ Soles" (chosen) and "US$ Dólares"', () => {
     renderStep()
-    expect(btn('S/').getAttribute('aria-pressed')).toBe('true')
-    expect(btn('US$').getAttribute('aria-pressed')).toBe('false')
-    expect(btn('S/').className).toMatch(/\bmin-h-14\b/)
+    expect(btn('S/ Soles').getAttribute('aria-pressed')).toBe('true')
+    expect(btn('US$ Dólares').getAttribute('aria-pressed')).toBe('false')
+    expect(btn('S/ Soles').className).toMatch(/\bmin-h-14\b/)
     expect(screen.queryByText(/\(PEN\)|\(USD\)/)).toBeNull()
-    fireEvent.click(btn('US$'))
-    expect(btn('US$').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(btn('US$ Dólares'))
+    expect(btn('US$ Dólares').getAttribute('aria-pressed')).toBe('true')
     expect(useListingFormStore.getState().data.currency).toBe('USD')
   })
 
   it('the price box shows the chosen currency', () => {
     renderStep()
     expect(screen.getByLabelText('Precio en S/')).toBeTruthy()
-    fireEvent.click(btn('US$'))
+    fireEvent.click(btn('US$ Dólares'))
     expect(screen.getByLabelText('Precio en US$')).toBeTruthy()
   })
 

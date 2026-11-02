@@ -24,7 +24,7 @@ interface LocationPickerProps {
   latitude: number | null
   longitude: number | null
   onChange: (lat: number, lng: number) => void
-  /** Where the person is, shown while the page asks "¿Tu propiedad está aquí?" (D6). */
+  /** Where the person is, shown while the page asks "¿Ubicación es correcta?" (D6). */
   provisional?: { lat: number; lng: number } | null
   /** Move the map here (the person, a search result); a new key moves it again. */
   focus?: { lat: number; lng: number; key: number } | null

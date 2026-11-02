@@ -25,7 +25,7 @@ export default function WizardStep3() {
 
   const [showExactLocation, setShowExactLocation] = useState(data.showExactLocation)
   const [hasPinPlaced, setHasPinPlaced] = useState(() => data.latitude != null)
-  // Where the person is, while the page asks "¿Tu propiedad está aquí?" (D6).
+  // Where the person is, while the page asks "¿Ubicación es correcta?" (D6).
   const [here, setHere] = useState<Point | null>(null)
   // Where the map should move to (the person, or a search result).
   const [focus, setFocus] = useState<(Point & { key: number }) | null>(null)
@@ -197,7 +197,7 @@ export default function WizardStep3() {
         </div>
         {here && !pinned ? (
           <div className="mt-3 rounded-xl border border-border bg-white p-4">
-            <p className={WIZARD_HEADING}>¿Tu propiedad está aquí?</p>
+            <p className={WIZARD_HEADING}>¿Ubicación es correcta?</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => handleLocationChange(here.lat, here.lng)} className={choiceClass(false)}>
                 Sí

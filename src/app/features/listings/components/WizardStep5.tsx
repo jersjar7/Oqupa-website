@@ -37,8 +37,10 @@ import { authService } from '@/services/authService'
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
 
-/** The currency buttons and the price box say S/ and US$ (ADR-043 D9). */
+/** The price box says S/ and US$ (ADR-043 D9). */
 const CURRENCY_WORDS: Record<Currency, string> = { PEN: 'S/', USD: 'US$' }
+/** The currency buttons say the word too (Jerson, 2026-11-02). */
+const CURRENCY_BUTTONS: Record<Currency, string> = { PEN: 'S/ Soles', USD: 'US$ Dólares' }
 
 /** The price as shown once the person leaves the box: "250,000", "1,500.5". */
 function formatAmount(amount: number | null | undefined): string {
@@ -534,7 +536,7 @@ export default function WizardStep5() {
               onClick={() => setValue('currency', cur)}
               className={choiceClass(currency === cur)}
             >
-              {CURRENCY_WORDS[cur]}
+              {CURRENCY_BUTTONS[cur]}
             </button>
           ))}
         </div>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // ADR-043 D6, D7 — Ubicación: the map opens where the person is and asks
-// "¿Tu propiedad está aquí?"; no pin on the city centre before anything is
+// "¿Ubicación es correcta?" (Jerson's words, 2026-11-02); no pin on the city centre before anything is
 // done; an address search limited to Piura; "¿Mostrar tu dirección exacta?"
 // as two big buttons.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -51,7 +51,7 @@ function refuseLocation() {
   })
 }
 const btn = (name: string | RegExp) => screen.getByRole('button', { name })
-const ASK = '¿Tu propiedad está aquí?'
+const ASK = '¿Ubicación es correcta?'
 const TAP = 'Toca el mapa donde está tu propiedad o busca la dirección.'
 
 describe('WizardStep3 — where the property is (D6)', () => {
