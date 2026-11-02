@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { Spinner } from '@/app/components/ui'
 import { consumeReturnUrl } from '@/lib/utils'
 import { consumeBouncedFor, rememberBouncedFrom } from '@/lib/returnPath'
+import { useAccountCreationInFlight } from '@/lib/accountCreation'
 
 interface GuestGuardProps {
   children: React.ReactNode
@@ -13,6 +14,7 @@ export default function GuestGuard({ children }: GuestGuardProps) {
   const { firebaseUser, user, isLoading, isInitialized } = useAuthStore()
   const location = useLocation()
   const destinationRef = useRef<{ uid: string; to: string } | null>(null)
+  const creatingAccount = useAccountCreationInFlight()
 
   // Bounced here by a guard (the session ended): once signed in, go back
   // where they were — a same-site /app page only (hostile review #3).
@@ -21,6 +23,11 @@ export default function GuestGuard({ children }: GuestGuardProps) {
   useEffect(() => {
     if (signedOut && bouncedFrom) rememberBouncedFrom(bouncedFrom)
   }, [signedOut, bouncedFrom])
+
+  // The page creating an account stays until its profile is saved — or
+  // until it shows why that failed (hostile review 2026-11-02, item 1a).
+  // After every hook, so the hook order never changes between renders.
+  if (creatingAccount) return <>{children}</>
 
   if (!isInitialized || isLoading) {
     return (

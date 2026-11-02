@@ -31,6 +31,7 @@ vi.mock('@/lib/utils', () => ({
 // ── Import after mocks ──────────────────────────────────────────────────────
 
 import GuestGuard from '../GuestGuard'
+import { accountCreation } from '@/lib/accountCreation'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -209,5 +210,33 @@ describe('GuestGuard', () => {
       expect(screen.queryByTestId('login-page')).toBeNull()
       expect(screen.getByTestId('dashboard')).toBeDefined()
     })
+  })
+})
+
+// Hostile review 2026-11-02, item 1a: while an email account is being
+// created and its profile saved, the page that is doing it stays — even
+// though Firebase already reports someone signed in. Leaving early is how an
+// account ended up with no profile and the error went unseen.
+describe('GuestGuard — while an account is being created', () => {
+  beforeEach(() => accountCreation.end())
+
+  it('keeps the page, even signed in and while the profile is loading', () => {
+    mockAuthState.firebaseUser = { uid: 'new', emailVerified: false }
+    mockAuthState.user = null
+    mockAuthState.isInitialized = true
+    mockAuthState.isLoading = true
+    accountCreation.begin()
+    renderWithRouter('/app/login')
+    expect(screen.getByTestId('login-page')).toBeDefined()
+    accountCreation.end()
+  })
+
+  it('moves on once it is done', () => {
+    mockAuthState.firebaseUser = { uid: 'new', emailVerified: false }
+    mockAuthState.user = null
+    mockAuthState.isInitialized = true
+    mockAuthState.isLoading = false
+    renderWithRouter('/app/login')
+    expect(screen.getByTestId('verify')).toBeDefined()
   })
 })

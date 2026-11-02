@@ -38,6 +38,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { auth, db } from '@/lib/firebase'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { signupAttribution, type SignupDoor } from '@/lib/attribution'
+import { createProfileIfAbsent } from '@/lib/profileRepair'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
 import { getDraftAccount, setDraftAccount, useListingFormStore } from '@/stores/listingFormStore'
@@ -72,6 +73,25 @@ function newAccountAttribution(credential: UserCredential, door: SignupDoor) {
     : {}
 }
 
+function newEmailProfile(email: string | null, attribution?: ReturnType<typeof signupAttribution>) {
+  const now = new Date()
+  const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return {
+    email,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    isActive: true,
+    isPhoneVerified: false,
+    isIdentityVerified: false,
+    isVerifiedRealtor: false,
+    claimsThisMonth: 0,
+    claimMonth,
+    authProvider: 'password',
+    // Where this account came from — write-once in the rules (A12b).
+    ...(attribution ? { signupAttribution: attribution } : {}),
+  }
+}
+
 // Store for phone verification flow
 let recaptchaVerifier: RecaptchaVerifier | null = null
 
@@ -84,25 +104,15 @@ export const authService = {
     )
     const user = credential.user
 
-    // Create Firestore user document
-    const now = new Date()
-    const claimMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
+    // Create Firestore user document. A failure here leaves an account with
+    // no profile; it is marked so the page can stay and retry
+    // (saveNewEmailProfile), hostile review 2026-11-02 item 1a.
     const attribution = signupAttribution('email')
-    await createUserDocument(user.uid, {
-      email: user.email,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      isActive: true,
-      isPhoneVerified: false,
-      isIdentityVerified: false,
-      isVerifiedRealtor: false,
-      claimsThisMonth: 0,
-      claimMonth,
-      authProvider: 'password',
-      // Where this account came from — write-once in the rules (A12b).
-      signupAttribution: attribution,
-    })
+    try {
+      await createUserDocument(user.uid, newEmailProfile(user.email, attribution))
+    } catch (error) {
+      throw Object.assign(error as object, { profileSaveFailed: true })
+    }
 
     AnalyticsLogger.registrationCompleted({
       campaign: attribution.lastCampaign ?? attribution.firstCampaign ?? null,
@@ -299,9 +309,33 @@ export const authService = {
     })
   },
 
+  /**
+   * Retries saving the profile of the account just created (see above).
+   * Create-only: if the first save landed after all, it is done — never
+   * rewritten (second review 2026-11-02, item 4).
+   */
+  async saveNewEmailProfile() {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await createProfileIfAbsent(user.uid, newEmailProfile(user.email), signupAttribution('email'))
+  },
+
   async changePassword(newPassword: string) {
     const user = auth.currentUser
     if (!user) throw new Error('No authenticated user')
+    await updatePassword(user, newPassword)
+  },
+
+  /**
+   * "Cambiar contraseña" in Mi perfil (ADR-046 #13), as the app does it: the
+   * current password is proved first, so a session left open on a shared
+   * computer cannot be used to take the account, and Firebase never answers
+   * requires-recent-login.
+   */
+  async changePasswordWithCurrent(currentPassword: string, newPassword: string) {
+    const user = auth.currentUser
+    if (!user) throw new Error('No authenticated user')
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', currentPassword))
     await updatePassword(user, newPassword)
   },
 

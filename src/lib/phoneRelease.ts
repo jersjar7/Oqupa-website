@@ -63,8 +63,16 @@ export async function releaseCollidedPhone(err: unknown, deps: ReleaseDeps): Pro
   } catch (releaseErr) {
     const code = codeOf(releaseErr)
     const reason = (releaseErr as { details?: { reason?: unknown } } | null)?.details?.reason
-    if (code === 'functions/failed-precondition' && (reason === 'held-by-active-account' || reason === 'caller-has-phone')) {
+    if (code === 'functions/failed-precondition' && reason === 'held-by-active-account') {
       throw { code: 'auth/credential-already-in-use' }
+    }
+    // Each refusal says what happened (audit 2026-11-02, C §3), in the same
+    // words as the app (phone_number_hand_over.dart).
+    if (code === 'functions/failed-precondition' && reason === 'caller-has-phone') {
+      throw { code: 'oqupa/caller-has-phone' }
+    }
+    if (code === 'functions/failed-precondition' && reason === 'holder-changed') {
+      throw { code: 'oqupa/phone-holder-changed' }
     }
     if (code === 'functions/permission-denied') {
       throw { code: 'auth/invalid-verification-id' }

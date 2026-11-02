@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -90,6 +90,10 @@ vi.mock('firebase/auth', () => ({
     static credential = vi.fn(() => ({ type: 'phone-credential' }))
   },
 }))
+
+// The create-only writer (second review 2026-11-02, item 4).
+const createIfAbsentMock = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/profileRepair', () => ({ createProfileIfAbsent: createIfAbsentMock }))
 
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
@@ -227,6 +231,36 @@ describe('authService', () => {
       const retry = setDocMock.mock.calls[1]![1]
       expect(retry.signupAttribution).toBeUndefined()
       expect(retry.authProvider).toBe('password')
+    })
+
+    // Hostile review 2026-11-02, item 1a: the page must know the ACCOUNT
+    // exists and only the profile failed, so it can stay and retry.
+    it('marks a failed profile save as such', async () => {
+      const user = makeUser('uid-1')
+      createUserMock.mockResolvedValue(makeCredential(user))
+      setDocMock.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'unavailable' }))
+      await expect(
+        authService.registerWithEmailAndPassword('user@test.com', 'pass123'),
+      ).rejects.toMatchObject({ code: 'unavailable', profileSaveFailed: true })
+    })
+
+    it('saveNewEmailProfile CREATES the same profile, never over an existing one', async () => {
+      _currentUser = makeUser('uid-7')
+      createIfAbsentMock.mockResolvedValueOnce('created')
+      await authService.saveNewEmailProfile()
+      const [uid, payload] = createIfAbsentMock.mock.calls[createIfAbsentMock.mock.calls.length - 1]!
+      expect(uid).toBe('uid-7')
+      expect(payload.authProvider).toBe('password')
+      expect(payload.isPhoneVerified).toBe(false)
+      expect(payload.email).toBe('uid-7@test.com')
+    })
+
+    // Item 4: the first save may have landed after all — then the retry is
+    // simply done (it used to rewrite the profile and be refused forever).
+    it('saveNewEmailProfile treats a profile that already exists as done', async () => {
+      _currentUser = makeUser('uid-8')
+      createIfAbsentMock.mockResolvedValueOnce('existed')
+      await expect(authService.saveNewEmailProfile()).resolves.toBeUndefined()
     })
 
     it('does not retry a failure that has nothing to do with the attribution', async () => {
@@ -476,6 +510,41 @@ describe('authService', () => {
       _currentUser = makeUser('uid-8')
       await authService.changePassword('newSecurePass123')
       expect(updatePasswordMock).toHaveBeenCalledWith(_currentUser, 'newSecurePass123')
+    })
+  })
+
+  // ADR-046 #13: the website's "Cambiar contraseña" proves the current one first.
+  describe('changePasswordWithCurrent', () => {
+    // This file's other tests count these calls; leave them as found.
+    afterEach(() => {
+      reauthenticateMock.mockClear()
+      emailCredentialMock.mockClear()
+      updatePasswordMock.mockClear()
+    })
+    it('signs in again with the current password, then sets the new one', async () => {
+      _currentUser = { ...makeUser('uid-9'), email: 'ana@example.com' }
+      const cred = { email: 'ana@example.com', password: 'Vieja123!', type: 'password' }
+      emailCredentialMock.mockReturnValueOnce(cred)
+      reauthenticateMock.mockResolvedValueOnce(undefined)
+      await authService.changePasswordWithCurrent('Vieja123!', 'Nueva123!')
+      expect(emailCredentialMock).toHaveBeenCalledWith('ana@example.com', 'Vieja123!')
+      expect(reauthenticateMock).toHaveBeenCalledWith(_currentUser, cred)
+      expect(updatePasswordMock).toHaveBeenCalledWith(_currentUser, 'Nueva123!')
+      const updates = updatePasswordMock.mock.invocationCallOrder
+      expect(reauthenticateMock.mock.invocationCallOrder[0]!).toBeLessThan(updates[updates.length - 1]!)
+    })
+
+    it('a wrong current password changes nothing', async () => {
+      _currentUser = { ...makeUser('uid-9'), email: 'ana@example.com' }
+      reauthenticateMock.mockRejectedValueOnce({ code: 'auth/invalid-credential' })
+      updatePasswordMock.mockClear()
+      await expect(authService.changePasswordWithCurrent('Mala', 'Nueva123!')).rejects.toMatchObject({ code: 'auth/invalid-credential' })
+      expect(updatePasswordMock).not.toHaveBeenCalled()
+    })
+
+    it('throws when there is no current user', async () => {
+      _currentUser = null
+      await expect(authService.changePasswordWithCurrent('a', 'b')).rejects.toThrow('No authenticated user')
     })
   })
 

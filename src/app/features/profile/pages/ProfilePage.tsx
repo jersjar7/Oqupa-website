@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { profileSchema, type ProfileFormData } from '@/schemas/profileSchema'
+import { profileSchema, editedNameError, type ProfileFormData } from '@/schemas/profileSchema'
 import { phoneSchema, verificationCodeSchema, type PhoneFormData, type VerificationCodeFormData } from '@/schemas/authSchema'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
@@ -12,12 +12,13 @@ import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Clock, XCircle, Phone, LifeBuoy } from 'lucide-react'
 import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
+import ChangePasswordCard, { isPasswordAccount } from '../components/ChangePasswordCard'
 
 type PhoneMode = 'idle' | 'enter-phone' | 'enter-code'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, refreshUser } = useAuthStore()
+  const { user, firebaseUser, refreshUser } = useAuthStore()
   const signOut = useSignOutConfirm(async () => {
     await authService.logout()
     navigate('/app/login')
@@ -42,6 +43,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    setError: setFieldError,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -76,8 +78,16 @@ export default function ProfilePage() {
     setError(null)
     setSuccess(null)
 
+    // The setup's name rule, only for an edited name (hostile review
+    // 2026-11-02, item 4).
+    const nameError = editedNameError(data.name, user.name)
+    if (nameError) {
+      setFieldError('name', { message: nameError })
+      return
+    }
+
     try {
-      await authService.updateUserName(user.id, data.name)
+      await authService.updateUserName(user.id, data.name.trim())
 
       if (user.contactInfo) {
         await authService.updateUserContactInfo(user.id, {
@@ -428,6 +438,9 @@ export default function ProfilePage() {
           )}
         </div>
       </Card>
+
+      {/* "Cambiar contraseña" for accounts that have one (ADR-046 #13) */}
+      {isPasswordAccount(firebaseUser) && <ChangePasswordCard />}
 
       {/* Account info */}
       <Card>

@@ -93,8 +93,9 @@ describe("PasswordLoginPage — wording for everyone", () => {
     openEmail();
     fillForm("ana@example.com");
     fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
-    const link = await screen.findByRole("link", { name: "¿Primera vez en Oqupa? Crea tu cuenta con este correo" });
-    expect(link.getAttribute("href")).toBe("/app/register?email=ana%40example.com");
+    // ADR-046 #9 (fix/audit-auth): it creates the account right here with
+    // what was typed, so it is a button now, not a link to /app/register.
+    await screen.findByRole("button", { name: "¿Primera vez en Oqupa? Crea tu cuenta con este correo" });
     expect(document.body.textContent).not.toMatch(/Nueva en Oqupa/);
   });
 });

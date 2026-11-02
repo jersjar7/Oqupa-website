@@ -25,6 +25,7 @@ const COOKIES_HINT = 'Permite las cookies para oqupa.com o sal del modo privado 
 const OURS = 'Hubo un problema de nuestro lado. Intenta de nuevo en un momento.'
 const NOT_AVAILABLE = 'Esta forma de entrar no está disponible en este momento. Escríbenos a admin@oqupa.com.'
 const WRONG_ADDRESS = 'Abre Oqupa desde su dirección oficial, oqupa.com, e intenta de nuevo.'
+const WEAK_PASSWORD = 'La contraseña es muy débil. Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.'
 const PROFILE_REFUSED = 'No pudimos guardar tu perfil. Cierra sesión, vuelve a entrar e intenta de nuevo.'
 
 /**
@@ -134,6 +135,13 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
     isRetryable: true,
   },
   unavailable: { message: CONNECTION, isRetryable: true },
+  // The phone hand-over function's refusals (phoneRelease.ts).
+  'oqupa/caller-has-phone': { message: 'Tu cuenta ya tiene un número verificado.', isRetryable: false },
+  'oqupa/phone-holder-changed': {
+    message: 'Algo cambió mientras verificábamos. Pide un código nuevo e intenta otra vez.',
+    isRetryable: true,
+  },
+  'functions/internal': { message: 'No pudimos guardar tu número. Intenta de nuevo.', isRetryable: true },
 }
 
 export function getPhoneAuthError(error: unknown): AuthErrorInfo {
@@ -154,7 +162,7 @@ export function getLoginAuthError(error: unknown): AuthErrorInfo {
     case 'auth/too-many-requests':
       return { message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.', isRetryable: false }
     case 'auth/user-disabled':
-      return { message: 'Esta cuenta ha sido desactivada.', isRetryable: false }
+      return { message: DISABLED, isRetryable: false }
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     case 'auth/invalid-email':
@@ -185,15 +193,9 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
     case 'auth/invalid-email':
       return { message: 'Ingresa un correo válido.', isRetryable: true }
     case 'auth/weak-password':
-      return {
-        message: 'La contraseña es muy débil. Usa al menos 6 caracteres.',
-        isRetryable: true,
-      }
+      return { message: WEAK_PASSWORD, isRetryable: true }
     case 'auth/operation-not-allowed':
-      return {
-        message: 'El registro con correo y contraseña está deshabilitado. Contacta a soporte.',
-        isRetryable: false,
-      }
+      return { message: NOT_AVAILABLE, isRetryable: false }
     case 'auth/too-many-requests':
       return {
         message: 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.',
@@ -205,7 +207,7 @@ export function getRegisterAuthError(error: unknown): AuthErrorInfo {
         isRetryable: true,
       }
     case 'auth/missing-password':
-      return { message: 'Crea una contraseña de al menos 6 caracteres.', isRetryable: true }
+      return { message: 'Crea una contraseña de al menos 8 caracteres con mayúscula, minúscula, número y símbolo.', isRetryable: true }
     case 'auth/web-storage-unsupported':
       return { message: COOKIES, recoveryHint: COOKIES_HINT, isRetryable: false }
     case 'auth/internal-error':
@@ -251,7 +253,7 @@ export function getForgotPasswordAuthError(error: unknown): AuthErrorInfo {
     case 'auth/network-request-failed':
       return { message: 'Error de conexión a internet. Verifica tu conexión e intenta de nuevo.', isRetryable: true }
     default:
-      return { message: 'Error al enviar el correo. Verifica tu dirección.', isRetryable: true }
+      return { message: 'No pudimos enviar el correo. Revisa que esté bien escrito y vuelve a intentarlo.', isRetryable: true }
   }
 }
 
@@ -398,5 +400,27 @@ export function getEmailChangeLinkError(error: unknown): string {
       return CONNECTION
     default:
       return withCode(EMAIL_CHANGE_COPY.linkFailed, code)
+  }
+}
+
+/** "Cambiar contraseña" in Mi perfil (ADR-046 #13) — the app's sentences. */
+export function getPasswordChangeError(error: unknown): AuthErrorInfo & { field?: 'current' } {
+  const code = extractFirebaseErrorCode(error)
+  switch (code) {
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return { message: 'Tu contraseña actual no es correcta.', isRetryable: true, field: 'current' }
+    case 'auth/weak-password':
+      return { message: WEAK_PASSWORD, isRetryable: true }
+    case 'auth/requires-recent-login':
+    case 'auth/user-token-expired':
+      return { message: SESSION, isRetryable: false }
+    case 'auth/too-many-requests':
+      return { message: TOO_MANY, isRetryable: false }
+    case 'auth/network-request-failed':
+      return { message: CONNECTION, isRetryable: true }
+    default:
+      return { message: withCode('No pudimos cambiar tu contraseña. Intenta de nuevo.', code), isRetryable: true }
   }
 }
