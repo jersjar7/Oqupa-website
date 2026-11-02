@@ -1,4 +1,5 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
+import { useSignOutConfirm } from '@/app/components/SignOutConfirm'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import VerificationBanner from '@/app/components/VerificationBanner'
@@ -46,6 +47,8 @@ function DashboardShellInner() {
     await authService.logout()
     navigate('/app/login')
   }
+  // Asks first, as the app does (audit 2026-11-02).
+  const signOut = useSignOutConfirm(handleLogout)
 
   const userName = user?.name ?? user?.email ?? 'Invitado'
   const roleLabel =
@@ -65,8 +68,9 @@ function DashboardShellInner() {
           caps={effective}
           userName={userName}
           roleLabel={roleLabel}
-          onLogout={handleLogout}
+          onLogout={signOut.ask}
         />
+        {signOut.dialog}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar
             title={meta.title}
