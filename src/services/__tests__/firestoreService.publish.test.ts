@@ -45,7 +45,7 @@ beforeEach(() => {
 describe('firestoreService.publishPropertyAndListing', () => {
   it('writes the property and the listing in ONE commit, under the given ids', async () => {
     const res = await firestoreService.publishPropertyAndListing(ids, property, listing)
-    expect(res).toEqual({ alreadyPublished: false })
+    expect(res).toMatchObject({ alreadyPublished: false })
     expect(h.commits).toHaveLength(1)
     expect(h.commits[0]!.map(([p]) => p)).toEqual([
       'properties/property_1_aaaaaaa',
@@ -64,7 +64,7 @@ describe('firestoreService.publishPropertyAndListing', () => {
     await firestoreService.publishPropertyAndListing(ids, property, listing)
     h.docs.set('properties/property_1_aaaaaaa', { listedByUserId: 'u1', masked: true })
     const res = await firestoreService.publishPropertyAndListing(ids, property, listing)
-    expect(res).toEqual({ alreadyPublished: true })
+    expect(res).toMatchObject({ alreadyPublished: true })
     expect(h.commits).toHaveLength(1)
     // The server's later changes (e.g. the masked address) are left alone.
     expect(h.docs.get('properties/property_1_aaaaaaa')).toEqual({ listedByUserId: 'u1', masked: true })
@@ -83,5 +83,23 @@ describe('firestoreService.publishPropertyAndListing', () => {
     const onStage = vi.fn()
     await firestoreService.publishPropertyAndListing(ids, property, listing, onStage)
     expect(onStage).toHaveBeenCalledWith('read')
+  })
+
+  it('stores the draft fingerprint on the listing', async () => {
+    await firestoreService.publishPropertyAndListing(ids, property, listing, undefined, 'abc')
+    expect(h.docs.get('listings/listing_1_aaaaaaa')!.publishDraftHash).toBe('abc')
+  })
+
+  it('an existing listing from the SAME draft is the same content', async () => {
+    await firestoreService.publishPropertyAndListing(ids, property, listing, undefined, 'abc')
+    const res = await firestoreService.publishPropertyAndListing(ids, property, listing, undefined, 'abc')
+    expect(res).toEqual({ alreadyPublished: true, sameContent: true })
+  })
+
+  it('an existing listing from an EARLIER version of the draft is flagged, and still nothing is written', async () => {
+    await firestoreService.publishPropertyAndListing(ids, property, listing, undefined, 'old')
+    const res = await firestoreService.publishPropertyAndListing(ids, property, listing, undefined, 'new')
+    expect(res).toEqual({ alreadyPublished: true, sameContent: false })
+    expect(h.commits).toHaveLength(1)
   })
 })

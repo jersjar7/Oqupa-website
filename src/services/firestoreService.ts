@@ -560,13 +560,20 @@ export const firestoreService = {
    * property after the server had already masked it.
    *
    * `onStage('read')` fires once the existence check is done.
+   *
+   * `draftHash` (see lib/draftHash) is stored on the listing as
+   * `publishDraftHash`. When the listing already exists, `sameContent` says
+   * whether it was saved from this same version of the draft; false means
+   * the person changed the draft after an earlier attempt landed late, and
+   * those changes are NOT in the listing.
    */
   async publishPropertyAndListing(
     ids: { propertyId: string; listingId: string },
     property: Omit<Property, 'id' | 'updatedAt'>,
     listing: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'viewCount'>,
     onStage?: (stage: 'read') => void,
-  ): Promise<{ alreadyPublished: boolean }> {
+    draftHash?: string,
+  ): Promise<{ alreadyPublished: boolean; sameContent: boolean }> {
     const propertyRef = doc(db, 'properties', ids.propertyId)
     const listingRef = doc(db, 'listings', ids.listingId)
     const cleanedProperty = stripUndefined(property as unknown as Record<string, unknown>)
@@ -579,7 +586,10 @@ export const firestoreService = {
           throw new Error('publish-id-taken')
         }
         onStage?.('read')
-        return { alreadyPublished: true }
+        const stored = existingListing.data()?.['publishDraftHash']
+        // A listing without a fingerprint cannot be compared; take it as ours.
+        const sameContent = stored === undefined || draftHash === undefined || stored === draftHash
+        return { alreadyPublished: true, sameContent }
       }
       const existingProperty = await tx.get(propertyRef)
       if (
@@ -593,11 +603,12 @@ export const firestoreService = {
       tx.set(listingRef, {
         ...cleanedListing,
         createdFrom: 'web',
+        ...(draftHash ? { publishDraftHash: draftHash } : {}),
         viewCount: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      return { alreadyPublished: false }
+      return { alreadyPublished: false, sameContent: true }
     })
   },
 

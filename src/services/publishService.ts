@@ -1,6 +1,7 @@
 import { storageService, type PhotoUploadResult } from '@/services/storageService'
 import { firestoreService } from '@/services/firestoreService'
 import { withTimeout } from '@/lib/withTimeout'
+import { draftHash } from '@/lib/draftHash'
 import { listingIdFor, propertyIdFor, photoFingerprints } from '@/lib/publishIdentity'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
@@ -26,12 +27,27 @@ export const PUBLISH_FAILED_MESSAGE =
 /** The property + listing save gets this long. */
 export const PUBLISH_SAVE_TIMEOUT_MS = 20_000
 
-/** Any failure on the publish path. Its message is always the Spanish sentence. */
+/**
+ * Any failure on the publish path. Its message is always the Spanish sentence.
+ * `kind: 'id-taken'` means the draft's ids already belong to another account
+ * (a draft left in this browser by someone else): the caller should take a
+ * fresh identity and try again, not show a connection error.
+ */
 export class PublishError extends Error {
+  readonly kind: 'id-taken' | 'failed'
   constructor(readonly reason: unknown) {
     super(PUBLISH_FAILED_MESSAGE)
     this.name = 'PublishError'
+    this.kind = isIdTaken(reason) ? 'id-taken' : 'failed'
   }
+}
+
+function isIdTaken(reason: unknown): boolean {
+  const e = reason as { code?: unknown; message?: unknown } | null
+  const message = typeof e?.message === 'string' ? e.message : ''
+  if (message === 'publish-id-taken') return true
+  // getUploadUrl refuses photo URLs for a property someone else owns.
+  return e?.code === 'functions/permission-denied' && message.includes('do not own this property')
 }
 
 export interface PublishMedia {
@@ -69,6 +85,11 @@ export interface PublishOutcome {
   media: PublishMedia
   /** True when an earlier attempt had already saved it; nothing was written. */
   alreadyPublished: boolean
+  /**
+   * True when the listing that already exists came from an EARLIER version of
+   * the draft: the person's later changes were not saved.
+   */
+  contentChanged: boolean
 }
 
 export async function publishListing(req: PublishRequest): Promise<PublishOutcome> {
@@ -116,19 +137,28 @@ export async function publishListing(req: PublishRequest): Promise<PublishOutcom
     const { property, listing } = req.buildDocs({ propertyId, listingId, media })
 
     onProgress?.('save', 0)
-    const { alreadyPublished } = await withTimeout(
+    const { alreadyPublished, sameContent } = await withTimeout(
       firestoreService.publishPropertyAndListing(
         { propertyId, listingId },
         property,
         listing,
         () => onProgress?.('save', 0.5),
+        draftHash(property, listing),
       ),
       PUBLISH_SAVE_TIMEOUT_MS,
       'publish save',
     )
     onProgress?.('save', 1)
 
-    return { propertyId, listingId, property, listing, media, alreadyPublished }
+    return {
+      propertyId,
+      listingId,
+      property,
+      listing,
+      media,
+      alreadyPublished,
+      contentChanged: alreadyPublished && !sameContent,
+    }
   } catch (err) {
     throw err instanceof PublishError ? err : new PublishError(err)
   }

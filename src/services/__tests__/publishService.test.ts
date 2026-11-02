@@ -124,7 +124,36 @@ describe('publishListing', () => {
   })
 
   it('says when an earlier attempt had already saved it', async () => {
-    h.save.mockResolvedValue({ alreadyPublished: true })
-    expect((await publishListing(request())).alreadyPublished).toBe(true)
+    h.save.mockResolvedValue({ alreadyPublished: true, sameContent: true })
+    const out = await publishListing(request())
+    expect(out.alreadyPublished).toBe(true)
+    expect(out.contentChanged).toBe(false)
+  })
+
+  it('passes the draft fingerprint to the save', async () => {
+    await publishListing(request())
+    expect(typeof h.save.mock.calls[0]![4]).toBe('string')
+    const first = h.save.mock.calls[0]![4]
+    await publishListing(request())
+    expect(h.save.mock.calls[1]![4]).toBe(first)
+  })
+
+  it('says when the listing that exists is an EARLIER version of the draft', async () => {
+    h.save.mockResolvedValue({ alreadyPublished: true, sameContent: false })
+    expect((await publishListing(request())).contentChanged).toBe(true)
+  })
+
+  it('ids taken by another account are their own kind of failure', async () => {
+    h.save.mockRejectedValue(new Error('publish-id-taken'))
+    const err = await publishListing(request()).catch((e) => e)
+    expect(err.kind).toBe('id-taken')
+    h.save.mockReset()
+    h.upload.mockRejectedValue(Object.assign(new Error('You do not own this property'), { code: 'functions/permission-denied' }))
+    expect((await publishListing(request()).catch((e) => e)).kind).toBe('id-taken')
+  })
+
+  it('anything else is an ordinary failure', async () => {
+    h.upload.mockRejectedValue(Object.assign(new Error('nope'), { code: 'functions/permission-denied' }))
+    expect((await publishListing(request()).catch((e) => e)).kind).toBe('failed')
   })
 })
