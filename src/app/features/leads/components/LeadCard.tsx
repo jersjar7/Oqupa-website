@@ -174,7 +174,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
             {listing.currentClaimsCount}/{listing.maxRealtors} agentes
           </span>
           {slotsFull && (
-            <Badge variant="default">Completo</Badge>
+            <Badge variant="default">Ya no hay cupos</Badge>
           )}
         </div>
       </Link>

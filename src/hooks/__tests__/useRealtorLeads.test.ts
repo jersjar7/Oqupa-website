@@ -313,7 +313,17 @@ describe('useAssignRealtor', () => {
     await act(async () => {
       await result.current.mutateAsync({ listingId: 'l-1', realtorId: 'r-1', realtorPhone: '+51 900' })
     })
-    expect(toastMock.success).toHaveBeenCalledWith('Agente asignado exitosamente')
+    // It only sends an invitation; the agent still has to accept (audit
+    // 2026-11-02). Was 'Agente asignado exitosamente'.
+    expect(toastMock.success).toHaveBeenCalledWith('Invitación enviada.')
+  })
+
+  it('names the agent in the success toast when known', async () => {
+    const { result } = renderHook(() => useAssignRealtor(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync({ listingId: 'l-1', realtorId: 'r-1', realtorPhone: '+51 900', realtorName: 'Ana' })
+    })
+    expect(toastMock.success).toHaveBeenCalledWith('Invitación enviada a Ana.')
   })
 
   it('shows error toast when assignment fails', async () => {
@@ -446,5 +456,61 @@ describe('useAcceptAssignment', () => {
       }
     })
     expect(toastMock.error).toHaveBeenCalledWith('Error al aceptar la invitación')
+  })
+})
+
+// Audit 2026-11-02 (section G): the cause and next step, not a bare "Error al…".
+describe('agent actions — the cause of a failure', () => {
+  beforeEach(() => {
+    toastMock.error.mockReset()
+    toastMock.success.mockReset()
+    firestoreServiceMock.createRealtorClaim.mockReset()
+  })
+
+  const cases = [
+    ['useAcceptAssignment', () => useAcceptAssignment(), firestoreServiceMock.acceptAssignment, 'listing-1'],
+    ['useDeclineAssignment', () => useDeclineAssignment(), firestoreServiceMock.declineAssignment, { listingId: 'l-1', currentDeclinedIds: [], agentId: 'a' }],
+    ['useAssignRealtor', () => useAssignRealtor(), firestoreServiceMock.assignRealtorToListing, { listingId: 'l-1', realtorId: 'r-1', realtorPhone: '+51 900' }],
+    ['useUnassignRealtor', () => useUnassignRealtor(), firestoreServiceMock.unassignRealtor, 'listing-1'],
+  ] as const
+
+  it.each(cases)('%s: offline says so', async (_name, hook, fn, vars) => {
+    fn.mockReset()
+    fn.mockRejectedValue({ code: 'unavailable', message: 'x' })
+    const { result } = renderHook(hook as () => { mutateAsync: (v: unknown) => Promise<unknown> }, { wrapper })
+    await act(async () => {
+      try { await result.current.mutateAsync(vars) } catch { /* expected */ }
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('Sin conexión. Revisa tu internet y vuelve a intentarlo.')
+  })
+
+  it.each(cases)('%s: a listing that changed under you says to refresh', async (_name, hook, fn, vars) => {
+    fn.mockReset()
+    fn.mockRejectedValue({ code: 'permission-denied', message: 'Missing or insufficient permissions.' })
+    const { result } = renderHook(hook as () => { mutateAsync: (v: unknown) => Promise<unknown> }, { wrapper })
+    await act(async () => {
+      try { await result.current.mutateAsync(vars) } catch { /* expected */ }
+    })
+    expect(toastMock.error).toHaveBeenCalledWith(
+      'Esta publicación cambió o ya no está disponible. Actualiza la página.',
+    )
+  })
+
+  it('a failed claim refreshes the list, so a listing that just filled stops offering RECLAMAR', async () => {
+    firestoreServiceMock.createRealtorClaim.mockRejectedValue(new Error('Esta oportunidad ya no tiene cupos disponibles.'))
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    const spy = vi.spyOn(client, 'invalidateQueries')
+    const w = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(MemoryRouter, null, React.createElement(QueryClientProvider, { client }, children))
+    const { result } = renderHook(() => useClaimLead(), { wrapper: w })
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          listingId: 'l-1', realtorId: 'r-1', listingOwnerId: 'o-1',
+          realtorName: 'N', realtorPhone: 'P', realtorBusinessName: 'B',
+        })
+      } catch { /* expected */ }
+    })
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['leads'] })
   })
 })

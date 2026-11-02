@@ -52,10 +52,10 @@ function browserOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false
 }
 
-/** Spanish text has accents, ñ, ¿/¡, or common Spanish words; the server's
- *  English sentences have none of these. */
-function looksSpanish(text: string): boolean {
-  return /[áéíóúñ¿¡]/i.test(text) || /\b(esta|este|tu|tus|ya|no|el|la|los|las|de|en|por|para|que)\b/i.test(text)
+/** The server's untranslated sentences are English ("Must be logged in",
+ *  "listingId is required"); Spanish ones never use these words. */
+function looksEnglish(text: string): boolean {
+  return /\b(the|is|are|must|be|not|required|invalid|cannot|only|should|to|of|and|failed|error)\b/i.test(text)
 }
 
 export function isOfflineError(err: unknown, online: boolean = browserOnline()): boolean {
@@ -75,7 +75,7 @@ export function callableErrorMessage(
   const code = codeOf(err)
   const message = messageOf(err)
   if (message && ENGLISH_SERVER_MESSAGES[message]) return ENGLISH_SERVER_MESSAGES[message]
-  if (code && BUSINESS_CODES.has(code) && message && looksSpanish(message)) return message
+  if (code && BUSINESS_CODES.has(code) && message && !looksEnglish(message)) return message
   return fallback
 }
 
