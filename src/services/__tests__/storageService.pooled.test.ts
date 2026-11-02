@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const h = vi.hoisted(() => ({
-  behaviour: (_url: string): 'ok' | 'fail' | 'hang' => 'ok',
+  behaviour: (_url: string): 'ok' | 'fail' | 'hang' | number => 'ok',
   inFlight: 0,
   maxInFlight: 0,
   aborted: [] as string[],
@@ -62,6 +62,7 @@ class FakeXHR {
       this.open_ = false
       h.inFlight--
       if (how === 'fail') { this.onerror?.(); return }
+      if (typeof how === 'number') { this.status = how; this.onload?.(); return }
       this.upload.onprogress?.({ lengthComputable: true, loaded: 5, total: 10 })
       this.upload.onprogress?.({ lengthComputable: true, loaded: 10, total: 10 })
       this.onload?.()
@@ -69,7 +70,7 @@ class FakeXHR {
   }
 }
 
-import { storageService, PHOTO_UPLOAD_CONCURRENCY, PHOTO_UPLOAD_TIMEOUT_MS } from '../storageService'
+import { storageService, PHOTO_UPLOAD_CONCURRENCY, PHOTO_UPLOAD_TIMEOUT_MS, UploadError } from '../storageService'
 
 const files = (n: number) =>
   Array.from({ length: n }, (_, i) => new File(['x'.repeat(10 * (i + 1))], `f${i}.jpg`, { type: 'image/jpeg' }))
@@ -141,6 +142,14 @@ describe('storageService.uploadPropertyPhotosPooled', () => {
     await expect(storageService.uploadPropertyPhotosPooled('p', files(8))).rejects.toThrow('Upload failed')
     expect(h.aborted).toContain('https://r2.test/1')
     expect(h.sent.length).toBeLessThan(8)
+  })
+
+  it('the error thrown is the FIRST failure, with its status — not the aborts it caused', async () => {
+    h.behaviour = (url) => (url.endsWith('/0') ? 403 : 'hang')
+    const err = await storageService.uploadPropertyPhotosPooled('p', files(4)).catch((e) => e)
+    expect(err).toBeInstanceOf(UploadError)
+    expect(err.status).toBe(403)
+    expect(h.aborted.length).toBeGreaterThan(0)
   })
 
   it('nothing to upload makes no calls', async () => {

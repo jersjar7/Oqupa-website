@@ -8,12 +8,13 @@ import { step4Schema, fullListingSchema, type Step4Data } from '@/schemas/listin
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { useAuthStore } from '@/stores/authStore'
+import { auth } from '@/lib/firebase'
 import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
 import {
   publishListing,
   PublishError,
-  PUBLISH_FAILED_MESSAGE,
+  PUBLISH_ERROR_MESSAGES,
   type ListingDoc,
   type PropertyDoc,
 } from '@/services/publishService'
@@ -328,6 +329,7 @@ export default function WizardStep5() {
         uploadedPhotos: useListingFormStore.getState().uploadedPhotos,
         onPhotoUploaded: recordUploadedPhoto,
         onProgress: (stage, fraction) => setPublishProgress(publishRealProgress(stage, fraction)),
+        isSignedIn: () => auth.currentUser !== null,
         buildDocs: ({ propertyId, media }) => {
           const mediaDoc = {
             propertyPhotoUrls: media.photoKeys,
@@ -417,7 +419,7 @@ export default function WizardStep5() {
       try {
         outcome = await attempt(publishId)
       } catch (err) {
-        // The ids belong to another account: not a connection problem.
+        // The ids belong to another account: nothing the person did.
         // Take a fresh identity and try once more, without telling anyone.
         if (!(err instanceof PublishError) || err.kind !== 'id-taken') throw err
         publishId = renewPublishIdentity(user.id)
@@ -450,9 +452,9 @@ export default function WizardStep5() {
     } catch (err) {
       console.error('Publish error:', err)
       publishingRef.current = false
-      // One Spanish sentence, whatever went wrong. The retry reuses the
+      // One Spanish sentence saying what went wrong. The retry reuses the
       // same identity and skips the photos that already arrived.
-      setSubmitError(PUBLISH_FAILED_MESSAGE)
+      setSubmitError(err instanceof PublishError ? err.message : PUBLISH_ERROR_MESSAGES.other)
       setPublishStatus('error')
     }
   }

@@ -26,8 +26,13 @@ const net = vi.hoisted(() => ({
   // One entry per atomic write (a setDoc, an updateDoc or a whole transaction).
   commits: [] as string[][],
   puts: [] as string[],
-  putBehaviour: (_url: string, _n: number): 'ok' | 'fail' | 'hang' => 'ok',
+  // A number answers the PUT with that HTTP status.
+  putBehaviour: (_url: string, _n: number): 'ok' | 'fail' | 'hang' | number => 'ok',
   urlCalls: 0,
+  // When set, getUploadUrl rejects with it.
+  urlError: null as unknown,
+  // When set, compressing a photo rejects with it.
+  compressError: null as unknown,
 }))
 
 vi.mock('@/lib/firebase', () => ({ db: { __db: true }, functions: {}, storage: {}, auth: {} }))
@@ -84,6 +89,7 @@ vi.mock('firebase/functions', () => ({
   httpsCallable: (_f: unknown, name: string) => async (req: { entityId: string; fileCount: number }) => {
     if (name !== 'getUploadUrl') return { data: {} }
     net.urlCalls += 1
+    if (net.urlError) throw net.urlError
     const call = net.urlCalls
     return {
       data: {
@@ -98,6 +104,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('browser-image-compression', () => ({
   default: async (file: File, opts?: { onProgress?: (p: number) => void }) => {
+    if (net.compressError) throw net.compressError
     opts?.onProgress?.(100)
     return file
   },
@@ -132,6 +139,7 @@ class FakeXHR {
     if (how === 'hang') return
     setTimeout(() => {
       if (how === 'fail') { this.onerror?.(); return }
+      if (typeof how === 'number') { this.status = how; this.onload?.(); return }
       net.puts.push(this.url)
       this.upload.onprogress?.({ lengthComputable: true, loaded: 10, total: 10 })
       this.onload?.()
@@ -145,8 +153,15 @@ import WizardStep5 from '../WizardStep5'
 import { useListingFormStore } from '@/stores/listingFormStore'
 import { useAuthStore } from '@/stores/authStore'
 
-const MESSAGE =
-  'No pudimos publicar. Revisa tu conexión y vuelve a intentarlo. Tu anuncio no se duplicará.'
+// What the person reads when publishing fails (owner's catalogue, 2026-11-02).
+const OFFLINE = 'No tienes conexión a internet. Conéctate y vuelve a intentarlo.'
+const SLOW = 'La conexión está muy lenta. Busca mejor señal y vuelve a intentarlo.'
+const SERVER = 'Oqupa no responde en este momento. Vuelve a intentarlo en unos minutos.'
+const SESSION = 'Tu sesión se cerró. Vuelve a iniciar sesión y publica de nuevo.'
+const NOT_ALLOWED = 'Tu cuenta no puede publicar en este momento. Escríbenos a admin@oqupa.com.'
+const PHOTO_UNREADABLE = 'No pudimos abrir una de tus fotos. Cámbiala por otra y vuelve a intentarlo.'
+const PHOTO_REFUSED = 'No pudimos subir tus fotos. Vuelve a intentarlo.'
+const OTHER = 'Algo salió mal. Verifica tus datos y vuelve a intentarlo.'
 
 function photos(n: number) {
   return Array.from({ length: n }, (_, i) => new File([`img${i}`], `foto${i}.jpg`, { type: 'image/jpeg', lastModified: 1 }))
@@ -202,6 +217,8 @@ beforeEach(() => {
   net.puts.length = 0
   net.urlCalls = 0
   net.putBehaviour = () => 'ok'
+  net.urlError = null
+  net.compressError = null
   FakeXHR.count = 0
   vi.stubGlobal('XMLHttpRequest', FakeXHR)
   vi.stubGlobal('matchMedia', (q: string) => ({
@@ -275,11 +292,11 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     expect((listing.media as { photoKeys: string[] }).photoKeys).toHaveLength(3)
   })
 
-  it('a failed publish tells the person, in Spanish, that it will not duplicate', async () => {
+  it('a failed upload tells the person, in Spanish, what went wrong — never about duplicates', async () => {
     net.putBehaviour = () => 'fail'
     renderStep()
     fireEvent.click(publishButton())
-    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    expect(await screen.findByText(SLOW, {}, { timeout: 3000 })).toBeTruthy()
     expect(screen.getByRole('button', { name: /reintentar/i })).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/upload|failed|error al/i)
   })
@@ -290,7 +307,7 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     renderStep()
     fireEvent.click(publishButton())
     await act(async () => { await vi.advanceTimersByTimeAsync(31000) })
-    expect(await screen.findByText(MESSAGE)).toBeTruthy()
+    expect(await screen.findByText(SLOW)).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/timed out|failed|error/i)
 
     fireEvent.click(screen.getByRole('button', { name: /reintentar|publicar/i }))
@@ -309,7 +326,7 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     }) as never)
     renderStep()
     fireEvent.click(publishButton())
-    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    expect(await screen.findByText(OTHER, {}, { timeout: 3000 })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /reintentar|publicar/i }))
     await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
     expect(ids('properties').size).toBe(1)
@@ -377,7 +394,7 @@ describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
     renderStep()
     fireEvent.click(publishButton())
     const alert = await screen.findByRole('alert', {}, { timeout: 3000 })
-    expect(alert.textContent).toBe(MESSAGE)
+    expect(alert.textContent).toBe(SLOW)
   })
 })
 
@@ -401,7 +418,7 @@ describe('WizardStep5 — a save that lands after its time limit', () => {
     renderStep()
     fireEvent.click(publishButton())
     await act(async () => { await vi.advanceTimersByTimeAsync(21000) })
-    expect(await screen.findByText(MESSAGE)).toBeTruthy()
+    expect(await screen.findByText(SLOW)).toBeTruthy()
     await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
     expect(ids('listings').size).toBe(1) // the late save landed
 
@@ -419,7 +436,7 @@ describe('WizardStep5 — a save that lands after its time limit', () => {
     renderStep()
     fireEvent.click(publishButton())
     await act(async () => { await vi.advanceTimersByTimeAsync(21000) })
-    expect(await screen.findByText(MESSAGE)).toBeTruthy()
+    expect(await screen.findByText(SLOW)).toBeTruthy()
     await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
     expect(ids('listings').size).toBe(1)
 
@@ -463,7 +480,7 @@ describe('WizardStep5 — blocked storage', () => {
     const removed = vi.spyOn(window, 'removeEventListener')
     renderStep()
     fireEvent.click(publishButton())
-    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    expect(await screen.findByText(SLOW, {}, { timeout: 3000 })).toBeTruthy()
     const handlers = added.mock.calls.filter(([t]) => t === 'beforeunload').map(([, h]) => h)
     const active = handlers.filter((h) => !removed.mock.calls.some(([t, r]) => t === 'beforeunload' && r === h))
     expect(active.length).toBeGreaterThan(0)
@@ -475,7 +492,7 @@ describe('WizardStep5 — blocked storage', () => {
     const removed = vi.spyOn(window, 'removeEventListener')
     renderStep()
     fireEvent.click(publishButton())
-    expect(await screen.findByText(MESSAGE, {}, { timeout: 3000 })).toBeTruthy()
+    expect(await screen.findByText(SLOW, {}, { timeout: 3000 })).toBeTruthy()
     const handlers = added.mock.calls.filter(([t]) => t === 'beforeunload').map(([, h]) => h)
     const active = handlers.filter((h) => !removed.mock.calls.some(([t, r]) => t === 'beforeunload' && r === h))
     expect(active).toHaveLength(0)
@@ -500,6 +517,92 @@ describe('WizardStep5 — a draft left by another account', () => {
     const mine = [...net.docs.entries()].filter(([p, d]) => p.startsWith('listings/') && d.ownerId === 'owner-1')
     expect(mine).toHaveLength(1)
     expect(mine[0]![0]).not.toBe(`listings/listing_${id}`)
-    expect(screen.queryByText(MESSAGE)).toBeNull()
+    expect(screen.queryByText(SLOW)).toBeNull()
+  })
+})
+
+// ── Each cause gets its own sentence (owner's decision, 2026-11-02) ──────────
+
+describe('WizardStep5 — a failed publish says what went wrong', () => {
+  const coded = (code: string, message = code) => Object.assign(new Error(message), { code })
+
+  async function failSaveWith(err: unknown) {
+    const fs = await import('firebase/firestore')
+    vi.spyOn(fs, 'runTransaction').mockRejectedValue(err as never)
+  }
+
+  async function publishAndRead() {
+    renderStep()
+    fireEvent.click(publishButton())
+    const alert = await screen.findByRole('alert', {}, { timeout: 3000 })
+    return alert.textContent
+  }
+
+  it('no internet: the photos cannot leave while offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    net.putBehaviour = () => 'fail'
+    expect(await publishAndRead()).toBe(OFFLINE)
+  })
+
+  it('too slow: a photo that never finishes', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    net.putBehaviour = () => 'hang'
+    renderStep()
+    fireEvent.click(publishButton())
+    await act(async () => { await vi.advanceTimersByTimeAsync(31000) })
+    expect((await screen.findByRole('alert')).textContent).toBe(SLOW)
+  })
+
+  it('server unavailable: photo storage answers 503', async () => {
+    net.putBehaviour = () => 503
+    expect(await publishAndRead()).toBe(SERVER)
+  })
+
+  it('server unavailable: the database is unavailable', async () => {
+    await failSaveWith(coded('unavailable'))
+    expect(await publishAndRead()).toBe(SERVER)
+  })
+
+  it('session gone: the upload-URL function says unauthenticated', async () => {
+    net.urlError = coded('functions/unauthenticated', 'Must be logged in')
+    expect(await publishAndRead()).toBe(SESSION)
+  })
+
+  it('session gone: the database refuses after the account was signed out', async () => {
+    const { auth } = await import('@/lib/firebase')
+    const was = auth.currentUser
+    ;(auth as { currentUser: unknown }).currentUser = null
+    try {
+      await failSaveWith(coded('permission-denied'))
+      expect(await publishAndRead()).toBe(SESSION)
+    } finally {
+      ;(auth as { currentUser: unknown }).currentUser = was
+    }
+  })
+
+  it('not allowed: the database refuses a signed-in account', async () => {
+    await failSaveWith(coded('permission-denied'))
+    expect(await publishAndRead()).toBe(NOT_ALLOWED)
+  })
+
+  it('a photo that cannot be opened', async () => {
+    net.compressError = new Error('The file given is not an image')
+    expect(await publishAndRead()).toBe(PHOTO_UNREADABLE)
+  })
+
+  it('photo storage refuses the upload (4xx)', async () => {
+    net.putBehaviour = () => 403
+    expect(await publishAndRead()).toBe(PHOTO_REFUSED)
+  })
+
+  it('anything else: the general sentence', async () => {
+    await failSaveWith(new Error('something nobody expected'))
+    expect(await publishAndRead()).toBe(OTHER)
+  })
+
+  it('no message ever mentions duplication', async () => {
+    net.putBehaviour = () => 'fail'
+    await publishAndRead()
+    expect(document.body.textContent).not.toMatch(/duplic/i)
   })
 })

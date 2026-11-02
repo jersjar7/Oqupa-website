@@ -43,7 +43,7 @@ vi.mock('@/lib/blurhash', () => ({
   generateBlurHash: (...args: unknown[]) => generateBlurHashMock(...args),
 }))
 
-import { storageService } from '../storageService'
+import { storageService, UploadError, PhotoUnreadableError } from '../storageService'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -304,6 +304,56 @@ describe('storageService', () => {
           { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }
         )
       ).rejects.toThrow('Upload failed')
+    })
+
+    it('a refused PUT keeps its status, so 4xx and 5xx can be told apart', async () => {
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      currentXHR.status = 503
+      currentXHR.send = vi.fn(function (_body: unknown) {
+        setTimeout(() => currentXHR.onload?.(), 0)
+      })
+      const err = await storageService
+        .uploadPropertyPhoto('prop-1', makeFile(), undefined, { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' })
+        .catch((e) => e)
+      expect(err).toBeInstanceOf(UploadError)
+      expect(err.status).toBe(503)
+      expect(err.reason).toBe('status')
+    })
+
+    it('a PUT that never reached the server is a network failure', async () => {
+      imageCompressionMock.mockResolvedValue(makeFile('c.jpg'))
+      currentXHR.send = vi.fn(function (_body: unknown) {
+        setTimeout(() => currentXHR.onerror?.(), 0)
+      })
+      const err = await storageService
+        .uploadPropertyPhoto('prop-1', makeFile(), undefined, { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' })
+        .catch((e) => e)
+      expect(err).toBeInstanceOf(UploadError)
+      expect(err.reason).toBe('network')
+      expect(err.status).toBeUndefined()
+    })
+
+    it('a photo that cannot be opened is reported as such, with the original cause', async () => {
+      const cause = new Error('The file given is not an image')
+      imageCompressionMock.mockRejectedValue(cause)
+      const err = await storageService
+        .uploadPropertyPhoto('prop-1', makeFile(), undefined, { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }, {})
+        .catch((e) => e)
+      expect(err).toBeInstanceOf(PhotoUnreadableError)
+      expect(err.cause).toBe(cause)
+      expect(currentXHR.send).not.toHaveBeenCalled()
+    })
+
+    it('compression stopped by an abort is an abort, not an unreadable photo', async () => {
+      const controller = new AbortController()
+      imageCompressionMock.mockImplementation(async () => {
+        controller.abort()
+        throw new DOMException('aborted', 'AbortError')
+      })
+      const err = await storageService
+        .uploadPropertyPhoto('prop-1', makeFile(), undefined, { uploadUrl: 'https://r2.example.com/u', objectKey: 'k' }, { signal: controller.signal })
+        .catch((e) => e)
+      expect(err).not.toBeInstanceOf(PhotoUnreadableError)
     })
 
     it('still returns a result when microThumb generation fails', async () => {

@@ -8,6 +8,9 @@ import imageCompression from 'browser-image-compression'
 import { storage, functions } from '@/lib/firebase'
 import { generateBlurHash } from '@/lib/blurhash'
 import { withTimeout } from '@/lib/withTimeout'
+import { UploadError, PhotoUnreadableError } from '@/lib/uploadErrors'
+
+export { UploadError, PhotoUnreadableError }
 
 // browser-image-compression spawns a Web Worker that calls
 // `self.importScripts(libURL)` to load the real implementation. The library's
@@ -90,9 +93,16 @@ export const storageService = {
     presignedUpload?: { uploadUrl: string; objectKey: string },
     options?: PhotoUploadOptions,
   ): Promise<PhotoUploadResult> {
-    const compressed = options
-      ? await this.compressImage(file, { signal: options.signal, onProgress: options.onCompressProgress })
-      : await this.compressImage(file)
+    let compressed: File
+    try {
+      compressed = options
+        ? await this.compressImage(file, { signal: options.signal, onProgress: options.onCompressProgress })
+        : await this.compressImage(file)
+    } catch (err) {
+      // Stopped on purpose (a time limit, or another photo failed): not the photo's fault.
+      if (options?.signal?.aborted) throw err
+      throw new PhotoUnreadableError(err)
+    }
 
     // Generate BlurHash from compressed image (runs in parallel with upload)
     const blurHashPromise = generateBlurHash(compressed)
@@ -136,18 +146,18 @@ export const storageService = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve()
         } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`))
+          reject(new UploadError('status', xhr.status))
         }
       }
 
-      xhr.onerror = () => reject(new Error('Upload failed'))
+      xhr.onerror = () => reject(new UploadError('network'))
       const signal = options?.signal
       if (signal) {
         if (signal.aborted) {
-          reject(new Error('Upload aborted'))
+          reject(new UploadError('aborted'))
           return
         }
-        xhr.onabort = () => reject(new Error('Upload aborted'))
+        xhr.onabort = () => reject(new UploadError('aborted'))
         signal.addEventListener('abort', () => xhr.abort(), { once: true })
       }
       xhr.send(compressed)
