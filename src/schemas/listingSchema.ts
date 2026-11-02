@@ -61,23 +61,23 @@ const longitudeSchema = (message: string) =>
 export const step1Schema = z.object({
   propertyType: z.enum(
     ['casa', 'departamento', 'terreno', 'oficina', 'local', 'hospedaje', 'habitacion'],
-    { message: 'Selecciona el tipo de propiedad' },
+    { message: 'Elige el tipo de propiedad.' },
   ),
   operationType: z.enum(['venta', 'alquiler'], {
-    message: 'Selecciona el tipo de operación',
+    message: 'Elige si vendes o alquilas.',
   }),
   rentalDurationType: z
     .enum(['longTerm', 'shortTerm', ''], { message: 'Selecciona la duración del alquiler' })
     .optional(),
   role: z.enum(['owner', 'realtor', 'relative'], {
-    message: 'Selecciona tu relación con la propiedad',
+    message: 'Elige si eres el dueño.',
   }),
 }).superRefine((data, ctx) => {
   if (data.operationType === 'alquiler' && !data.rentalDurationType) {
     ctx.addIssue({
       code: 'custom',
       path: ['rentalDurationType'],
-      message: 'Selecciona la duración del alquiler',
+      message: 'Elige si vendes o alquilas.',
     })
   }
 })
