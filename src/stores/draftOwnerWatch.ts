@@ -1,5 +1,5 @@
 import { useAuthStore } from './authStore'
-import { useListingFormStore } from './listingFormStore'
+import { setDraftAccount, useListingFormStore } from './listingFormStore'
 
 /**
  * Keeps the publishing draft with the account that started it (hostile
@@ -17,6 +17,7 @@ export function watchDraftOwner(): () => void {
   // of account. A page load always passes through "nobody yet", so this
   // also runs before the wizard can show a draft that is not theirs.
   const adopt = (uid: string | null) => {
+    setDraftAccount(uid)
     if (!uid) return
     const form = useListingFormStore.getState()
     if (form.isEditMode) return
