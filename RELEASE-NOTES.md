@@ -4,7 +4,7 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
-## Unreleased — on staging, waiting for Jerson's "promote" (includes sign-in changes)
+## 2026-11-02 (afternoon) — Simpler wizard, one boost, Guardados, sign-in, audit fixes (Jerson: "Promote to production")
 
 ### New Features
 - The simpler publishing wizard (ADR-043 step 4, D1–D13; Jerson: "Wizard ok"): SIGUIENTE/ATRÁS, "¿Vendes o alquilas?",

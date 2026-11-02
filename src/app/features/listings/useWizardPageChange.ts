@@ -28,14 +28,21 @@ export function useScrollTopOnPageChange(step: number, anchor: RefObject<HTMLEle
  * messages carry `data-wizard-error`; a box marked aria-invalid is focused itself.
  */
 export function focusFirstError(): void {
-  setTimeout(() => {
+  // The messages render after the form state updates; on a slow phone (or a
+  // busy CI machine) that can take more than one tick. Look for up to ~1 s.
+  let tries = 0
+  const attempt = () => {
     // The first in page order: a box marked invalid, or a message.
     const el = document.querySelector<HTMLElement>(
       '[data-wizard-error], input[aria-invalid="true"], textarea[aria-invalid="true"]',
     )
-    if (!el) return
+    if (!el) {
+      if (++tries < 20) setTimeout(attempt, 50)
+      return
+    }
     if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1')
     el.focus()
     el.scrollIntoView?.({ block: 'center' })
-  }, 0)
+  }
+  setTimeout(attempt, 0)
 }
