@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,12 +9,13 @@ import { useRevealedFields } from '@/hooks/useRevealedFields'
 import { useAuthStore } from '@/stores/authStore'
 import { firestoreService } from '@/services/firestoreService'
 import { storageService } from '@/services/storageService'
-import { Button, Input, InfoTip } from '@/app/components/ui'
-import Modal from '@/app/components/ui/Modal'
-import ShareFormatModal from '@/components/ShareFormatModal'
+import { publishListing, PUBLISH_FAILED_MESSAGE, type ListingDoc, type PropertyDoc } from '@/services/publishService'
+import { Button, Input, InfoTip, FillingButton } from '@/app/components/ui'
+import type { FillStatus } from '@/app/components/ui/FillingButton'
 import RevealField from './RevealField'
 import { CURRENCY_SYMBOLS, type Currency } from '@/types/enums'
 import { AnalyticsLogger } from '@/lib/analytics'
+import { publishRealProgress } from '@/lib/fillProgress'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 import { attributionForListing } from '@/lib/attribution'
@@ -31,19 +32,34 @@ export default function WizardStep5() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
-  const { data, prevStep, isEditMode, editListingId, editPropertyId, reset } =
-    useListingFormStore()
+  const {
+    data, prevStep, isEditMode, editListingId, editPropertyId, reset,
+    publishId, recordUploadedPhoto, persistDraft, markPublished, publishedListingId,
+  } = useListingFormStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
-  const [successData, setSuccessData] = useState<{
-    listing: Listing
-    property: Property
-    focusLat: number | null
-    focusLng: number | null
-  } | null>(null)
-  const [showShareModal, setShowShareModal] = useState(false)
+  // The new-listing publish (ADR-043). A draft already published cannot
+  // publish again: the button stays done and the person moves on.
+  const [publishStatus, setPublishStatus] = useState<FillStatus>(
+    publishedListingId ? 'done' : 'idle',
+  )
+  const [publishProgress, setPublishProgress] = useState(0)
+  // Set synchronously on the first click, so a second click that lands
+  // before React re-renders cannot start a second publish.
+  const publishingRef = useRef(false)
+
+  // Leaving while photos and the listing are on their way would lose them.
+  useEffect(() => {
+    if (publishStatus !== 'filling') return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [publishStatus])
 
   const {
     register,
@@ -103,14 +119,16 @@ export default function WizardStep5() {
       return
     }
 
+    if (!isEditMode) {
+      await publishNew(formData)
+      return
+    }
+
     setIsSubmitting(true)
     setSubmitError(null)
 
-    let createdPropertyId: string | null = null
-
     try {
-
-      if (isEditMode && editPropertyId && editListingId) {
+      if (editPropertyId && editListingId) {
         // UPDATE FLOW
         // Upload new photos if any
         let newPhotoKeys: string[] = []
@@ -121,7 +139,6 @@ export default function WizardStep5() {
           const results = await storageService.uploadMultiplePropertyPhotos(
             editPropertyId,
             data.photos,
-            (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
           )
           newPhotoKeys = results.map(r => r.objectKey)
           newBlurHashes = results.map(r => r.blurHash)
@@ -234,202 +251,13 @@ export default function WizardStep5() {
             console.warn('R2 cleanup failed for removed photos:', cleanupErr)
           }
         }
-      } else {
-        // CREATE FLOW
-        setUploadProgress('Creando propiedad...')
-        const propertyId = await firestoreService.createProperty({
-          listedByUserId: user.id,
-          propertyType: data.propertyType as Property['propertyType'],
-          operationType: data.operationType as Property['operationType'],
-          ...(data.operationType === 'alquiler' && data.rentalDurationType
-            ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
-            : {}),
-          specs: {
-            totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
-            bedroomCount: data.bedroomCount ?? undefined,
-            bathroomCount: data.bathroomCount ?? undefined,
-            availableParkingSpaces: data.availableParkingSpaces,
-            propertyAmenities: data.propertyAmenities,
-            ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
-          },
-          location: {
-            latitude: data.latitude!,
-            longitude: data.longitude!,
-            calle: data.calle,
-            urbanizacion: data.urbanizacion,
-            distrito: data.distrito,
-            provincia: data.provincia,
-            departamento: data.departamento,
-            countryIsoCode: 'PE',
-          },
-          currentPrice: {
-            amount: formData.amount,
-            currency: formData.currency,
-          },
-          normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}, ${data.provincia}, ${data.departamento}`,
-          media: { propertyPhotoUrls: [] },
-          isAvailable: true,
-        })
-        createdPropertyId = propertyId
-
-        // Upload photos
-        let photoKeys: string[] = []
-        let blurHashes: string[] = []
-        let microThumb = ''
-        if (data.photos.length > 0) {
-          setUploadProgress('Subiendo fotos...')
-          const results = await storageService.uploadMultiplePropertyPhotos(
-            propertyId,
-            data.photos,
-            (p) => setUploadProgress(`Subiendo fotos... (${Math.round(p)}%)`)
-          )
-          photoKeys = results.map(r => r.objectKey)
-          blurHashes = results.map(r => r.blurHash)
-          microThumb = results[0]?.microThumb ?? ''
-
-          // Update property with photo keys, BlurHash, and micro-thumbnail
-          await firestoreService.updateProperty(propertyId, {
-            media: {
-              propertyPhotoUrls: photoKeys,
-              photoKeys,
-              photoBlurHashes: blurHashes,
-              ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
-            },
-          })
-        }
-
-        // Create listing
-        setUploadProgress('Creando publicación...')
-        const now = new Date()
-        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-
-        // Read once: two calls could disagree if storage changes mid-publish.
-        const arrivedFrom = attributionForListing()
-
-        const listingData = {
-          role: data.role as Listing['role'],
-          ownerId: user.id,
-          propertyId,
-          description: data.description,
-          price: { amount: formData.amount, currency: formData.currency },
-          contactInfo: user.contactInfo,
-          status: 'active' as const,
-          publishedAt: now,
-          expiresAt,
-          media: {
-            propertyPhotoUrls: photoKeys,
-            photoKeys,
-            photoBlurHashes: blurHashes,
-            ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
-          },
-          wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
-          maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
-          currentClaimsCount: 0,
-          contactClickCount: 0,
-          operationType: data.operationType as Listing['operationType'],
-          isBoosted: false,
-          boostScore: 1,
-          showExactLocation: data.showExactLocation,
-          // Owner identity copied onto the listing (ADR-015 Phase 3.3) so
-          // rendering a listing card needs no read of the owner's user record.
-          // Phase 4 makes those records private; without this the publisher
-          // name, photo and verified badge would vanish from every card.
-          ...(user.name ? { ownerDisplayName: user.name } : {}),
-          ...(user.photoUrl ? { ownerPhotoKey: user.photoUrl } : {}),
-          ownerIsVerified: Boolean(user.isPhoneVerified || user.isIdentityVerified),
-          ownerMemberSinceYear: user.createdAt.getFullYear(),
-          // How this person first found Oqupa, carried from their first visit.
-          //
-          // This is the only durable answer to "did paid advertising produce a
-          // listing?". Meta's own reporting cannot answer it — it credits a
-          // conversion only when it recognises the browser, which ad blockers,
-          // Safari and iOS increasingly prevent. Stamping it on the listing
-          // means the answer lives in our own database and survives whatever
-          // Meta can or cannot see.
-          //
-          // Campaign labels and a timestamp only; no personal data. Absent for
-          // anyone whose browser blocks local storage, which is expected and
-          // must never block a publish.
-          ...(arrivedFrom ? { attribution: arrivedFrom } : {}),
-        }
-
-        const listingId = await firestoreService.createListing(listingData)
-
-        // Build objects for the success modal share CTA
-        const createdListing: Listing = {
-          ...listingData,
-          id: listingId,
-          createdAt: now,
-          updatedAt: now,
-          viewCount: 0,
-          contactClickCount: 0,
-        }
-        const createdProperty: Property = {
-          id: propertyId,
-          listedByUserId: user.id,
-          propertyType: data.propertyType as Property['propertyType'],
-          operationType: data.operationType as Property['operationType'],
-          ...(data.operationType === 'alquiler' && data.rentalDurationType
-            ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
-            : {}),
-          specs: {
-            totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
-            bedroomCount: data.bedroomCount ?? undefined,
-            bathroomCount: data.bathroomCount ?? undefined,
-            availableParkingSpaces: data.availableParkingSpaces,
-            propertyAmenities: data.propertyAmenities,
-            ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
-          },
-          location: {
-            latitude: data.latitude!,
-            longitude: data.longitude!,
-            calle: data.calle,
-            urbanizacion: data.urbanizacion,
-            distrito: data.distrito,
-            provincia: data.provincia,
-            departamento: data.departamento,
-            countryIsoCode: 'PE',
-          },
-          currentPrice: { amount: formData.amount, currency: formData.currency },
-          normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}`,
-          media: {
-            propertyPhotoUrls: photoKeys,
-            photoKeys,
-            photoBlurHashes: blurHashes,
-            ...(microThumb ? { primaryPhotoMicroThumb: microThumb } : {}),
-          },
-          updatedAt: now,
-          isAvailable: true,
-        }
-
-        AnalyticsLogger.listingCreated(data.operationType)
-        await queryClient.invalidateQueries({ queryKey: ['listings'] })
-
-        // Show success modal with share CTA instead of navigating immediately
-        setSuccessData({
-          listing: createdListing,
-          property: createdProperty,
-          focusLat: data.latitude ?? null,
-          focusLng: data.longitude ?? null,
-        })
-        return
       }
 
-      // Edit mode: navigate immediately
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
       reset()
       navigate('/app')
     } catch (err) {
       console.error('Submission error:', err)
-
-      // Clean up orphaned Property if create flow failed after Property was created
-      if (createdPropertyId) {
-        try {
-          await firestoreService.deleteProperty(createdPropertyId)
-        } catch {
-          console.warn('Failed to cleanup orphaned property:', createdPropertyId)
-        }
-      }
 
       // Invalidate queries even on error so dashboard reflects any partial changes
       await queryClient.invalidateQueries({ queryKey: ['listings'] })
@@ -439,7 +267,9 @@ export default function WizardStep5() {
         setSubmitError('No tienes permisos para realizar esta acción.')
       } else if (message.includes('not-found')) {
         setSubmitError('No se encontró la publicación. Puede haber sido eliminada.')
-      } else if (message.includes('storage') || message.includes('upload')) {
+      } else if (/storage|upload/i.test(message)) {
+        // Case-insensitive: the upload error says "Upload failed", which the
+        // old lowercase check never matched.
         setSubmitError('Error al subir las fotos. Verifica tu conexión e intenta de nuevo.')
       } else if (!navigator.onLine) {
         setSubmitError('Sin conexión a internet. Verifica tu conexión e intenta de nuevo.')
@@ -452,55 +282,137 @@ export default function WizardStep5() {
     }
   }
 
-  const handleNavigateAfterCreation = () => {
-    if (!successData) return
-    const { focusLat, focusLng } = successData
-    reset()
-    if (focusLat != null && focusLng != null) {
-      navigate('/explorar', { state: { focusLat, focusLng } })
-    } else {
-      navigate('/app')
+  // CREATE FLOW (ADR-043): photos first under the draft's identity, then the
+  // property and the listing in one write. Every attempt for this draft
+  // targets the same two documents, so a retry can never duplicate.
+  async function publishNew(formData: Step4Data) {
+    if (!user || publishingRef.current || useListingFormStore.getState().publishedListingId) return
+    publishingRef.current = true
+    setSubmitError(null)
+    setPublishProgress(0)
+    setPublishStatus('filling')
+    // The identity must be stored with the draft before anything is sent.
+    persistDraft()
+
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    // Read once: two calls could disagree if storage changes mid-publish.
+    const arrivedFrom = attributionForListing()
+
+    try {
+      const outcome = await publishListing({
+        publishId,
+        photos: data.photos,
+        uploadedPhotos: useListingFormStore.getState().uploadedPhotos,
+        onPhotoUploaded: recordUploadedPhoto,
+        onProgress: (stage, fraction) => setPublishProgress(publishRealProgress(stage, fraction)),
+        buildDocs: ({ propertyId, media }) => {
+          const mediaDoc = {
+            propertyPhotoUrls: media.photoKeys,
+            photoKeys: media.photoKeys,
+            photoBlurHashes: media.blurHashes,
+            ...(media.microThumb ? { primaryPhotoMicroThumb: media.microThumb } : {}),
+          }
+          const property: PropertyDoc = {
+            listedByUserId: user.id,
+            propertyType: data.propertyType as Property['propertyType'],
+            operationType: data.operationType as Property['operationType'],
+            ...(data.operationType === 'alquiler' && data.rentalDurationType
+              ? { rentalDurationType: data.rentalDurationType as Property['rentalDurationType'] }
+              : {}),
+            specs: {
+              totalAreaInSquareMeters: data.totalAreaInSquareMeters!,
+              bedroomCount: data.bedroomCount ?? undefined,
+              bathroomCount: data.bathroomCount ?? undefined,
+              availableParkingSpaces: data.availableParkingSpaces,
+              propertyAmenities: data.propertyAmenities,
+              ...(data.propertyType === 'habitacion' ? { hasPrivateBathroom: data.hasPrivateBathroom } : {}),
+            },
+            location: {
+              latitude: data.latitude!,
+              longitude: data.longitude!,
+              calle: data.calle,
+              urbanizacion: data.urbanizacion,
+              distrito: data.distrito,
+              provincia: data.provincia,
+              departamento: data.departamento,
+              countryIsoCode: 'PE',
+            },
+            currentPrice: {
+              amount: formData.amount,
+              currency: formData.currency,
+            },
+            normalizedAddress: `${data.calle}${data.urbanizacion ? ', ' + data.urbanizacion : ''}, ${data.distrito}, ${data.provincia}, ${data.departamento}`,
+            media: mediaDoc,
+            isAvailable: true,
+          }
+          const listing: ListingDoc = {
+            role: data.role as Listing['role'],
+            ownerId: user.id,
+            propertyId,
+            description: data.description,
+            price: { amount: formData.amount, currency: formData.currency },
+            contactInfo: user.contactInfo,
+            status: 'active' as const,
+            publishedAt: now,
+            expiresAt,
+            media: mediaDoc,
+            wantsRealtorHelp: formData.wantsRealtorHelp ?? false,
+            maxRealtors: formData.wantsRealtorHelp ? (formData.maxRealtors ?? 3) : 3,
+            currentClaimsCount: 0,
+            contactClickCount: 0,
+            operationType: data.operationType as Listing['operationType'],
+            isBoosted: false,
+            boostScore: 1,
+            showExactLocation: data.showExactLocation,
+            // Owner identity copied onto the listing (ADR-015 Phase 3.3) so
+            // rendering a listing card needs no read of the owner's user record.
+            // Phase 4 makes those records private; without this the publisher
+            // name, photo and verified badge would vanish from every card.
+            ...(user.name ? { ownerDisplayName: user.name } : {}),
+            ...(user.photoUrl ? { ownerPhotoKey: user.photoUrl } : {}),
+            ownerIsVerified: Boolean(user.isPhoneVerified || user.isIdentityVerified),
+            ownerMemberSinceYear: user.createdAt.getFullYear(),
+            // How this person first found Oqupa, carried from their first visit.
+            //
+            // This is the only durable answer to "did paid advertising produce a
+            // listing?". Meta's own reporting cannot answer it — it credits a
+            // conversion only when it recognises the browser, which ad blockers,
+            // Safari and iOS increasingly prevent. Stamping it on the listing
+            // means the answer lives in our own database and survives whatever
+            // Meta can or cannot see.
+            //
+            // Campaign labels and a timestamp only; no personal data. Absent for
+            // anyone whose browser blocks local storage, which is expected and
+            // must never block a publish.
+            ...(arrivedFrom ? { attribution: arrivedFrom } : {}),
+          }
+          return { property, listing }
+        },
+      })
+
+      // Saved. The draft goes now — not when some dialog closes — so a
+      // refresh, a back button or a second tab cannot publish it again.
+      markPublished(outcome.listingId)
+      if (!outcome.alreadyPublished) AnalyticsLogger.listingCreated(data.operationType)
+      void queryClient.invalidateQueries({ queryKey: ['listings'] })
+      setPublishStatus('done')
+    } catch (err) {
+      console.error('Publish error:', err)
+      publishingRef.current = false
+      // One Spanish sentence, whatever went wrong. The retry reuses the
+      // same identity and skips the photos that already arrived.
+      setSubmitError(PUBLISH_FAILED_MESSAGE)
+      setPublishStatus('error')
     }
   }
 
-  // Show success modal after listing creation
-  if (successData) {
-    return (
-      <>
-        <Modal
-          isOpen={!showShareModal}
-          onClose={handleNavigateAfterCreation}
-          title="¡Publicado!"
-        >
-          <p className="text-text-secondary">
-            ¡Comparte tu anuncio en todas tus redes sociales!
-          </p>
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={handleNavigateAfterCreation}
-              className="flex-1 rounded-xl border border-border px-4 py-3 font-medium text-text-secondary transition-colors hover:bg-black/5"
-            >
-              Ahora no
-            </button>
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="flex-1 rounded-xl bg-primary px-4 py-3 font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-hover"
-            >
-              Compartir
-            </button>
-          </div>
-        </Modal>
-        <ShareFormatModal
-          isOpen={showShareModal}
-          onClose={() => {
-            setShowShareModal(false)
-            handleNavigateAfterCreation()
-          }}
-          listing={successData.listing}
-          property={successData.property}
-        />
-      </>
-    )
+  // After "¡PUBLICADO!": the new listing's page, which offers to share it.
+  const handlePublishedShown = () => {
+    const listingId = useListingFormStore.getState().publishedListingId
+    if (!listingId) return
+    navigate(`/property/${listingId}`, { replace: true, state: { justPublished: true } })
+    reset()
   }
 
   return (
@@ -604,8 +516,8 @@ export default function WizardStep5() {
             <p className="text-sm text-error">{submitError}</p>
           )}
 
-          {/* Upload progress */}
-          {uploadProgress && (
+          {/* Edit mode: what is being saved */}
+          {isEditMode && uploadProgress && (
             <p className="text-sm text-primary">{uploadProgress}</p>
           )}
 
@@ -615,18 +527,30 @@ export default function WizardStep5() {
               type="button"
               variant="text"
               onClick={prevStep}
-              disabled={isSubmitting}
+              disabled={isSubmitting || publishStatus === 'filling' || publishStatus === 'done'}
               className="flex-1"
             >
               Atrás
             </Button>
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              className="flex-1"
-            >
-              {isEditMode ? 'Guardar Cambios' : 'Publicar'}
-            </Button>
+            {isEditMode ? (
+              <Button
+                type="submit"
+                isLoading={isSubmitting}
+                className="flex-1"
+              >
+                Guardar Cambios
+              </Button>
+            ) : (
+              <FillingButton
+                type="submit"
+                status={publishStatus}
+                progress={publishProgress}
+                onDone={handlePublishedShown}
+                className="flex-1"
+              >
+                Publicar
+              </FillingButton>
+            )}
           </div>
         </div>
       </RevealField>
