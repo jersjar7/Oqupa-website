@@ -43,6 +43,7 @@ import RevealedContact from '@/app/features/listings/components/RevealedContact'
 import ReportListing from '@/app/features/listings/components/ReportListing'
 import { contactFailureMessage, whatsappGreeting } from '@/app/features/listings/contactReveal'
 import { OFFLINE_MESSAGE } from '@/lib/friendlyErrors'
+import { isBoostLive } from '@/lib/boostState'
 
 /** "US$ 1,200" / "S/. 150,000" — in the listing's own currency (the page
  *  showed every price in soles). */
@@ -586,7 +587,7 @@ export default function PropertyPage() {
                   return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
                 })()}
               </p>
-              {listing.isBoosted && (
+              {isBoostLive(listing) && (
                 <DestacadoBadge withStar />
               )}
               <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
@@ -733,8 +734,8 @@ export default function PropertyPage() {
             )}
 
             {/* Owner boost section */}
-            {isOwner && listing.status === 'active' && (
-              listing.isBoosted ? (
+            {isOwner && listing.status === 'active' && (<>
+              {isBoostLive(listing) && (
                 // Boost status for owner
                 <div className="rounded-xl border border-boost/40 bg-boost/10 p-4">
                   <div className="flex items-center gap-2">
@@ -763,22 +764,19 @@ export default function PropertyPage() {
                     )}
                   </div>
                 </div>
-              ) : (
-                // Boost for owner: available, not promoted (ADR-042, ADR-043
-                // D17) — a plain secondary button, not an amber call to action.
-                <BoostPurchaseFlow
-                  listingId={listing.id}
-                  placement="listing_page"
-                  onSuccess={() => {}}
-                >
-                  {(openFlow) => (
-                    <Button onClick={openFlow} className="w-full">
-                      Destacar mi propiedad
-                    </Button>
-                  )}
-                </BoostPurchaseFlow>
-              )
-            )}
+              )}
+              {/* Boost for owner: available, not promoted (ADR-042, ADR-043
+                  D17) — a plain secondary button, not an amber call to action.
+                  The flow stays mounted once boosted, so its confirmation is
+                  not lost when the page refreshes underneath it. */}
+              <BoostPurchaseFlow listingId={listing.id} placement="listing_page">
+                {(openFlow) => !isBoostLive(listing) && (
+                  <Button onClick={openFlow} className="w-full">
+                    Destacar mi propiedad
+                  </Button>
+                )}
+              </BoostPurchaseFlow>
+            </>)}
 
             {/* App download banner */}
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">

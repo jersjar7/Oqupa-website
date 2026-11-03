@@ -18,6 +18,7 @@ import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 import AnimatedImage from '@/app/components/ui/AnimatedImage'
+import { isBoostLive } from '@/lib/boostState'
 
 export const COMPACT_CARD_PHOTO_PX = 96
 
@@ -37,7 +38,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
     <div
       data-testid="compact-listing-card"
       className={`relative flex items-center gap-3 rounded-2xl bg-white p-2 pr-2 shadow-large ${
-        listing.isBoosted ? 'border-2 border-boost' : ''
+        isBoostLive(listing) ? 'border-2 border-boost' : ''
       } ${className}`}
     >
       <div
@@ -53,7 +54,7 @@ export default function CompactListingCard({ item, className = '' }: { item: Lis
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        {listing.isBoosted && (
+        {isBoostLive(listing) && (
           <DestacadoBadge size="sm" className="self-start" />
         )}
         <span className="truncate text-lg font-bold leading-tight text-text-primary">{label.priceLine}</span>

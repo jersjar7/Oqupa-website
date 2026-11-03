@@ -9,6 +9,7 @@ import { card as cardUrl } from '@/lib/imageUrl'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import { isBoostLive } from '@/lib/boostState'
 
 interface PropertyCardProps {
   item: ListingWithProperty
@@ -56,7 +57,7 @@ export default function PropertyCard({ item, isHighlighted = false }: PropertyCa
               </svg>
             </div>
           )}
-          {listing.isBoosted && (
+          {isBoostLive(listing) && (
             <DestacadoBadge withStar className="absolute bottom-2 left-2 shadow" />
           )}
         </div>

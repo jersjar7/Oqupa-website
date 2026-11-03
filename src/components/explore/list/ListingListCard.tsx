@@ -14,6 +14,7 @@ import { drawingSvg, PIN_COLORS } from '@/components/explore/mapbox/pinElements'
 import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import { isBoostLive } from '@/lib/boostState'
 
 interface ListingListCardProps {
   item: ListingWithProperty
@@ -36,7 +37,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
     <div
       data-testid="listing-list-card"
       className={`relative overflow-hidden rounded-2xl bg-white shadow-light ${
-        listing.isBoosted ? 'border-2 border-boost' : isHighlighted ? 'border border-primary ring-2 ring-primary/20' : 'border border-border'
+        isBoostLive(listing) ? 'border-2 border-boost' : isHighlighted ? 'border border-primary ring-2 ring-primary/20' : 'border border-border'
       }`}
     >
       <Link to={`/property/${listing.id}`} className="block">
@@ -47,7 +48,7 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
           {photoRef && (
             <AnimatedImage src={cardUrl(photoRef)} alt={`${pinKindWord(label.kind)} en ${listingLocationLine(item)}`} className="h-full w-full object-cover" />
           )}
-          {listing.isBoosted && (
+          {isBoostLive(listing) && (
             <DestacadoBadge className="absolute left-3 top-3" />
           )}
           {photos.length > 1 && (
