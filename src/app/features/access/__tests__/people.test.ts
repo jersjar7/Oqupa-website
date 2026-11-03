@@ -131,6 +131,7 @@ describe('TEAM_EMAILS', () => {
   // CI check fails when they differ.
   const CONFIRMED = [
     'admin@oqupa.com',
+    'jersondevs+appstore@gmail.com',
     'jersondevs@gmail.com',
     'bbarba@oqupa.com',
     'sarahwalkerdev@gmail.com',
@@ -143,9 +144,9 @@ describe('TEAM_EMAILS', () => {
     'libardo.pico26@gmail.com',
   ]
 
-  it('is exactly the 11 confirmed team emails', () => {
+  it('is exactly the 12 confirmed team emails (incl. the App Store review account)', () => {
     expect([...TEAM_EMAILS].sort()).toEqual([...CONFIRMED].sort())
-    expect(TEAM_EMAILS).toHaveLength(11)
+    expect(TEAM_EMAILS).toHaveLength(12)
   })
 
   it('is lowercase and sorted', () => {
