@@ -6,6 +6,7 @@ import { DEFAULT_PEN_PER_USD } from './exchangeRates'
 import { mapPointOf, type Bounds } from './mapPoint'
 import { withThousands } from './pinLabel'
 import type { ListingWithProperty } from '@/types/explore'
+import { isBoostLive } from '@/lib/boostState'
 
 // --- What the list contains ----------------------------------------------
 
@@ -124,7 +125,7 @@ export function sortListingsForList(
   switch (sort) {
     case 'recomendados':
       return out.sort((a, b) => {
-        const ab = a.listing.isBoosted, bb = b.listing.isBoosted
+        const ab = isBoostLive(a.listing), bb = isBoostLive(b.listing)
         if (ab !== bb) return ab ? -1 : 1
         if (ab) {
           const level = (b.listing.boostScore ?? 0) - (a.listing.boostScore ?? 0)

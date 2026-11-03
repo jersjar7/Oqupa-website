@@ -39,6 +39,7 @@ import {
   nextClaimResetText, activeListingsNote, countPublishedSince,
   spendThisMonthSoles, buildSubtitle, boostedKpiSubtitle,
 } from './dashboardHelpers'
+import { isBoostLive } from '@/lib/boostState'
 
 // ---------------------------------------------------------------------------
 // Action button styles — Gotham Bold, uppercase, brand letter-spacing.
@@ -85,7 +86,7 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
   const { data: payments } = useUserBoostPayments(userId)
   const listings = items ?? []
   const active = listings.filter(({ listing }) => listing.status === 'active').length
-  const boosted = listings.filter(({ listing }) => listing.isBoosted).length
+  const boosted = listings.filter(({ listing }) => isBoostLive(listing)).length
   const totalViews = listings.reduce((sum, { listing }) => sum + (listing.viewCount ?? 0), 0)
   const monthlySpend = spendThisMonthSoles(payments)
 

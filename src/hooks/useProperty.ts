@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { listingQueryKeys } from '@/lib/listingQueries'
 import { firestoreService } from '@/services/firestoreService'
 import { listingPageView, type ListingPageView } from '@/app/features/listings/listingVisibility'
 
@@ -15,7 +16,7 @@ export function useProperty(
   { viewerId, authReady = true }: UsePropertyOptions = {},
 ) {
   const { data, isLoading: queryLoading, error, refetch } = useQuery({
-    queryKey: ['listings', 'detail', listingId],
+    queryKey: listingQueryKeys.detail(listingId),
     queryFn: () => firestoreService.getListingWithProperty(listingId!),
     enabled: !!listingId,
   })

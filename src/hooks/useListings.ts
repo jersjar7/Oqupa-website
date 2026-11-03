@@ -4,10 +4,11 @@ import { firestoreService } from '@/services/firestoreService'
 import type { Listing } from '@/types/listing'
 import { firestoreWriteErrorMessage } from '@/lib/friendlyErrors'
 import { AGENTS_WHEN_TURNED_ON } from '@/lib/agentHelp'
+import { invalidateListingQueries, listingQueryKeys } from '@/lib/listingQueries'
 
 export function useListingDetails(listingId: string | undefined) {
   return useQuery({
-    queryKey: ['listings', 'detail', listingId],
+    queryKey: listingQueryKeys.detail(listingId),
     queryFn: () => firestoreService.getListingWithProperty(listingId!),
     enabled: !!listingId,
   })
@@ -15,7 +16,7 @@ export function useListingDetails(listingId: string | undefined) {
 
 export function useUserListingsWithProperties(userId: string | undefined) {
   return useQuery({
-    queryKey: ['listings', 'user', userId, 'withProperties'],
+    queryKey: listingQueryKeys.owner(userId),
     queryFn: () => firestoreService.getUserListingsWithProperties(userId!),
     enabled: !!userId,
   })
@@ -40,7 +41,7 @@ export function useToggleListingStatus() {
       return currentStatus
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient, variables.listingId)
       toast.success(
         variables.currentStatus === 'active'
           ? 'Publicación desactivada'
@@ -65,7 +66,7 @@ export function useMarkListingClosed() {
       await firestoreService.updateListingStatus(listingId, status)
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient, variables.listingId)
       toast.success(
         variables.status === 'rented' ? 'Propiedad marcada como alquilada' : 'Propiedad marcada como vendida'
       )
@@ -90,8 +91,8 @@ export function useDeleteListing() {
       await firestoreService.deleteListing(listingId)
       await firestoreService.deleteProperty(propertyId)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    onSuccess: (_data, variables) => {
+      void invalidateListingQueries(queryClient, variables.listingId)
       toast.success('Publicación eliminada')
     },
     onError: (error) => {
@@ -117,7 +118,7 @@ export function useSetRealtorHelp() {
       )
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient, variables.listingId)
       toast.success(variables.on ? 'Ayuda de agentes activada' : 'Ayuda de agentes desactivada')
     },
     onError: (error) => {

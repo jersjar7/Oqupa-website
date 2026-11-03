@@ -1,7 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
@@ -11,11 +10,8 @@ import { useToggleListingStatus, useDeleteListing, useMarkListingClosed, useSetR
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
-import { useAuthStore } from '@/stores/authStore'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
-import type { BoostTier } from '@/types/boost'
-import type { ListingWithProperty } from '@/types/explore'
 import {
   PROPERTY_TYPE_LABELS,
   LISTING_STATUS_LABELS,
@@ -24,6 +20,7 @@ import {
 import { getPriceSuffix } from '@/lib/formatters'
 import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
 import { AGENTS_WHEN_TURNED_ON, agentHelpOffer, agentHelpOnLine } from '@/lib/agentHelp'
+import { isBoostLive } from '@/lib/boostState'
 import { boostDaysLeft as boostDaysLeftFor } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface ListingCardProps {
@@ -43,8 +40,6 @@ function formatPrice(amount: number, currency: string): string {
 export default function ListingCard({ listing, property }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
   const deleteListing = useDeleteListing()
-  const queryClient = useQueryClient()
-  const { user } = useAuthStore()
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const markClosed = useMarkListingClosed()
@@ -56,36 +51,6 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
   const [showRealtorHelpOff, setShowRealtorHelpOff] = useState(false)
 
-  const handleBoostSuccess = useCallback(
-    ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
-      const userId = user?.id
-      if (!userId) return
-
-      const boostedUntil = new Date()
-      boostedUntil.setDate(boostedUntil.getDate() + durationDays)
-
-      // Optimistically update the listing in the React Query cache
-      queryClient.setQueryData<ListingWithProperty[]>(
-        ['listings', 'user', userId, 'withProperties'],
-        (old) =>
-          old?.map((item) =>
-            item.listing.id === listing.id
-              ? {
-                  ...item,
-                  listing: {
-                    ...item.listing,
-                    isBoosted: true,
-                    boostTier: tier,
-                    boostScore: 100,
-                    boostedUntil,
-                  },
-                }
-              : item,
-          ),
-      )
-    },
-    [queryClient, user?.id, listing.id],
-  )
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const isClosed = listing.status === 'sold' || listing.status === 'rented'
   // Sold / rented listings can be published again, as in the app.
@@ -100,7 +65,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // Deactivating does not pause a boost: the expiry job ignores status, so the
   // paid days keep running and nothing is returned. A boosted listing asks
   // first and says so; an unboosted one has nothing to lose.
-  const asksBeforeDeactivating = listing.status === 'active' && listing.isBoosted
+  // Boosted only while isBoosted AND boostedUntil is still ahead.
+  const boostLive = isBoostLive(listing)
+  // Asks unless the boost is known to be over: one with no end date written
+  // still warns.
+  const asksBeforeDeactivating =
+    listing.status === 'active' && listing.isBoosted && (!listing.boostedUntil || boostLive)
+  // Round-up days, 30 on the day of purchase (fix/boost-days).
   const boostDaysLeft = boostDaysLeftFor(listing.boostedUntil, listing.boostTier)
 
   return (
@@ -157,7 +128,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         </div>
 
         {/* Boost status */}
-        {listing.isBoosted && (
+        {boostLive && (
           <div className="mt-2">
             <BoostStatusBadge listing={listing} detailed />
           </div>
@@ -169,14 +140,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
           <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Boost CTA for non-boosted active listings */}
-        {listing.status === 'active' && !listing.isBoosted && (
-          <BoostPurchaseFlow
-            listingId={listing.id}
-            placement="my_listings"
-            onSuccess={handleBoostSuccess}
-          >
-            {(openFlow) => (
+        {/* Boost CTA for non-boosted active listings. The flow stays mounted
+            once the listing is boosted, so its confirmation is not lost when
+            the card refreshes underneath it. */}
+        {listing.status === 'active' && (
+          <BoostPurchaseFlow listingId={listing.id} placement="my_listings">
+            {(openFlow) => !boostLive && (
               <button
                 onClick={openFlow}
                 className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-boost px-4 font-sans text-sm font-bold uppercase tracking-[1px] text-ink transition-colors hover:bg-boost-hover"

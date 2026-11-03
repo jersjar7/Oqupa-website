@@ -35,6 +35,7 @@ import { editAwareResolver, issuesThatCount } from '../editLimits'
 import { storeWayBackFor } from '@/lib/returnPath'
 import { authService } from '@/services/authService'
 import { AGENTS_WHEN_TURNED_ON } from '@/lib/agentHelp'
+import { invalidateListingQueries } from '@/lib/listingQueries'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
@@ -323,7 +324,7 @@ export default function WizardStep5() {
         }
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      await invalidateListingQueries(queryClient, editListingId ?? undefined)
       // Back to the stored new-listing draft, untouched by the edit.
       leaveEdit()
       navigate('/app')
@@ -331,7 +332,7 @@ export default function WizardStep5() {
       console.error('Submission error:', err)
 
       // Invalidate queries even on error so dashboard reflects any partial changes
-      await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      await invalidateListingQueries(queryClient, editListingId ?? undefined)
 
       const message = err instanceof Error ? err.message : ''
       if (message.includes('permission-denied') || message.includes('PERMISSION_DENIED')) {
@@ -486,7 +487,7 @@ export default function WizardStep5() {
         // take the person to the listing that exists, where they can edit.
         const listingId = outcome.listingId
         markPublished(listingId)
-        void queryClient.invalidateQueries({ queryKey: ['listings'] })
+        void invalidateListingQueries(queryClient, listingId)
         toast(ALREADY_PUBLISHED_NOTICE, {
           duration: 10000,
           action: { label: 'Editar', onClick: () => navigate(`/app/listings/${listingId}/edit`) },
@@ -500,7 +501,7 @@ export default function WizardStep5() {
       // refresh, a back button or a second tab cannot publish it again.
       markPublished(outcome.listingId)
       if (!outcome.alreadyPublished) AnalyticsLogger.listingCreated(data.operationType)
-      void queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient, outcome.listingId)
       setPublishStatus('done')
     } catch (err) {
       console.error('Publish error:', err)

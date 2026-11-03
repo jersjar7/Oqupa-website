@@ -1,6 +1,7 @@
 import type { Listing } from '@/types/listing'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import { isBoostLive } from '@/lib/boostState'
 import { boostDaysLeft } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface BoostStatusBadgeProps {
@@ -15,7 +16,7 @@ interface BoostStatusBadgeProps {
  * - Detailed badge with tier and remaining days for owner views
  */
 export default function BoostStatusBadge({ listing, detailed = false }: BoostStatusBadgeProps) {
-  if (!listing.isBoosted) return null
+  if (!isBoostLive(listing)) return null
 
   if (!detailed) {
     return <DestacadoBadge withStar className="shadow" />

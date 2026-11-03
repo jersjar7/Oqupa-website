@@ -10,6 +10,7 @@ import { pinLabelFor, type PinKind } from '@/lib/map/pinLabel'
 import { buildImageUrl } from '@/lib/imageUrl'
 import type { ListingWithProperty } from '@/types/explore'
 import { currentPointerKind, pointerWords, type PointerKind } from '@/lib/pointerWords'
+import { isBoostLive } from '@/lib/boostState'
 
 export const PIN_COLORS = {
   venta: '#005B8D',
@@ -126,7 +127,7 @@ export function createPinElement(item: ListingWithProperty, state: { selected: b
   button.setAttribute('aria-label', `${label.typeLine}, ${label.priceLine}`)
   button.append(
     circle(PIN_CIRCLE_PX, color, label.kind),
-    words(item.listing.isBoosted ? `✦ ${label.typeLine}` : label.typeLine, label.priceLine, {
+    words(isBoostLive(item.listing) ? `✦ ${label.typeLine}` : label.typeLine, label.priceLine, {
       wordColor: state.selected ? '#E5E7EB' : PIN_COLORS.word,
       priceColor: state.selected ? '#FFFFFF' : PIN_COLORS.selected,
       priceSize: PRICE_PX,
@@ -196,7 +197,7 @@ export function createDotElement(item: ListingWithProperty, onTap: () => void): 
   const k = size / BASE_DOT_PX // edges and drawing grow with the dot
   const dot = el('button', {
     width: `${size}px`, height: `${size}px`, borderRadius: '50%', padding: '0',
-    border: item.listing.isBoosted ? `${2.5 * k}px solid ${PIN_COLORS.gold}` : `${1.5 * k}px solid #FFFFFF`, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
+    border: isBoostLive(item.listing) ? `${2.5 * k}px solid ${PIN_COLORS.gold}` : `${1.5 * k}px solid #FFFFFF`, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'flex',
     alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
   })
   dot.type = 'button'
@@ -258,7 +259,7 @@ export function createRaisedPinElement(
   onOpen: () => void,
   state: { selected: boolean } = { selected: false },
 ): HTMLDivElement {
-  const pin = item.listing.isBoosted
+  const pin = isBoostLive(item.listing)
     ? createBoostedPinElement(item, state)
     : createPinElement(item, state)
   pin.querySelector('button')!.addEventListener('click', (e) => {
@@ -268,7 +269,7 @@ export function createRaisedPinElement(
   const root = el('div', { display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' })
   root.dataset.listingId = item.listing.id
   root.dataset.raised = '1'
-  const lineColor = item.listing.isBoosted ? PIN_COLORS.gold : PIN_COLORS.selected
+  const lineColor = isBoostLive(item.listing) ? PIN_COLORS.gold : PIN_COLORS.selected
   const leader = el('div', {
     width: '2px', height: '0px', marginTop: '-1px', backgroundColor: lineColor,
     boxShadow: '0 0 0 1px #FFFFFF', borderRadius: '1px', transition: 'height 200ms ease-out',

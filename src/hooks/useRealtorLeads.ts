@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import { useAuthStore } from '@/stores/authStore'
 import { OFFLINE_MESSAGE, isOfflineError } from '@/lib/friendlyErrors'
+import { invalidateListingQueries } from '@/lib/listingQueries'
 
 /** A failed accept / decline / invite / remove: the cause and the next step
  *  (audit 2026-11-02, section G); `fallback` for anything unrecognised. */
@@ -101,7 +102,7 @@ export function useAssignRealtor() {
     }) => firestoreService.assignRealtorToListing(data.listingId, data.realtorId, data.realtorPhone),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient)
       // It sends an invitation; the agent still has to accept it.
       toast.success(vars.realtorName ? `Invitación enviada a ${vars.realtorName}.` : 'Invitación enviada.')
     },
@@ -118,7 +119,7 @@ export function useUnassignRealtor() {
     mutationFn: (listingId: string) => firestoreService.unassignRealtor(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient)
       toast.success('Agente removido')
     },
     onError: (error) => {
@@ -135,7 +136,7 @@ export function useAcceptAssignment() {
     mutationFn: (listingId: string) => firestoreService.acceptAssignment(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient)
       // The card now moves pages — surface where it went so agents don't
       // wonder if they lost it.
       toast.success('¡Invitación aceptada!', {
@@ -164,7 +165,7 @@ export function useDeclineAssignment() {
     }) => firestoreService.declineAssignment(data.listingId, data.currentDeclinedIds, data.agentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      void invalidateListingQueries(queryClient)
       toast.success('Asignación rechazada')
     },
     onError: (error) => {

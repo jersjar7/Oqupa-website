@@ -194,8 +194,7 @@ function Where() {
   return <div data-testid="where" data-just-published={String(just)}>{loc.pathname}</div>
 }
 
-function renderStep() {
-  const client = new QueryClient()
+function renderStep(client = new QueryClient()) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={['/app/listings/new']}>
@@ -651,5 +650,55 @@ describe('WizardStep5 — saving an edit leaves agent help alone (review #4)', (
     expect(listing.maxRealtors).toBe(9)
     const lastListingWrite = net.commits.filter((c) => c.includes('listings/L1')).length
     expect(lastListingWrite).toBeGreaterThan(0)
+  })
+})
+
+// After publishing or saving an edit, the owner's cards, the explore map +
+// list (every tab) and the listing page refetch from the server (2026-11-02).
+describe('WizardStep5 — the screens that show listings refresh', () => {
+  const KEYS = [
+    ['owner cards', ['listings', 'user', 'owner-1', 'withProperties']],
+    ['explore, Todos', ['listings', 'explore', undefined]],
+    ['explore, Venta', ['listings', 'explore', 'venta']],
+    ['explore, Alquiler', ['listings', 'explore', 'alquiler']],
+  ] as const
+
+  function seededClient() {
+    const client = new QueryClient()
+    for (const [, key] of KEYS) client.setQueryData([...key], [])
+    return client
+  }
+
+  it('publishing a new listing', async () => {
+    const client = seededClient()
+    renderStep(client)
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    await waitFor(() => {
+      for (const [name, key] of KEYS) expect([name, client.getQueryState([...key])?.isInvalidated]).toEqual([name, true])
+    })
+  })
+
+  it('saving an edit', async () => {
+    net.docs.set('listings/L1', { ownerId: 'owner-1', wantsRealtorHelp: false, maxRealtors: 3, currentClaimsCount: 0 })
+    net.docs.set('properties/P1', { listedByUserId: 'owner-1' })
+    const s = useListingFormStore.getState()
+    s.startEdit('L1', 'P1')
+    s.updateData({
+      propertyType: 'terreno', operationType: 'venta', role: 'owner',
+      description: 'Terreno amplio con todos los servicios cerca de la avenida',
+      totalAreaInSquareMeters: 200, latitude: -5.19, longitude: -80.63, calle: 'Av. Grau 123',
+      distrito: 'Piura', provincia: 'Piura', departamento: 'Piura', amount: 60000, currency: 'USD',
+      existingPhotoUrls: ['property-photos/P1/1-0.webp'], originalExistingPhotoUrls: ['property-photos/P1/1-0.webp'],
+    })
+    s.markEditBaseline()
+    s.setStep(5)
+    const client = seededClient()
+    client.setQueryData(['listings', 'detail', 'L1'], null)
+    renderStep(client)
+    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }))
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/app'), { timeout: 3000 })
+    for (const [name, key] of KEYS) expect([name, client.getQueryState([...key])?.isInvalidated]).toEqual([name, true])
+    expect(client.getQueryState(['listings', 'detail', 'L1'])?.isInvalidated).toBe(true)
   })
 })
