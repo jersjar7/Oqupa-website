@@ -14,6 +14,7 @@ let deactivateListingMock: Mock
 let activateListingMock: Mock
 let deleteListingMock: Mock
 let deletePropertyMock: Mock
+let updateListingMock: Mock
 
 vi.mock('@/services/firestoreService', () => ({
   get firestoreService() {
@@ -24,6 +25,7 @@ vi.mock('@/services/firestoreService', () => ({
       activateListing: (id: string) => activateListingMock(id),
       deleteListing: (id: string) => deleteListingMock(id),
       deleteProperty: (id: string) => deletePropertyMock(id),
+      updateListing: (id: string, data: unknown) => updateListingMock(id, data),
     }
   },
 }))
@@ -40,7 +42,8 @@ vi.mock('sonner', () => ({
   },
 }))
 
-import { useListingDetails, useUserListingsWithProperties, useToggleListingStatus, useDeleteListing } from '../useListings'
+import { useListingDetails, useUserListingsWithProperties, useToggleListingStatus, useDeleteListing, useSetRealtorHelp } from '../useListings'
+import { AGENTS_WHEN_TURNED_ON } from '@/lib/agentHelp'
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
@@ -61,6 +64,7 @@ describe('useListings hooks', () => {
     activateListingMock = vi.fn()
     deleteListingMock = vi.fn()
     deletePropertyMock = vi.fn()
+    updateListingMock = vi.fn().mockResolvedValue(undefined)
     toastSuccessMock.mockClear()
     toastErrorMock.mockClear()
   })
@@ -218,6 +222,27 @@ describe('useListings hooks', () => {
       })
 
       expect(toastErrorMock).toHaveBeenCalled()
+    })
+  })
+
+  // Jerson 2026-11-02: turning help on writes the same number of agents the
+  // offer quotes ("Hasta 3 agentes…"), as the app does.
+  describe('useSetRealtorHelp', () => {
+    it('turning on writes the quoted number of agents', async () => {
+      const { result } = renderHook(() => useSetRealtorHelp(), { wrapper })
+      await act(async () => {
+        await result.current.mutateAsync({ listingId: 'l1', on: true })
+      })
+      expect(AGENTS_WHEN_TURNED_ON).toBe(3)
+      expect(updateListingMock).toHaveBeenCalledWith('l1', { wantsRealtorHelp: true, maxRealtors: AGENTS_WHEN_TURNED_ON })
+    })
+
+    it('turning off leaves the limit alone', async () => {
+      const { result } = renderHook(() => useSetRealtorHelp(), { wrapper })
+      await act(async () => {
+        await result.current.mutateAsync({ listingId: 'l1', on: false })
+      })
+      expect(updateListingMock).toHaveBeenCalledWith('l1', { wantsRealtorHelp: false })
     })
   })
 
