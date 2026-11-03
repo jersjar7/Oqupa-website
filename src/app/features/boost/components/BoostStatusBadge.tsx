@@ -1,6 +1,7 @@
 import type { Listing } from '@/types/listing'
 import { BOOST_TIER_LABELS } from '@/types/boost'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import { boostDaysLeft } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface BoostStatusBadgeProps {
   listing: Listing
@@ -22,9 +23,7 @@ export default function BoostStatusBadge({ listing, detailed = false }: BoostSta
 
   // Detailed view for owners
   const tierLabel = listing.boostTier ? BOOST_TIER_LABELS[listing.boostTier] : ''
-  const remainingDays = listing.boostedUntil
-    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : 0
+  const remainingDays = boostDaysLeft(listing.boostedUntil, listing.boostTier) ?? 0
 
   return (
     <div className="flex items-center gap-2">

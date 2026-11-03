@@ -24,6 +24,7 @@ import {
 import { getPriceSuffix } from '@/lib/formatters'
 import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
 import { AGENTS_WHEN_TURNED_ON, agentHelpOffer, agentHelpOnLine } from '@/lib/agentHelp'
+import { boostDaysLeft as boostDaysLeftFor } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface ListingCardProps {
   listing: Listing
@@ -100,9 +101,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // paid days keep running and nothing is returned. A boosted listing asks
   // first and says so; an unboosted one has nothing to lose.
   const asksBeforeDeactivating = listing.status === 'active' && listing.isBoosted
-  const boostDaysLeft = listing.boostedUntil
-    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null
+  const boostDaysLeft = boostDaysLeftFor(listing.boostedUntil, listing.boostTier)
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
