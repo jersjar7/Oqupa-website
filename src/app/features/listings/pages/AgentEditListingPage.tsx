@@ -224,7 +224,7 @@ export default function AgentEditListingPage() {
               disabled={!hasChanges}
               className="flex-1"
             >
-              Guardar Cambios
+              Guardar cambios
             </Button>
             <Button
               variant="text"

@@ -156,7 +156,7 @@ export default function EditListingPage() {
   return (
     <div ref={top} className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <h1 className="font-serif text-[28px] font-normal text-text-primary">
-        Editar Publicación
+        Editar publicación
       </h1>
       <p className="mt-1 text-base text-text-secondary">
         Modifica los datos de tu propiedad

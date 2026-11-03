@@ -236,7 +236,7 @@ export default function AdminApplicationsPage() {
                         {/* Professional info */}
                         <div className="mt-4 space-y-2">
                           <h3 className="text-sm font-medium uppercase text-text-secondary">
-                            Información Profesional
+                            Información profesional
                           </h3>
                           <div className="flex flex-col gap-1.5 text-sm text-text-primary">
                             {app.businessName && (
@@ -313,7 +313,7 @@ export default function AdminApplicationsPage() {
             setActionError(null)
           }
         }}
-        title={confirmAction?.type === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
+        title={confirmAction?.type === 'approve' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
       >
         <p className="text-text-secondary">
           {confirmAction?.type === 'approve'

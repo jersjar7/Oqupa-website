@@ -67,7 +67,7 @@ export default function AppLayout() {
                     ...(location.pathname === '/app/profile' || location.pathname !== '/app'
                       ? [
                           {
-                            label: 'Mis Publicaciones',
+                            label: 'Mis publicaciones',
                             icon: <Home className="h-4 w-4" />,
                             to: '/app',
                           },
@@ -80,7 +80,7 @@ export default function AppLayout() {
                     },
                     // Payment history menu item
                     {
-                      label: 'Mis Pagos',
+                      label: 'Mis pagos',
                       icon: <CreditCard className="h-4 w-4" />,
                       to: '/app/payments',
                     },
@@ -88,7 +88,7 @@ export default function AppLayout() {
                     ...(isAdminEmail(user?.email)
                       ? [
                           {
-                            label: 'Solicitudes de Agentes',
+                            label: 'Solicitudes de agentes',
                             icon: <ShieldCheck className="h-4 w-4" />,
                             to: '/app/admin/applications',
                           },
@@ -108,7 +108,7 @@ export default function AppLayout() {
                     ...(!user?.isVerifiedRealtor && user?.realtorApplicationStatus !== 'pending'
                       ? [
                           {
-                            label: 'Regístrate como Agente',
+                            label: 'Regístrate como agente',
                             icon: <Briefcase className="h-4 w-4" />,
                             to: '/app/realtor-registration',
                           },
@@ -117,7 +117,7 @@ export default function AppLayout() {
                     ...(user?.realtorApplicationStatus === 'pending'
                       ? [
                           {
-                            label: 'Solicitud en Revisión',
+                            label: 'Solicitud en revisión',
                             icon: <Clock className="h-4 w-4" />,
                             to: '/app/realtor-registration',
                             className: 'text-text-tertiary',
@@ -125,7 +125,7 @@ export default function AppLayout() {
                         ]
                       : []),
                     {
-                      label: 'Cerrar Sesión',
+                      label: 'Cerrar sesión',
                       icon: <LogOut className="h-4 w-4" />,
                       onClick: handleLogout,
                       className: 'text-error',
@@ -137,7 +137,7 @@ export default function AppLayout() {
                   to="/app/login"
                   className="inline-flex h-12 items-center rounded-full border-[1.5px] border-secondary px-6 text-base font-bold uppercase text-secondary transition-colors hover:border-secondary-hover hover:text-secondary-hover"
                 >
-                  Iniciar Sesión
+                  Iniciar sesión
                 </Link>
               )}
             </nav>
