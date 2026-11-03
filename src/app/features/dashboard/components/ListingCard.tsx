@@ -21,6 +21,7 @@ import { getPriceSuffix } from '@/lib/formatters'
 import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
 import { AGENTS_WHEN_TURNED_ON, agentHelpOffer, agentHelpOnLine } from '@/lib/agentHelp'
 import { isBoostLive } from '@/lib/boostState'
+import { boostDaysLeft as boostDaysLeftFor } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface ListingCardProps {
   listing: Listing
@@ -70,9 +71,8 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // still warns.
   const asksBeforeDeactivating =
     listing.status === 'active' && listing.isBoosted && (!listing.boostedUntil || boostLive)
-  const boostDaysLeft = listing.boostedUntil
-    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null
+  // Round-up days, 30 on the day of purchase (fix/boost-days).
+  const boostDaysLeft = boostDaysLeftFor(listing.boostedUntil, listing.boostTier)
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">

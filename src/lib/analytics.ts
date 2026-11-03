@@ -1,7 +1,12 @@
 import { analytics } from './firebase'
-import { logEvent, setUserProperties } from 'firebase/analytics'
-import { trackMeta, trackMetaCustom } from './metaPixel'
-import { trackTikTok } from './tiktokPixel'
+import { logEvent, setAnalyticsCollectionEnabled, setUserProperties } from 'firebase/analytics'
+import { trackMeta as sendMeta, trackMetaCustom as sendMetaCustom } from './metaPixel'
+import { trackTikTok as sendTikTok } from './tiktokPixel'
+import {
+  isAnalyticsSuppressed,
+  onAnalyticsSuppressionChange,
+  whenAnalyticsAllowed,
+} from './analyticsSuppression'
 import { PropertyType, type Currency } from '@/types/enums'
 
 // ── Shared contract with the Flutter app ────────────────────────────────────
@@ -93,11 +98,34 @@ function printInDev(line: string) {
   if (import.meta.env.DEV) console.debug(`Analytics: ${line}`)
 }
 
+// ── Team accounts never count (ADR-050) ─────────────────────────────────────
+// Every send below goes through whenAnalyticsAllowed: dropped while a team
+// account is signed in, held until sign-in is known on a fresh page load.
+// Turning GA collection off as well stops what the SDK sends on its own
+// (automatic page views on navigation, engagement pings), which never passes
+// through this file.
+function applyCollection(suppressed: boolean) {
+  try {
+    setAnalyticsCollectionEnabled(analytics, !suppressed)
+  } catch {
+    /* analytics unavailable in this browser; nothing to switch */
+  }
+}
+if (isAnalyticsSuppressed()) applyCollection(true)
+onAnalyticsSuppressionChange(applyCollection)
+
+const trackMeta: typeof sendMeta = (...args) => whenAnalyticsAllowed(() => sendMeta(...args))
+const trackMetaCustom: typeof sendMetaCustom = (...args) =>
+  whenAnalyticsAllowed(() => sendMetaCustom(...args))
+const trackTikTok: typeof sendTikTok = (...args) => whenAnalyticsAllowed(() => sendTikTok(...args))
+
 /** Every Firebase event goes through here, so every one gets its dev line. */
 function sendFirebaseEvent(name: string, params?: Record<string, string | number>) {
-  printInDev(`${name} ${JSON.stringify(params ?? {})}`)
-  if (params) logEvent(analytics, name, params)
-  else logEvent(analytics, name)
+  whenAnalyticsAllowed(() => {
+    printInDev(`${name} ${JSON.stringify(params ?? {})}`)
+    if (params) logEvent(analytics, name, params)
+    else logEvent(analytics, name)
+  })
 }
 
 /**
@@ -452,9 +480,11 @@ export const AnalyticsLogger = {
     if (Object.keys(values).length === 0) return
     for (const key of Object.keys(values)) {
       values[key] = values[key]!.slice(0, MAX_USER_PROPERTY_VALUE_LENGTH)
-      printInDev(`${key} ${values[key]}`)
     }
-    setUserProperties(analytics, values)
+    whenAnalyticsAllowed(() => {
+      for (const key of Object.keys(values)) printInDev(`${key} ${values[key]}`)
+      setUserProperties(analytics, values)
+    })
   },
 
   /**
@@ -465,7 +495,9 @@ export const AnalyticsLogger = {
    * next. Called on sign-out, and when a person has no labels.
    */
   clearUserProperties: () => {
-    printInDev('user_segment, home_district, is_realtor (cleared)')
-    setUserProperties(analytics, { user_segment: null, home_district: null, is_realtor: null })
+    whenAnalyticsAllowed(() => {
+      printInDev('user_segment, home_district, is_realtor (cleared)')
+      setUserProperties(analytics, { user_segment: null, home_district: null, is_realtor: null })
+    })
   },
 }

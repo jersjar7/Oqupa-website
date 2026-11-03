@@ -44,6 +44,7 @@ import ReportListing from '@/app/features/listings/components/ReportListing'
 import { contactFailureMessage, whatsappGreeting } from '@/app/features/listings/contactReveal'
 import { OFFLINE_MESSAGE } from '@/lib/friendlyErrors'
 import { isBoostLive } from '@/lib/boostState'
+import { boostDaysLeft } from '@/app/features/boost/lib/boostDaysLeft'
 
 /** "US$ 1,200" / "S/. 150,000" — in the listing's own currency (the page
  *  showed every price in soles). */
@@ -759,7 +760,7 @@ export default function PropertyPage() {
                     )}
                     {listing.boostedUntil && (
                       <span>
-                        ({Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días restantes)
+                        ({boostDaysLeft(listing.boostedUntil, listing.boostTier)} días restantes)
                       </span>
                     )}
                   </div>
