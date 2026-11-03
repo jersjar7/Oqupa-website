@@ -11,6 +11,11 @@ import { initTikTokPixel, trackTikTok, __testing } from '../tiktokPixel'
 async function importInProductionMode() {
   vi.resetModules()
   vi.stubEnv('MODE', 'production')
+  // Precondition: sign-in is known and no team account is signed in
+  // (ADR-050) — until then the pixel waits. pixels.teamAccounts.test.ts
+  // covers the waiting and the team cases.
+  const { applyAnalyticsAccount } = await import('../analyticsSuppression')
+  applyAnalyticsAccount(null)
   return import('../tiktokPixel')
 }
 
