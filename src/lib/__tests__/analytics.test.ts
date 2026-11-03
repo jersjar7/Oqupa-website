@@ -24,6 +24,7 @@ vi.mock('@/lib/firebase', () => ({
 vi.mock('firebase/analytics', () => ({
   logEvent: (...args: unknown[]) => logEventMock(...args),
   setUserProperties: (...args: unknown[]) => setUserPropertiesMock(...args),
+  setAnalyticsCollectionEnabled: vi.fn(),
 }))
 
 vi.mock('@/lib/metaPixel', () => ({
@@ -36,6 +37,12 @@ vi.mock('@/lib/tiktokPixel', () => ({
 }))
 
 import { AnalyticsLogger, normalizeDistrict, priceBandFor } from '../analytics'
+import { applyAnalyticsAccount } from '../analyticsSuppression'
+
+// Precondition for every test here: sign-in is known and nobody from the team
+// is signed in (ADR-050). Until then events are held, not sent — that case is
+// covered in analytics.teamAccounts.test.ts.
+applyAnalyticsAccount(null)
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

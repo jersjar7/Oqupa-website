@@ -3,7 +3,8 @@ import { getFirestore } from 'firebase/firestore'
 import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
-import { getAnalytics } from 'firebase/analytics'
+import { getAnalytics, initializeAnalytics } from 'firebase/analytics'
+import { isAnalyticsSuppressed } from './analyticsSuppression'
 import { getPerformance } from 'firebase/performance'
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
@@ -71,5 +72,11 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true
   connectFunctionsEmulator(functions, '127.0.0.1', 5001)
   console.log('[firebase] Routing Cloud Function calls to local emulator (127.0.0.1:5001)')
 }
-export const analytics = getAnalytics(app)
+// Team accounts never count in analytics (ADR-050). On a browser where a team
+// account was the last one signed in, start GA without its automatic first
+// page_view; lib/analytics.ts then turns collection off. Everyone else gets
+// the default.
+export const analytics = isAnalyticsSuppressed()
+  ? initializeAnalytics(app, { config: { send_page_view: false } })
+  : getAnalytics(app)
 export const performance = getPerformance(app)

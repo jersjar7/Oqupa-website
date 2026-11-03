@@ -769,3 +769,31 @@ describe('authStore.ensureProfile', () => {
     accountCreation.end()
   })
 })
+
+// Team accounts never count in analytics (ADR-050, Jerson 2026-11-02).
+describe('authStore — team accounts switch analytics off', () => {
+  beforeEach(() => {
+    useAuthStore.getState().reset()
+    authStateCallback = null
+    mockAuth.authStateReady.mockImplementation(() => Promise.resolve())
+    ;(getDoc as Mock).mockReset()
+    ;(getDoc as Mock).mockResolvedValue(makeFirestoreDoc(true, { firstName: 'X' }))
+  })
+
+  it('a team account signing in turns analytics off; signing out turns it back on', async () => {
+    const { isAnalyticsSuppressed } = await import('@/lib/analyticsSuppression')
+    useAuthStore.getState().initialize()
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    await fireAuthStateChanged({ uid: 'j', email: 'Admin@Oqupa.com' })
+    expect(isAnalyticsSuppressed()).toBe(true)
+
+    await fireAuthStateChanged(null)
+    expect(isAnalyticsSuppressed()).toBe(false)
+
+    await fireAuthStateChanged({ uid: 'v', email: 'vecina@gmail.com' })
+    expect(isAnalyticsSuppressed()).toBe(false)
+  })
+})

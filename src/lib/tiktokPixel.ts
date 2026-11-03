@@ -26,12 +26,21 @@
  * change ships in the same commit as this file, never after it.
  */
 
+import {
+  isAnalyticsDecided,
+  isAnalyticsSuppressed,
+  onAnalyticsSuppressionChange,
+  whenAnalyticsAllowed,
+} from './analyticsSuppression'
+
 const PIXEL_ID = 'DA072E3C77U1IFUQUTEG'
 
 type TtqFn = {
   (...args: unknown[]): void
   page?: (...args: unknown[]) => void
   track?: (event: string, params?: Record<string, unknown>) => void
+  revokeConsent?: () => void
+  grantConsent?: () => void
   load?: (id: string, options?: Record<string, unknown>) => void
   methods?: string[]
   setAndDefer?: (target: unknown, method: string) => void
@@ -52,10 +61,37 @@ declare global {
 const isProduction = import.meta.env.MODE === 'production'
 
 let started = false
+let requested = false
 
-/** Load the pixel and report the first page view. */
+/**
+ * Load the pixel and report the first page view.
+ *
+ * TEAM ACCOUNTS (ADR-050): same as the Meta pixel — waits until sign-in is
+ * known, never loads for a team account, and revokes / grants consent if one
+ * signs in or out after it loaded. See analyticsSuppression.ts.
+ */
 export function initTikTokPixel(): void {
   if (!isProduction || started || typeof window === 'undefined') return
+  requested = true
+  if (!isAnalyticsDecided() || isAnalyticsSuppressed()) return
+  start()
+}
+
+onAnalyticsSuppressionChange((suppressed) => {
+  if (!isProduction || typeof window === 'undefined') return
+  if (!started) {
+    if (!suppressed && requested) start()
+    return
+  }
+  try {
+    if (suppressed) window.ttq?.revokeConsent?.()
+    else window.ttq?.grantConsent?.()
+  } catch {
+    /* blocked; nothing is being sent anyway */
+  }
+})
+
+function start(): void {
   started = true
 
   /* eslint-disable */
@@ -118,11 +154,13 @@ export function initTikTokPixel(): void {
  */
 export function trackTikTok(event: string, params?: Record<string, unknown>): void {
   if (!isProduction || typeof window === 'undefined') return
-  try {
-    window.ttq?.track?.(event, params)
-  } catch {
-    /* blocked or not loaded; nothing to do about it here */
-  }
+  whenAnalyticsAllowed(() => {
+    try {
+      window.ttq?.track?.(event, params)
+    } catch {
+      /* blocked or not loaded; nothing to do about it here */
+    }
+  })
 }
 
 export const __testing = { PIXEL_ID, isProduction }
