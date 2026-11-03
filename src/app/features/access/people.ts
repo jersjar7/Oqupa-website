@@ -60,6 +60,7 @@ export const PEOPLE: Person[] = [
   // Jerson's personal Google account. On the team, so it never counts in
   // analytics (ADR-050) — but it opens no internal page; admin@ does that.
   { name: 'Jerson (personal)', email: 'jersondevs@gmail.com',     access: [] },
+  { name: 'App Store review', email: 'jersondevs+appstore@gmail.com', access: [] },
   { name: 'Branko',  email: 'bbarba@oqupa.com',                  access: ['admin', 'metrics'] },
 
   // Software engineering — the dev board renders one column per person, in
