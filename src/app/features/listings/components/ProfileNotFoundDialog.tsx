@@ -1,4 +1,5 @@
 import { SUPPORT_WHATSAPP_URL } from '@/app/features/help/HelpOptions'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 /**
  * The contact refusal for a signed-in account with no saved profile (feature
@@ -28,26 +29,26 @@ export default function ProfileNotFoundDialog({ onClose }: { onClose: () => void
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-xl sm:p-6">
-        <h3 className="font-serif text-lg font-normal text-text-primary">{PROFILE_NOT_FOUND_COPY.title}</h3>
+        <h3 className="font-serif text-[22px] font-normal leading-snug text-text-primary">{PROFILE_NOT_FOUND_COPY.title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-text-secondary">{PROFILE_NOT_FOUND_COPY.body}</p>
-        <div className="mt-6 flex flex-col gap-3">
+        <DialogActions>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center justify-center rounded-xl px-6 py-2 text-base text-secondary transition-colors hover:bg-black/5"
+          >
+            {PROFILE_NOT_FOUND_COPY.close}
+          </button>
           <a
             href={SUPPORT_WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
-            className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-[1px] text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
+            className="flex items-center justify-center rounded-xl bg-primary px-6 py-3 font-bold uppercase tracking-[1px] text-white transition-all duration-200 hover:bg-primary-hover active:scale-[0.97]"
           >
             {PROFILE_NOT_FOUND_COPY.write}
           </a>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex min-h-11 w-full items-center justify-center rounded-xl px-6 py-2 text-sm text-text-secondary transition-colors hover:bg-black/5"
-          >
-            {PROFILE_NOT_FOUND_COPY.close}
-          </button>
-        </div>
+        </DialogActions>
       </div>
     </div>
   )

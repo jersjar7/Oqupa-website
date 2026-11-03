@@ -16,7 +16,7 @@ import { PIURA_CENTER } from '@/lib/constants'
 import { MapMarkerIndex, type MapMarker } from '@/lib/map/mapMarkers'
 import { showsDots } from '@/lib/map/zoomPolicy'
 import type { Bounds } from '@/lib/map/mapPoint'
-import { cardSide, panToReveal, MAP_CARD_Z } from '@/lib/map/mapView'
+import { panToReveal, previewCardPosition, PREVIEW_CARD_HEIGHT, MAP_CARD_Z } from '@/lib/map/mapView'
 import { createPinElement, createBoostedPinElement, createGroupElement, createDotElement, createRaisedPinElement, createRaisedAnchorElement, RAISED_LEADER_PX, RAISED_ANCHOR_PX } from './mapbox/pinElements'
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
@@ -50,6 +50,9 @@ export interface ExploreMapProps {
   coveredBottom?: number
 }
 
+/** The computer's floating card is w-[370px]. */
+const PREVIEW_CARD_WIDTH = 370
+
 interface LiveMarker { key: string; marker: mapboxgl.Marker; el: HTMLElement }
 
 export default function ExploreMap(props: ExploreMapProps) {
@@ -73,7 +76,8 @@ function MapboxExploreMap({
   const liveRef = useRef<Map<string, LiveMarker>>(new Map())
   const [mapReady, setMapReady] = useState(false)
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null)
-  // The far-out dot whose pin is raised on a leader line (ADR-033).
+  // The far-out dot whose pin is raised on a leader line (ADR-033). The
+  // selected listing is raised whatever this says (ADR-048).
   const [raisedId, setRaisedId] = useState<string | null>(null)
 
   // Latest callbacks/values for listeners registered once.
@@ -178,8 +182,9 @@ function MapboxExploreMap({
       frame = 0
       const b = map.getBounds()
       if (!b) return
-      // Close in every listing is already its own pin.
-      if (latest.current.raisedId && !showsDots(map.getZoom())) setRaisedId(null)
+      // Close in every listing is already its own pin; the open one stays
+      // raised whatever its zoom (ADR-048), which markersFor handles.
+      if (latest.current.raisedId && !showsDots(map.getZoom()) && latest.current.raisedId !== latest.current.selectedId) setRaisedId(null)
       const wanted = indexRef.current.markersFor(
         { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
         map.getZoom(),
@@ -273,8 +278,9 @@ function MapboxExploreMap({
 
   // --- the selected listing: privacy circle + (computer) pinned preview -------
   const selectedItem = useMemo(() => items.find((i) => i.listing.id === selectedId) ?? null, [items, selectedId])
-  // An open listing raised from its dot sits higher, on its leader line.
-  const lift = raisedId && raisedId === selectedId ? RAISED_LEADER_PX + RAISED_ANCHOR_PX / 2 : 0
+  // The open listing sits higher, on its leader line — every selected listing
+  // does since ADR-048, at any zoom.
+  const lift = selectedItem ? RAISED_LEADER_PX + RAISED_ANCHOR_PX / 2 : 0
   useEffect(() => {
     const map = mapRef.current
     if (!map || !mapReady) return
@@ -290,18 +296,29 @@ function MapboxExploreMap({
     const el = document.createElement('div')
     const lat = selectedItem.listing.displayLatitude ?? selectedItem.property.location.latitude
     const lng = selectedItem.listing.displayLongitude ?? selectedItem.property.location.longitude
-    // Above the pin, or below it when the pin is too close to the top of the
-    // map for the card to fit (it was cut off there — UX review 2026-10-25).
-    const box = map.getContainer().getBoundingClientRect()
-    const pinTop = box.top + map.project([lng, lat]).y - 45 - lift
-    const side = cardSide({ pinTop, mapTop: box.top })
-    if (side === 'above') el.style.paddingBottom = `${56 + lift}px`
-    else el.style.paddingTop = '12px'
-    const marker = new mapboxgl.Marker({ element: el, anchor: side === 'above' ? 'bottom' : 'top' }).setLngLat([lng, lat]).addTo(map)
+    // Beside the pin (above it, or below near the top), and always wholly
+    // inside the map: near an edge it slides in rather than being cut off
+    // (production, 2026-11-02). The map never moves for it (ADR-033/036).
+    const marker = new mapboxgl.Marker({ element: el, anchor: 'top-left' }).setLngLat([lng, lat]).addTo(map)
+    const place = () => {
+      const box = map.getContainer().getBoundingClientRect()
+      const point = map.project([lng, lat])
+      const { left, top } = previewCardPosition({
+        point,
+        map: { width: box.width, height: box.height },
+        card: { width: PREVIEW_CARD_WIDTH, height: el.offsetHeight || PREVIEW_CARD_HEIGHT },
+        lift,
+      })
+      marker.setOffset([left - point.x, top - point.y])
+    }
+    place()
+    requestAnimationFrame(place) // once the card has its real height
+    map.on('move', place)
     // Above every pin (one lit up from the list is 3), below the filters.
     marker.getElement().style.zIndex = String(MAP_CARD_Z)
     setPreviewEl(el)
     return () => {
+      map.off('move', place)
       marker.remove()
       setPreviewEl(null)
     }

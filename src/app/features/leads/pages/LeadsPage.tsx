@@ -31,6 +31,7 @@ import type { Property } from '@/types/property'
 import { PROPERTY_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
+import DialogActions from '@/app/components/ui/DialogActions'
 import {
   isValidLeadsTab, filterEnEspera, filterInvitaciones, type LeadsTab,
 } from './leadsHelpers'
@@ -309,14 +310,14 @@ function DisponiblesPane({
               que el dueño decida. Si te elige, verás la invitación en{' '}
               <span className="font-medium">Invitaciones</span>.
             </p>
-            <div className="mt-6 flex gap-3">
-              <Button className="flex-1" onClick={handleClaimConfirm} isLoading={claimLead.isPending}>
-                Confirmar
-              </Button>
-              <Button variant="text" className="flex-1" onClick={() => setConfirmLead(null)} disabled={claimLead.isPending}>
+            <DialogActions>
+              <Button variant="text" onClick={() => setConfirmLead(null)} disabled={claimLead.isPending}>
                 Cancelar
               </Button>
-            </div>
+              <Button onClick={handleClaimConfirm} isLoading={claimLead.isPending}>
+                Confirmar
+              </Button>
+            </DialogActions>
           </div>
         )}
       </Modal>

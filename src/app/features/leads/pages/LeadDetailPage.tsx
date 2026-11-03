@@ -12,6 +12,7 @@ import { Button, Modal, Spinner } from '@/app/components/ui'
 import GalleryModal from '@/app/components/GalleryModal'
 import ClaimConsequences from '../components/ClaimConsequences'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 function formatPrice(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency
@@ -426,23 +427,18 @@ export default function LeadDetailPage() {
 
           <ClaimConsequences limit={claimStatus.limit} remaining={claimStatus.remaining} />
 
-          <div className="mt-6 flex gap-3">
-            <Button
-              className="flex-1"
-              onClick={handleClaimConfirm}
-              isLoading={claimLead.isPending}
-            >
-              Confirmar
-            </Button>
+          <DialogActions>
             <Button
               variant="text"
-              className="flex-1"
               onClick={() => setConfirmOpen(false)}
               disabled={claimLead.isPending}
             >
               Cancelar
             </Button>
-          </div>
+            <Button onClick={handleClaimConfirm} isLoading={claimLead.isPending}>
+              Confirmar
+            </Button>
+          </DialogActions>
         </div>
       </Modal>
 

@@ -8,6 +8,7 @@ import type { RealtorApplication } from '@/types/realtorApplication'
 import type { RealtorApplicationStatus } from '@/types/enums'
 import { Card, Badge, Button, Spinner, Modal } from '@/app/components/ui'
 import StaggerList, { staggerItemVariants } from '@/app/components/ui/StaggerList'
+import DialogActions from '@/app/components/ui/DialogActions'
 
 type FilterStatus = RealtorApplicationStatus | 'all'
 
@@ -322,7 +323,7 @@ export default function AdminApplicationsPage() {
         {actionError && (
           <p className="mt-3 text-sm text-error">{actionError}</p>
         )}
-        <div className="mt-6 flex justify-end gap-3">
+        <DialogActions>
           <Button
             variant="text"
             onClick={() => {
@@ -340,7 +341,7 @@ export default function AdminApplicationsPage() {
           >
             {confirmAction?.type === 'approve' ? 'Aprobar' : 'Rechazar'}
           </Button>
-        </div>
+        </DialogActions>
       </Modal>
     </div>
   )

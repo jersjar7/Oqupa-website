@@ -65,11 +65,17 @@ export async function asVisitor(page: Page, camera: { lat: number; lng: number; 
     ([key, cam, more]) => {
       // Only on the first load of this test: later navigations keep what the
       // test did (saves, the camera after moving).
-      if (sessionStorage.getItem('__e2e_seeded')) return
-      sessionStorage.setItem('__e2e_seeded', '1')
-      localStorage.clear()
-      localStorage.setItem(key as string, JSON.stringify(cam))
-      for (const [k, v] of Object.entries(more as Record<string, string>)) localStorage.setItem(k, v)
+      // Init scripts also run inside third-party frames whose storage is
+      // locked (seen on production); only the page itself is seeded.
+      try {
+        if (sessionStorage.getItem('__e2e_seeded')) return
+        sessionStorage.setItem('__e2e_seeded', '1')
+        localStorage.clear()
+        localStorage.setItem(key as string, JSON.stringify(cam))
+        for (const [k, v] of Object.entries(more as Record<string, string>)) localStorage.setItem(k, v)
+      } catch {
+        // A sandboxed frame: nothing to seed.
+      }
     },
     [CAMERA_KEY, camera, extra] as const,
   )
@@ -80,7 +86,9 @@ export async function asVisitor(page: Page, camera: { lat: number; lng: number; 
  *  report-only policy note) is not the site's fault and is left out. */
 export function collectPageErrors(page: Page): string[] {
   const errors: string[] = []
-  const ignore = /googletagmanager|google-analytics|facebook|tiktok|clarity|doubleclick|ERR_ABORTED|net::ERR_FAILED.*(api\.mapbox|events\.mapbox)|AbortError|recaptcha|appCheck|App Check|Failed to load resource|report-only Content Security Policy/i
+  // google.com/measurement/conversion: GA4 tries a Google Ads conversion ping; the
+  // site's CSP blocks it on purpose (no Google Ads — Jerson, 2026-10-31).
+  const ignore = /google\.com\/measurement\/conversion|googletagmanager|google-analytics|facebook|tiktok|clarity|doubleclick|ERR_ABORTED|net::ERR_FAILED.*(api\.mapbox|events\.mapbox)|AbortError|recaptcha|appCheck|App Check|Failed to load resource|report-only Content Security Policy/i
   // A local dev server uses a map key that Mapbox refuses for some tiles on
   // localhost; that is the key's domain list, not the site.
   const local = /localhost|127\.0\.0\.1/.test(process.env.E2E_BASE_URL ?? '')
@@ -189,4 +197,31 @@ export async function textLines(page: Page, selector: string): Promise<number[]>
         return tops.size
       }),
   )
+}
+
+/** A point on the map with nothing over it — no marker, card, control or
+ *  button: what is under it is the map's own canvas. A click there is a tap
+ *  on the bare map (it closes an open card). Searched on a grid inside the
+ *  map, away from its edges. */
+export async function emptyMapPoint(page: Page): Promise<{ x: number; y: number }> {
+  const box = (await page.getByTestId('explore-map').boundingBox())!
+  const found = await page.evaluate(({ x, y, width, height }) => {
+    const pad = 30
+    for (let fy = 0.2; fy <= 0.8; fy += 0.05) {
+      for (let fx = 0.1; fx <= 0.9; fx += 0.05) {
+        const px = x + pad + (width - 2 * pad) * fx
+        const py = y + pad + (height - 2 * pad) * fy
+        // Clear of a marker's edge too: the point and a ring around it.
+        const ring = [[0, 0], [12, 0], [-12, 0], [0, 12], [0, -12]]
+        const bare = ring.every(([dx, dy]) => {
+          const el = document.elementFromPoint(px + dx!, py + dy!)
+          return !!el && el.classList.contains('mapboxgl-canvas')
+        })
+        if (bare) return { x: px, y: py }
+      }
+    }
+    return null
+  }, box)
+  if (!found) throw new Error('no empty point on the map')
+  return found
 }

@@ -60,7 +60,8 @@ export default function Modal({
   const sheet = placement === 'sheet'
   const dialogClass = sheet
     ? 'mx-0 mb-0 mt-auto w-full max-w-none border-none bg-transparent p-0 shadow-none backdrop:bg-black/50 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md'
-    : 'm-auto w-full max-w-lg rounded-2xl border-none bg-transparent p-0 shadow-none backdrop:bg-black/50 backdrop:backdrop-blur-sm'
+    : // A 1 rem gutter each side on a phone: the dialog used to touch the screen edges.
+      'm-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border-none bg-transparent p-0 shadow-none backdrop:bg-black/50 backdrop:backdrop-blur-sm'
   const panelClass = [
     surface === 'cream' ? 'bg-cream' : 'bg-white',
     'shadow-large',
@@ -91,7 +92,8 @@ export default function Modal({
               {/* Header */}
               <div className="flex items-center justify-between">
                 {title && (
-                  <h2 className="text-[28px] font-medium text-text-primary">{title}</h2>
+                  // Roboto Serif Regular, as the app's dialogs — never Gotham, never bold on serif (ADR-038).
+                  <h2 className="font-serif text-[22px] font-normal leading-snug text-text-primary">{title}</h2>
                 )}
                 <button
                   onClick={onClose}

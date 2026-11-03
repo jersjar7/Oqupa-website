@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-02 (evening) — Leader line for every selected listing; confirmation windows; card stays on the map
+
+Jerson: "It looks super good… the leader line is what I was looking for" and, for the windows, "They all look great".
+- Every selected listing shows its pin raised on the leader line, at any zoom (ADR-048).
+- The floating listing card on tablet/computer stays fully inside the map near its edges (it was cut off at the left).
+- Confirmation windows: one row of choices only when both fit, otherwise stacked full width with the action on top;
+  48 px; red only for destructive actions.
+- After a refused SIGUIENTE, focus reaches the first error even on slow devices (released earlier today).
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-02 (afternoon) — Simpler wizard, one boost, Guardados, sign-in, audit fixes (Jerson: "Promote to production")
 
 ### New Features

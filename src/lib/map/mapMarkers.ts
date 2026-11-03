@@ -9,6 +9,7 @@
 // they sit on top); the selected listing always shows on its own. A tapped
 // dot raises its pin on a leader line (ADR-033): its dot becomes a small black
 // dot at the line's foot and the raised pin is drawn last, over every dot.
+// Since ADR-048 every selected listing is drawn that way, at any zoom.
 import { showsDots } from './zoomPolicy'
 import { mapPointOf, type Bounds } from './mapPoint'
 import type { ListingWithProperty } from '@/types/explore'
@@ -51,35 +52,35 @@ export class MapMarkerIndex {
   ): MapMarker[] {
     const inView = (lat: number, lng: number) =>
       lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
-    if (showsDots(zoom)) {
-      const out: MapMarker[] = []
+    // Every selected listing shows its pin raised on its leader line, at any
+    // zoom, however it was opened (ADR-048, Jerson 2026-11-02). A tapped dot
+    // is raised as it is opened (ADR-036); a dot raised but not open drops
+    // once pins show, as every listing is then a pin.
+    const dots = showsDots(zoom)
+    const liftedId = selectedId ?? (dots ? raisedId : null)
+    const out: MapMarker[] = []
+    let lifted: { item: ListingWithProperty; lat: number; lng: number } | null = null
+    if (dots) {
       // Boosted listings are dots too, the same size; the dot draws their gold edge.
-      // The selected listing, and one pointed at in the list, show as their
-      // pins even far out (as in the app), drawn after the dots.
-      // A raised listing stays raised when it is also the open one: a tapped
-      // dot is raised and opened at once (Jerson, 2026-10-30).
-      const shownAsPin = new Set([selectedId, emphasizedId].filter((id): id is string => !!id && id !== raisedId))
+      // One pointed at in the list shows as its pin even far out, drawn after the dots.
       const pins: MapMarker[] = []
       for (const item of [...this.regular, ...this.boosted]) {
         const p = mapPointOf(item)
         if (!inView(p.lat, p.lng)) continue
-        if (shownAsPin.has(item.listing.id)) pins.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
+        if (item.listing.id === liftedId) {
+          // Its dot becomes the small black dot at its line's foot.
+          out.push({ kind: 'anchor', item, lat: p.lat, lng: p.lng })
+          lifted = { item, lat: p.lat, lng: p.lng }
+        } else if (item.listing.id === emphasizedId) pins.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
         else out.push({ kind: 'dot', item, lat: p.lat, lng: p.lng })
       }
-      // A raised listing's dot becomes the small black dot at its line's foot.
-      const at = out.findIndex((m) => m.kind === 'dot' && m.item.listing.id === raisedId)
-      const raised = out[at]
-      if (raised && raised.kind === 'dot') {
-        out[at] = { kind: 'anchor', item: raised.item, lat: raised.lat, lng: raised.lng }
-        out.push({ kind: 'raised', item: raised.item, lat: raised.lat, lng: raised.lng })
-      }
+      if (lifted) out.push({ kind: 'raised', ...lifted })
       return [...out, ...pins]
     }
-    const out: MapMarker[] = []
     for (const spot of this.spots) {
       if (!inView(spot.lat, spot.lng)) continue
-      const selected = spot.items.find((i) => i.listing.id === selectedId)
-      if (selected) out.push({ kind: 'pin', item: selected, lat: spot.lat, lng: spot.lng })
+      const selected = spot.items.find((i) => i.listing.id === liftedId)
+      if (selected) lifted = { item: selected, lat: spot.lat, lng: spot.lng }
       const rest = spot.items.filter((i) => i !== selected)
       if (rest.length === 1) {
         out.push({ kind: 'pin', item: rest[0]!, lat: spot.lat, lng: spot.lng })
@@ -89,8 +90,13 @@ export class MapMarkerIndex {
     }
     for (const item of this.boosted) {
       const p = mapPointOf(item)
-      if (inView(p.lat, p.lng)) out.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
+      if (!inView(p.lat, p.lng)) continue
+      if (item.listing.id === liftedId) lifted = { item, lat: p.lat, lng: p.lng }
+      else out.push({ kind: 'pin', item, lat: p.lat, lng: p.lng })
     }
+    // Last, so it sits on top: the small black dot on the exact spot, then
+    // the pin on its line above it.
+    if (lifted) out.push({ kind: 'anchor', ...lifted }, { kind: 'raised', ...lifted })
     return out
   }
 }
