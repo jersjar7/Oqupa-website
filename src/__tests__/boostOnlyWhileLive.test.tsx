@@ -111,3 +111,13 @@ describe('control: a live boost still shows everywhere', () => {
     expect(screen.getByText(/destacado/i)).toBeDefined()
   })
 })
+
+describe('isBoostLive — raw Firestore timestamps (the agents\' lead cards)', () => {
+  it('reads a Timestamp-like boostedUntil', () => {
+    const at = (ms: number) => ({ toMillis: () => ms, toDate: () => new Date(ms) })
+    expect(isBoostLive({ isBoosted: true, boostedUntil: at(Date.now() + DAY) })).toBe(true)
+    expect(isBoostLive({ isBoosted: true, boostedUntil: at(Date.now() - DAY) })).toBe(false)
+    expect(isBoostLive({ isBoosted: false, boostedUntil: at(Date.now() + DAY) })).toBe(false)
+    expect(isBoostLive({ isBoosted: true, boostedUntil: { seconds: Math.floor((Date.now() + DAY) / 1000) } })).toBe(true)
+  })
+})
