@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { firestoreService } from '@/services/firestoreService'
 import type { Listing } from '@/types/listing'
 import { firestoreWriteErrorMessage } from '@/lib/friendlyErrors'
+import { AGENTS_WHEN_TURNED_ON } from '@/lib/agentHelp'
 
 export function useListingDetails(listingId: string | undefined) {
   return useQuery({
@@ -109,7 +110,11 @@ export function useSetRealtorHelp() {
 
   return useMutation({
     mutationFn: async ({ listingId, on }: { listingId: string; on: boolean }) => {
-      await firestoreService.updateListing(listingId, { wantsRealtorHelp: on })
+      // Turning on writes the number the offer quotes, as the app does.
+      await firestoreService.updateListing(
+        listingId,
+        on ? { wantsRealtorHelp: true, maxRealtors: AGENTS_WHEN_TURNED_ON } : { wantsRealtorHelp: false },
+      )
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })

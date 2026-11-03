@@ -23,6 +23,7 @@ import {
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
+import { AGENTS_WHEN_TURNED_ON, agentHelpOffer, agentHelpOnLine } from '@/lib/agentHelp'
 
 interface ListingCardProps {
   listing: Listing
@@ -217,9 +218,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {listing.status === 'active' && !listing.assignedRealtorId && (
           <div className="mt-2">
             {listing.wantsRealtorHelp ? (
-              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
-                Desactivar ayuda de agentes
-              </button>
+              <>
+                <p className="mb-1 text-sm text-text-primary">{agentHelpOnLine(listing.maxRealtors ?? AGENTS_WHEN_TURNED_ON)}</p>
+                <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
+                  Desactivar ayuda de agentes
+                </button>
+              </>
             ) : (
               <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOffer(true)}>
                 <Users className="h-4 w-4" aria-hidden="true" />
@@ -259,7 +263,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {showRealtorHelpOffer && (
           <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
             <p className="text-sm text-text-secondary">
-              {`Agentes verificados por Oqupa podrán ofrecerte ayuda para ${isRental ? 'alquilar' : 'vender'} tu propiedad. Oqupa no cobra comisiones por este servicio.`}
+              {agentHelpOffer(isRental)}
             </p>
             <DialogActions className="mt-3">
               <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>

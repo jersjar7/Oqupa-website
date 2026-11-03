@@ -34,6 +34,7 @@ import { coverMicroThumbOnEdit } from '../editMedia'
 import { editAwareResolver, issuesThatCount } from '../editLimits'
 import { storeWayBackFor } from '@/lib/returnPath'
 import { authService } from '@/services/authService'
+import { AGENTS_WHEN_TURNED_ON } from '@/lib/agentHelp'
 
 /** Shown when the draft was changed after an earlier attempt had already landed. */
 export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Puedes editarlo aquí.'
@@ -434,7 +435,7 @@ export default function WizardStep5() {
             // D10: agent help is offered after publishing, off until the
             // owner turns it on in Mis Propiedades.
             wantsRealtorHelp: false,
-            maxRealtors: 3,
+            maxRealtors: AGENTS_WHEN_TURNED_ON,
             currentClaimsCount: 0,
             contactClickCount: 0,
             operationType: data.operationType as Listing['operationType'],
