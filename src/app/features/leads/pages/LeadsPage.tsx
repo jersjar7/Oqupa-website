@@ -412,7 +412,7 @@ function InvitacionesPane({
         <p className="mx-auto mt-2 max-w-lg text-sm text-text-secondary">
           Cuando un dueño te elige de entre los agentes que reclamaron su
           propiedad, aparece aquí una invitación. Al aceptarla, la propiedad se
-          mueve a <Link to="/app/listings?tab=asignadas" className="font-medium text-secondary underline-offset-2 hover:underline">Mis Propiedades → Asignadas</Link>
+          mueve a <Link to="/app/listings?tab=asignadas" className="font-medium text-secondary underline-offset-2 hover:underline">Mis propiedades → Asignadas</Link>
           {' '}para que la gestiones.
         </p>
       </div>

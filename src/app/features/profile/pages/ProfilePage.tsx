@@ -285,7 +285,7 @@ export default function ProfilePage() {
               {success && <p className="text-sm text-success">{success}</p>}
 
               <Button type="submit" isLoading={isSubmitting}>
-                Guardar Cambios
+                Guardar cambios
               </Button>
             </form>
           </Card>
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                 to="/app/realtor-registration"
                 className="text-sm font-medium text-secondary hover:text-secondary-hover"
               >
-                Regístrate como Agente
+                Regístrate como agente
               </Link>
             </div>
           )}
@@ -481,7 +481,7 @@ export default function ProfilePage() {
         </p>
         <div className="mt-4">
           <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
-            Eliminar Cuenta
+            Eliminar cuenta
           </Button>
         </div>
       </Card>

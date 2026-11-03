@@ -27,7 +27,7 @@ const stepVariants = {
 
 export default function CreateListingPage() {
   useSetPageMeta({
-    title: 'Crear Publicación',
+    title: 'Crear publicación',
     subtitle: 'Completa los datos de tu propiedad',
   })
   const { step, direction, reset, leaveEdit, draftVersion } = useListingFormStore()

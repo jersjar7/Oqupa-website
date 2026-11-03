@@ -29,7 +29,7 @@ const ITEMS = {
   pagos:              { id: 'pagos',              label: 'Pagos',         to: '/app/payments',                 icon: CreditCard } as NavItem,
   miPerfil:           { id: 'miPerfil',           label: 'Mi perfil',     to: '/app/profile',                  icon: User } as NavItem,
   oportunidades:      { id: 'oportunidades',      label: 'Oportunidades', to: '/app/leads',                    icon: Compass } as NavItem,
-  miRegistroAgente:   { id: 'miRegistroAgente',   label: 'Mi Registro',   to: '/app/realtor-registration',     icon: FileBadge } as NavItem,
+  miRegistroAgente:   { id: 'miRegistroAgente',   label: 'Mi registro',   to: '/app/realtor-registration',     icon: FileBadge } as NavItem,
   aplicaciones:       { id: 'aplicaciones',       label: 'Aplicaciones',  to: '/app/admin/applications',       icon: ClipboardList } as NavItem,
   numeros:            { id: 'numeros',            label: 'Números',       to: '/app/numbers',                  icon: BarChart3 } as NavItem,
   equipo:             { id: 'equipo',             label: 'Ing. de Software', to: '/app/equipo',                icon: KanbanSquare } as NavItem,
