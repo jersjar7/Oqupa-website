@@ -22,4 +22,11 @@ export interface TeamTask {
   /** When it was marked finished. Null while still in progress. */
   doneAt: Date | null
   createdByEmail: string
+  /** Meeting 2026-11-05. Missing on older tasks, which read as 'normal'. */
+  priority?: TaskPriority
+  /** Longer explanation under the title: what it means, how to do it. */
+  description?: string
 }
+
+/** 'luego' = "Cuando haya tiempo": tech debt, bugs, nice-to-haves. */
+export type TaskPriority = 'alta' | 'normal' | 'luego'

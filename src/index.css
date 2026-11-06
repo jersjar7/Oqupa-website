@@ -33,6 +33,7 @@
   --color-ink-tertiary: #737373;   /* captions, metadata — 4.6:1 on cream */
   --color-surface-muted: #F4F1EC;  /* quiet fill: read-only fields, chips, hovers */
   --color-surface-strong: #E7E2DB; /* skeletons, tracks, stronger fills */
+  --color-board: #EDEDED;          /* soft grey behind the internal Equipo board only (Jerson 2026-11-06: readability) */
   --color-text-primary: var(--color-ink);
   --color-text-secondary: var(--color-ink-secondary);
   --color-text-tertiary: var(--color-ink-tertiary);

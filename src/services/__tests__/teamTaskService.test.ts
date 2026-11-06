@@ -295,4 +295,34 @@ describe('teamTaskService', () => {
       expect(deleteDocMock).toHaveBeenCalledOnce()
     })
   })
+
+  // ── meeting 2026-11-05: priority and description ─────────────────────────
+
+  describe('priority and description', () => {
+    it('setPriority writes only the priority', async () => {
+      await teamTaskService.setPriority('task-1', 'luego')
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ priority: 'luego' })
+    })
+
+    it('setDescription writes only the description', async () => {
+      await teamTaskService.setDescription('task-1', 'Pasos claros')
+      expect(updateDocMock.mock.calls[0]![1]).toEqual({ description: 'Pasos claros' })
+    })
+
+    it('create carries a priority when given one, and none otherwise', async () => {
+      await teamTaskService.create({ title: 'A', team: 'dev', assigneeEmail: null, createdByEmail: 'x@y.z', priority: 'luego' })
+      expect(addDocMock.mock.calls[0]![1].priority).toBe('luego')
+      await teamTaskService.create({ title: 'B', team: 'dev', assigneeEmail: null, createdByEmail: 'x@y.z' })
+      expect('priority' in addDocMock.mock.calls[1]![1]).toBe(false)
+    })
+
+    it('reads priority and description from the document', () => {
+      const onChange = vi.fn()
+      teamTaskService.subscribe('dev', onChange, vi.fn())
+      fireOnChange([makeSnapshotDoc('t', { title: 'T', team: 'dev', priority: 'alta', description: 'D' })])
+      const [task] = onChange.mock.calls[0]![0]
+      expect(task.priority).toBe('alta')
+      expect(task.description).toBe('D')
+    })
+  })
 })
