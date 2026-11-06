@@ -21,6 +21,7 @@ import { createPinElement, createBoostedPinElement, createGroupElement, createDo
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import CompactListingCard from './CompactListingCard'
+import CountedSelectedCard from './CountedSelectedCard'
 import MyLocationButton from './MyLocationButton'
 import HoverPreviewCard from './HoverPreviewCard'
 import type { ListingWithProperty } from '@/types/explore'
@@ -370,7 +371,9 @@ function MapboxExploreMap({
               }
             }}
           >
-            <CompactListingCard item={selectedItem} className="w-[370px]" />
+            <CountedSelectedCard item={selectedItem}>
+              <CompactListingCard item={selectedItem} className="w-[370px]" />
+            </CountedSelectedCard>
           </div>,
           previewEl,
         )}

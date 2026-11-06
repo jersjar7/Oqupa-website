@@ -22,6 +22,7 @@ import { Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserListingsWithProperties } from '@/hooks/useListings'
+import { useListingsApariciones } from '@/hooks/useListingApariciones'
 import { useAgentAssignments } from '@/hooks/useRealtorLeads'
 import { Button, Spinner, StaggerList, staggerItemVariants } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
@@ -205,6 +206,8 @@ function PropiasPane({
   error: boolean
   refetch: () => unknown
 }) {
+  // ADR-051: each card shows its Apariciones beside its Vistas.
+  const apariciones = useListingsApariciones((items ?? []).map(({ listing }) => listing.id))
   return (
     <AnimatePresence mode="wait">
       {isLoading ? (
@@ -249,7 +252,7 @@ function PropiasPane({
         <StaggerList className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" key="content">
           {items.map(({ listing, property }) => (
             <motion.div key={listing.id} variants={staggerItemVariants} className="h-full">
-              <ListingCard listing={listing} property={property} />
+              <ListingCard listing={listing} property={property} apariciones={apariciones.byId[listing.id]} />
             </motion.div>
           ))}
         </StaggerList>

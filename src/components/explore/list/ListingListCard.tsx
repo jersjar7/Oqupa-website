@@ -15,6 +15,7 @@ import SaveButton from '@/components/lists/SaveButton'
 import type { ListingWithProperty } from '@/types/explore'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 import { isBoostLive } from '@/lib/boostState'
+import { useCountShownWhenVisible } from '@/hooks/useListingCounts'
 
 interface ListingListCardProps {
   item: ListingWithProperty
@@ -32,9 +33,12 @@ export default function ListingListCard({ item, isHighlighted = false }: Listing
   const blurDataUrl = useMemo(() => blurHashToDataUrl(blurHash), [blurHash])
   const placeholderUrl = microThumb ? `data:image/webp;base64,${microThumb}` : blurDataUrl
   const details = listingDetailsLine(item)
+  // ADR-051: half the card on screen for 1 second is an Aparición.
+  const countRef = useCountShownWhenVisible(listing.id, listing.ownerId)
 
   return (
     <div
+      ref={countRef}
       data-testid="listing-list-card"
       className={`relative overflow-hidden rounded-2xl bg-white shadow-light ${
         isBoostLive(listing) ? 'border-2 border-boost' : isHighlighted ? 'border border-primary ring-2 ring-primary/20' : 'border border-border'

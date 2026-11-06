@@ -20,6 +20,7 @@ vi.mock('@/hooks/useListings', () => ({
   useUserListingsWithProperties: () => ({ data: [], isLoading: false, error: undefined }),
 }))
 
+vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: () => ({ byId: {}, total: undefined, isLoading: false, isError: false }) }))
 vi.mock('@/hooks/useRealtorLeads', () => ({
   useAgentAssignments: () => ({ data: [], isLoading: false }),
 }))

@@ -26,6 +26,8 @@ import { boostDaysLeft as boostDaysLeftFor } from '@/app/features/boost/lib/boos
 interface ListingCardProps {
   listing: Listing
   property: Property
+  /** ADR-051: lifetime Apariciones (owner-only total); undefined while unknown. */
+  apariciones?: number
 }
 
 /** A brand action: Gotham Bold, uppercase, tracked, 44px (audit 2026-11-02). */
@@ -37,7 +39,7 @@ function formatPrice(amount: number, currency: string): string {
   return `${symbol} ${amount.toLocaleString('es-PE')}`
 }
 
-export default function ListingCard({ listing, property }: ListingCardProps) {
+export default function ListingCard({ listing, property, apariciones }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
   const deleteListing = useDeleteListing()
   const [showShareModal, setShowShareModal] = useState(false)
@@ -138,6 +140,13 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         <div className="mt-3 flex items-center gap-1 text-xs text-text-tertiary">
           <Eye className="h-3.5 w-3.5" />
           <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
+          {/* ADR-051: the owner's second number; hidden while unknown, never a false 0. */}
+          {apariciones !== undefined && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{apariciones} {apariciones === 1 ? 'aparición' : 'apariciones'}</span>
+            </>
+          )}
         </div>
 
         {/* Boost CTA for non-boosted active listings. The flow stays mounted

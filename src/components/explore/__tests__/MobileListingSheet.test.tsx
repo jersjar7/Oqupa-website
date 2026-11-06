@@ -10,6 +10,8 @@ import MobileListingSheet from '../MobileListingSheet'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
+// ADR-051 counting is tested in useListingCounts / listingCountsWiring.
+vi.mock('@/hooks/useListingCounts', () => ({ useCountShownWhenVisible: () => () => {}, useCountSeenWhileOpen: () => {} }))
 
 function renderSheet(item = mapListing({ id: 'L1', amount: 98000, currency: 'USD' })) {
   return render(

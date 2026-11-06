@@ -44,7 +44,8 @@ const mockProperty = {
 }
 
 vi.mock('@/hooks/useProperty', () => ({ useProperty: () => mockProperty }))
-vi.mock('@/hooks/useRecordListingView', () => ({ useRecordListingView: () => ({ record: vi.fn() }) }))
+vi.mock('@/hooks/useListingCounts', () => ({ useCountSeenWhileOpen: () => {}, useCountShownWhenVisible: () => () => {} }))
+vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: () => ({ byId: {}, total: undefined, isLoading: false, isError: false }) }))
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: () => {} }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => mockAuth }))
 vi.mock('@/lib/analytics', async (importOriginal) => {

@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import CompactListingCard from './CompactListingCard'
+import CountedSelectedCard from './CountedSelectedCard'
 import type { ListingWithProperty } from '@/types/explore'
 
 interface MobileListingSheetProps {
@@ -80,7 +81,9 @@ export default function MobileListingSheet({ item, onClose, onHeightChange }: Mo
               }
             }}
           >
-            <CompactListingCard item={item} />
+            <CountedSelectedCard item={item}>
+              <CompactListingCard item={item} />
+            </CountedSelectedCard>
           </div>
         </motion.div>
       )}

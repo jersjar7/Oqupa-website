@@ -6,7 +6,8 @@ import { Eye, Sparkles } from 'lucide-react'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
-import { useRecordListingView } from '@/hooks/useRecordListingView'
+import { useCountSeenWhileOpen } from '@/hooks/useListingCounts'
+import { useListingsApariciones } from '@/hooks/useListingApariciones'
 import { useAuthStore } from '@/stores/authStore'
 import { setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -253,6 +254,10 @@ export default function PropertyPage() {
     viewerId: user?.id,
     authReady: isInitialized,
   })
+  // ADR-051: Apariciones is owner-only; only the owner's page ever asks for it.
+  // Called before any early return (hook order — see PropertyPage.hooks.test).
+  const viewerIsOwner = !!user && !!listing && user.id === listing.ownerId
+  const ownerApariciones = useListingsApariciones(viewerIsOwner && id ? [id] : [])
   const [showAuthModal, setShowAuthModal] = useState(false)
   // Signed in, no saved profile (feature audit 2026-11-02).
   const [showProfileNotFound, setShowProfileNotFound] = useState(false)
@@ -341,7 +346,8 @@ export default function PropertyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, listing, property?.location?.distrito])
 
-  useRecordListingView(id, listing?.ownerId)
+  // ADR-051: open for 2 seconds is a Vista, through the one server counter.
+  useCountSeenWhileOpen(id, listing?.ownerId)
 
   // Back from the pipeline with the intent to contact: open WhatsApp now,
   // once, and drop the hash so a reload does not do it again.
@@ -596,6 +602,11 @@ export default function PropertyPage() {
                   <Eye className="h-4 w-4 shrink-0" />
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
                 </span>
+                {viewerIsOwner && ownerApariciones.total !== undefined && (
+                  <span className="whitespace-nowrap text-sm text-text-secondary">
+                    {ownerApariciones.total} {ownerApariciones.total === 1 ? 'aparición' : 'apariciones'}
+                  </span>
+                )}
                 {canContact && <SaveButton listingId={listing.id} variant="page" />}
 {view !== 'owner-only' && (
                 <button

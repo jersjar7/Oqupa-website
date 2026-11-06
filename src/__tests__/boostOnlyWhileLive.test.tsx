@@ -22,6 +22,8 @@ import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import { isBoostLive } from '@/lib/boostState'
 
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
+// ADR-051 counting is tested in useListingCounts / listingCountsWiring.
+vi.mock('@/hooks/useListingCounts', () => ({ useCountShownWhenVisible: () => () => {}, useCountSeenWhileOpen: () => {} }))
 
 const DAY = 24 * 60 * 60 * 1000
 const future = () => new Date(Date.now() + 31 * DAY)
