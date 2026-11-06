@@ -1002,7 +1002,9 @@ export default function TeamBoardPage() {
   }
 
   return (
-    <div className="space-y-5 p-4 md:p-6">
+    // Soft grey behind the board (Jerson 2026-11-06, for readability): the
+    // white columns stand out more than on cream. Internal page only.
+    <div className="min-h-full space-y-5 bg-board p-4 md:p-6">
       {error && (
         <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 font-sans text-sm text-error">
           {error}
