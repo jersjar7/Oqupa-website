@@ -12,7 +12,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { TeamTask } from '@/types/teamTask'
+import type { TaskPriority, TeamTask } from '@/types/teamTask'
 import type { TeamId } from '@/app/features/team/teamRoster'
 
 const COLLECTION = 'teamTasks'
@@ -46,6 +46,8 @@ function docToTask(id: string, data: Record<string, unknown>): TeamTask {
     claimedAt: toDate(data['claimedAt']),
     doneAt: toDate(data['doneAt']),
     createdByEmail: String(data['createdByEmail'] ?? ''),
+    priority: (data['priority'] as TaskPriority | undefined) ?? undefined,
+    description: typeof data['description'] === 'string' ? data['description'] : undefined,
   }
 }
 
@@ -81,6 +83,7 @@ export const teamTaskService = {
     team: TeamId
     assigneeEmail: string | null
     createdByEmail: string
+    priority?: TaskPriority
   }): Promise<void> {
     await addDoc(tasksCol(), {
       title: params.title,
@@ -90,6 +93,7 @@ export const teamTaskService = {
       claimedAt: params.assigneeEmail ? serverTimestamp() : null,
       doneAt: null,
       createdByEmail: params.createdByEmail,
+      ...(params.priority ? { priority: params.priority } : {}),
     })
   },
 
@@ -114,6 +118,15 @@ export const teamTaskService = {
 
   async rename(taskId: string, title: string): Promise<void> {
     await updateDoc(taskRef(taskId), { title })
+  },
+
+  async setPriority(taskId: string, priority: TaskPriority): Promise<void> {
+    await updateDoc(taskRef(taskId), { priority })
+  },
+
+  /** The longer explanation under a title; empty clears it. */
+  async setDescription(taskId: string, description: string): Promise<void> {
+    await updateDoc(taskRef(taskId), { description })
   },
 
   async remove(taskId: string): Promise<void> {

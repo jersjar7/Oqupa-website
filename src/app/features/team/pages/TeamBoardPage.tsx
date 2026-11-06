@@ -6,7 +6,8 @@ import { Spinner } from '@/app/components/ui'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import { useTeamTasks } from '@/hooks/useTeamTasks'
 import { teamTaskService } from '@/services/teamTaskService'
-import type { TeamTask } from '@/types/teamTask'
+import type { TaskPriority, TeamTask } from '@/types/teamTask'
+import { PRIORITIES, PRIORITY_LABELS, priorityOf } from '@/app/features/team/taskOrder'
 import {
   memberFor,
   membersOf,
@@ -24,6 +25,8 @@ const BOARD = 'dev' as const
  *  explain itself. Raised 500 -> 1000 on 2026-08-25 after a real task was
  *  refused at 500 with only a generic "could not add" toast. */
 const MAX_TASK_TITLE = 1000
+/** Must match firestore.rules (teamTasks description.size()). */
+const MAX_TASK_DESCRIPTION = 5000
 
 /**
  * A textarea that grows with its content instead of scrolling sideways.
@@ -364,6 +367,131 @@ function MinimizedColumn({
 }
 
 /* ------------------------------------------------------------------ */
+/* Priority and details (meeting of 2026-11-05)                        */
+/* ------------------------------------------------------------------ */
+
+/** "ALTA" next to a task that should be taken first. */
+function AltaPill() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-primary/15 px-2 py-0.5 font-sans text-[10.5px] font-medium uppercase tracking-[0.5px] text-text-primary">
+      Alta
+    </span>
+  )
+}
+
+function PrioritySelect({ task, onChange }: { task: TeamTask; onChange: (p: TaskPriority) => void }) {
+  return (
+    <select
+      value={priorityOf(task)}
+      aria-label={`Prioridad de "${task.title}"`}
+      onChange={(e) => onChange(e.target.value as TaskPriority)}
+      className="min-w-0 flex-1 rounded-lg border border-border bg-white px-2 py-1.5 font-sans text-xs text-text-secondary md:flex-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      {PRIORITIES.map((p) => (
+        <option key={p} value={p}>
+          {PRIORITY_LABELS[p]}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+/**
+ * The longer explanation under a title — what the task means and how to do it —
+ * so whoever picks it up does not have to guess what a one-line title meant.
+ */
+function TaskDetails({ task, onSave }: { task: TeamTask; onSave: (description: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(task.description ?? '')
+  const has = !!task.description?.trim()
+
+  function save() {
+    const next = draft.trim()
+    setEditing(false)
+    if (next !== (task.description ?? '').trim()) onSave(next)
+    setOpen(!!next)
+  }
+
+  if (editing) {
+    return (
+      <div className="mt-2 space-y-2">
+        <textarea
+          autoFocus
+          rows={4}
+          value={draft}
+          maxLength={MAX_TASK_DESCRIPTION}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setDraft(task.description ?? '')
+              setEditing(false)
+            }
+          }}
+          aria-label={`Detalles de "${task.title}"`}
+          placeholder="Qué significa, por qué importa y cómo hacerlo…"
+          className="w-full rounded-lg border border-border bg-white px-2.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => { setDraft(task.description ?? ''); setEditing(false) }}
+            className="rounded-lg px-3 py-1.5 font-sans text-xs text-text-secondary hover:bg-background-secondary"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            className="rounded-lg bg-secondary px-3 py-1.5 font-sans text-xs font-medium text-white hover:bg-secondary-hover"
+          >
+            Guardar detalles
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!has) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setDraft(''); setEditing(true) }}
+        className="mt-1 font-sans text-xs text-text-tertiary hover:text-secondary"
+      >
+        Añadir detalles
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 font-sans text-xs font-medium text-secondary hover:text-secondary-hover"
+      >
+        Detalles
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="mt-1.5 rounded-lg bg-background-secondary/60 px-2.5 py-2">
+          <p className="whitespace-pre-wrap break-words text-sm text-text-primary">{task.description}</p>
+          <button
+            type="button"
+            onClick={() => { setDraft(task.description ?? ''); setEditing(true) }}
+            className="mt-1 font-sans text-xs text-text-tertiary hover:text-secondary"
+          >
+            Editar detalles
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /* Task card (inside a person's column)                                */
 /* ------------------------------------------------------------------ */
 
@@ -373,12 +501,14 @@ function TaskCard({
   onUnassign,
   onDelete,
   onRename,
+  onDescription,
 }: {
   task: TeamTask
   onToggleDone: () => void
   onUnassign: () => void
   onDelete: () => void
   onRename: (title: string) => void
+  onDescription: (d: string) => void
 }) {
   const isDone = task.doneAt !== null
 
@@ -404,6 +534,9 @@ function TaskCard({
         </button>
 
         <div className="min-w-0 flex-1">
+          {!isDone && priorityOf(task) === 'alta' && (
+            <div className="mb-1 pl-1"><AltaPill /></div>
+          )}
           <EditableTitle
             title={task.title}
             done={isDone}
@@ -411,6 +544,9 @@ function TaskCard({
             clampLines={3}
             className="w-full break-words text-sm leading-snug text-text-primary"
           />
+          <div className="pl-1">
+            <TaskDetails task={task} onSave={onDescription} />
+          </div>
         </div>
 
         <div className="flex shrink-0 gap-0.5 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
@@ -458,10 +594,12 @@ function MemberColumn({
   onDelete,
   onRename,
   onMinimize,
+  onDescription,
 }: {
   member: TeamMember
   tasks: TeamTask[]
   onMinimize: () => void
+  onDescription: (task: TeamTask, d: string) => void
   onAdd: (title: string) => Promise<void>
   onRename: (task: TeamTask, title: string) => void
   onToggleDone: (task: TeamTask) => void
@@ -470,7 +608,12 @@ function MemberColumn({
 }) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  // Finished work stays out of the way until asked for (meeting 2026-11-05):
+  // a column used to fill with done tasks that had to be deleted one by one.
+  const [showDone, setShowDone] = useState(false)
   const activeCount = tasks.filter((t) => !t.doneAt).length
+  const doneCount = tasks.length - activeCount
+  const visible = showDone ? tasks : tasks.filter((t) => !t.doneAt)
 
   // Optional event: the form's onSubmit passes one, the textarea's Enter key
   // calls it directly.
@@ -548,12 +691,12 @@ function MemberColumn({
       {/* Fixed ceiling with internal scroll so one busy column can't stretch
           the whole row and push the TO DO list off the screen. */}
       <div className="max-h-[26rem] min-h-[6rem] space-y-2 overflow-y-auto p-3">
-        {tasks.length === 0 ? (
+        {visible.length === 0 ? (
           <p className="px-1 py-4 text-center font-sans text-xs text-text-tertiary">
-            Sin tareas todavía.
+            {tasks.length === 0 ? 'Sin tareas todavía.' : 'Nada en curso.'}
           </p>
         ) : (
-          tasks.map((task) => (
+          visible.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
@@ -561,8 +704,18 @@ function MemberColumn({
               onUnassign={() => onUnassign(task)}
               onDelete={() => onDelete(task)}
               onRename={(title) => onRename(task, title)}
+              onDescription={(d) => onDescription(task, d)}
             />
           ))
+        )}
+        {doneCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowDone((v) => !v)}
+            className="w-full rounded-lg py-2 font-sans text-xs text-text-tertiary hover:bg-background-secondary/60 hover:text-secondary"
+          >
+            {showDone ? 'Ocultar terminadas' : `Mostrar terminadas (${doneCount})`}
+          </button>
         )}
       </div>
     </section>
@@ -574,25 +727,28 @@ function MemberColumn({
 /* ------------------------------------------------------------------ */
 
 function TodoContainer({
-  tasks,
+  now,
+  later,
   members,
   currentEmail,
   onAdd,
   onAssign,
   onDelete,
   onRename,
+  onPriority,
+  onDescription,
 }: {
-  tasks: TeamTask[]
+  now: TeamTask[]
+  later: TeamTask[]
   members: TeamMember[]
   currentEmail: string | null
-  onAdd: (title: string) => Promise<void>
+  onAdd: (title: string, priority?: TaskPriority) => Promise<void>
   onAssign: (task: TeamTask, email: string) => void
   onDelete: (task: TeamTask) => void
   onRename: (task: TeamTask, title: string) => void
+  onPriority: (task: TeamTask, p: TaskPriority) => void
+  onDescription: (task: TeamTask, d: string) => void
 }) {
-  const [draft, setDraft] = useState('')
-  const [busy, setBusy] = useState(false)
-
   // The signed-in teammate goes first so claiming your own work is the
   // shortest path through the menu.
   const assignOptions = useMemo(() => {
@@ -604,15 +760,76 @@ function TodoContainer({
     ]
   }, [members, currentEmail])
 
+  const rowProps = { assignOptions, onAssign, onDelete, onRename, onPriority, onDescription }
+
+  return (
+    <div className="space-y-5">
+      <TodoSection
+        title="Por hacer"
+        tasks={now}
+        addLabel="Añadir tarea por hacer"
+        placeholder="Añadir algo por hacer…"
+        empty="Nada pendiente. Todo está asignado."
+        onAdd={(title) => onAdd(title)}
+        {...rowProps}
+      />
+      {/* Meeting 2026-11-05: tech debt, bugs and nice-to-haves live apart, so
+          the list above says what matters and this one is never empty-handed. */}
+      <TodoSection
+        title="Cuando haya tiempo"
+        subtitle="Deuda técnica, bugs y mejoras: para cuando termines lo tuyo."
+        tasks={later}
+        addLabel="Añadir tarea para cuando haya tiempo"
+        placeholder="Añadir deuda técnica, un bug o una mejora…"
+        empty="Nada aquí todavía."
+        onAdd={(title) => onAdd(title, 'luego')}
+        {...rowProps}
+      />
+    </div>
+  )
+}
+
+function TodoSection({
+  title,
+  subtitle,
+  tasks,
+  addLabel,
+  placeholder,
+  empty,
+  onAdd,
+  assignOptions,
+  onAssign,
+  onDelete,
+  onRename,
+  onPriority,
+  onDescription,
+}: {
+  title: string
+  subtitle?: string
+  tasks: TeamTask[]
+  addLabel: string
+  placeholder: string
+  empty: string
+  onAdd: (title: string) => Promise<void>
+  assignOptions: { email: string; label: string }[]
+  onAssign: (task: TeamTask, email: string) => void
+  onDelete: (task: TeamTask) => void
+  onRename: (task: TeamTask, title: string) => void
+  onPriority: (task: TeamTask, p: TaskPriority) => void
+  onDescription: (task: TeamTask, d: string) => void
+}) {
+  const [draft, setDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+
   // Optional event: the form's onSubmit passes one, the textarea's Enter key
   // calls it directly.
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
-    const title = draft.trim()
-    if (!title || busy) return
+    const next = draft.trim()
+    if (!next || busy) return
     setBusy(true)
     try {
-      await onAdd(title)
+      await onAdd(next)
       setDraft('')
     } finally {
       setBusy(false)
@@ -620,12 +837,13 @@ function TodoContainer({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-white shadow-light">
-      <header className="flex items-baseline justify-between border-b border-border px-4 py-3 md:px-5">
-        <h2 className="font-sans text-sm font-medium uppercase tracking-wide text-secondary">
-          Por hacer
-        </h2>
-        <span className="font-sans text-xs text-text-tertiary">
+    <section aria-label={title} className="rounded-2xl border border-border bg-white shadow-light">
+      <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
+        <div className="min-w-0">
+          <h2 className="font-sans text-sm font-medium uppercase tracking-wide text-secondary">{title}</h2>
+          {subtitle && <p className="mt-0.5 font-sans text-xs text-text-tertiary">{subtitle}</p>}
+        </div>
+        <span className="shrink-0 font-sans text-xs text-text-tertiary">
           {tasks.length} {tasks.length === 1 ? 'tarea' : 'tareas'}
         </span>
       </header>
@@ -635,7 +853,7 @@ function TodoContainer({
           <button
             type="submit"
             disabled={busy || !draft.trim()}
-            aria-label="Añadir tarea por hacer"
+            aria-label={addLabel}
             className="shrink-0 rounded text-text-tertiary transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
@@ -644,17 +862,15 @@ function TodoContainer({
             value={draft}
             onChange={setDraft}
             onSubmit={() => void submit()}
-            placeholder="Añadir algo por hacer…"
-            ariaLabel="Añadir tarea por hacer"
+            placeholder={placeholder}
+            ariaLabel={addLabel}
             disabled={busy}
             className="w-full bg-transparent py-1 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
           />
           {draft.length > 0 && (
             <span
               className={`shrink-0 font-sans text-xs tabular-nums ${
-                draft.length > MAX_TASK_TITLE - 100
-                  ? 'text-error'
-                  : 'text-text-tertiary'
+                draft.length > MAX_TASK_TITLE - 100 ? 'text-error' : 'text-text-tertiary'
               }`}
             >
               {draft.length}/{MAX_TASK_TITLE}
@@ -664,36 +880,43 @@ function TodoContainer({
       </form>
 
       {tasks.length === 0 ? (
-        <p className="px-4 py-8 text-center font-sans text-sm text-text-tertiary md:px-5">
-          Nada pendiente. Todo está asignado.
-        </p>
+        <p className="px-4 py-8 text-center font-sans text-sm text-text-tertiary md:px-5">{empty}</p>
       ) : (
         <ul className="divide-y divide-border">
           {tasks.map((task) => (
             <li
               key={task.id}
-              className="flex flex-col gap-2 px-4 py-3 hover:bg-background-secondary/40 md:flex-row md:items-center md:gap-4 md:px-5"
+              className="flex flex-col gap-2 px-4 py-3 hover:bg-background-secondary/40 md:flex-row md:items-start md:gap-4 md:px-5"
             >
               <div className="min-w-0 flex-1">
-                <EditableTitle
-                  title={task.title}
-                  onRename={(title) => onRename(task, title)}
-                  clampLines={2}
-                  className="w-full break-words text-sm text-text-primary md:text-base"
-                />
+                <div className="flex items-start gap-2">
+                  {priorityOf(task) === 'alta' && <span className="mt-0.5"><AltaPill /></span>}
+                  <div className="min-w-0 flex-1">
+                    <EditableTitle
+                      title={task.title}
+                      onRename={(next) => onRename(task, next)}
+                      clampLines={2}
+                      className="w-full break-words text-sm text-text-primary md:text-base"
+                    />
+                  </div>
+                </div>
                 <p className="mt-0.5 pl-1 font-serif text-[11px] font-light italic text-text-tertiary">
                   Creado por {creatorName(task.createdByEmail)} · {formatStamp(task.createdAt)}
                 </p>
+                <div className="pl-1">
+                  <TaskDetails task={task} onSave={(d) => onDescription(task, d)} />
+                </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 md:shrink-0">
+                <PrioritySelect task={task} onChange={(p) => onPriority(task, p)} />
                 <select
                   value=""
                   aria-label={`Asignar "${task.title}"`}
                   onChange={(e) => {
                     if (e.target.value) onAssign(task, e.target.value)
                   }}
-                  className="rounded-lg border border-border bg-white px-2.5 py-1.5 font-sans text-xs text-text-secondary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="min-w-0 flex-1 rounded-lg border border-border bg-white px-2.5 py-1.5 font-sans text-xs text-text-secondary md:flex-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="">Asignar a…</option>
                   {assignOptions.map((opt) => (
@@ -736,7 +959,7 @@ export default function TeamBoardPage() {
 
   const members = useMemo(() => membersOf(BOARD), [])
   const [minimized, setMinimized] = useMinimizedColumns(currentEmail)
-  const { todo, byAssignee, isLoading, error } = useTeamTasks(BOARD)
+  const { now, later, byAssignee, isLoading, error } = useTeamTasks(BOARD)
 
   // TeamGuard already redirected anyone off-roster; this is the belt-and-braces
   // case where the roster changed mid-session.
@@ -749,7 +972,12 @@ export default function TeamBoardPage() {
     })
   }
 
-  async function addTo(assigneeEmail: string | null, title: string) {
+  const setPriority = (task: TeamTask, p: TaskPriority) =>
+    report(() => teamTaskService.setPriority(task.id, p), 'No se pudo cambiar la prioridad')
+  const setDescription = (task: TeamTask, d: string) =>
+    report(() => teamTaskService.setDescription(task.id, d), 'No se pudieron guardar los detalles')
+
+  async function addTo(assigneeEmail: string | null, title: string, priority?: TaskPriority) {
     if (title.length > MAX_TASK_TITLE) {
       toast.error(
         `La tarea es muy larga (${title.length} de ${MAX_TASK_TITLE} caracteres)`
@@ -762,6 +990,7 @@ export default function TeamBoardPage() {
         team: BOARD,
         assigneeEmail,
         createdByEmail: currentEmail!,
+        ...(priority ? { priority } : {}),
       })
     } catch (err) {
       // Swallowing this is what made a length rejection look like a
@@ -829,15 +1058,17 @@ export default function TeamBoardPage() {
                     'No se pudo renombrar la tarea',
                   )
                 }
+                onDescription={setDescription}
               />
             )}
           />
 
           <TodoContainer
-            tasks={todo}
+            now={now}
+            later={later}
             members={members}
             currentEmail={currentEmail}
-            onAdd={(title) => addTo(null, title)}
+            onAdd={(title, priority) => addTo(null, title, priority)}
             onAssign={(task, assignee) =>
               report(
                 () => teamTaskService.assign(task.id, assignee),
@@ -856,6 +1087,8 @@ export default function TeamBoardPage() {
                 'No se pudo renombrar la tarea',
               )
             }
+            onPriority={setPriority}
+            onDescription={setDescription}
           />
         </>
       )}
