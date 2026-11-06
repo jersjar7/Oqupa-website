@@ -13,6 +13,7 @@ import GalleryModal from '@/app/components/GalleryModal'
 import ClaimConsequences from '../components/ClaimConsequences'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
 import DialogActions from '@/app/components/ui/DialogActions'
+import { isBoostLive } from '@/lib/boostState'
 
 function formatPrice(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency
@@ -272,7 +273,7 @@ export default function LeadDetailPage() {
               return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
             })()}
           </p>
-          {listing.isBoosted && (
+          {isBoostLive(listing) && (
             <DestacadoBadge withStar />
           )}
         </div>

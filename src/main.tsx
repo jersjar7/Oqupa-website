@@ -8,6 +8,8 @@ import { AnalyticsLogger } from '@/lib/analytics'
 import { initErrorBuffer } from '@/lib/errorBuffer'
 import { initMetaPixel } from '@/lib/metaPixel'
 import { initTikTokPixel } from '@/lib/tiktokPixel'
+import { applyAnalyticsAccount } from '@/lib/analyticsSuppression'
+import { auth } from '@/lib/firebase'
 import { captureAttribution } from '@/lib/attribution'
 import { watchDraftOwner } from '@/stores/draftOwnerWatch'
 
@@ -22,9 +24,18 @@ captureAttribution()
 // draft (hostile review of the wizard fixes, #1).
 watchDraftOwner()
 
-// Production only; see metaPixel.ts / tiktokPixel.ts.
+// Production only; see metaPixel.ts / tiktokPixel.ts. Both wait until
+// Firebase says who is signed in, and never load for a team account (ADR-050).
 initMetaPixel()
 initTikTokPixel()
+
+// Settle "is a team account signed in?" as soon as the saved session is read,
+// independent of when the auth store starts listening. Events held until then
+// are sent, or dropped for a team account. authStore keeps it current after.
+auth
+  .authStateReady()
+  .then(() => applyAnalyticsAccount(auth.currentUser?.email ?? null))
+  .catch(() => applyAnalyticsAccount(null))
 
 // Catch unhandled errors outside React
 window.addEventListener('error', (event) => {

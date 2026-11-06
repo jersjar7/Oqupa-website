@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth'
+import { applyAnalyticsAccount } from '@/lib/analyticsSuppression'
 import { doc, getDoc, updateDoc, serverTimestamp, type Timestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import type { User } from '@/types/user'
@@ -122,6 +123,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // before listening. This prevents a premature null callback.
     auth.authStateReady().then(() => {
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        // Team accounts never count in analytics (ADR-050). First, before any
+        // await, so nothing this sign-in triggers is measured.
+        applyAnalyticsAccount(firebaseUser?.email ?? null)
         if (firebaseUser) {
           set({ firebaseUser, isLoading: true })
           try {

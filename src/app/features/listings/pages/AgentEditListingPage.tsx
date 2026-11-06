@@ -9,6 +9,7 @@ import { card as cardUrl } from '@/lib/imageUrl'
 import { Button, Spinner } from '@/app/components/ui'
 import { callableErrorMessage } from '@/lib/friendlyErrors'
 import { agentEditParams } from '../agentEdit'
+import { invalidateListingQueries } from '@/lib/listingQueries'
 
 export default function AgentEditListingPage() {
   const { id } = useParams<{ id: string }>()
@@ -83,7 +84,7 @@ export default function AgentEditListingPage() {
       }
 
       // Invalidate cached data so dashboard and detail pages show updated content
-      await queryClient.invalidateQueries({ queryKey: ['listings'] })
+      await invalidateListingQueries(queryClient, id)
       await queryClient.invalidateQueries({ queryKey: ['leads'] })
 
       navigate('/app', { replace: true })
@@ -224,7 +225,7 @@ export default function AgentEditListingPage() {
               disabled={!hasChanges}
               className="flex-1"
             >
-              Guardar Cambios
+              Guardar cambios
             </Button>
             <Button
               variant="text"

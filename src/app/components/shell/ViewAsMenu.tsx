@@ -25,8 +25,8 @@ export default function ViewAsMenu({ caps }: Props) {
 
   const options: Array<{ value: typeof viewAs; label: string }> = [
     { value: 'self',      label: caps.isRealtor ? 'Mi vista (Admin · Agente)' : 'Mi vista (Admin)' },
-    { value: 'asRealtor', label: 'Como un Agente' },
-    { value: 'asOwner',   label: 'Como un Dueño' },
+    { value: 'asRealtor', label: 'Como un agente' },
+    { value: 'asOwner',   label: 'Como un dueño' },
   ]
 
   function openMenu(focusOnIdx: number | null = 0) {

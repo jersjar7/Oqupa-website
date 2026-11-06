@@ -51,7 +51,7 @@ export default function RealtorClaimCard({
 
           {/* Business name */}
           <p className="mt-0.5 text-sm text-text-secondary">
-            {claim.realtorBusinessName || 'Agente Independiente'}
+            {claim.realtorBusinessName || 'Agente independiente'}
           </p>
 
           {/* Phone */}
@@ -83,7 +83,7 @@ export default function RealtorClaimCard({
             isLoading={isAssigning}
           >
             <UserCheck className="h-4 w-4" />
-            Trabajar con este Agente
+            Trabajar con este agente
           </Button>
         )}
       </div>

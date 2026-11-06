@@ -40,7 +40,8 @@ const mockProperty = {
 }
 
 vi.mock('@/hooks/useProperty', () => ({ useProperty: () => mockProperty }))
-vi.mock('@/hooks/useRecordListingView', () => ({ useRecordListingView: () => ({ record: vi.fn() }) }))
+vi.mock('@/hooks/useListingCounts', () => ({ useCountSeenWhileOpen: () => {}, useCountShownWhenVisible: () => () => {} }))
+vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: () => ({ byId: {}, total: undefined, isLoading: false, isError: false }) }))
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: (m: unknown) => documentMetaMock(m) }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => mockAuth }))
 vi.mock('@/lib/analytics', async (importOriginal) => {
@@ -128,5 +129,38 @@ describe("the owner's own active listing", () => {
     show('active', 'open', 'stranger')
     renderPage()
     expect(screen.queryByRole('button', { name: /destacar mi propiedad/i })).toBeNull()
+  })
+})
+
+// Boosted only with isBoosted AND a future boostedUntil (production,
+// 2026-11-02: a refund leaves boostedUntil behind; a boost that ended stays
+// isBoosted until the hourly job runs).
+describe('the listing page shows a boost only while it is live', () => {
+  const DAY = 24 * 60 * 60 * 1000
+  const SHAPES = [
+    ['after a refund (isBoosted false, boostedUntil in the future)', { isBoosted: false, boostScore: 1, boostedUntil: new Date(Date.now() + 31 * DAY) }],
+    ['ended, job not run yet (isBoosted true, boostedUntil past)', { isBoosted: true, boostScore: 100, boostTier: 'thirtyDays', boostedUntil: new Date(Date.now() - 3600_000) }],
+  ] as const
+
+  it.each(SHAPES)('%s: the owner is offered the boost, not told it is boosted', (_n, boost) => {
+    show('active', 'open', 'owner-1')
+    mockProperty.listing = { ...LISTING, status: 'active', ...boost }
+    renderPage()
+    expect(screen.getByRole('button', { name: /destacar mi propiedad/i })).toBeTruthy()
+    expect(screen.queryByText('Tu publicación está destacada')).toBeNull()
+  })
+
+  it.each(SHAPES)('%s: a visitor sees no DESTACADO', (_n, boost) => {
+    show('active', 'open', 'stranger')
+    mockProperty.listing = { ...LISTING, status: 'active', ...boost }
+    renderPage()
+    expect(screen.queryByText(/^destacado$/i)).toBeNull()
+  })
+
+  it('control: a live boost reads as boosted to the owner and to a visitor', () => {
+    show('active', 'open', 'owner-1')
+    mockProperty.listing = { ...LISTING, status: 'active', isBoosted: true, boostScore: 100, boostTier: 'thirtyDays', boostedUntil: new Date(Date.now() + 10 * DAY) }
+    renderPage()
+    expect(screen.getByText('Tu publicación está destacada')).toBeTruthy()
   })
 })

@@ -10,6 +10,8 @@ import ListToggleButton from '../ListToggleButton'
 import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
+// ADR-051 counting is tested in useListingCounts / listingCountsWiring.
+vi.mock('@/hooks/useListingCounts', () => ({ useCountShownWhenVisible: () => () => {}, useCountSeenWhileOpen: () => {} }))
 // The visit's exchange rate (ADR-031 item 19): no network in tests. Starts at the
 // fixed default; the "live" answer is set per test.
 const rate = vi.hoisted(() => ({ live: 3.75 }))

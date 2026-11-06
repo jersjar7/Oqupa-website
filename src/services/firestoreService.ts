@@ -506,6 +506,34 @@ export const firestoreService = {
     await callable({ listingId, clientId: getOrCreateClientId() })
   },
 
+  // ADR-051: Apariciones and Vistas, grouped, to the one server counter both
+  // apps use. Guests count too; the server decides what counts. App Check is
+  // attached when the browser has it, and is not required. Callers swallow
+  // failures (lib/listingCounts.ts retries once).
+  async recordListingCounts(events: Array<{ listingId: string; kind: 'shown' | 'seen' }>): Promise<void> {
+    if (events.length === 0) return
+    const callable = httpsCallable<
+      { deviceId: string; platform: 'web'; events: Array<{ listingId: string; kind: 'shown' | 'seen' }> },
+      { counted: { shown: number; seen: number } }
+    >(functions, 'recordListingCounts')
+    await callable({ deviceId: getOrCreateClientId(), platform: 'web', events })
+  },
+
+  // ADR-051: an owner's lifetime Apariciones, per listing, in one query by
+  // owner (listingTotals is readable by the owner only). A listing nobody has
+  // seen yet has no record — reading it alone is refused by the rules — so it
+  // is simply absent here, which callers read as 0. A failed read throws, so
+  // the page shows "—" rather than a false 0.
+  async getOwnerApariciones(ownerId: string): Promise<Record<string, number>> {
+    const snap = await getDocs(query(collection(db, 'listingTotals'), where('ownerId', '==', ownerId)))
+    const out: Record<string, number> = {}
+    for (const d of snap.docs) {
+      const shown = d.data()['shown']
+      out[d.id] = typeof shown === 'number' ? shown : 0
+    }
+    return out
+  },
+
   async updateListingStatus(
     listingId: string,
     status: Listing['status']

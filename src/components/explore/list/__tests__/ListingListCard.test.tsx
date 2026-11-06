@@ -10,6 +10,8 @@ import { mapListing } from '@/lib/map/__tests__/mapListingFixture'
 import type { PropertyType } from '@/types/enums'
 
 vi.mock('@/components/lists/SaveButton', () => ({ default: () => null }))
+// ADR-051 counting is tested in useListingCounts / listingCountsWiring.
+vi.mock('@/hooks/useListingCounts', () => ({ useCountShownWhenVisible: () => () => {}, useCountSeenWhileOpen: () => {} }))
 
 const TYPES: PropertyType[] = ['casa', 'departamento', 'terreno', 'local', 'oficina']
 

@@ -21,9 +21,11 @@ import { createPinElement, createBoostedPinElement, createGroupElement, createDo
 import { addDepartamentoBorder, setPrivacyCircle } from './mapbox/mapLayers'
 import { loadMapboxCamera, saveMapboxCamera, MAPBOX_DEFAULT_ZOOM, MAPBOX_FOCUS_ZOOM } from './mapbox/mapCamera'
 import CompactListingCard from './CompactListingCard'
+import CountedSelectedCard from './CountedSelectedCard'
 import MyLocationButton from './MyLocationButton'
 import HoverPreviewCard from './HoverPreviewCard'
 import type { ListingWithProperty } from '@/types/explore'
+import { isBoostLive } from '@/lib/boostState'
 
 export const MAPBOX_STYLE = 'mapbox://styles/mapbox/standard'
 const TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string | undefined) ?? ''
@@ -219,7 +221,7 @@ function MapboxExploreMap({
           .setLngLat([m.lng, m.lat])
           .addTo(map)
         // Boosted markers sit above everything else; the selected one above them.
-        if (m.kind !== 'group' && m.item.listing.isBoosted) el.style.zIndex = '2'
+        if (m.kind !== 'group' && isBoostLive(m.item.listing)) el.style.zIndex = '2'
         if (m.kind === 'raised' || m.kind === 'anchor') el.style.zIndex = '4'
         if (m.kind === 'pin' && (m.item.listing.id === latest.current.selectedId || m.item.listing.id === latest.current.emphasizedId)) el.style.zIndex = '3'
         entry = { key, marker, el }
@@ -240,7 +242,7 @@ function MapboxExploreMap({
     if (m.kind === 'pin') {
       const id = m.item.listing.id
       const selected = id === latest.current.selectedId || id === latest.current.emphasizedId
-      const el = m.item.listing.isBoosted
+      const el = isBoostLive(m.item.listing)
         ? createBoostedPinElement(m.item, { selected })
         : createPinElement(m.item, { selected })
       el.dataset.markerId = id
@@ -369,7 +371,9 @@ function MapboxExploreMap({
               }
             }}
           >
-            <CompactListingCard item={selectedItem} className="w-[370px]" />
+            <CountedSelectedCard item={selectedItem}>
+              <CompactListingCard item={selectedItem} className="w-[370px]" />
+            </CountedSelectedCard>
           </div>,
           previewEl,
         )}
@@ -382,10 +386,10 @@ function keyOf(m: MapMarker, selectedId: string | null, isVenta: boolean, emphas
   const mode = isVenta ? 'v' : 'a'
   if (m.kind === 'pin') {
     const l = m.item.listing
-    return `pin:${l.id}:${l.id === selectedId || l.id === emphasizedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${l.isBoosted ? 'b' : ''}:${mode}`
+    return `pin:${l.id}:${l.id === selectedId || l.id === emphasizedId ? 's' : ''}:${l.price.amount}:${l.price.currency}:${isBoostLive(l) ? 'b' : ''}:${mode}`
   }
   if (m.kind === 'raised') return `raised:${m.item.listing.id}:${m.item.listing.id === selectedId ? 's' : ''}:${mode}`
   if (m.kind === 'anchor') return `anchor:${m.item.listing.id}`
-  if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${m.item.listing.isBoosted ? 'b' : ''}:${mode}`
+  if (m.kind === 'dot') return `dot:${m.item.listing.id}:${m.item.property.propertyType}:${isBoostLive(m.item.listing) ? 'b' : ''}:${mode}`
   return `group:${m.id}:${m.count}:${mode}`
 }

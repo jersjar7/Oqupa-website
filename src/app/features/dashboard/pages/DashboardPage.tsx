@@ -21,9 +21,10 @@
 import { Link } from 'react-router-dom'
 import {
   Briefcase, Compass, FileBadge, Eye, Zap, CheckCircle, ClipboardList,
-  ArrowUpRight,
+  ArrowUpRight, LayoutList,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { useListingsApariciones } from '@/hooks/useListingApariciones'
 import { useUserListingsWithProperties } from '@/hooks/useListings'
 import { useAvailableLeads, useClaimStatus, useAgentAssignments } from '@/hooks/useRealtorLeads'
 import { usePendingRealtorApplicationsCount } from '@/hooks/useAdmin'
@@ -39,6 +40,7 @@ import {
   nextClaimResetText, activeListingsNote, countPublishedSince,
   spendThisMonthSoles, buildSubtitle, boostedKpiSubtitle,
 } from './dashboardHelpers'
+import { isBoostLive } from '@/lib/boostState'
 
 // ---------------------------------------------------------------------------
 // Action button styles — Gotham Bold, uppercase, brand letter-spacing.
@@ -85,8 +87,10 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
   const { data: payments } = useUserBoostPayments(userId)
   const listings = items ?? []
   const active = listings.filter(({ listing }) => listing.status === 'active').length
-  const boosted = listings.filter(({ listing }) => listing.isBoosted).length
+  const boosted = listings.filter(({ listing }) => isBoostLive(listing)).length
   const totalViews = listings.reduce((sum, { listing }) => sum + (listing.viewCount ?? 0), 0)
+  // ADR-051: the owner's second number, from the owner-only totals.
+  const apariciones = useListingsApariciones(listings.map(({ listing }) => listing.id), userId)
   const monthlySpend = spendThisMonthSoles(payments)
 
   const failedNote = 'No pudimos cargar tus números. Recarga la página.'
@@ -98,14 +102,16 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
     monthlySpendSoles: monthlySpend,
   })
 
+  // Captions decided by Jerson (ADR-051): "veces", never "personas" — the same
+  // person can count again.
   const viewsSub = totalViews > 0
-    ? 'Acumuladas en todos tus anuncios'
+    ? 'Veces que abrieron tu propiedad'
     : active > 0
       ? 'Comparte tus anuncios para empezar a recibir vistas'
       : 'Crea tu primer anuncio para empezar'
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       <StatCard
         label="Anuncios activos"
         value={isLoading ? '—' : active}
@@ -123,6 +129,12 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
         value={isLoading ? '—' : totalViews.toLocaleString('es-PE')}
         sub={isError ? undefined : viewsSub}
         icon={<Eye className="h-6 w-6 text-secondary" />}
+      />
+      <StatCard
+        label="Apariciones totales"
+        value={isLoading || apariciones.total === undefined ? '—' : apariciones.total.toLocaleString('es-PE')}
+        sub={isError ? undefined : listings.length === 0 ? 'Crea tu primer anuncio para empezar' : 'Veces que apareció en pantalla'}
+        icon={<LayoutList className="h-6 w-6 text-secondary" />}
       />
     </div>
   )

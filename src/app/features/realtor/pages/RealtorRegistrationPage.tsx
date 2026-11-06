@@ -425,7 +425,7 @@ export default function RealtorRegistrationPage() {
               )}
 
               <Button type="submit" isLoading={isSubmitting}>
-                Enviar Solicitud
+                Enviar solicitud
               </Button>
             </form>
           </Card>
@@ -453,7 +453,7 @@ export default function RealtorRegistrationPage() {
                 navigate('/app/profile')
               }}
             >
-              Ir a Mi Perfil
+              Ir a Mi perfil
             </Button>
           </div>
         </div>

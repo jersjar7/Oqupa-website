@@ -55,7 +55,7 @@ describe('ListingCard — agent help after publishing (D10)', () => {
     setup({})
     fireEvent.click(btn('Ayuda de agentes'))
     expect(
-      screen.getByText('Agentes verificados por Oqupa podrán ofrecerte ayuda para vender tu propiedad. Oqupa no cobra comisiones por este servicio.'),
+      screen.getByText('Agentes verificados por Oqupa podrán ofrecerte ayuda para vender tu propiedad. Hasta 3 agentes podrán contactarte y tú siempre eliges con quién trabajar. Oqupa no cobra comisiones por este servicio.'),
     ).toBeTruthy()
     expect(setHelp.mutate).not.toHaveBeenCalled()
     fireEvent.click(btn('Sí, activar'))
@@ -90,6 +90,23 @@ describe('ListingCard — agent help after publishing (D10)', () => {
     expect(screen.getByText('2 agentes están interesados en trabajar contigo. Si guardas este cambio, dejarán de ver tu anuncio y se les avisará.')).toBeTruthy()
     fireEvent.click(btn('Sí, desactivar'))
     expect(setHelp.mutate).toHaveBeenCalledWith({ listingId: 'L1', on: false }, expect.anything())
+  })
+
+  // Jerson 2026-11-02: when on, say how many agents may get in touch and
+  // that the owner chooses — the listing's own limit, as the app does.
+  it('on: says up to how many agents may contact, and that the owner chooses', () => {
+    setup({ wantsRealtorHelp: true, maxRealtors: 3 })
+    expect(screen.getByText('Hasta 3 agentes pueden contactarte. Tú eliges con quién trabajar.')).toBeTruthy()
+  })
+
+  it('on: the number is the listing\'s own limit; one is singular', () => {
+    setup({ wantsRealtorHelp: true, maxRealtors: 1 })
+    expect(screen.getByText('Hasta 1 agente puede contactarte. Tú eliges con quién trabajar.')).toBeTruthy()
+  })
+
+  it('off: the line is not shown before help is on', () => {
+    setup({ maxRealtors: 3 })
+    expect(screen.queryByText(/pueden contactarte/)).toBeNull()
   })
 
   it('turning it off can be cancelled', () => {

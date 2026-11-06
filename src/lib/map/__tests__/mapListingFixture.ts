@@ -22,6 +22,9 @@ export interface FixtureOptions {
   exact?: boolean
   boosted?: boolean
   boostScore?: number
+  /** Defaults to far in the future for a boosted listing, as the server
+   *  always writes it with the boost; null leaves it out. */
+  boostedUntil?: Date | null
   publishedAt?: Date
   photos?: number
 }
@@ -53,6 +56,10 @@ export function mapListing(o: FixtureOptions = {}): ListingWithProperty {
       currentClaimsCount: 0,
       isBoosted: o.boosted ?? false,
       boostScore: o.boostScore ?? 1,
+      boostedUntil:
+        o.boostedUntil === null
+          ? undefined
+          : o.boostedUntil ?? (o.boosted ? new Date('2099-01-01T00:00:00Z') : undefined),
       showExactLocation: exact,
       displayLatitude: exact ? undefined : lat,
       displayLongitude: exact ? undefined : lng,

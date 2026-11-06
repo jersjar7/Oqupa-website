@@ -26,6 +26,13 @@
  * including the staging deploy, which is a trap this codebase has hit before.
  */
 
+import {
+  isAnalyticsDecided,
+  isAnalyticsSuppressed,
+  onAnalyticsSuppressionChange,
+  whenAnalyticsAllowed,
+} from './analyticsSuppression'
+
 const DATASET_ID = '4589259354641565'
 
 type FbqFn = ((...args: unknown[]) => void) & { queue?: unknown[]; loaded?: boolean }
@@ -40,6 +47,7 @@ declare global {
 const isProduction = import.meta.env.MODE === 'production'
 
 let started = false
+let requested = false
 
 /**
  * Load the pixel and report the first page view.
@@ -47,9 +55,33 @@ let started = false
  * Injected at runtime rather than pasted into index.html so that it loads on
  * production only, and so the dataset id lives beside the code that documents
  * what it is for.
+ *
+ * TEAM ACCOUNTS (ADR-050): loading itself reports a PageView, so the pixel
+ * waits until sign-in is known and never loads while a team account is
+ * signed in. If one signs in after it loaded, consent is revoked (Meta then
+ * sends nothing) and granted again on sign-out. See analyticsSuppression.ts.
  */
 export function initMetaPixel(): void {
   if (!isProduction || started || typeof window === 'undefined') return
+  requested = true
+  if (!isAnalyticsDecided() || isAnalyticsSuppressed()) return
+  start()
+}
+
+onAnalyticsSuppressionChange((suppressed) => {
+  if (!isProduction || typeof window === 'undefined') return
+  if (!started) {
+    if (!suppressed && requested) start()
+    return
+  }
+  try {
+    window.fbq?.('consent', suppressed ? 'revoke' : 'grant')
+  } catch {
+    /* blocked; nothing is being sent anyway */
+  }
+})
+
+function start(): void {
   started = true
 
   /* eslint-disable */
@@ -86,21 +118,25 @@ export function initMetaPixel(): void {
  */
 export function trackMeta(event: string, params?: Record<string, unknown>): void {
   if (!isProduction || typeof window === 'undefined') return
-  try {
-    window.fbq?.('track', event, params)
-  } catch {
-    /* an ad blocker ate it; not our problem to solve */
-  }
+  whenAnalyticsAllowed(() => {
+    try {
+      window.fbq?.('track', event, params)
+    } catch {
+      /* an ad blocker ate it; not our problem to solve */
+    }
+  })
 }
 
 /** For events Meta has no standard name for. */
 export function trackMetaCustom(event: string, params?: Record<string, unknown>): void {
   if (!isProduction || typeof window === 'undefined') return
-  try {
-    window.fbq?.('trackCustom', event, params)
-  } catch {
-    /* see trackMeta */
-  }
+  whenAnalyticsAllowed(() => {
+    try {
+      window.fbq?.('trackCustom', event, params)
+    } catch {
+      /* see trackMeta */
+    }
+  })
 }
 
 export const __testing = { DATASET_ID, isProduction }

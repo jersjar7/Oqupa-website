@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 const state = vi.hoisted(() => ({ listings: { data: undefined as unknown, isLoading: false, isError: true } }))
 vi.mock('@/hooks/useListings', () => ({ useUserListingsWithProperties: () => state.listings }))
+vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: () => ({ total: undefined, isLoading: false, isError: true }) }))
 vi.mock('@/hooks/useBoost', () => ({ useUserBoostPayments: () => ({ data: [] }) }))
 vi.mock('@/hooks/useAdmin', () => ({ usePendingRealtorApplicationsCount: () => ({ data: 0 }) }))
 vi.mock('@/hooks/useRealtorLeads', () => ({

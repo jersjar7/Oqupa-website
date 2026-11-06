@@ -6,7 +6,8 @@ import { Eye, Sparkles } from 'lucide-react'
 import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
-import { useRecordListingView } from '@/hooks/useRecordListingView'
+import { useCountSeenWhileOpen } from '@/hooks/useListingCounts'
+import { useListingsApariciones } from '@/hooks/useListingApariciones'
 import { useAuthStore } from '@/stores/authStore'
 import { setReturnUrl } from '@/lib/utils'
 import { getPriceSuffix } from '@/lib/formatters'
@@ -43,6 +44,8 @@ import RevealedContact from '@/app/features/listings/components/RevealedContact'
 import ReportListing from '@/app/features/listings/components/ReportListing'
 import { contactFailureMessage, whatsappGreeting } from '@/app/features/listings/contactReveal'
 import { OFFLINE_MESSAGE } from '@/lib/friendlyErrors'
+import { isBoostLive } from '@/lib/boostState'
+import { boostDaysLeft } from '@/app/features/boost/lib/boostDaysLeft'
 
 /** "US$ 1,200" / "S/. 150,000" — in the listing's own currency (the page
  *  showed every price in soles). */
@@ -251,6 +254,10 @@ export default function PropertyPage() {
     viewerId: user?.id,
     authReady: isInitialized,
   })
+  // ADR-051: Apariciones is owner-only; only the owner's page ever asks for it.
+  // Called before any early return (hook order — see PropertyPage.hooks.test).
+  const viewerIsOwner = !!user && !!listing && user.id === listing.ownerId
+  const ownerApariciones = useListingsApariciones(viewerIsOwner && id ? [id] : [], viewerIsOwner ? user?.id : undefined)
   const [showAuthModal, setShowAuthModal] = useState(false)
   // Signed in, no saved profile (feature audit 2026-11-02).
   const [showProfileNotFound, setShowProfileNotFound] = useState(false)
@@ -339,7 +346,8 @@ export default function PropertyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, listing, property?.location?.distrito])
 
-  useRecordListingView(id, listing?.ownerId)
+  // ADR-051: open for 2 seconds is a Vista, through the one server counter.
+  useCountSeenWhileOpen(id, listing?.ownerId)
 
   // Back from the pipeline with the intent to contact: open WhatsApp now,
   // once, and drop the hash so a reload does not do it again.
@@ -586,13 +594,17 @@ export default function PropertyPage() {
                   return suffix ? <span className="font-sans text-lg font-normal text-text-secondary"> {suffix}</span> : null
                 })()}
               </p>
-              {listing.isBoosted && (
+              {isBoostLive(listing) && (
                 <DestacadoBadge withStar />
               )}
-              <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
+              <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:w-auto">
                 <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
                   <Eye className="h-4 w-4 shrink-0" />
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
+                  {/* ADR-051: the owner's second number, owner-only. */}
+                  {viewerIsOwner && ownerApariciones.total !== undefined && (
+                    <> · {ownerApariciones.total} {ownerApariciones.total === 1 ? 'aparición' : 'apariciones'}</>
+                  )}
                 </span>
                 {canContact && <SaveButton listingId={listing.id} variant="page" />}
 {view !== 'owner-only' && (
@@ -733,8 +745,8 @@ export default function PropertyPage() {
             )}
 
             {/* Owner boost section */}
-            {isOwner && listing.status === 'active' && (
-              listing.isBoosted ? (
+            {isOwner && listing.status === 'active' && (<>
+              {isBoostLive(listing) && (
                 // Boost status for owner
                 <div className="rounded-xl border border-boost/40 bg-boost/10 p-4">
                   <div className="flex items-center gap-2">
@@ -758,27 +770,24 @@ export default function PropertyPage() {
                     )}
                     {listing.boostedUntil && (
                       <span>
-                        ({Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días restantes)
+                        ({boostDaysLeft(listing.boostedUntil, listing.boostTier)} días restantes)
                       </span>
                     )}
                   </div>
                 </div>
-              ) : (
-                // Boost for owner: available, not promoted (ADR-042, ADR-043
-                // D17) — a plain secondary button, not an amber call to action.
-                <BoostPurchaseFlow
-                  listingId={listing.id}
-                  placement="listing_page"
-                  onSuccess={() => {}}
-                >
-                  {(openFlow) => (
-                    <Button onClick={openFlow} className="w-full">
-                      Destacar mi propiedad
-                    </Button>
-                  )}
-                </BoostPurchaseFlow>
-              )
-            )}
+              )}
+              {/* Boost for owner: available, not promoted (ADR-042, ADR-043
+                  D17) — a plain secondary button, not an amber call to action.
+                  The flow stays mounted once boosted, so its confirmation is
+                  not lost when the page refreshes underneath it. */}
+              <BoostPurchaseFlow listingId={listing.id} placement="listing_page">
+                {(openFlow) => !isBoostLive(listing) && (
+                  <Button onClick={openFlow} className="w-full">
+                    Destacar mi propiedad
+                  </Button>
+                )}
+              </BoostPurchaseFlow>
+            </>)}
 
             {/* App download banner */}
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-secondary to-[#2E5544] p-6 text-white">

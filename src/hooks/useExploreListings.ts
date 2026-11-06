@@ -4,6 +4,7 @@ import { firestoreService } from '@/services/firestoreService'
 import type { ExploreListingsPage } from '@/types/explore'
 import type { OperationType } from '@/types/enums'
 import type { QueryDocumentSnapshot } from 'firebase/firestore'
+import { listingQueryKeys } from '@/lib/listingQueries'
 
 const EXPLORE_PAGE_SIZE = 30
 
@@ -37,10 +38,10 @@ export function useExploreListings(
     ExploreListingsPage,
     Error,
     { pages: ExploreListingsPage[] },
-    (string | undefined)[],
+    readonly (string | undefined)[],
     QueryDocumentSnapshot | undefined
   >({
-    queryKey: ['listings', 'explore', opType],
+    queryKey: listingQueryKeys.explore(opType),
     queryFn: ({ pageParam }) =>
       firestoreService.getActiveListingsWithPropertiesPaginated(
         EXPLORE_PAGE_SIZE,

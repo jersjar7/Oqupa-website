@@ -4,7 +4,10 @@
  * ─────────────────────────────────────────────────────────────────────────
  *  TO ADD OR REMOVE SOMEONE
  *
- *    1. Edit the PEOPLE array below — nothing else.
+ *    1. Edit the PEOPLE array below — nothing else. Everyone listed is a team
+ *       account (excluded from analytics, ADR-050), even with `access: []`.
+ *       Also update TEAM_EMAILS in oqupa/functions/lib/team-roster.js and
+ *       oqupa/lib/utils/team_emails.dart — CI fails until all three agree.
  *    2. Run:  npm run access:sync      (writes the list into firestore.rules)
  *    3. Commit both files together.
  *    4. Deploy the rules:
@@ -54,6 +57,10 @@ export interface Person {
 export const PEOPLE: Person[] = [
   // Founders / admin
   { name: 'Jerson',  email: 'admin@oqupa.com',                   access: ['admin', 'metrics', 'dev', 'marketing'] },
+  // Jerson's personal Google account. On the team, so it never counts in
+  // analytics (ADR-050) — but it opens no internal page; admin@ does that.
+  { name: 'Jerson (personal)', email: 'jersondevs@gmail.com',     access: [] },
+  { name: 'App Store review', email: 'jersondevs+appstore@gmail.com', access: [] },
   { name: 'Branko',  email: 'bbarba@oqupa.com',                  access: ['admin', 'metrics'] },
 
   // Software engineering — the dev board renders one column per person, in
@@ -80,6 +87,29 @@ export const PEOPLE: Person[] = [
   // ONLY Contenido. He is deliberately still off Números; the 2026-08-01
   // decision stands and adding him back there needs its own instruction.
 ]
+
+/**
+ * Every team account, lowercase and sorted — whether or not it opens any page.
+ *
+ * Team accounts NEVER count in analytics (ADR-050, Jerson 2026-11-02: "Please
+ * do not include in our analytics anything done with my admin account so we do
+ * not fake numbers. Make this a rule for any of our Equipo board emails.").
+ * The website stops sending GA4 / Meta / TikTok events while one is signed in,
+ * and the nightly Números build leaves their accounts, listings, contacts and
+ * payments out.
+ *
+ * Copies that cannot import this file, kept equal by checks that fail the build:
+ *   - oqupa/functions/lib/team-roster.js  TEAM_EMAILS  (Oqupa-Platform CI:
+ *     scripts/check-team-emails.mjs)
+ *   - oqupa/lib/utils/team_emails.dart    (app test pins it to the functions copy)
+ */
+export const TEAM_EMAILS: readonly string[] = PEOPLE.map((p) => p.email.toLowerCase()).sort()
+
+/** True when the email belongs to a team account. Case-insensitive. */
+export function isTeamEmail(email: string | undefined | null): boolean {
+  if (!email) return false
+  return TEAM_EMAILS.includes(email.trim().toLowerCase())
+}
 
 /** Everyone granted an area, in file order. */
 export function peopleWith(area: AccessArea): Person[] {

@@ -14,6 +14,7 @@ import {
   CURRENCY_SYMBOLS,
 } from '@/types/enums'
 import DestacadoBadge from '@/app/components/ui/DestacadoBadge'
+import { isBoostLive } from '@/lib/boostState'
 
 interface LeadCardProps {
   listing: Listing
@@ -129,7 +130,7 @@ export default function LeadCard({ listing, property, canClaim, onClaim, isClaim
           </div>
         )}
 
-        {listing.isBoosted && (
+        {isBoostLive(listing) && (
           <DestacadoBadge className="absolute top-3 left-3" />
         )}
       </div>

@@ -13,6 +13,7 @@
 import { showsDots } from './zoomPolicy'
 import { mapPointOf, type Bounds } from './mapPoint'
 import type { ListingWithProperty } from '@/types/explore'
+import { isBoostLive } from '@/lib/boostState'
 
 export type MapMarker =
   | { kind: 'pin'; item: ListingWithProperty; lat: number; lng: number }
@@ -28,8 +29,8 @@ export class MapMarkerIndex {
   private readonly spots: { lat: number; lng: number; items: ListingWithProperty[] }[]
 
   constructor(items: ListingWithProperty[]) {
-    this.boosted = items.filter((i) => i.listing.isBoosted)
-    this.regular = items.filter((i) => !i.listing.isBoosted)
+    this.boosted = items.filter((i) => isBoostLive(i.listing))
+    this.regular = items.filter((i) => !isBoostLive(i.listing))
     const byPoint = new Map<string, { lat: number; lng: number; items: ListingWithProperty[] }>()
     for (const item of this.regular) {
       const p = mapPointOf(item)

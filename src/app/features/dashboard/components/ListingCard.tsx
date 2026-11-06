@@ -1,7 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
@@ -11,11 +10,8 @@ import { useToggleListingStatus, useDeleteListing, useMarkListingClosed, useSetR
 import CloseSurveyModal from './CloseSurveyModal'
 import BoostStatusBadge from '@/app/features/boost/components/BoostStatusBadge'
 import BoostPurchaseFlow from '@/app/features/boost/components/BoostPurchaseFlow'
-import { useAuthStore } from '@/stores/authStore'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
-import type { BoostTier } from '@/types/boost'
-import type { ListingWithProperty } from '@/types/explore'
 import {
   PROPERTY_TYPE_LABELS,
   LISTING_STATUS_LABELS,
@@ -23,10 +19,15 @@ import {
 } from '@/types/enums'
 import { getPriceSuffix } from '@/lib/formatters'
 import { realtorHelpDisableWarning } from '@/lib/realtorHelpWarning'
+import { AGENTS_WHEN_TURNED_ON, agentHelpOffer, agentHelpOnLine } from '@/lib/agentHelp'
+import { isBoostLive } from '@/lib/boostState'
+import { boostDaysLeft as boostDaysLeftFor } from '@/app/features/boost/lib/boostDaysLeft'
 
 interface ListingCardProps {
   listing: Listing
   property: Property
+  /** ADR-051: lifetime Apariciones (owner-only total); undefined while unknown. */
+  apariciones?: number
 }
 
 /** A brand action: Gotham Bold, uppercase, tracked, 44px (audit 2026-11-02). */
@@ -38,11 +39,9 @@ function formatPrice(amount: number, currency: string): string {
   return `${symbol} ${amount.toLocaleString('es-PE')}`
 }
 
-export default function ListingCard({ listing, property }: ListingCardProps) {
+export default function ListingCard({ listing, property, apariciones }: ListingCardProps) {
   const toggleStatus = useToggleListingStatus()
   const deleteListing = useDeleteListing()
-  const queryClient = useQueryClient()
-  const { user } = useAuthStore()
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const markClosed = useMarkListingClosed()
@@ -54,36 +53,6 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
   const [showRealtorHelpOff, setShowRealtorHelpOff] = useState(false)
 
-  const handleBoostSuccess = useCallback(
-    ({ tier, durationDays }: { tier: BoostTier; durationDays: number }) => {
-      const userId = user?.id
-      if (!userId) return
-
-      const boostedUntil = new Date()
-      boostedUntil.setDate(boostedUntil.getDate() + durationDays)
-
-      // Optimistically update the listing in the React Query cache
-      queryClient.setQueryData<ListingWithProperty[]>(
-        ['listings', 'user', userId, 'withProperties'],
-        (old) =>
-          old?.map((item) =>
-            item.listing.id === listing.id
-              ? {
-                  ...item,
-                  listing: {
-                    ...item.listing,
-                    isBoosted: true,
-                    boostTier: tier,
-                    boostScore: 100,
-                    boostedUntil,
-                  },
-                }
-              : item,
-          ),
-      )
-    },
-    [queryClient, user?.id, listing.id],
-  )
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const isClosed = listing.status === 'sold' || listing.status === 'rented'
   // Sold / rented listings can be published again, as in the app.
@@ -98,10 +67,14 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
   // Deactivating does not pause a boost: the expiry job ignores status, so the
   // paid days keep running and nothing is returned. A boosted listing asks
   // first and says so; an unboosted one has nothing to lose.
-  const asksBeforeDeactivating = listing.status === 'active' && listing.isBoosted
-  const boostDaysLeft = listing.boostedUntil
-    ? Math.max(0, Math.ceil((listing.boostedUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null
+  // Boosted only while isBoosted AND boostedUntil is still ahead.
+  const boostLive = isBoostLive(listing)
+  // Asks unless the boost is known to be over: one with no end date written
+  // still warns.
+  const asksBeforeDeactivating =
+    listing.status === 'active' && listing.isBoosted && (!listing.boostedUntil || boostLive)
+  // Round-up days, 30 on the day of purchase (fix/boost-days).
+  const boostDaysLeft = boostDaysLeftFor(listing.boostedUntil, listing.boostTier)
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
@@ -157,7 +130,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         </div>
 
         {/* Boost status */}
-        {listing.isBoosted && (
+        {boostLive && (
           <div className="mt-2">
             <BoostStatusBadge listing={listing} detailed />
           </div>
@@ -167,16 +140,21 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         <div className="mt-3 flex items-center gap-1 text-xs text-text-tertiary">
           <Eye className="h-3.5 w-3.5" />
           <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
+          {/* ADR-051: the owner's second number; hidden while unknown, never a false 0. */}
+          {apariciones !== undefined && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{apariciones} {apariciones === 1 ? 'aparición' : 'apariciones'}</span>
+            </>
+          )}
         </div>
 
-        {/* Boost CTA for non-boosted active listings */}
-        {listing.status === 'active' && !listing.isBoosted && (
-          <BoostPurchaseFlow
-            listingId={listing.id}
-            placement="my_listings"
-            onSuccess={handleBoostSuccess}
-          >
-            {(openFlow) => (
+        {/* Boost CTA for non-boosted active listings. The flow stays mounted
+            once the listing is boosted, so its confirmation is not lost when
+            the card refreshes underneath it. */}
+        {listing.status === 'active' && (
+          <BoostPurchaseFlow listingId={listing.id} placement="my_listings">
+            {(openFlow) => !boostLive && (
               <button
                 onClick={openFlow}
                 className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-boost px-4 font-sans text-sm font-bold uppercase tracking-[1px] text-ink transition-colors hover:bg-boost-hover"
@@ -217,9 +195,12 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {listing.status === 'active' && !listing.assignedRealtorId && (
           <div className="mt-2">
             {listing.wantsRealtorHelp ? (
-              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
-                Desactivar ayuda de agentes
-              </button>
+              <>
+                <p className="mb-1 text-sm text-text-primary">{agentHelpOnLine(listing.maxRealtors ?? AGENTS_WHEN_TURNED_ON)}</p>
+                <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
+                  Desactivar ayuda de agentes
+                </button>
+              </>
             ) : (
               <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOffer(true)}>
                 <Users className="h-4 w-4" aria-hidden="true" />
@@ -259,7 +240,7 @@ export default function ListingCard({ listing, property }: ListingCardProps) {
         {showRealtorHelpOffer && (
           <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
             <p className="text-sm text-text-secondary">
-              {`Agentes verificados por Oqupa podrán ofrecerte ayuda para ${isRental ? 'alquilar' : 'vender'} tu propiedad. Oqupa no cobra comisiones por este servicio.`}
+              {agentHelpOffer(isRental)}
             </p>
             <DialogActions className="mt-3">
               <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>

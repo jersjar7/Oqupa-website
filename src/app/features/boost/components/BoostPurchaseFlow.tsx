@@ -16,7 +16,7 @@ interface BoostPurchaseFlowProps {
   /** Where the offer is shown. Sent as `boost_offer_viewed.placement`. */
   placement: BoostOfferPlacement
   /** Called when boost purchase completes successfully */
-  onSuccess: (data: { tier: BoostTier; durationDays: number }) => void
+  onSuccess?: (data: { tier: BoostTier; durationDays: number }) => void
   /** Render prop to trigger the flow */
   children: (openFlow: () => void) => React.ReactNode
 }
@@ -111,19 +111,15 @@ export default function BoostPurchaseFlow({
   const handlePaymentSuccess = useCallback(async () => {
     setStep('processing')
 
-    // Poll for webhook confirmation
+    // Poll for webhook confirmation. The hook refreshes every listing screen
+    // once the server confirms (and keeps watching if the webhook is late).
     await pollCompletion.mutateAsync(paymentId)
-
-    // Invalidate queries to refresh listing data
-    queryClient.invalidateQueries({ queryKey: ['listings'] })
-    queryClient.invalidateQueries({ queryKey: ['payments'] })
 
     // Find the tier config for the summary
     const tierConfig = tiers?.find((t) => t.tier === selectedTier)
     const durationDays = tierConfig?.durationDays ?? 7
 
-    // Notify parent for optimistic update
-    onSuccess({ tier: selectedTier!, durationDays })
+    onSuccess?.({ tier: selectedTier!, durationDays })
 
     // Show success step
     setStep('success')
@@ -132,7 +128,7 @@ export default function BoostPurchaseFlow({
     autoCloseTimer.current = setTimeout(() => {
       handleSuccessClose()
     }, 4000)
-  }, [paymentId, pollCompletion, queryClient, onSuccess, tiers, selectedTier, handleSuccessClose])
+  }, [paymentId, pollCompletion, onSuccess, tiers, selectedTier, handleSuccessClose])
 
   const handlePaymentCancel = useCallback(() => {
     setStep('tier-selection')
