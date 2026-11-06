@@ -8,14 +8,19 @@ export function bathroomsLabel(count: number | null | undefined): string | null 
 }
 
 /**
- * "3 hab." — or just "3" with `bare`, where the label sits beside it. A
- * Departamento with 0 dormitorios reads "Monoambiente" (ADR-043 D4); no other
- * type ever does.
+ * The number shown for a bedroom count. A listing saved with 0 (a
+ * "monoambiente") reads 1 — Jerson, 2026-11-06 (ADR-053): "using the number 1
+ * is enough". The stored value is not changed. Same rule as the app.
  */
+export function shownBedrooms(count: number): number {
+  return count < 1 ? 1 : count
+}
+
+/** "3 hab." — or just "3" with `bare`, where the label sits beside it. */
 export function bedroomsLabel(
   count: number,
-  { bare = false, propertyType }: { bare?: boolean; propertyType?: string } = {},
+  { bare = false }: { bare?: boolean; propertyType?: string } = {},
 ): string {
-  if (count === 0 && propertyType === 'departamento') return 'Monoambiente'
-  return bare ? String(count) : `${count} hab.`
+  const n = shownBedrooms(count)
+  return bare ? String(n) : `${n} hab.`
 }

@@ -5,7 +5,7 @@ interface WizardStepperProps {
   min: number
   max: number
   onChange: (value: number) => void
-  /** What the number reads as (0 dormitorios is "Monoambiente"). */
+  /** What the number reads as. */
   display?: (value: number) => string
 }
 

@@ -1,6 +1,7 @@
 // The list of what the map shows — map plan step 3 (ADR-031 items 5 and 7–11).
 // Same rules and Jerson's words as the app's map_list_logic.dart. The header
 // carries the count and nothing else — no filler text.
+import { shownBedrooms } from '@/lib/roomCounts'
 import { findDistrict } from './peruGeography'
 import { DEFAULT_PEN_PER_USD } from './exchangeRates'
 import { mapPointOf, type Bounds } from './mapPoint'
@@ -65,7 +66,7 @@ export function listingDetailsLine({ property }: ListingWithProperty): string {
       const beds = property.specs?.bedroomCount
       const baths = property.specs?.bathroomCount
       return [
-        beds === 0 && property.propertyType === 'departamento' ? 'Monoambiente' : beds != null && beds > 0 ? count(beds, 'dormitorio', 'dormitorios') : null,
+        beds != null ? count(shownBedrooms(beds), 'dormitorio', 'dormitorios') : null,
         baths != null && baths > 0 ? count(baths, 'baño', 'baños') : null,
         areaPart,
       ].filter(Boolean).join(' · ')

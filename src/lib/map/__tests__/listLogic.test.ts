@@ -66,9 +66,10 @@ describe('the details line, per type', () => {
     expect(listingDetailsLine(mapListing({ bedrooms: 3, bathrooms: 2, area: 160 }))).toBe('3 dormitorios · 2 baños · 160 m²')
     expect(listingDetailsLine(mapListing({ bedrooms: 1, bathrooms: 1, area: 45 }))).toBe('1 dormitorio · 1 baño · 45 m²')
   })
-  it('a departamento with 0 dormitorios is a Monoambiente (ADR-043 D4); a casa never', () => {
-    expect(listingDetailsLine(mapListing({ type: 'departamento', bedrooms: 0, bathrooms: 1, area: 30 }))).toBe('Monoambiente · 1 baño · 30 m²')
-    expect(listingDetailsLine(mapListing({ type: 'casa', bedrooms: 0, bathrooms: 1, area: 30 }))).toBe('1 baño · 30 m²')
+  // ADR-053 (Jerson 2026-11-06): no "Monoambiente" word; a saved 0 reads 1, as in the app.
+  it('0 dormitorios reads "1 dormitorio", for a departamento and a casa alike', () => {
+    expect(listingDetailsLine(mapListing({ type: 'departamento', bedrooms: 0, bathrooms: 1, area: 30 }))).toBe('1 dormitorio · 1 baño · 30 m²')
+    expect(listingDetailsLine(mapListing({ type: 'casa', bedrooms: 0, bathrooms: 1, area: 30 }))).toBe('1 dormitorio · 1 baño · 30 m²')
   })
   it('departamento leaves out what is missing', () => {
     expect(listingDetailsLine(mapListing({ type: 'departamento', bedrooms: 2, area: 70 }))).toBe('2 dormitorios · 70 m²')
