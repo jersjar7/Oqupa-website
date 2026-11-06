@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-06 (evening) — Equipo board: priority, details, finished tasks out of the way
+
+From the weekly meeting of 2026-11-05; Jerson: "The new dashboard looks good" (soft grey background at his request).
+- A person's column shows unfinished work; "Mostrar terminadas (N)" shows the rest.
+- Priority on every task (Alta / Normal / Cuando haya tiempo); the shared list puts Alta first and keeps tech debt
+  and bugs in their own "Cuando haya tiempo" section.
+- "Añadir detalles" / "Detalles" under every task.
+- Soft grey behind the board for readability. Internal page only; rules allowing the two new fields are live.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-06 — Vistas and Apariciones; the team out of analytics; boosted only while live
 
 Jerson's yes: the "go" of 2026-11-06 for the website release (ADR-051 step 4).
