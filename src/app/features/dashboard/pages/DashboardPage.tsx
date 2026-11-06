@@ -90,7 +90,7 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
   const boosted = listings.filter(({ listing }) => isBoostLive(listing)).length
   const totalViews = listings.reduce((sum, { listing }) => sum + (listing.viewCount ?? 0), 0)
   // ADR-051: the owner's second number, from the owner-only totals.
-  const apariciones = useListingsApariciones(listings.map(({ listing }) => listing.id))
+  const apariciones = useListingsApariciones(listings.map(({ listing }) => listing.id), userId)
   const monthlySpend = spendThisMonthSoles(payments)
 
   const failedNote = 'No pudimos cargar tus números. Recarga la página.'

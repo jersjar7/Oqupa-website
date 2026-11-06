@@ -519,14 +519,19 @@ export const firestoreService = {
     await callable({ deviceId: getOrCreateClientId(), platform: 'web', events })
   },
 
-  // ADR-051: lifetime Apariciones of one listing, kept off the public listing
-  // (listingTotals is readable by the owner only). No record yet = 0; a failed
-  // read throws, so the page shows "—" rather than a false 0.
-  async getListingApariciones(listingId: string): Promise<number> {
-    const snap = await getDoc(doc(db, 'listingTotals', listingId))
-    if (!snap.exists()) return 0
-    const shown = snap.data()?.['shown']
-    return typeof shown === 'number' ? shown : 0
+  // ADR-051: an owner's lifetime Apariciones, per listing, in one query by
+  // owner (listingTotals is readable by the owner only). A listing nobody has
+  // seen yet has no record — reading it alone is refused by the rules — so it
+  // is simply absent here, which callers read as 0. A failed read throws, so
+  // the page shows "—" rather than a false 0.
+  async getOwnerApariciones(ownerId: string): Promise<Record<string, number>> {
+    const snap = await getDocs(query(collection(db, 'listingTotals'), where('ownerId', '==', ownerId)))
+    const out: Record<string, number> = {}
+    for (const d of snap.docs) {
+      const shown = d.data()['shown']
+      out[d.id] = typeof shown === 'number' ? shown : 0
+    }
+    return out
   },
 
   async updateListingStatus(

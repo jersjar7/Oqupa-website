@@ -257,7 +257,7 @@ export default function PropertyPage() {
   // ADR-051: Apariciones is owner-only; only the owner's page ever asks for it.
   // Called before any early return (hook order — see PropertyPage.hooks.test).
   const viewerIsOwner = !!user && !!listing && user.id === listing.ownerId
-  const ownerApariciones = useListingsApariciones(viewerIsOwner && id ? [id] : [])
+  const ownerApariciones = useListingsApariciones(viewerIsOwner && id ? [id] : [], viewerIsOwner ? user?.id : undefined)
   const [showAuthModal, setShowAuthModal] = useState(false)
   // Signed in, no saved profile (feature audit 2026-11-02).
   const [showProfileNotFound, setShowProfileNotFound] = useState(false)
@@ -597,16 +597,15 @@ export default function PropertyPage() {
               {isBoostLive(listing) && (
                 <DestacadoBadge withStar />
               )}
-              <div className="flex w-full items-center gap-3 sm:ml-auto sm:w-auto">
+              <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:w-auto">
                 <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
                   <Eye className="h-4 w-4 shrink-0" />
                   {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
+                  {/* ADR-051: the owner's second number, owner-only. */}
+                  {viewerIsOwner && ownerApariciones.total !== undefined && (
+                    <> · {ownerApariciones.total} {ownerApariciones.total === 1 ? 'aparición' : 'apariciones'}</>
+                  )}
                 </span>
-                {viewerIsOwner && ownerApariciones.total !== undefined && (
-                  <span className="whitespace-nowrap text-sm text-text-secondary">
-                    {ownerApariciones.total} {ownerApariciones.total === 1 ? 'aparición' : 'apariciones'}
-                  </span>
-                )}
                 {canContact && <SaveButton listingId={listing.id} variant="page" />}
 {view !== 'owner-only' && (
                 <button

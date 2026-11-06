@@ -41,8 +41,8 @@ const mockProperty = {
 
 vi.mock('@/hooks/useProperty', () => ({ useProperty: () => mockProperty }))
 vi.mock('@/hooks/useListingCounts', () => ({ useCountSeenWhileOpen: () => {}, useCountShownWhenVisible: () => () => {} }))
-const aparicionesHook = vi.hoisted(() => vi.fn((_ids: string[]) => ({ byId: {} as Record<string, number | undefined>, total: 210 as number | undefined, isLoading: false, isError: false })))
-vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: (ids: string[]) => aparicionesHook(ids) }))
+const aparicionesHook = vi.hoisted(() => vi.fn((_ids: string[], _owner?: string) => ({ byId: {} as Record<string, number | undefined>, total: 210 as number | undefined, isLoading: false, isError: false })))
+vi.mock('@/hooks/useListingApariciones', () => ({ useListingsApariciones: (ids: string[], owner?: string) => aparicionesHook(ids, owner) }))
 vi.mock('@/hooks/useDocumentMeta', () => ({ useDocumentMeta: (m: unknown) => documentMetaMock(m) }))
 vi.mock('@/stores/authStore', () => ({ useAuthStore: () => mockAuth }))
 vi.mock('@/lib/analytics', async (importOriginal) => {
@@ -120,8 +120,8 @@ describe('Apariciones on the listing page', () => {
     show('active', 'open', 'owner-1')
     renderPage()
     expect(screen.getByText(/3 vistas/)).toBeTruthy()
-    expect(screen.getByText('210 apariciones')).toBeTruthy()
-    expect(aparicionesHook).toHaveBeenLastCalledWith(['listing_1'])
+    expect(screen.getByText(/3 vistas · 210 apariciones/)).toBeTruthy()
+    expect(aparicionesHook).toHaveBeenLastCalledWith(['listing_1'], 'owner-1')
   })
 
   it('a visitor sees Vistas only, and the page never asks for Apariciones', () => {

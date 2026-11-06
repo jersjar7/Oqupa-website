@@ -207,7 +207,7 @@ function PropiasPane({
   refetch: () => unknown
 }) {
   // ADR-051: each card shows its Apariciones beside its Vistas.
-  const apariciones = useListingsApariciones((items ?? []).map(({ listing }) => listing.id))
+  const apariciones = useListingsApariciones((items ?? []).map(({ listing }) => listing.id), items?.[0]?.listing.ownerId)
   return (
     <AnimatePresence mode="wait">
       {isLoading ? (
