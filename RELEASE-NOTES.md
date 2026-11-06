@@ -4,6 +4,29 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-06 — Vistas and Apariciones; the team out of analytics; boosted only while live
+
+Jerson's yes: the "go" of 2026-11-06 for the website release (ADR-051 step 4).
+
+### New Features
+- Two numbers per listing, counted for everyone, guests included (ADR-051): **Apariciones** (a listing card half on
+  screen for 1 second, once per person per Lima day) and **Vistas** (the listing opened for 2 seconds, again after an
+  hour), sent through the one server counter. The owner and the team are never counted.
+- Owners see their Apariciones: Mi panel "Apariciones totales — Veces que apareció en pantalla", and on Mis
+  propiedades and their own listing page "N vistas · N apariciones". Buyers keep seeing Vistas only.
+- Team accounts never count (ADR-050): nothing reaches GA4, Meta or TikTok while a team account is signed in; the App
+  Store review account counts as team.
+
+### Bug Fixes
+- A listing reads as boosted only while isBoosted AND its end date is ahead (a refunded or lapsed boost no longer
+  shows DESTACADO); days left use the app's rule.
+- One refresh for every listing change: owner cards, the explore map and list, and the listing page update at once.
+- Agent help says up to 3 agents may contact and the owner chooses; sentence-case menu and page labels, as in the app.
+
+reCAPTCHA / App Check: unchanged — the new counter records the App Check token and does not require it.
+
+---
+
 ## 2026-11-02 (evening) — Leader line for every selected listing; confirmation windows; card stays on the map
 
 Jerson: "It looks super good… the leader line is what I was looking for" and, for the windows, "They all look great".
