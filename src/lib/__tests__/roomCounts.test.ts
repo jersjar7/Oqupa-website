@@ -17,18 +17,18 @@ describe('bathroomsLabel', () => {
 // ADR-043 D4: a Departamento with 0 dormitorios reads "Monoambiente", never
 // "0 hab."; no other type is ever called a Monoambiente (hostile review).
 describe('bedroomsLabel', () => {
-  // ADR-053 (Jerson 2026-11-06): "using the number 1 is enough" — no
-  // "Monoambiente" word; a saved 0 reads 1, for every type, as in the app.
-  it('a saved 0 reads 1; others are "N hab." or just N beside a label', () => {
-    expect(bedroomsLabel(0, { propertyType: 'departamento' })).toBe('1 hab.')
-    expect(bedroomsLabel(0, { bare: true, propertyType: 'departamento' })).toBe('1')
+  // ADR-053 (Jerson 2026-11-06): no "Monoambiente" word; 0 stays 0 — "We
+  // don't need to lie for them." Every type, as in the app.
+  it('a saved 0 reads 0; others are "N hab." or just N beside a label', () => {
+    expect(bedroomsLabel(0, { propertyType: 'departamento' })).toBe('0 hab.')
+    expect(bedroomsLabel(0, { bare: true, propertyType: 'departamento' })).toBe('0')
     expect(bedroomsLabel(3, { propertyType: 'departamento' })).toBe('3 hab.')
     expect(bedroomsLabel(3, { bare: true })).toBe('3')
   })
   it('never the word Monoambiente, for any type', () => {
     for (const t of ['departamento', 'casa', 'hospedaje', 'habitacion', undefined]) {
-      expect(bedroomsLabel(0, { propertyType: t })).toBe('1 hab.')
-      expect(bedroomsLabel(0, { bare: true, propertyType: t })).toBe('1')
+      expect(bedroomsLabel(0, { propertyType: t })).toBe('0 hab.')
+      expect(bedroomsLabel(0, { bare: true, propertyType: t })).toBe('0')
     }
   })
 })
