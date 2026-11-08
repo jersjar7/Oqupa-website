@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { openedPhrase, shownPhrase } from '@/lib/countWords'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
+import { Eye, MoreHorizontal, Pencil, Power, Sparkles } from 'lucide-react'
 import ShareFormatModal from '@/components/ShareFormatModal'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
 import DialogActions from '@/app/components/ui/DialogActions'
@@ -35,6 +35,17 @@ interface ListingCardProps {
 const ACTION =
   'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-secondary/40 px-3 font-sans text-xs font-bold uppercase tracking-[1px] text-secondary transition-colors hover:border-secondary hover:text-secondary-hover disabled:opacity-50'
 
+/** The card's one main action: 48px, green outline, as in the app. */
+const PRIMARY =
+  'inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-secondary bg-white px-4 font-sans text-xs font-bold uppercase tracking-[1px] text-secondary transition-colors hover:bg-background-secondary disabled:opacity-50'
+/** Volver a publicar: the same button, filled, as the app does. */
+const PRIMARY_FILLED = `${PRIMARY.replace('bg-white', 'bg-secondary').replace('text-secondary', 'text-white').replace('hover:bg-background-secondary', 'hover:bg-secondary-hover')}`
+/** Room the menu needs below ⋯ (tab bar included) before it opens upward. */
+const MENU_ROOM = 360
+/** One entry in the "⋯" menu. */
+const MENU_ITEM =
+  'flex min-h-11 w-full items-center px-4 text-left font-sans text-[15px] text-text-primary transition-colors hover:bg-background-secondary disabled:opacity-50'
+
 function formatPrice(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency
   return `${symbol} ${amount.toLocaleString('es-PE')}`
@@ -51,8 +62,32 @@ export default function ListingCard({ listing, property, apariciones }: ListingC
   const [showRepublishConfirm, setShowRepublishConfirm] = useState(false)
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
   const setRealtorHelp = useSetRealtorHelp()
-  const [showRealtorHelpOffer, setShowRealtorHelpOffer] = useState(false)
   const [showRealtorHelpOff, setShowRealtorHelpOff] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuUp, setMenuUp] = useState(false)
+  const menuId = useId()
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const moreRef = useRef<HTMLButtonElement>(null)
+  const closeMenu = () => setMenuOpen(false)
+
+  // The menu closes on a click outside it, and on Escape (focus back on ⋯).
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (!actionsRef.current?.contains(e.target as Node)) setMenuOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setMenuOpen(false)
+      moreRef.current?.focus()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
   const photos = property.media.photoKeys ?? property.media.propertyPhotoUrls ?? []
   const isClosed = listing.status === 'sold' || listing.status === 'rented'
@@ -76,11 +111,23 @@ export default function ListingCard({ listing, property, apariciones }: ListingC
     listing.status === 'active' && listing.isBoosted && (!listing.boostedUntil || boostLive)
   // Round-up days, 30 on the day of purchase (fix/boost-days).
   const boostDaysLeft = boostDaysLeftFor(listing.boostedUntil, listing.boostTier)
+  const editPath = `/app/listings/${listing.id}/edit`
+  // Editar is the main button only on a live boost; elsewhere it is in ⋯.
+  const primaryIsEditar = listing.status === 'active' && boostLive
+  // Same rule as the app (bug B3): help on OR an agent assigned, active only.
+  const showAgents = listing.status === 'active' && (listing.wantsRealtorHelp || !!listing.assignedRealtorId)
+  const hasInterestedAgents = showAgents && (listing.currentClaimsCount ?? 0) > 0
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium">
+    // No overflow-hidden on the card: it clipped the ⋯ menu (2026-11-08). The
+    // photo rounds its own top corners; an open menu lifts the card above the
+    // one below it.
+    <div
+      data-testid="owner-listing-card"
+      className={`relative flex h-full flex-col rounded-2xl border border-border bg-white shadow-light transition-shadow hover:shadow-medium ${menuOpen ? 'z-30' : ''}`}
+    >
       {/* Photo (carousel) */}
-      <div className="relative">
+      <div className="relative overflow-hidden rounded-t-2xl">
         <PhotoCarousel
           photos={photos}
           blurHashes={property.media.photoBlurHashes}
@@ -150,65 +197,162 @@ export default function ListingCard({ listing, property, apariciones }: ListingC
           )}
         </div>
 
-        {/* Boost CTA for non-boosted active listings. The flow stays mounted
-            once the listing is boosted, so its confirmation is not lost when
-            the card refreshes underneath it. */}
-        {listing.status === 'active' && (
-          <BoostPurchaseFlow listingId={listing.id} placement="my_listings">
-            {(openFlow) => !boostLive && (
-              <button
-                onClick={openFlow}
-                className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-boost px-4 font-sans text-sm font-bold uppercase tracking-[1px] text-ink transition-colors hover:bg-boost-hover"
-              >
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                Destacar mi propiedad
-              </button>
+        {/* Actions: one main button and "⋯" with the rest, as in the app
+            (Jerson 2026-11-08). The main one follows the listing: Destacar,
+            Editar once boosted, Volver a publicar when off or closed. The
+            boost flow stays mounted while active, so its confirmation is not
+            lost when the card refreshes to boosted underneath it. */}
+        <div ref={actionsRef} className="relative mt-3 flex gap-2">
+          {listing.status === 'active' ? (
+            <BoostPurchaseFlow listingId={listing.id} placement="my_listings">
+              {(openFlow) =>
+                boostLive ? (
+                  <Link to={editPath} className={PRIMARY}>
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                    Editar
+                  </Link>
+                ) : (
+                  // ADR-042: available, not promoted — a green outline, as in the app.
+                  <button type="button" onClick={openFlow} className={PRIMARY}>
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                    Destacar
+                  </button>
+                )
+              }
+            </BoostPurchaseFlow>
+          ) : canToggle ? (
+            <button
+              type="button"
+              className={PRIMARY_FILLED}
+              disabled={toggleStatus.isPending}
+              onClick={() => setShowRepublishConfirm(true)}
+            >
+              <Power className="h-4 w-4" aria-hidden="true" />
+              Volver a publicar
+            </button>
+          ) : (
+            <Link to={editPath} className={PRIMARY}>
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Editar
+            </Link>
+          )}
+          <button
+            ref={moreRef}
+            type="button"
+            aria-label="Más opciones"
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            onClick={() => {
+              // Opens upward when the screen has no room below (the phone's
+              // tab bar hid the last entries, 2026-11-08).
+              const r = moreRef.current?.getBoundingClientRect()
+              const below = r ? window.innerHeight - r.bottom : Infinity
+              setMenuUp(!!r && below < MENU_ROOM && r.top > below)
+              setMenuOpen((o) => !o)
+            }}
+            className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[13px] border border-separator bg-white text-text-secondary transition-colors hover:bg-background-secondary"
+          >
+            <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+            {/* Interested agents wait inside the menu, as the app's dot says. */}
+            {hasInterestedAgents && (
+              <span
+                data-testid="interested-agents-dot"
+                className="absolute -top-[3px] -right-[3px] h-3 w-3 rounded-full border-2 border-white bg-primary"
+              />
             )}
-          </BoostPurchaseFlow>
-        )}
-
-        {/* Realtor agents */}
-        {/* Reachable while an agent is assigned too, as in the app (bug B3):
-            the agents page is the owner's only way to "Quitar agente". */}
-        {(listing.wantsRealtorHelp || listing.assignedRealtorId) && listing.status === 'active' && (
-          <div className="mt-2">
-            {listing.assignedRealtorId ? (
-              <Link to={`/app/listings/${listing.id}/agents`} className="inline-flex min-h-11 items-center">
-                <span className="text-xs font-medium text-secondary">Agente asignado</span>
+          </button>
+          {menuOpen && (
+            <div
+              id={menuId}
+              data-testid="listing-actions-menu"
+              data-placement={menuUp ? 'up' : 'down'}
+              className={`absolute right-0 ${menuUp ? 'bottom-14' : 'top-14'} z-20 flex w-60 flex-col rounded-[14px] border border-border bg-white py-1.5 shadow-medium`}
+            >
+              <Link to={`/property/${listing.id}`} className={MENU_ITEM} onClick={closeMenu}>
+                Ver publicación
               </Link>
-            ) : (
-              <Link
-                to={`/app/listings/${listing.id}/agents`}
-                className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-secondary hover:text-secondary-hover"
-              >
-                <Users className="h-3.5 w-3.5" />
-                {listing.currentClaimsCount > 0
-                  ? `${listing.currentClaimsCount} agente${listing.currentClaimsCount !== 1 ? 's' : ''} interesado${listing.currentClaimsCount !== 1 ? 's' : ''}`
-                  : 'Esperando agentes...'}
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* Agent help (ADR-043 D10): offered here after publishing, off
-            until the owner turns it on. With an agent assigned the agents
-            page above handles it. */}
-        {listing.status === 'active' && !listing.assignedRealtorId && (
-          <div className="mt-2">
-            {listing.wantsRealtorHelp ? (
-              <>
-                <p className="mb-1 text-sm text-text-primary">{agentHelpOnLine(listing.maxRealtors ?? AGENTS_WHEN_TURNED_ON)}</p>
-                <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
-                  Desactivar ayuda de agentes
+              {!primaryIsEditar && (
+                <Link to={editPath} className={MENU_ITEM} onClick={closeMenu}>
+                  Editar
+                </Link>
+              )}
+              {listing.status === 'active' && (
+                <button type="button" className={MENU_ITEM} onClick={() => { closeMenu(); setShowShareModal(true) }}>
+                  Compartir
                 </button>
-              </>
-            ) : (
-              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOffer(true)}>
-                <Users className="h-4 w-4" aria-hidden="true" />
-                Ayuda de agentes
+              )}
+              {/* Reachable while an agent is assigned too (bug B3): the
+                  agents page is the owner's only way to "Quitar agente". */}
+              {showAgents && (
+                <Link to={`/app/listings/${listing.id}/agents`} className={MENU_ITEM} onClick={closeMenu}>
+                  {`Ver agentes interesados (${listing.currentClaimsCount ?? 0})`}
+                </Link>
+              )}
+              {listing.status === 'active' && (
+                <>
+                  <div className="my-1 h-px bg-border" aria-hidden="true" />
+                  <button
+                    type="button"
+                    className={MENU_ITEM}
+                    disabled={toggleStatus.isPending}
+                    onClick={() => {
+                      closeMenu()
+                      if (asksBeforeDeactivating) setShowDeactivateConfirm(true)
+                      else toggleStatus.mutate({ listingId: listing.id, currentStatus: listing.status })
+                    }}
+                  >
+                    Desactivar
+                  </button>
+                </>
+              )}
+              {canClose && (
+                <button type="button" className={MENU_ITEM} onClick={() => { closeMenu(); setShowCloseConfirm(true) }}>
+                  {isRental ? 'Marcar como alquilado' : 'Marcar como vendido'}
+                </button>
+              )}
+              {/* Deactivated, Vendido or Alquilado can be deleted directly
+                  (ADR-046 #14): last, set apart, in red; it still asks. */}
+              {canDelete && (
+                <>
+                  <div className="my-1 h-px bg-border" aria-hidden="true" />
+                  <button
+                    type="button"
+                    className={`${MENU_ITEM} text-error-strong`}
+                    onClick={() => { closeMenu(); setShowDeleteConfirm(true) }}
+                  >
+                    Eliminar
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Agent help (ADR-043 D10): offered after publishing, off until the
+            owner turns it on — the app's box, explained, one button. With an
+            agent assigned the agents page handles it. */}
+        {listing.status === 'active' && !listing.assignedRealtorId && (
+          listing.wantsRealtorHelp ? (
+            <div className="mt-3">
+              <p className="mb-1 text-sm text-text-primary">{agentHelpOnLine(listing.maxRealtors ?? AGENTS_WHEN_TURNED_ON)}</p>
+              <button type="button" className={ACTION} onClick={() => setShowRealtorHelpOff(true)}>
+                Desactivar ayuda de agentes
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-xl bg-background-secondary p-3">
+              <p className="font-sans text-sm font-medium uppercase tracking-wide text-secondary">AYUDA DE AGENTES</p>
+              <p className="mt-1.5 text-[13px] leading-snug text-text-primary">{agentHelpOffer(isRental)}</p>
+              <button
+                type="button"
+                className="mt-2.5 inline-flex min-h-11 items-center rounded-full bg-secondary px-5 font-sans text-[13px] font-bold uppercase tracking-[1px] text-white transition-colors hover:bg-secondary-hover disabled:opacity-50"
+                disabled={setRealtorHelp.isPending}
+                onClick={() => setRealtorHelp.mutate({ listingId: listing.id, on: true })}
+              >
+                Sí, activar
+              </button>
+            </div>
+          )
         )}
         {/* Turning it off releases and notifies the agents: it asks first,
             with the app's words (hostile review #5). */}
@@ -238,93 +382,6 @@ export default function ListingCard({ listing, property, apariciones }: ListingC
             </DialogActions>
           </div>
         )}
-        {showRealtorHelpOffer && (
-          <div className="mt-3 rounded-lg border border-border bg-background-secondary p-3">
-            <p className="text-sm text-text-secondary">
-              {agentHelpOffer(isRental)}
-            </p>
-            <DialogActions className="mt-3">
-              <Button variant="text" onClick={() => setShowRealtorHelpOffer(false)}>
-                Cancelar
-              </Button>
-              <Button
-                isLoading={setRealtorHelp.isPending}
-                onClick={() =>
-                  setRealtorHelp.mutate(
-                    { listingId: listing.id, on: true },
-                    { onSuccess: () => setShowRealtorHelpOffer(false) },
-                  )
-                }
-              >
-                Sí, activar
-              </Button>
-            </DialogActions>
-          </div>
-        )}
-
-        {/* Actions — pinned to the bottom via mt-auto. Brand buttons, 44px
-            tall (audit 2026-11-02: they were small lowercase text links). */}
-        <div className="mt-auto flex flex-wrap gap-2 pt-4">
-          <Link to={`/app/listings/${listing.id}/edit`} className={`${ACTION} flex-1`}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            Editar
-          </Link>
-          {listing.status === 'active' && (
-            <button type="button" className={ACTION} onClick={() => setShowShareModal(true)}>
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-              Compartir
-            </button>
-          )}
-          {canToggle && (
-            <button
-              type="button"
-              className={ACTION}
-              disabled={toggleStatus.isPending}
-              onClick={() =>
-                listing.status !== 'active'
-                  ? setShowRepublishConfirm(true)
-                  : asksBeforeDeactivating
-                  ? setShowDeactivateConfirm(true)
-                  : toggleStatus.mutate({
-                      listingId: listing.id,
-                      currentStatus: listing.status,
-                    })
-              }
-            >
-              {listing.status === 'active' ? (
-                <>
-                  <PowerOff className="h-4 w-4" aria-hidden="true" />
-                  Desactivar
-                </>
-              ) : (
-                <>
-                  <Power className="h-4 w-4" aria-hidden="true" />
-                  Volver a publicar
-                </>
-              )}
-            </button>
-          )}
-          {canClose && (
-            <button type="button" className={ACTION} onClick={() => setShowCloseConfirm(true)}>
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              {isRental ? 'Marcar como alquilado' : 'Marcar como vendido'}
-            </button>
-          )}
-          {/* Deactivated, Vendido or Alquilado can be deleted directly
-              (ADR-046 #14); set apart from the other actions. */}
-          {canDelete && (
-            <div className="mt-2 w-full border-t border-border pt-2">
-              <button
-                type="button"
-                className={`${ACTION} border-error/40 text-error hover:border-error hover:text-error-strong`}
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-                Eliminar
-              </button>
-            </div>
-          )}
-        </div>
 
         {/* Delete confirmation */}
         {showDeleteConfirm && (
