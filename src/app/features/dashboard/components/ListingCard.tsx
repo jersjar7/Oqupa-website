@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { openedPhrase, shownPhrase } from '@/lib/countWords'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Eye, Pencil, Power, PowerOff, Share2, Sparkles, Trash2, Users } from 'lucide-react'
@@ -139,12 +140,12 @@ export default function ListingCard({ listing, property, apariciones }: ListingC
         {/* View count */}
         <div className="mt-3 flex items-center gap-1 text-xs text-text-tertiary">
           <Eye className="h-3.5 w-3.5" />
-          <span>{listing.viewCount} vista{listing.viewCount !== 1 ? 's' : ''}</span>
+          <span>{openedPhrase(listing.viewCount ?? 0, property.propertyType)}</span>
           {/* ADR-051: the owner's second number; hidden while unknown, never a false 0. */}
           {apariciones !== undefined && (
             <>
               <span aria-hidden="true">·</span>
-              <span>{apariciones} {apariciones === 1 ? 'aparición' : 'apariciones'}</span>
+              <span>{shownPhrase(apariciones)}</span>
             </>
           )}
         </div>

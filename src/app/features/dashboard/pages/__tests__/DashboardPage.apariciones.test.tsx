@@ -39,19 +39,18 @@ beforeEach(() => {
   state.apariciones = { total: 345, isLoading: false, isError: false }
 })
 
-describe('Mi panel — Vistas and Apariciones', () => {
+describe('Mi panel — Las abrieron and Se mostraron', () => {
   it('shows total Apariciones with its caption', () => {
     render(<MemoryRouter><OwnerKpis userId="u1" /></MemoryRouter>)
-    expect(screen.getByText('Apariciones totales')).toBeTruthy()
+    expect(screen.getByText('Se mostraron')).toBeTruthy()
     expect(screen.getByText('345')).toBeTruthy()
-    expect(screen.getByText('Veces que apareció en pantalla')).toBeTruthy()
+    expect(screen.getAllByText('veces en total').length).toBe(2)
   })
 
   it('Vistas keeps its total and gets its caption', () => {
     render(<MemoryRouter><OwnerKpis userId="u1" /></MemoryRouter>)
-    expect(screen.getByText('Vistas totales')).toBeTruthy()
+    expect(screen.getByText('Las abrieron')).toBeTruthy()
     expect(screen.getByText('12')).toBeTruthy()
-    expect(screen.getByText('Veces que abrieron tu propiedad')).toBeTruthy()
   })
 
   it('never says "personas"', () => {
@@ -62,9 +61,20 @@ describe('Mi panel — Vistas and Apariciones', () => {
   it('Apariciones that failed to load show "—", not 0', () => {
     state.apariciones = { total: undefined, isLoading: false, isError: true }
     render(<MemoryRouter><OwnerKpis userId="u1" /></MemoryRouter>)
-    const card = screen.getByText('Apariciones totales').closest('div')!.parentElement!
+    const card = screen.getByText('Se mostraron').closest('div')!.parentElement!
     expect(card.textContent).toContain('—')
     expect(card.textContent).not.toMatch(/\b0\b/)
+  })
+
+  it('never shows the old words', () => {
+    const { container } = render(<MemoryRouter><OwnerKpis userId="u1" /></MemoryRouter>)
+    expect(container.textContent).not.toMatch(/vistas|aparici/i)
+  })
+
+  it('no Vistas yet: the hint asks to share, without the old word', () => {
+    state.listings = { data: [listing('L1', 0)], isLoading: false, isError: false }
+    render(<MemoryRouter><OwnerKpis userId="u1" /></MemoryRouter>)
+    expect(screen.getByText('Comparte tus anuncios para que más personas los abran')).toBeTruthy()
   })
 
   it('an owner with no listings yet keeps the "first listing" note', () => {

@@ -102,12 +102,12 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
     monthlySpendSoles: monthlySpend,
   })
 
-  // Captions decided by Jerson (ADR-051): "veces", never "personas" — the same
-  // person can count again.
+  // Jerson 2026-11-07: "Las abrieron" / "Se mostraron", counted in "veces",
+  // never "personas" — the same person can count again.
   const viewsSub = totalViews > 0
-    ? 'Veces que abrieron tu propiedad'
+    ? 'veces en total'
     : active > 0
-      ? 'Comparte tus anuncios para empezar a recibir vistas'
+      ? 'Comparte tus anuncios para que más personas los abran'
       : 'Crea tu primer anuncio para empezar'
 
   return (
@@ -125,15 +125,15 @@ export function OwnerKpis({ userId }: { userId: string | undefined }) {
         icon={<Zap className="h-6 w-6 text-primary" />}
       />
       <StatCard
-        label="Vistas totales"
+        label="Las abrieron"
         value={isLoading ? '—' : totalViews.toLocaleString('es-PE')}
         sub={isError ? undefined : viewsSub}
         icon={<Eye className="h-6 w-6 text-secondary" />}
       />
       <StatCard
-        label="Apariciones totales"
+        label="Se mostraron"
         value={isLoading || apariciones.total === undefined ? '—' : apariciones.total.toLocaleString('es-PE')}
-        sub={isError ? undefined : listings.length === 0 ? 'Crea tu primer anuncio para empezar' : 'Veces que apareció en pantalla'}
+        sub={isError ? undefined : listings.length === 0 ? 'Crea tu primer anuncio para empezar' : 'veces en total'}
         icon={<LayoutList className="h-6 w-6 text-secondary" />}
       />
     </div>
