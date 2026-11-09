@@ -4,6 +4,20 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-09 — When the SMS code does not come (ADR-056)
+
+Jerson's yes: "Yes ship it" (2026-11-09).
+
+### UX Improvements
+- Phone step (sign-up and Perfil): when Google refuses to send the code, it says "Google está bloqueando los códigos
+  desde tu conexión de internet. Prueba con los datos móviles de tu celular o desde la app de Oqupa." A minute after
+  a code is sent, "¿No te llegó el código?" explains what to try and how to reach us.
+- Every failure is reported to the team (never the phone number); admin@ gets an email on someone's second request
+  for help in a day.
+- Números → Resumen: "Personas a las que no les llegó el código SMS".
+
+---
+
 ## 2026-11-09 — www.oqupa.com goes to oqupa.com
 
 Jerson: "can you please solve these issues" (Search Console, 2026-11-09).
