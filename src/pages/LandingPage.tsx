@@ -18,7 +18,7 @@ export default function LandingPage() {
   useDocumentMeta({
     title: 'Oqupa - Tu próximo hogar ya está en el mapa',
     description:
-      'Oqupa centraliza los avisos inmobiliarios de Piura, elimina fraudes y conecta a usuarios con dueños y agentes verificados.',
+      'Oqupa reúne los avisos de Piura en un mapa y te conecta por WhatsApp con dueños que confirmaron su teléfono y correo.',
     url: 'https://oqupa.com',
   })
 
@@ -33,7 +33,7 @@ export default function LandingPage() {
       url: 'https://oqupa.com',
       logo: 'https://oqupa.com/favicon.png',
       description:
-        'Oqupa centraliza los avisos inmobiliarios de Piura, elimina fraudes y conecta a usuarios con dueños y agentes verificados.',
+        'Oqupa reúne los avisos de Piura en un mapa y te conecta por WhatsApp con dueños que confirmaron su teléfono y correo.',
       address: {
         '@type': 'PostalAddress',
         addressLocality: 'Piura',

@@ -48,7 +48,7 @@ const FEATURES = [
   {
     title: 'Información completa',
     description:
-      'Cada aviso incluye fotos, ubicación exacta, características y datos de contacto verificados.',
+      'Cada aviso incluye fotos, su ubicación (exacta o aproximada, según el dueño), características y contacto directo.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"

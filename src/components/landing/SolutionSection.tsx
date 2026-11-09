@@ -4,7 +4,7 @@ import cleanInterface from '@/assets/images/ubiqa-clean-interface.webp'
 
 const BENEFITS = [
   'Evita avisos con información incompleta',
-  'Accede a propiedades con datos verificados',
+  'Propiedades con la información completa, en un solo mapa',
   'Disfruta de una búsqueda clara y organizada',
 ] as const
 
