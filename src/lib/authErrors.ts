@@ -154,8 +154,15 @@ export const PHONE_SEND_BLOCKED =
 
 export function getPhoneAuthError(error: unknown, step?: 'send' | 'verify'): AuthErrorInfo {
   const code = extractFirebaseErrorCode(error)
-  if (step === 'send' && (code === 'auth/too-many-requests' || code === 'auth/quota-exceeded')) {
+  if (step === 'send' && code === 'auth/too-many-requests') {
     return { message: PHONE_SEND_BLOCKED, isRetryable: false }
+  }
+  // The whole project's SMS limit (review 2026-11-09): not the person's connection.
+  if (step === 'send' && code === 'auth/quota-exceeded') {
+    return {
+      message: 'Ahora mismo no podemos enviar códigos por SMS. Intenta de nuevo en unas horas o escríbenos a admin@oqupa.com.',
+      isRetryable: false,
+    }
   }
   return PHONE_ERROR_MAP[code] ?? {
     message: withCode('Error al verificar. Intenta de nuevo.', code),

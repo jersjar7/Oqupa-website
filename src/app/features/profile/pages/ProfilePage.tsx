@@ -8,6 +8,7 @@ import { phoneSchema, verificationCodeSchema, type PhoneFormData, type Verificat
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import { getPhoneAuthError, getProfileSaveError, getAccountDeleteError } from '@/lib/authErrors'
+import { reportPhoneStepFailure } from '@/services/phoneStepFailures'
 import { Button, Input, Select, Card, Modal, Badge } from '@/app/components/ui'
 import { CONTACT_TIME_SLOT_LABELS } from '@/types/enums'
 import { CheckCircle, Clock, XCircle, Phone, LifeBuoy } from 'lucide-react'
@@ -137,6 +138,8 @@ export default function ProfilePage() {
       const code = err && typeof err === 'object' && 'code' in err
         ? (err as { code: string }).code
         : ''
+      // Someone verifying from Perfil can be stuck too (review 2026-11-09).
+      void reportPhoneStepFailure({ code, step: 'send' })
       if (code === 'auth/captcha-check-failed' || code === 'auth/missing-client-identifier') {
         authService.cleanupRecaptcha()
         authService.initializeRecaptcha('profile-recaptcha-container')
@@ -174,6 +177,10 @@ export default function ProfilePage() {
     } catch (err) {
 
       const errorInfo = getPhoneAuthError(err, 'verify')
+      void reportPhoneStepFailure({
+        code: err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '',
+        step: 'verify',
+      })
       setPhoneError(errorInfo.message)
       setPhoneRecoveryHint(errorInfo.recoveryHint ?? null)
       toast.error(errorInfo.message)
