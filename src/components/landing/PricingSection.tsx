@@ -25,7 +25,7 @@ const FREE_BENEFITS = [
   {
     title: 'Máxima visibilidad',
     description:
-      'Tu propiedad será vista por miles de personas buscando en Piura. Llega a más interesados sin gastar un sol.',
+      'Tu propiedad aparece en el mapa de Oqupa para quienes buscan en Piura. Llega a más interesados sin gastar un sol.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"

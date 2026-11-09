@@ -2,9 +2,9 @@ import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 
 const TRUST_CARDS = [
   {
-    title: 'Avisos verificados',
+    title: 'Publicadores confirmados',
     description:
-      'Cada aviso pasa por un proceso de verificación para garantizar información real y confiable.',
+      'Cada persona que publica confirmó su teléfono por SMS y su correo.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +51,7 @@ const TRUST_CARDS = [
   {
     title: 'Información transparente y confiable',
     description:
-      'Datos claros, fotos reales y contacto directo con dueños y agentes verificados.',
+      'Datos claros, fotos y contacto directo con el dueño por WhatsApp.',
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
