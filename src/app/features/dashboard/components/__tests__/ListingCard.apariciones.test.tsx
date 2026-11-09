@@ -37,39 +37,45 @@ import ListingCard from '../ListingCard'
 import type { Listing } from '@/types/listing'
 import type { Property } from '@/types/property'
 
-function setup(viewCount: number, apariciones?: number) {
+function setup(viewCount: number, apariciones?: number, propertyType = 'casa') {
   const listing = {
     id: 'L1', propertyId: 'P1', status: 'active', viewCount, isBoosted: false,
     price: { amount: 250000, currency: 'PEN' }, description: '', wantsRealtorHelp: false, currentClaimsCount: 0,
   } as unknown as Listing
   const property = {
-    operationType: 'venta', propertyType: 'casa', location: { distrito: 'Castilla' },
+    operationType: 'venta', propertyType, location: { distrito: 'Castilla' },
     specs: { totalAreaInSquareMeters: 0 }, media: { photoKeys: [] },
   } as unknown as Property
   render(<ListingCard listing={listing} property={property} apariciones={apariciones} />)
 }
 
-describe('ListingCard — Vistas and Apariciones', () => {
+describe('ListingCard — La abrieron and Se mostró', () => {
   it('shows both numbers', () => {
     setup(12, 210)
-    expect(screen.getByText('12 vistas')).toBeTruthy()
-    expect(screen.getByText('210 apariciones')).toBeTruthy()
+    expect(screen.getByText('La abrieron 12 veces')).toBeTruthy()
+    expect(screen.getByText('Se mostró 210 veces')).toBeTruthy()
   })
 
-  it('one of each reads in the singular, with its accent', () => {
+  it('one of each reads "1 vez"', () => {
     setup(1, 1)
-    expect(screen.getByText('1 vista')).toBeTruthy()
-    expect(screen.getByText('1 aparición')).toBeTruthy()
+    expect(screen.getByText('La abrieron 1 vez')).toBeTruthy()
+    expect(screen.getByText('Se mostró 1 vez')).toBeTruthy()
   })
 
   it('zero Apariciones is shown as 0 when it is known', () => {
     setup(0, 0)
-    expect(screen.getByText('0 apariciones')).toBeTruthy()
+    expect(screen.getByText('Se mostró 0 veces')).toBeTruthy()
+  })
+
+  it('a departamento reads "Lo abrieron"', () => {
+    setup(5, 7, 'departamento')
+    expect(screen.getByText('Lo abrieron 5 veces')).toBeTruthy()
+    expect(screen.getByText('Se mostró 7 veces')).toBeTruthy()
   })
 
   it('unknown Apariciones (still loading or failed) is not shown as 0', () => {
     setup(4)
-    expect(screen.getByText('4 vistas')).toBeTruthy()
-    expect(screen.queryByText(/aparici/)).toBeNull()
+    expect(screen.getByText('La abrieron 4 veces')).toBeTruthy()
+    expect(screen.queryByText(/Se mostró/)).toBeNull()
   })
 })

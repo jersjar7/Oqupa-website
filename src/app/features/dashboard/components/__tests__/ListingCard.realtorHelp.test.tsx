@@ -51,37 +51,30 @@ const btn = (name: string | RegExp) => screen.getByRole('button', { name })
 describe('ListingCard — agent help after publishing (D10)', () => {
   beforeEach(() => setHelp.mutate.mockReset())
 
-  it('off: offers AYUDA DE AGENTES; turning it on explains first, then asks', () => {
+  // Jerson 2026-11-08 (the card with one main button and ⋯): the app's box —
+  // the explanation and SÍ, ACTIVAR are on the card, no extra click first.
+  it('off: AYUDA DE AGENTES explains on the card; nothing changes until Sí, activar', () => {
     setup({})
-    fireEvent.click(btn('Ayuda de agentes'))
+    expect(screen.getByText('AYUDA DE AGENTES')).toBeTruthy()
     expect(
       screen.getByText('Agentes verificados por Oqupa podrán ofrecerte ayuda para vender tu propiedad. Hasta 3 agentes podrán contactarte y tú siempre eliges con quién trabajar. Oqupa no cobra comisiones por este servicio.'),
     ).toBeTruthy()
     expect(setHelp.mutate).not.toHaveBeenCalled()
     fireEvent.click(btn('Sí, activar'))
-    expect(setHelp.mutate).toHaveBeenCalledWith({ listingId: 'L1', on: true }, expect.anything())
+    expect(setHelp.mutate).toHaveBeenCalledWith({ listingId: 'L1', on: true })
   })
 
   it('a rental says "alquilar", never "vender"', () => {
     setup({}, 'alquiler')
-    fireEvent.click(btn('Ayuda de agentes'))
     expect(screen.getByText(/ayuda para alquilar tu propiedad/)).toBeTruthy()
     expect(screen.queryByText(/vender/)).toBeNull()
-  })
-
-  it('Cancelar leaves it off', () => {
-    setup({})
-    fireEvent.click(btn('Ayuda de agentes'))
-    fireEvent.click(btn('Cancelar'))
-    expect(setHelp.mutate).not.toHaveBeenCalled()
-    expect(screen.queryByText(/Agentes verificados/)).toBeNull()
   })
 
   // Hostile review 2026-11-02 #5: turning it off releases and notifies the
   // agents, so it asks first, with the app's words, never on one tap.
   it('on: turning it off asks first, with the app\'s warning when agents are interested', () => {
     setup({ wantsRealtorHelp: true, currentClaimsCount: 2 })
-    expect(screen.queryByRole('button', { name: 'Ayuda de agentes' })).toBeNull()
+    expect(screen.queryByText('AYUDA DE AGENTES')).toBeNull()
     const off = btn('Desactivar ayuda de agentes')
     expect(off.className).toMatch(/\bmin-h-11\b/)
     fireEvent.click(off)
@@ -119,12 +112,12 @@ describe('ListingCard — agent help after publishing (D10)', () => {
 
   it('with an agent assigned, no switch (the agents page handles it)', () => {
     setup({ wantsRealtorHelp: true, assignedRealtorId: 'R1', assignmentStatus: 'accepted' })
-    expect(screen.queryByRole('button', { name: 'Ayuda de agentes' })).toBeNull()
+    expect(screen.queryByText('AYUDA DE AGENTES')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Desactivar ayuda de agentes' })).toBeNull()
   })
 
   it('not offered on a listing that is not active', () => {
     setup({ status: 'deactivated' })
-    expect(screen.queryByRole('button', { name: 'Ayuda de agentes' })).toBeNull()
+    expect(screen.queryByText('AYUDA DE AGENTES')).toBeNull()
   })
 })

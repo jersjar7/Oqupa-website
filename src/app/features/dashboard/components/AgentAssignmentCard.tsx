@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { openedPhrase } from '@/lib/countWords'
 import { Link } from 'react-router-dom'
 import { Clock, CheckCircle, Eye, Phone, Pencil } from 'lucide-react'
 import { Button, PhotoCarousel, PhotoOverlayBadge } from '@/app/components/ui'
@@ -87,7 +88,7 @@ export default function AgentAssignmentCard({
           <div className="mt-2 flex gap-4 text-xs text-text-tertiary">
             <span className="flex items-center gap-1">
               <Eye className="h-3.5 w-3.5" />
-              {listing.viewCount} vistas
+              {openedPhrase(listing.viewCount ?? 0, property.propertyType)}
             </span>
             <span className="flex items-center gap-1">
               <Phone className="h-3.5 w-3.5" />

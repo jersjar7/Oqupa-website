@@ -52,6 +52,8 @@ function setup(status: string, operationType: 'venta' | 'alquiler') {
   render(<ListingCard listing={listing} property={property} />)
 }
 
+const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+
 describe('ListingCard — Vendido / Alquilado', () => {
   beforeEach(() => {
     markClosedMutate.mockReset()
@@ -60,6 +62,7 @@ describe('ListingCard — Vendido / Alquilado', () => {
 
   it('a listing for sale can be marked sold, after confirming, and then asks the survey', () => {
     setup('active', 'venta')
+    openMenu()
     fireEvent.click(screen.getByRole('button', { name: /Marcar como vendido/ }))
     expect(screen.getByText('¿Ya vendiste la propiedad? La publicación se cerrará.')).toBeTruthy()
     expect(markClosedMutate).not.toHaveBeenCalled()
@@ -78,6 +81,7 @@ describe('ListingCard — Vendido / Alquilado', () => {
 
   it('a rental is marked rented, with the app\'s wording', () => {
     setup('active', 'alquiler')
+    openMenu()
     expect(screen.queryByRole('button', { name: /Marcar como vendido/ })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /Marcar como alquilado/ }))
     expect(screen.getByText(/¿Ya encontraste inquilino\?/)).toBeTruthy()
@@ -89,6 +93,7 @@ describe('ListingCard — Vendido / Alquilado', () => {
 
   it('Cancelar closes the confirmation and changes nothing', () => {
     setup('active', 'venta')
+    openMenu()
     fireEvent.click(screen.getByRole('button', { name: /Marcar como vendido/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByText('¿Ya vendiste la propiedad? La publicación se cerrará.')).toBeNull()
@@ -97,6 +102,7 @@ describe('ListingCard — Vendido / Alquilado', () => {
 
   it.each(['deactivated', 'sold', 'rented'])('a %s listing offers no Vendido/Alquilado action, like the app', (status) => {
     setup(status, 'venta')
+    openMenu()
     expect(screen.queryByRole('button', { name: /Marcar como/ })).toBeNull()
   })
 

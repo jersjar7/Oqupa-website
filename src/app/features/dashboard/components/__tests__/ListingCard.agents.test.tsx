@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 /**
  * The owner's way to their listing's agents page ("Quitar agente", the
@@ -52,14 +52,19 @@ function setup(listing: Partial<Listing>) {
   render(<ListingCard listing={l} property={property} />)
 }
 
-const agentsLinks = () =>
-  screen.queryAllByRole('link').filter((a) => a.getAttribute('href') === '/app/listings/L1/agents')
+// Since 2026-11-08 the agents page is reached from the card's ⋯ menu, as in
+// the app ("Ver agentes interesados (N)").
+const agentsLinks = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+  return screen.queryAllByRole('link').filter((a) => a.getAttribute('href') === '/app/listings/L1/agents')
+}
 
 describe('ListingCard — agents', () => {
   it('with an agent assigned, the card still leads to the agents page', () => {
     setup({ wantsRealtorHelp: true, assignedRealtorId: 'R1', assignmentStatus: 'accepted', currentClaimsCount: 1 })
-    expect(agentsLinks()).toHaveLength(1)
-    expect(agentsLinks()[0]!.textContent).toContain('Agente asignado')
+    const links = agentsLinks()
+    expect(links).toHaveLength(1)
+    expect(links[0]!.textContent).toBe('Ver agentes interesados (1)')
   })
 
   it('an agent assigned with the help request since turned off is still reachable', () => {
@@ -67,10 +72,11 @@ describe('ListingCard — agents', () => {
     expect(agentsLinks()).toHaveLength(1)
   })
 
-  it('waiting for agents: unchanged', () => {
+  it('waiting for agents: the entry is there with 0', () => {
     setup({ wantsRealtorHelp: true })
-    expect(agentsLinks()).toHaveLength(1)
-    expect(agentsLinks()[0]!.textContent).toContain('Esperando agentes...')
+    const links = agentsLinks()
+    expect(links).toHaveLength(1)
+    expect(links[0]!.textContent).toBe('Ver agentes interesados (0)')
   })
 
   it('no agent help and no agent: nothing', () => {

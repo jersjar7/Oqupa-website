@@ -279,15 +279,15 @@ function Buscadores({ data, range }: TabProps) {
     <>
       <Glance
         items={[
-          { label: 'Vistas a listados', value: num(views.value), detail: <Change stat={views} /> },
+          { label: 'Veces que abrieron un anuncio', value: num(views.value), detail: <Change stat={views} /> },
           { label: 'Contactos reales', value: num(contacts.value), detail: <Change stat={contacts} /> },
-          { label: 'Contactos por cada 100 vistas', value: num(per100, 1), detail: 'en el periodo' },
+          { label: 'Contactos por cada 100 veces que abrieron un anuncio', value: num(per100, 1), detail: 'en el periodo' },
           { label: 'Usuarios de la app por día', value: num(app?.value ?? null, 1), detail: app && <Change stat={app} digits={1} /> },
           { label: 'Desinstalaciones (Android)', value: num(uninstalls?.value ?? null), detail: uninstalls && <Change stat={uninstalls} /> },
         ]}
       />
       <Charts>
-        <Section title="Vistas a listados" note="App + web. La misma persona cuenta otra vez después de 1 hora.">
+        <Section title="Veces que abrieron un anuncio" note="App + web. La misma persona cuenta otra vez después de 1 hora.">
           <Trend series={s.views} range={range} today={today} />
         </Section>
         <Section title="Contactos reales" note="Sin las cuentas del equipo.">
@@ -324,7 +324,7 @@ function Oferta({ data, range }: TabProps) {
             value: num(neverContacted),
             detail: active.length ? `${Math.round((neverContacted / active.length) * 100)} % de los activos` : undefined,
           },
-          { label: 'Activos sin ninguna vista', value: num(neverViewed), detail: 'nadie los abrió' },
+          { label: 'Activos que nadie abrió', value: num(neverViewed), detail: 'ni una vez' },
         ]}
       />
       <Charts>

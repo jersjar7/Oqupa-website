@@ -54,6 +54,8 @@ function setup(status: string, boost: { isBoosted: boolean; boostedUntil?: Date 
   render(<ListingCard listing={listing} property={property} />)
 }
 
+const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+
 describe('ListingCard — lifecycle', () => {
   beforeEach(() => {
     toggleMutate.mockReset()
@@ -62,6 +64,7 @@ describe('ListingCard — lifecycle', () => {
 
   it.each(['sold', 'rented'])('a %s listing can be deleted directly, after confirming', (status) => {
     setup(status)
+    openMenu()
     fireEvent.click(screen.getByRole('button', { name: /Eliminar/ }))
     expect(deleteMutate).not.toHaveBeenCalled()
     expect(screen.getByText(/Esta acción no se puede deshacer/)).toBeTruthy()
@@ -71,6 +74,7 @@ describe('ListingCard — lifecycle', () => {
 
   it('an active listing cannot be deleted from the card', () => {
     setup('active')
+    openMenu()
     expect(screen.queryByRole('button', { name: /Eliminar/ })).toBeNull()
   })
 
@@ -88,6 +92,7 @@ describe('ListingCard — lifecycle', () => {
   it('an expired listing can be put back and deleted, like a deactivated one', () => {
     setup('expired')
     expect(screen.getByRole('button', { name: /Volver a publicar/ })).toBeTruthy()
+    openMenu()
     expect(screen.getByRole('button', { name: /Eliminar/ })).toBeTruthy()
   })
 })

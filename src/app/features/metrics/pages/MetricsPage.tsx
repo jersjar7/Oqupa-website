@@ -338,9 +338,9 @@ function LegacyMetricsPage() {
         />
         <KpiTile
           label="Tasa de contacto"
-          help="De todas las vistas a listados, qué porcentaje terminó en un click de contacto (WhatsApp o llamada). Mide si los listados convencen una vez que alguien los abre."
+          help="De todas las veces que abrieron un anuncio, qué porcentaje terminó en un click de contacto (WhatsApp o llamada). Mide si los listados convencen una vez que alguien los abre."
           value={formatPct(contactRate)}
-          secondary={`${formatNumber(latest.listings.totalContactClicks)} contactos · ${formatNumber(latest.listings.totalViews)} vistas`}
+          secondary={`${formatNumber(latest.listings.totalContactClicks)} contactos · ${formatNumber(latest.listings.totalViews)} veces que abrieron un anuncio`}
           spark={sparkOf(series, 'contactRate')}
           sparkColor={COLORS.secondary}
         />
@@ -398,11 +398,11 @@ function LegacyMetricsPage() {
       </h2>
       <div className="mt-3">
         <ChartCard
-          title="Vistas y contactos"
-          help="Acumulado diario de vistas a listados (verde) y clicks de contacto (naranja). La distancia entre las dos líneas es la brecha entre interés y acción. Los datos empiezan el día del primer snapshot. Las vistas desde la web solo se cuentan desde el 5 de agosto de 2026; antes, solo las de la app."
+          title="Anuncios abiertos y contactos"
+          help="Acumulado diario de veces que abrieron un anuncio (verde) y clicks de contacto (naranja). La distancia entre las dos líneas es la brecha entre interés y acción. Los datos empiezan el día del primer snapshot. Las veces abiertos desde la web solo se cuentan desde el 5 de agosto de 2026; antes, solo las de la app."
           subtitle="Acumulado diario desde el primer snapshot — no hay reconstrucción histórica"
           heightClass="h-72"
-          note="Las vistas desde la web se cuentan solo desde el 5 de agosto de 2026. Antes de esa fecha, el total solo incluye vistas desde la app: el salto posterior no es crecimiento."
+          note="Las veces que abrieron un anuncio desde la web se cuentan solo desde el 5 de agosto de 2026. Antes de esa fecha, el total solo incluye las de la app: el salto posterior no es crecimiento."
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
@@ -414,7 +414,7 @@ function LegacyMetricsPage() {
                 formatter={(v, name) => [formatNumber(Number(v) || 0), name]}
               />
               <Legend iconType="plainline" wrapperStyle={{ fontSize: 12 }} />
-              <Line type="stepAfter" dataKey="totalViews" stroke={COLORS.secondary} strokeWidth={2} dot={false} name="Vistas" isAnimationActive={false} />
+              <Line type="stepAfter" dataKey="totalViews" stroke={COLORS.secondary} strokeWidth={2} dot={false} name="Veces abiertos" isAnimationActive={false} />
               <Line type="stepAfter" dataKey="totalClicks" stroke={COLORS.primary} strokeWidth={2} dot={false} name="Contactos" isAnimationActive={false} />
               {webViewsStartTick && (
                 <ReferenceLine

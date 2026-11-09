@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { openedPhrase, shownPhrase } from '@/lib/countWords'
 import { bathroomsLabel, bedroomsLabel } from '@/lib/roomCounts'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -600,10 +601,10 @@ export default function PropertyPage() {
               <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:ml-auto sm:w-auto">
                 <span className="mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-text-secondary sm:mr-0">
                   <Eye className="h-4 w-4 shrink-0" />
-                  {listing.viewCount} {listing.viewCount === 1 ? 'vista' : 'vistas'}
+                  {openedPhrase(listing.viewCount ?? 0, property.propertyType)}
                   {/* ADR-051: the owner's second number, owner-only. */}
                   {viewerIsOwner && ownerApariciones.total !== undefined && (
-                    <> · {ownerApariciones.total} {ownerApariciones.total === 1 ? 'aparición' : 'apariciones'}</>
+                    <> · {shownPhrase(ownerApariciones.total)}</>
                   )}
                 </span>
                 {canContact && <SaveButton listingId={listing.id} variant="page" />}

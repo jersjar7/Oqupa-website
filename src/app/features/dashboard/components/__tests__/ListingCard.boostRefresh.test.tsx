@@ -92,7 +92,7 @@ beforeEach(() => seed())
 describe('ListingCard — boosting refreshes from the confirmed payment', () => {
   it("shows the server's boost and keeps the confirmation on screen", async () => {
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: /destacar mi propiedad/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /^destacar$/i }))
     fireEvent.click(screen.getByRole('button', { name: 'tier:confirm' }))
     const paid = await screen.findByRole('button', { name: 'pay:success' })
     // The webhook: 30 days, as the server writes them.
@@ -104,7 +104,7 @@ describe('ListingCard — boosting refreshes from the confirmed payment', () => 
     await waitFor(() => expect(screen.getByText(/30 días restantes/)).toBeTruthy())
     // Still there once the card has refreshed underneath it.
     expect(screen.getByText('Tu publicación ahora está destacada')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /destacar mi propiedad/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^destacar$/i })).toBeNull()
   })
 })
 
@@ -112,14 +112,14 @@ describe('ListingCard — boosted only while the boost is live', () => {
   it('after a refund (isBoosted false, boostedUntil in the future): no DESTACADO, the boost is offered again', async () => {
     seed({ isBoosted: false, boostScore: 1, boostedUntil: new Date(Date.now() + 31 * DAY) })
     renderPage()
-    expect(await screen.findByRole('button', { name: /destacar mi propiedad/i })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^destacar$/i })).toBeTruthy()
     expect(screen.queryByText(/restante/)).toBeNull()
   })
 
   it('a boost that ended before the hourly job ran (isBoosted true, boostedUntil past): no DESTACADO, offered again', async () => {
     seed({ isBoosted: true, boostScore: 100, boostTier: 'thirtyDays', boostedUntil: new Date(Date.now() - 60 * 60 * 1000) })
     renderPage()
-    expect(await screen.findByRole('button', { name: /destacar mi propiedad/i })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^destacar$/i })).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/destacado/i)
   })
 })

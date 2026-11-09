@@ -119,16 +119,16 @@ describe('Apariciones on the listing page', () => {
   it('the owner sees Apariciones beside Vistas', () => {
     show('active', 'open', 'owner-1')
     renderPage()
-    expect(screen.getByText(/3 vistas/)).toBeTruthy()
-    expect(screen.getByText(/3 vistas · 210 apariciones/)).toBeTruthy()
+    expect(screen.getByText(/La abrieron 3 veces · Se mostró 210 veces/)).toBeTruthy()
     expect(aparicionesHook).toHaveBeenLastCalledWith(['listing_1'], 'owner-1')
   })
 
   it('a visitor sees Vistas only, and the page never asks for Apariciones', () => {
     show('active', 'open', 'stranger')
     renderPage()
-    expect(screen.getByText(/3 vistas/)).toBeTruthy()
-    expect(screen.queryByText(/aparici/)).toBeNull()
+    expect(screen.getByText(/La abrieron 3 veces/)).toBeTruthy()
+    expect(screen.queryByText(/Se mostró/)).toBeNull()
+    expect(screen.queryByText(/vistas/)).toBeNull()
     for (const [ids] of aparicionesHook.mock.calls) expect(ids).toEqual([])
   })
 
@@ -136,6 +136,6 @@ describe('Apariciones on the listing page', () => {
     aparicionesHook.mockReturnValue({ byId: {}, total: undefined, isLoading: true, isError: false })
     show('active', 'open', 'owner-1')
     renderPage()
-    expect(screen.queryByText(/aparici/)).toBeNull()
+    expect(screen.queryByText(/Se mostró/)).toBeNull()
   })
 })

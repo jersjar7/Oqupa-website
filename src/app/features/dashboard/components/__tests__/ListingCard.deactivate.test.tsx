@@ -53,6 +53,8 @@ function setup(status: string, boost: { isBoosted: boolean; boostedUntil?: Date 
   render(<ListingCard listing={listing} property={property} />)
 }
 
+const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+
 describe('ListingCard — Desactivar a boosted listing', () => {
   beforeEach(() => {
     toggleMutate.mockReset()
@@ -63,7 +65,8 @@ describe('ListingCard — Desactivar a boosted listing', () => {
 
   it('asks first, saying the paid days keep running', () => {
     setup('active', { isBoosted: true, boostedUntil: new Date('2026-11-05T12:00:00Z') })
-    fireEvent.click(screen.getByRole('button', { name: /Desactivar/ }))
+    openMenu()
+    fireEvent.click(screen.getByRole('button', { name: /^Desactivar$/ }))
     expect(toggleMutate).not.toHaveBeenCalled()
     expect(screen.getByText('¿Desactivar esta publicación?')).toBeTruthy()
     expect(
@@ -79,7 +82,8 @@ describe('ListingCard — Desactivar a boosted listing', () => {
 
   it('one day left reads in the singular', () => {
     setup('active', { isBoosted: true, boostedUntil: new Date('2026-11-01T06:00:00Z') })
-    fireEvent.click(screen.getByRole('button', { name: /Desactivar/ }))
+    openMenu()
+    fireEvent.click(screen.getByRole('button', { name: /^Desactivar$/ }))
     expect(
       screen.getByText('Te queda 1 día de destacado. Sigue corriendo mientras esté desactivada.'),
     ).toBeTruthy()
@@ -87,7 +91,8 @@ describe('ListingCard — Desactivar a boosted listing', () => {
 
   it('without an end date, still warns', () => {
     setup('active', { isBoosted: true })
-    fireEvent.click(screen.getByRole('button', { name: /Desactivar/ }))
+    openMenu()
+    fireEvent.click(screen.getByRole('button', { name: /^Desactivar$/ }))
     expect(
       screen.getByText('Los días de tu destacado siguen corriendo mientras esté desactivada.'),
     ).toBeTruthy()
@@ -95,7 +100,8 @@ describe('ListingCard — Desactivar a boosted listing', () => {
 
   it('Cancelar changes nothing', () => {
     setup('active', { isBoosted: true, boostedUntil: new Date('2026-11-05T12:00:00Z') })
-    fireEvent.click(screen.getByRole('button', { name: /Desactivar/ }))
+    openMenu()
+    fireEvent.click(screen.getByRole('button', { name: /^Desactivar$/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByText('¿Desactivar esta publicación?')).toBeNull()
     expect(toggleMutate).not.toHaveBeenCalled()
@@ -103,7 +109,8 @@ describe('ListingCard — Desactivar a boosted listing', () => {
 
   it('a listing that is not boosted is still deactivated in one click', () => {
     setup('active', { isBoosted: false })
-    fireEvent.click(screen.getByRole('button', { name: /Desactivar/ }))
+    openMenu()
+    fireEvent.click(screen.getByRole('button', { name: /^Desactivar$/ }))
     expect(screen.queryByText('¿Desactivar esta publicación?')).toBeNull()
     expect(toggleMutate).toHaveBeenCalledWith({ listingId: 'L1', currentStatus: 'active' })
   })
