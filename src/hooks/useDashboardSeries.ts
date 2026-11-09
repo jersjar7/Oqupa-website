@@ -73,6 +73,8 @@ export interface DashboardSeries {
     /** Refunds on the day refunded (absent in documents built before 2026-10-31). */
     refundsPEN?: DailySeries
     refundsCount?: DailySeries
+    /** People who could not get their SMS code, once per person per day (absent before 2026-11-09). */
+    smsFailedPeople?: DailySeries
   }
   /** Null when Google Analytics was unavailable (always on staging). */
   analytics: {
@@ -94,7 +96,7 @@ export interface DashboardSeries {
   /** Punto de control: three numbers by Lima month. Absent on documents built before 2026-11-01. */
   checkpoint?: Checkpoint
   metaReported: { installs?: number; spendUSD?: number } | null
-  since: { snapshots: string | null; contactLog: string | null; analytics: string | null }
+  since: { snapshots: string | null; contactLog: string | null; analytics: string | null; phoneStepFailures?: string | null }
 }
 
 interface UseDashboardSeries {

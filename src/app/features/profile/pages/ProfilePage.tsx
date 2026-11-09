@@ -128,7 +128,7 @@ export default function ProfilePage() {
       setPhoneMode('enter-code')
     } catch (err) {
 
-      const errorInfo = getPhoneAuthError(err)
+      const errorInfo = getPhoneAuthError(err, 'send')
       setPhoneError(errorInfo.message)
       setPhoneRecoveryHint(errorInfo.recoveryHint ?? null)
       toast.error(errorInfo.message)
@@ -173,7 +173,7 @@ export default function ProfilePage() {
       setVerificationId(null)
     } catch (err) {
 
-      const errorInfo = getPhoneAuthError(err)
+      const errorInfo = getPhoneAuthError(err, 'verify')
       setPhoneError(errorInfo.message)
       setPhoneRecoveryHint(errorInfo.recoveryHint ?? null)
       toast.error(errorInfo.message)

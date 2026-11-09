@@ -478,3 +478,15 @@ describe('audit 2026-11-02 — forgot password default', () => {
     )
   })
 })
+
+// Jerson 2026-11-09: when Google refuses to SEND a code, say what is happening
+// and what works, in his words. The verify step keeps its own message.
+describe('getPhoneAuthError — Google refusing to send', () => {
+  const BLOCKED = 'Google está bloqueando los códigos desde tu conexión de internet. Prueba con los datos móviles de tu celular o desde la app de Oqupa.'
+  it.each(['auth/too-many-requests', 'auth/quota-exceeded'])('%s while sending', (code) => {
+    expect(getPhoneAuthError({ code }, 'send').message).toBe(BLOCKED)
+  })
+  it('too many wrong codes is not about the connection', () => {
+    expect(getPhoneAuthError({ code: 'auth/too-many-requests' }, 'verify').message).not.toBe(BLOCKED)
+  })
+})
