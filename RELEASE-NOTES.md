@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-09 — The homepage says only what Oqupa does
+
+Jerson's yes: "Fix the home page claims" (2026-11-09).
+
+### Bug Fixes
+- Inicio (homepage): removed claims the product does not back — "elimina fraudes", "Avisos verificados",
+  "agentes verificados", "datos verificados", "ubicación exacta" and "miles de personas". Now: every publisher
+  confirmed their phone by SMS and their email; contact is by WhatsApp; the location is exact or approximate as the
+  owner chooses; the property appears on the map for people searching in Piura. The search-engine description
+  matches. A test keeps the old claims out.
+
+---
+
 ## 2026-11-08 — Mis propiedades: one main button and ⋯; the numbers say what happened; 0 bedrooms reads 0
 
 Jerson's yes: "ship the website to production" (2026-11-08).
