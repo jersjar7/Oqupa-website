@@ -4,6 +4,17 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-09 — www.oqupa.com goes to oqupa.com
+
+Jerson: "can you please solve these issues" (Search Console, 2026-11-09).
+
+### Bug Fixes
+- Search: https://www.oqupa.com/ served a second copy of the whole site, which Google reported as "Duplicate without
+  user-selected canonical". Pages on www now go to the same address on oqupa.com; the app-link files stay on www so
+  links to www still open the app. No visible change on oqupa.com.
+
+---
+
 ## 2026-11-09 — The homepage says only what Oqupa does
 
 Jerson's yes: "Fix the home page claims" (2026-11-09).
