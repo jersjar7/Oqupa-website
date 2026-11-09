@@ -144,8 +144,26 @@ const PHONE_ERROR_MAP: Record<string, AuthErrorInfo> = {
   'functions/internal': { message: 'No pudimos guardar tu número. Intenta de nuevo.', isRetryable: true },
 }
 
-export function getPhoneAuthError(error: unknown): AuthErrorInfo {
+/**
+ * Google refusing to SEND a code (Jerson 2026-11-09, his words). It happens
+ * per connection — Javier's office network was blocked before he could get a
+ * single code — so waiting is not the answer; another connection is.
+ */
+export const PHONE_SEND_BLOCKED =
+  'Google está bloqueando los códigos desde tu conexión de internet. Prueba con los datos móviles de tu celular o desde la app de Oqupa.'
+
+export function getPhoneAuthError(error: unknown, step?: 'send' | 'verify'): AuthErrorInfo {
   const code = extractFirebaseErrorCode(error)
+  if (step === 'send' && code === 'auth/too-many-requests') {
+    return { message: PHONE_SEND_BLOCKED, isRetryable: false }
+  }
+  // The whole project's SMS limit (review 2026-11-09): not the person's connection.
+  if (step === 'send' && code === 'auth/quota-exceeded') {
+    return {
+      message: 'Ahora mismo no podemos enviar códigos por SMS. Intenta de nuevo en unas horas o escríbenos a admin@oqupa.com.',
+      isRetryable: false,
+    }
+  }
   return PHONE_ERROR_MAP[code] ?? {
     message: withCode('Error al verificar. Intenta de nuevo.', code),
     isRetryable: true,

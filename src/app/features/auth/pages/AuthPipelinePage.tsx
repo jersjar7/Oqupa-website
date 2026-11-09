@@ -23,6 +23,7 @@ import {
 } from '@/app/features/listings/contactFunnel'
 import { switchAccount } from '@/app/features/auth/lib/switchAccount'
 import { getPhoneAuthError, getProfileSaveError, getEmailResendError, getEmailChangeError } from '@/lib/authErrors'
+import { reportPhoneStepFailure } from '@/services/phoneStepFailures'
 import {
   EMAIL_CHANGE_COPY,
   validateNewEmail,
@@ -48,6 +49,9 @@ const stepVariants = {
 }
 
 const RESEND_SECONDS = 30
+const NO_CODE_HELP_AFTER_MS = 60_000
+const NO_CODE_HELP =
+  'A veces el código no llega por la conexión de internet o por el operador. Prueba con los datos móviles de tu celular o desde la app de Oqupa.'
 const EMAIL_POLL_MS = 4000
 
 export default function AuthPipelinePage() {
@@ -261,11 +265,12 @@ export default function AuthPipelinePage() {
                     setDirection(1)
                     setStep('verify-code')
                   } catch (err) {
-                    const errorInfo = getPhoneAuthError(err)
+                    const errorInfo = getPhoneAuthError(err, 'send')
                     setError(errorInfo.message)
                     setRecoveryHint(errorInfo.recoveryHint ?? null)
                     toast.error(errorInfo.message)
                     const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : ''
+                    void reportPhoneStepFailure({ code, step: 'send' })
                     if (code === 'auth/captcha-check-failed' || code === 'auth/missing-client-identifier') {
                       authService.cleanupRecaptcha()
                       authService.initializeRecaptcha('recaptcha-container')
@@ -311,14 +316,17 @@ export default function AuthPipelinePage() {
                     await refreshUser() // → effect moves on, or finishes
                     toast.success('Teléfono verificado')
                   } catch (err) {
-                    const errorInfo = getPhoneAuthError(err)
+                    const errorInfo = getPhoneAuthError(err, 'verify')
                     setError(errorInfo.message)
                     setRecoveryHint(errorInfo.recoveryHint ?? null)
                     toast.error(errorInfo.message)
+                    const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : ''
+                    void reportPhoneStepFailure({ code, step: 'verify' })
                   } finally {
                     setIsSubmitting(false)
                   }
                 }}
+                onNoCode={() => { void reportPhoneStepFailure({ code: 'no-code', step: 'no-code' }) }}
                 onResend={() => {
                   if (smsCooldown > 0) return
                   setDirection(-1)
@@ -522,6 +530,7 @@ function VerifyCodeStep({
   onSubmit,
   onResend,
   onChangeNumber,
+  onNoCode,
 }: {
   sentTo: string | null
   error: string | null
@@ -531,7 +540,16 @@ function VerifyCodeStep({
   onSubmit: (data: VerificationCodeFormData) => void
   onResend: () => void
   onChangeNumber: () => void
+  onNoCode?: () => void
 }) {
+  // "¿No te llegó el código?" after a minute (Jerson 2026-11-09): what works
+  // when Google blocks a connection, and a way to reach us.
+  const [canAskForHelp, setCanAskForHelp] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setCanAskForHelp(true), NO_CODE_HELP_AFTER_MS)
+    return () => clearTimeout(t)
+  }, [])
   const { register, handleSubmit, watch, formState: { errors } } = useForm<VerificationCodeFormData>({
     resolver: zodResolver(verificationCodeSchema),
   })
@@ -594,9 +612,30 @@ function VerifyCodeStep({
           Cambiar número
         </button>
       </div>
-      <p className="mt-6 text-center text-xs text-text-tertiary">
-        ¿No llega? A veces tarda unos minutos, según tu operador.
-      </p>
+      {!canAskForHelp && (
+        <p className="mt-6 text-center text-xs text-text-tertiary">
+          ¿No llega? A veces tarda unos minutos, según tu operador.
+        </p>
+      )}
+      {canAskForHelp && !showHelp && (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => { setShowHelp(true); onNoCode?.() }}
+            className="text-base text-secondary underline hover:text-secondary-hover"
+          >
+            ¿No te llegó el código?
+          </button>
+        </div>
+      )}
+      {showHelp && (
+        <div className="mt-6 rounded-xl border border-border bg-white p-4 text-left text-sm text-text-primary">
+          {/* Not "Google está bloqueando": a code that was sent but never
+              arrived is often the carrier, so say only what is true. */}
+          <p>{NO_CODE_HELP}</p>
+          <p className="mt-2 text-text-secondary">Si sigue sin llegar, escríbenos a admin@oqupa.com y te ayudamos.</p>
+        </div>
+      )}
     </>
   )
 }

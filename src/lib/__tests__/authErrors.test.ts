@@ -478,3 +478,22 @@ describe('audit 2026-11-02 — forgot password default', () => {
     )
   })
 })
+
+// Jerson 2026-11-09: when Google refuses to SEND a code, say what is happening
+// and what works, in his words. The verify step keeps its own message.
+describe('getPhoneAuthError — Google refusing to send', () => {
+  const BLOCKED = 'Google está bloqueando los códigos desde tu conexión de internet. Prueba con los datos móviles de tu celular o desde la app de Oqupa.'
+  it('too-many-requests while sending', () => {
+    expect(getPhoneAuthError({ code: 'auth/too-many-requests' }, 'send').message).toBe(BLOCKED)
+  })
+  // Review 2026-11-09: quota-exceeded is the whole project's SMS limit — another
+  // connection does not help, so it must not say so.
+  it('quota-exceeded is about Oqupa, not the connection', () => {
+    const m = getPhoneAuthError({ code: 'auth/quota-exceeded' }, 'send').message
+    expect(m).not.toBe(BLOCKED)
+    expect(m).toMatch(/admin@oqupa\.com/)
+  })
+  it('too many wrong codes is not about the connection', () => {
+    expect(getPhoneAuthError({ code: 'auth/too-many-requests' }, 'verify').message).not.toBe(BLOCKED)
+  })
+})
