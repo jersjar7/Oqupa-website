@@ -4,6 +4,27 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-08 — Mis propiedades: one main button and ⋯; the numbers say what happened; 0 bedrooms reads 0
+
+Jerson's yes: "ship the website to production" (2026-11-08).
+
+### UX Improvements
+- Mis propiedades cards match the app's owner card: one main button and "⋯". The main button follows the listing —
+  DESTACAR (green outline, ADR-042: available, not promoted) → EDITAR once boosted → VOLVER A PUBLICAR when off,
+  sold or rented. Everything else is in "⋯" (Ver publicación, Editar, Compartir, Ver agentes interesados,
+  Desactivar, Marcar como vendido/alquilado, Eliminar last in red). An orange dot on "⋯" when agents are interested.
+  The menu opens upward near the bottom of a phone screen and is no longer clipped on a computer.
+- Agent help when off is the app's AYUDA DE AGENTES box with SÍ, ACTIVAR.
+- The listing numbers read what happened (ADR-054): "Se mostró N veces" and "La abrieron N veces" (Lo/Las/Se
+  mostraron by property type and count), replacing Apariciones and Vistas. Counting unchanged.
+
+### Bug Fixes
+- No "Monoambiente" word (ADR-053): a bedroom count shows exactly what the owner entered, 0 included.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-06 (evening) — Equipo board: priority, details, finished tasks out of the way
 
 From the weekly meeting of 2026-11-05; Jerson: "The new dashboard looks good" (soft grey background at his request).
