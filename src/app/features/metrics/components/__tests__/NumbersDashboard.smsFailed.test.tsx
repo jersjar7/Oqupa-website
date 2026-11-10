@@ -34,6 +34,12 @@ describe('Números — Resumen: SMS codes that failed', () => {
     expect(screen.getByText(/sin el equipo\. Registro desde el/)).toBeTruthy()
   })
 
+  it('the caption names only what is counted — wrong codes are not', () => {
+    render(<NumbersDashboard data={data({ smsFailedPeople: { '2026-11-09': 2 } }, '2026-11-09')} />)
+    expect(screen.getByText(/^Google no envió el código o tocaron «¿No te llegó\?»\./)).toBeTruthy()
+    expect(screen.queryByText(/rechazado/)).toBeNull()
+  })
+
   it('a document built before this was counted still renders', () => {
     render(<NumbersDashboard data={data({})} />)
     expect(screen.getByText('Personas a las que no les llegó el código SMS')).toBeTruthy()
