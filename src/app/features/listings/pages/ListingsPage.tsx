@@ -101,7 +101,7 @@ export default function ListingsPage() {
         <div className="flex items-center gap-2 self-end sm:ml-auto sm:self-auto">
           {propiasCount > 0 && (
             <Link to="/app/analitica">
-              <Button variant="text" className="h-12 px-3">Ver analítica</Button>
+              <Button variant="text" className="h-12 whitespace-nowrap px-3">Ver analítica</Button>
             </Link>
           )}
           <Link to="/app/listings/new">
