@@ -14,7 +14,7 @@ export default function Section({
   return (
     <section
       data-testid={testId}
-      className={`break-inside-avoid rounded-2xl border border-border bg-white p-5 shadow-light sm:p-6 ${className}`}
+      className={`min-w-0 break-inside-avoid rounded-2xl border border-border bg-white p-5 shadow-light sm:p-6 ${className}`}
     >
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="font-serif text-[22px] font-normal leading-tight text-text-primary">{title}</h2>

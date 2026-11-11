@@ -72,3 +72,4 @@ describe('Analítica selectors (ADR-058)', () => {
     expect(medianDays([listing('C', { daysPublished: null })])).toBeNull()
   })
 })
+

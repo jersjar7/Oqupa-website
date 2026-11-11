@@ -21,7 +21,7 @@ export default function HeatMap({ heat: given }: { heat: Heat | undefined }) {
       subtitle={<>Más interés <strong className="font-medium text-text-primary">{bestTimeText(heat.best)}</strong> — buen momento para compartir tu anuncio.</>}
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[420px] border-separate border-spacing-1" aria-label="Vistas por día de la semana y hora">
+        <table className="w-full min-w-[240px] border-separate border-spacing-1" aria-label="Vistas por día de la semana y hora">
           <thead>
             <tr>
               <td />

@@ -10,8 +10,6 @@ const MARK_WORDS: Record<string, string> = {
   'price-up': 'Subiste el precio',
   photos: 'Fotos nuevas',
 }
-/** More marks than this and their labels would overlap: lines only, and the list below says what each is. */
-const LABELLED_MARKS = 4
 const LISTED_MARKS = 6
 
 /** Se mostró/mostraron (left scale) and La/Lo/Las abrieron (right scale), per day, with change marks. */
@@ -43,7 +41,6 @@ export default function Trend({
     else byDay.set(key, { day: m.day, kind: m.kind, ids: [m.listingId] })
   }
   const markList = [...byDay.values()]
-  const labelled = markList.length <= LABELLED_MARKS
   const last = points[points.length - 1]
 
   return (
@@ -77,7 +74,6 @@ export default function Trend({
                 x={m.day}
                 stroke={axis}
                 strokeDasharray="3 3"
-                label={labelled ? { value: MARK_WORDS[m.kind] ?? '', position: 'insideTop', fill: axis, fontSize: 11 } : undefined}
               />
             ))}
           </ComposedChart>
@@ -91,15 +87,16 @@ export default function Trend({
           {points.map((p) => <tr key={p.day}><th scope="row">{shortDay(p.day)}</th><td>{p.shown}</td><td>{p.seen}</td></tr>)}
         </tbody>
       </table>
-      {markList.length > 0 && (many || !labelled) && (
+      {/* Lines only on the chart (words there overlapped on phones); this list names each one. */}
+      {markList.length > 0 && (
         <ul className="mt-3 space-y-1 text-xs text-text-secondary">
-          {markList.slice(0, LISTED_MARKS).map((m) => (
+          {markList.slice(-LISTED_MARKS).map((m) => (
             <li key={`${m.day}-${m.kind}`}>
               {shortDay(m.day)}: {(MARK_WORDS[m.kind] ?? '').toLowerCase()}
               {many ? ` — ${m.ids.map((id) => listingNames[id] ?? 'una propiedad').join(', ')}` : ''}
             </li>
           ))}
-          {markList.length > LISTED_MARKS && <li>y {markList.length - LISTED_MARKS} cambios más</li>}
+          {markList.length > LISTED_MARKS && <li>y {markList.length - LISTED_MARKS} cambios anteriores</li>}
         </ul>
       )}
       {!marks?.photosSince && (

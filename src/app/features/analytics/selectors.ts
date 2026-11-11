@@ -132,3 +132,4 @@ export function focusListingId(data: OwnerAnalytics, scope: string): string | nu
   if (scope !== 'all' && data.listings.some((l) => l.id === scope)) return scope
   return data.featuredListingId ?? data.listings[0]?.id ?? null
 }
+
