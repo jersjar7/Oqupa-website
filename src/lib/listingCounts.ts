@@ -9,10 +9,15 @@
 // skips what the server would ignore anyway, to save requests. Sending never
 // throws into the page.
 
-export type CountKind = 'shown' | 'seen'
+import type { Via } from './arrival'
+
+// ADR-058 adds a WhatsApp tap (after the contact gate) and, on a vista, how the
+// person arrived. The server counts a tap only after that person's counted contact.
+export type CountKind = 'shown' | 'seen' | 'whatsapp'
 export interface CountEvent {
   listingId: string
   kind: CountKind
+  via?: Via
 }
 
 const MAX_PER_MESSAGE = 50
@@ -36,6 +41,7 @@ export function createListingCountQueue({ send, now = Date.now, flushMs = 3000 }
   let timer: ReturnType<typeof setTimeout> | null = null
   const shownOn = new Map<string, string>() // listingId → Lima day it was sent
   const seenAt = new Map<string, number>() // listingId → when it was sent
+  const tappedOn = new Map<string, string>() // listingId → Lima day a WhatsApp tap was sent
 
   function schedule() {
     if (timer !== null || pending.length === 0) return
@@ -54,7 +60,7 @@ export function createListingCountQueue({ send, now = Date.now, flushMs = 3000 }
       const batch = pending.slice(0, MAX_PER_MESSAGE)
       pending = pending.slice(MAX_PER_MESSAGE)
       try {
-        await send(batch.map(({ listingId, kind }) => ({ listingId, kind })))
+        await send(batch.map(({ listingId, kind, via }) => (via ? { listingId, kind, via } : { listingId, kind })))
       } catch {
         const retry = batch
           .map((e) => ({ ...e, attempts: e.attempts + 1 }))
@@ -67,18 +73,19 @@ export function createListingCountQueue({ send, now = Date.now, flushMs = 3000 }
   }
 
   /** Queues one count. Returns false when the server would ignore it anyway. */
-  function add(listingId: string, kind: CountKind): boolean {
+  function add(listingId: string, kind: CountKind, via?: Via): boolean {
     const t = now()
-    if (kind === 'shown') {
+    if (kind === 'shown' || kind === 'whatsapp') {
       const day = limaDayOf(t)
-      if (shownOn.get(listingId) === day) return false
-      shownOn.set(listingId, day)
+      const seenDays = kind === 'shown' ? shownOn : tappedOn
+      if (seenDays.get(listingId) === day) return false
+      seenDays.set(listingId, day)
     } else {
       const last = seenAt.get(listingId)
       if (last !== undefined && t - last < SEEN_REPEAT_MS) return false
       seenAt.set(listingId, t)
     }
-    pending.push({ listingId, kind, attempts: 0 })
+    pending.push(via && kind === 'seen' ? { listingId, kind, via, attempts: 0 } : { listingId, kind, attempts: 0 })
     schedule()
     return true
   }
@@ -108,6 +115,6 @@ function sharedQueue() {
 }
 
 export const listingCounts = {
-  add: (listingId: string, kind: CountKind) => sharedQueue().add(listingId, kind),
+  add: (listingId: string, kind: CountKind, via?: Via) => sharedQueue().add(listingId, kind, via),
   flush: () => sharedQueue().flush(),
 }
