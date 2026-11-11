@@ -22,6 +22,17 @@ export default function HeatMap({ heat: given }: { heat: Heat | undefined }) {
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[420px] border-separate border-spacing-1" aria-label="Vistas por día de la semana y hora">
+          <thead>
+            <tr>
+              <td />
+              {Array.from({ length: 12 }, (_, s) => (
+                <th key={s} scope="col" className="text-left text-[11px] font-normal text-text-tertiary">
+                  <span aria-hidden="true">{s % 2 === 0 ? `${s * 2} h` : ''}</span>
+                  <span className="sr-only">{slotText(s)}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {rows.map((row, d) => (
               <tr key={DAY_SHORT[d]}>
@@ -42,14 +53,6 @@ export default function HeatMap({ heat: given }: { heat: Heat | undefined }) {
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr>
-              <td />
-              {Array.from({ length: 12 }, (_, s) => (
-                <td key={s} className="text-left text-[11px] text-text-tertiary">{s % 2 === 0 ? `${s * 2} h` : ''}</td>
-              ))}
-            </tr>
-          </tfoot>
         </table>
       </div>
     </Section>

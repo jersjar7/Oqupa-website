@@ -30,7 +30,7 @@ function Thumb({ photoKey }: { photoKey?: string | null }) {
 }
 
 /** Tu cartera — one row per listing, sorted by vistas; a phone gets cards. */
-export default function Portfolio({ rows, days }: { rows: PortfolioRow[]; days: number }) {
+export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioRow[]; days: number; names?: Record<string, string> }) {
   const attention = rows.filter((r) => noteText(r.listing.note, r.listing.propertyType).tone === 'warn').length
   return (
     <Section
@@ -60,7 +60,7 @@ export default function Portfolio({ rows, days }: { rows: PortfolioRow[]; days: 
                     <Link to={`/property/${r.listing.id}`} className="flex items-center gap-3 hover:underline">
                       <Thumb photoKey={r.listing.photoKey} />
                       <span className="min-w-0">
-                        <span className="block truncate font-bold text-text-primary">{r.listing.name}</span>
+                        <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
                         <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>
                       </span>
                     </Link>
@@ -88,7 +88,7 @@ export default function Portfolio({ rows, days }: { rows: PortfolioRow[]; days: 
               <Link to={`/property/${r.listing.id}`} className="flex items-center gap-3">
                 <Thumb photoKey={r.listing.photoKey} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-bold text-text-primary">{r.listing.name}</span>
+                  <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
                   <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>
                 </span>
                 <Spark values={r.spark} warn={note.tone === 'warn'} />

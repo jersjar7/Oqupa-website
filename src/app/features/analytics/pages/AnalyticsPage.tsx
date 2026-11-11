@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
@@ -52,7 +52,8 @@ function uniqueNames(listings: OwnerAnalytics['listings']): Record<string, strin
     if ((bySub.get(base) ?? 0) < 2) return [l.id, base]
     const n = (seen.get(base) ?? 0) + 1
     seen.set(base, n)
-    return [l.id, `${base} (${n})`]
+    // The number first, so a cut-off label still shows which one it is (break-it web 3 #2).
+    return [l.id, `${n}. ${base}`]
   }))
 }
 
@@ -65,12 +66,26 @@ export default function AnalyticsPage() {
   const state = useOwnerAnalytics(user?.id)
   const [period, setPeriod] = useState<PeriodKey>('30')
   const [scope, setScope] = useState<string>('all')
+  // On paper the chart is drawn at a fixed width, so it is never cut at the edge (break-it web 3 #6).
+  const [printing, setPrinting] = useState(false)
+  useEffect(() => {
+    const before = () => setPrinting(true)
+    const after = () => setPrinting(false)
+    window.addEventListener('beforeprint', before)
+    window.addEventListener('afterprint', after)
+    return () => {
+      window.removeEventListener('beforeprint', before)
+      window.removeEventListener('afterprint', after)
+    }
+  }, [])
 
   const data = state.status === 'ready' ? state.data : null
-  const focusId = data ? focusListingId(data, scope) : null
+  const focusId = data ? focusListingId(data, data.listings.length === 1 && data.listings[0] ? data.listings[0].id : scope) : null
   const focus = useListingAnalytics(focusId)
 
-  const many = !data || scope === 'all' || !data.listings.some((l) => l.id === scope)
+  // An owner with one listing is spoken to about that listing (break-it web 3 #1).
+  const effectiveScope = data && data.listings.length === 1 && data.listings[0] ? data.listings[0].id : scope
+  const many = !data || effectiveScope === 'all' || !data.listings.some((l) => l.id === effectiveScope)
   const focusListing = data?.listings.find((l) => l.id === focusId)
 
   const listingNames = useMemo(() => uniqueNames(data?.listings ?? []), [data])
@@ -94,7 +109,7 @@ export default function AnalyticsPage() {
       </div>
     )
   }
-  if (state.status === 'none' || !data) {
+  if (state.status === 'none' || !data || data.listings.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="font-serif text-[22px] text-text-primary">Cuando publiques una propiedad, aquí verás cómo le va.</p>
@@ -154,23 +169,23 @@ export default function AnalyticsPage() {
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:px-0">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-secondary" aria-live="polite">
           {block ? `Del ${shortDay(block.from)} al ${shortDay(block.to)}` : ''}
           {block && block.from === data.countingSince?.counts ? ` · contamos desde el ${shortDay(block.from)}` : ''}
           {built ? ` · actualizado el ${built}` : ''}
           {state.refreshing ? ' · actualizando…' : ''}
         </p>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <label className="sr-only" htmlFor="analytics-scope">Propiedad</label>
-          <select
+          {data.listings.length > 1 && <label className="sr-only" htmlFor="analytics-scope">Propiedad</label>}
+          {data.listings.length > 1 && <select
             id="analytics-scope"
             value={many ? 'all' : scope}
             onChange={(e) => setScope(e.target.value)}
-            className="h-11 max-w-[16rem] truncate rounded-full border border-border bg-white px-4 text-sm text-text-primary"
+            className="h-11 w-full max-w-full truncate rounded-full sm:w-auto sm:max-w-[26rem] border border-border bg-white px-4 text-sm text-text-primary"
           >
             <option value="all">Todas tus propiedades</option>
             {data.listings.map((l) => <option key={l.id} value={l.id}>{listingNames[l.id] ?? l.name}</option>)}
-          </select>
+          </select>}
           <div role="group" aria-label="Periodo" className="inline-flex rounded-full border border-border bg-white p-1">
             {PERIODS.map((p) => (
               <button
@@ -218,7 +233,7 @@ export default function AnalyticsPage() {
             propertyType={focusListing?.propertyType}
           />
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-3 print:block print:space-y-5">
             <div className="lg:col-span-2">
               <Trend
                 points={trendSeries(series, block)}
@@ -226,9 +241,10 @@ export default function AnalyticsPage() {
                 many={many}
                 propertyType={focusListing?.propertyType}
                 listingNames={listingNames}
+                fixedWidth={printing ? 640 : undefined}
               />
             </div>
-            <Funnel totals={block.totals} many={many} propertyType={focusListing?.propertyType} />
+            <Funnel totals={block.totals} many={many} propertyType={focusListing?.propertyType} whatsappFrom={block.whatsappFrom} />
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
@@ -250,7 +266,7 @@ export default function AnalyticsPage() {
             ? <Section title="Qué buscan en tu zona" testId="analytics-demand"><div className="flex justify-center py-6"><Spinner /></div></Section>
             : <Demand demand={listingBlock?.demand} side={side} />}
 
-          <Portfolio rows={rows} days={Number(period)} />
+          <Portfolio rows={rows} days={Number(period)} names={listingNames} />
 
           <p className="pb-4 text-center font-serif text-xs font-light italic text-text-tertiary">
             Las visitas del equipo de Oqupa no cuentan en estos números.

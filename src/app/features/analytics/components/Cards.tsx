@@ -20,7 +20,8 @@ function Card({ c }: { c: CardData }) {
       <p className="mt-2 text-sm text-text-secondary">
         {c.change && (
           <span className={`mr-1 font-medium ${c.change.up === false ? 'text-error-strong' : 'text-secondary'}`}>
-            {c.change.text}
+            <span aria-hidden="true">{c.change.text}</span>
+            <span className="sr-only">{c.change.text.replace('▲', 'sube').replace('▼', 'baja')}</span>
           </span>
         )}
         {c.note}

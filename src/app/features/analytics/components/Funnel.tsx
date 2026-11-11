@@ -1,13 +1,15 @@
 import type { Block } from '../types'
 import { funnelSteps } from '../selectors'
-import { fmt, moreDataText, pronoun } from '../words'
+import { fmt, moreDataText, pronoun, shortDay } from '../words'
 import Section from './Section'
 
 const COLORS = ['bg-secondary', 'bg-secondary/70', 'bg-accent', 'bg-primary', 'bg-primary-hover']
 
 /** De verla a escribirte — each step's bar is its share of "Se mostraron" (square-root, so small steps stay visible). */
-export default function Funnel({ totals, propertyType, many }: {
+export default function Funnel({ totals, propertyType, many, whatsappFrom }: {
   totals: Block['totals']
+  /** WhatsApp taps are counted from this day, inside the period. */
+  whatsappFrom?: string
   /** One listing: "La/Lo abrieron"; several: "Las abrieron". */
   propertyType?: string | null
   many: boolean
@@ -37,6 +39,7 @@ export default function Funnel({ totals, propertyType, many }: {
                   />
                 </div>
                 <p className="mt-1 text-xs text-text-tertiary">
+                  {s.key === 'whatsapp' && whatsappFrom ? `Contamos desde el ${shortDay(whatsappFrom)} · ` : ''}
                   {i === 0
                     ? 'Cada vez que tu tarjeta estuvo 1 segundo en pantalla'
                     : s.ofPrevious === null

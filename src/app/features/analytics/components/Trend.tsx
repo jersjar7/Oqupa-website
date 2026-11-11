@@ -16,7 +16,7 @@ const LISTED_MARKS = 6
 
 /** Se mostró/mostraron (left scale) and La/Lo/Las abrieron (right scale), per day, with change marks. */
 export default function Trend({
-  points, marks, many, propertyType, listingNames,
+  points, marks, many, propertyType, listingNames, fixedWidth,
 }: {
   points: TrendPoint[]
   marks: Marks | undefined
@@ -24,6 +24,8 @@ export default function Trend({
   propertyType?: string | null
   /** id → name, to say which listing a mark belongs to on the all-listings view. */
   listingNames: Record<string, string>
+  /** On paper: a fixed width instead of measuring the screen. */
+  fixedWidth?: number
 }) {
   const shownWord = many ? 'Se mostraron' : 'Se mostró'
   const seenWord = `${many ? 'Las' : pronoun(propertyType) === 'lo' ? 'Lo' : 'La'} abrieron`
@@ -56,7 +58,7 @@ export default function Trend({
       )}
     >
       <div className="h-60 w-full" role="img" aria-label={`${shownWord} y ${seenWord.toLowerCase()} por día, del ${points[0] ? shortDay(points[0].day) : ''} al ${last ? shortDay(last.day) : ''}`}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width={fixedWidth ?? '100%'} height="100%">
           <ComposedChart data={points} margin={{ top: 8, right: 4, bottom: 0, left: -12 }}>
             <CartesianGrid stroke={grid} vertical={false} />
             <XAxis dataKey="day" tickFormatter={shortDay} tick={{ fill: axis, fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={24} />
@@ -81,6 +83,14 @@ export default function Trend({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      {/* The same numbers for screen readers (break-it web 3 #3). */}
+      <table className="sr-only">
+        <caption>{shownWord} y {seenWord.toLowerCase()} por día</caption>
+        <thead><tr><th scope="col">Día</th><th scope="col">{shownWord}</th><th scope="col">{seenWord}</th></tr></thead>
+        <tbody>
+          {points.map((p) => <tr key={p.day}><th scope="row">{shortDay(p.day)}</th><td>{p.shown}</td><td>{p.seen}</td></tr>)}
+        </tbody>
+      </table>
       {markList.length > 0 && (many || !labelled) && (
         <ul className="mt-3 space-y-1 text-xs text-text-secondary">
           {markList.slice(0, LISTED_MARKS).map((m) => (

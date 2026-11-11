@@ -51,7 +51,14 @@ export type Zone =
 export type Compare = Thin | { status: 'ok'; n: number; tenths: number; district: string | null }
 export type DaysToClose = Thin | { status: 'ok'; n: number; area: 'district' | 'province'; median: number }
 export type ContactRate = Thin | { status: 'ok'; n: number; mine: number; zone: number }
-export type Demand = Thin | { status: 'ok'; n: number; topRange: [number, number]; perListing: Record<string, number> }
+export interface DemandDistrict {
+  district: string
+  searches: number
+  listings: number
+  /** Searches per listing published; null when nobody publishes there. */
+  perListing: number | null
+}
+export type Demand = Thin | { status: 'ok'; n: number; side: 'venta' | 'alquiler'; topRange: [number, number | null] | null; districts: DemandDistrict[] }
 
 export interface Block {
   from: string
@@ -63,7 +70,10 @@ export interface Block {
   sources: Sources
   places: Places
   marks: Marks
-  demand: Demand
+  /** Per listing only (the all-listings page shows the featured listing's). */
+  demand?: Demand
+  /** When WhatsApp taps started being recorded inside this period. */
+  whatsappFrom?: string
   // Per listing only:
   zone?: Zone
   compare?: Compare

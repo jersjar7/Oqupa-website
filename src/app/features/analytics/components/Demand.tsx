@@ -14,25 +14,30 @@ export default function Demand({ demand: given, side }: { demand: DemandData | u
       </Section>
     )
   }
-  const rows = Object.entries(demand.perListing).sort((a, b) => b[1] - a[1]).slice(0, 6)
-  const max = Math.max(1, ...rows.map(([, n]) => n))
+  const rows = demand.districts
+  const max = Math.max(1, ...rows.map((r) => r.perListing ?? 0))
+  const range = demand.topRange
   return (
     <Section
       title={title}
       subtitle={subtitle}
       testId="analytics-demand"
-      aside={(
-        <>Rango más buscado en {side}: <strong className="font-bold text-text-primary">S/ {fmt(demand.topRange[0])} – {fmt(demand.topRange[1])}{side === 'alquiler' ? ' al mes' : ''}</strong></>
-      )}
+      aside={range ? (
+        <>Rango más buscado en {side}: <strong className="font-bold text-text-primary">
+          {range[1] === null ? `desde S/ ${fmt(range[0])}` : `S/ ${fmt(range[0])} – ${fmt(range[1])}`}{side === 'alquiler' ? ' al mes' : ''}
+        </strong></>
+      ) : undefined}
     >
       <ul className="space-y-2">
-        {rows.map(([district, n]) => (
-          <li key={district} className="grid grid-cols-[minmax(0,10rem)_1fr_3rem] items-center gap-3 text-sm">
-            <span className="truncate">{district}</span>
+        {rows.map((r) => (
+          <li key={r.district} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm">
+            <span className="truncate">{r.district}</span>
             <span className="h-2.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-              <span className="block h-full rounded-full bg-secondary" style={{ width: `${(n / max) * 100}%` }} />
+              <span className={`block h-full rounded-full ${r.perListing === null ? 'bg-primary' : 'bg-secondary'}`} style={{ width: `${r.perListing === null ? 100 : (r.perListing / max) * 100}%` }} />
             </span>
-            <span className="text-right font-bold">{fmt(Math.round(n * 10) / 10)}</span>
+            <span className="text-right font-bold">
+              {r.perListing === null ? `${fmt(r.searches)} búsquedas · ninguna propiedad` : fmt(r.perListing)}
+            </span>
           </li>
         ))}
       </ul>
