@@ -34,3 +34,14 @@ describe('names are never cut on a phone', () => {
     expect(src).toMatch(/perListing === null \? 'col-span-2 sm:col-span-1 text-left sm:text-right'/)
   })
 })
+
+// Round 3 #2: a table column grows to fit text that cannot wrap, so a long
+// repeated name widened the table past a 1280 px screen. In the table the name
+// wraps inside a fixed width.
+describe('Tu cartera table keeps its width', () => {
+  it('the name cell wraps within 16rem instead of growing', () => {
+    const table = read('Portfolio.tsx').split('xl:block')[1]?.split('xl:hidden')[0] ?? ''
+    expect(table).toContain('max-w-[16rem]')
+    expect(table).not.toMatch(/block truncate font-bold/)
+  })
+})

@@ -133,18 +133,3 @@ export function focusListingId(data: OwnerAnalytics, scope: string): string | nu
   return data.featuredListingId ?? data.listings[0]?.id ?? null
 }
 
-/**
- * Whether change labels fit on the trend chart: at most four, and each at least
- * a third of the chart from the next (a label is about a third of a phone chart
- * wide). Otherwise the chart shows lines only and the list below names them.
- */
-export function markLabelsFit(days: string[], chartDays: number): boolean {
-  if (days.length > 4) return false
-  const sorted = [...days].sort()
-  const gap = chartDays / 3
-  for (let i = 1; i < sorted.length; i++) {
-    const apart = (Date.parse(`${sorted[i]}T00:00:00Z`) - Date.parse(`${sorted[i - 1]}T00:00:00Z`)) / 86400000
-    if (apart < gap) return false
-  }
-  return true
-}

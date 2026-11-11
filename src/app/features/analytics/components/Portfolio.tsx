@@ -59,8 +59,8 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
                   <td className="py-3 pr-3">
                     <Link to={`/property/${r.listing.id}`} className="flex items-center gap-3 hover:underline">
                       <Thumb photoKey={r.listing.photoKey} />
-                      <span className="min-w-0">
-                        <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
+                      <span className="min-w-0 max-w-[16rem]">
+                        <span className="block break-words font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
                         {!(names[r.listing.id] ?? '').includes(r.listing.sub) && <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>}
                       </span>
                     </Link>
