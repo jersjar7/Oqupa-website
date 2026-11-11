@@ -33,12 +33,14 @@ describe('useMapSearchReport', () => {
   beforeEach(() => { vi.useFakeTimers(); resetMapSearchReport() })
   afterEach(() => vi.useRealTimers())
 
-  it('sends once the map settles, then nothing more for 10 minutes on this device (web 4 #3)', () => {
+  it('sends once the map settles, then nothing more for 10 minutes on this device (web 4 #3)', async () => {
     let t = 0
     const send = vi.fn(async () => undefined)
     const { rerender } = renderHook(({ min }) => useMapSearchReport(filters({ priceMin: min }), castilla, 3.44, send, () => t), { initialProps: { min: 800 } })
     vi.advanceTimersByTime(2600)
     expect(send).toHaveBeenCalledTimes(1)
+    await Promise.resolve() // the gap starts once the send has finished
+    await Promise.resolve()
     t = 5 * 60 * 1000
     rerender({ min: 900 })
     vi.advanceTimersByTime(2600)
@@ -56,5 +58,16 @@ describe('useMapSearchReport', () => {
     rerender({ min: 900 })
     vi.advanceTimersByTime(1000)
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('a failed send does not start the gap (web 6 #3)', async () => {
+    const send = vi.fn(async () => { throw new Error('offline') })
+    const { rerender } = renderHook(({ min }) => useMapSearchReport(filters({ priceMin: min }), castilla, 3.44, send, () => 0), { initialProps: { min: 800 } })
+    vi.advanceTimersByTime(2600)
+    await Promise.resolve()
+    await Promise.resolve()
+    rerender({ min: 900 })
+    vi.advanceTimersByTime(2600)
+    expect(send).toHaveBeenCalledTimes(2)
   })
 })
