@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { daysBetween, focusListingId, funnelSteps, medianDays, portfolioRows, sparkFor, trendSeries } from '../selectors'
+import { daysBetween, focusListingId, funnelSteps, markLabelsFit, medianDays, portfolioRows, sparkFor, trendSeries } from '../selectors'
 import type { OwnerAnalytics, OwnerListing, Series } from '../types'
 
 function listing(id: string, over: Partial<OwnerListing> = {}): OwnerListing {
@@ -70,5 +70,27 @@ describe('Analítica selectors (ADR-058)', () => {
   it('median days published ignores closed listings (null days)', () => {
     expect(medianDays([listing('A', { daysPublished: 10 }), listing('B', { daysPublished: 20 }), listing('C', { daysPublished: null })])).toBe(15)
     expect(medianDays([listing('C', { daysPublished: null })])).toBeNull()
+  })
+})
+
+// Break-it round 2 #2: two change labels five days apart printed on top of each
+// other on a phone. A label goes on the chart only when every change is at
+// least a third of the chart away from the next; otherwise lines only, and the
+// list under the chart says what each one is.
+describe('markLabelsFit', () => {
+  it('does not label two changes five days apart in 30 days', () => {
+    expect(markLabelsFit(['2026-10-15', '2026-10-20'], 30)).toBe(false)
+  })
+  it('labels changes a third of the chart apart', () => {
+    expect(markLabelsFit(['2026-10-01', '2026-10-11', '2026-10-21'], 30)).toBe(true)
+  })
+  it('labels a single change', () => {
+    expect(markLabelsFit(['2026-10-15'], 30)).toBe(true)
+  })
+  it('never labels more than four', () => {
+    expect(markLabelsFit(['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01'], 365)).toBe(false)
+  })
+  it('two kinds on the same day overlap', () => {
+    expect(markLabelsFit(['2026-10-15', '2026-10-15'], 30)).toBe(false)
   })
 })

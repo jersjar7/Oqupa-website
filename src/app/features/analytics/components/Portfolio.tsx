@@ -39,7 +39,7 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
       aside={attention ? `${attention} con algo que revisar` : undefined}
     >
       {/* Computer: a table */}
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto xl:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left font-sans text-xs font-medium uppercase tracking-wide text-text-secondary">
@@ -80,7 +80,7 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
       </div>
 
       {/* Phone: cards */}
-      <ul className="space-y-3 md:hidden">
+      <ul className="space-y-3 xl:hidden">
         {rows.map((r) => {
           const note = noteText(r.listing.note, r.listing.propertyType)
           return (
@@ -88,7 +88,7 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
               <Link to={`/property/${r.listing.id}`} className="flex items-center gap-3">
                 <Thumb photoKey={r.listing.photoKey} />
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-2 break-words font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
+                  <span className="block break-words font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
                   {!(names[r.listing.id] ?? '').includes(r.listing.sub) && <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>}
                 </span>
               </Link>

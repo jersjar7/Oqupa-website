@@ -1,6 +1,7 @@
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Marks } from '../types'
 import type { TrendPoint } from '../selectors'
+import { markLabelsFit } from '../selectors'
 import { fmt, moreDataText, pronoun, shortDay } from '../words'
 import { token } from '../tokens'
 import Section from './Section'
@@ -10,8 +11,6 @@ const MARK_WORDS: Record<string, string> = {
   'price-up': 'Subiste el precio',
   photos: 'Fotos nuevas',
 }
-/** More marks than this and their labels would overlap: lines only, and the list below says what each is. */
-const LABELLED_MARKS = 4
 const LISTED_MARKS = 6
 
 /** Se mostró/mostraron (left scale) and La/Lo/Las abrieron (right scale), per day, with change marks. */
@@ -43,7 +42,7 @@ export default function Trend({
     else byDay.set(key, { day: m.day, kind: m.kind, ids: [m.listingId] })
   }
   const markList = [...byDay.values()]
-  const labelled = markList.length <= LABELLED_MARKS
+  const labelled = markLabelsFit(markList.map((m) => m.day), Math.max(1, points.length))
   const last = points[points.length - 1]
 
   return (

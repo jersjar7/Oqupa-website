@@ -10,10 +10,17 @@ import { join } from 'node:path'
 const read = (f: string) => readFileSync(join(__dirname, '../components', f), 'utf8')
 
 describe('names are never cut on a phone', () => {
-  it('Tu cartera phone card: name wraps to two lines, sparkline below with the note', () => {
-    const phone = read('Portfolio.tsx').split('md:hidden')[1] ?? ''
+  // Round 2 #1: two listings with the same name differ only at the end of the
+  // name (the facts are added to tell them apart), so the name is never clamped.
+  // Round 2 #3: the computer table needs ~930 px, so cards are used below xl.
+  it('Tu cartera card: the whole name shows, sparkline below with the note; cards until xl', () => {
+    const src = read('Portfolio.tsx')
+    expect(src).toContain('<ul className="space-y-3 xl:hidden">')
+    expect(src).toContain('hidden overflow-x-auto xl:block')
+    const phone = src.split('xl:hidden')[1] ?? ''
     const header = phone.slice(0, phone.indexOf('</Link>'))
-    expect(header).toContain('line-clamp-2')
+    expect(header).not.toContain('line-clamp')
+    expect(header).toContain('break-words')
     expect(header).not.toMatch(/block truncate font-bold/)
     expect(header).not.toContain('<Spark')
     expect(phone).toContain('<Spark')
