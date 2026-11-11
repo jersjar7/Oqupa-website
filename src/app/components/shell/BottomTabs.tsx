@@ -17,8 +17,9 @@ export default function BottomTabs({ caps }: { caps: Capabilities }) {
     <nav
       aria-label="Navegación móvil"
       className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-white grid z-40 print:hidden"
+      // One line per label: a long one ("Mis propiedades") takes the room it needs, the rest share what is left.
       // The tabs sit above the iPhone's home line; the bar's white runs under it.
-      style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(min-content, 1fr))`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {items.map((item) => {
         const active = isActive(item.to)
@@ -28,7 +29,7 @@ export default function BottomTabs({ caps }: { caps: Capabilities }) {
             key={item.id}
             to={item.to}
             aria-current={active ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center py-2 text-[10px] ${
+            className={`flex flex-col items-center justify-center whitespace-nowrap px-0.5 py-2 text-[10px] ${
               active ? 'text-secondary font-medium' : 'text-text-secondary'
             }`}
           >

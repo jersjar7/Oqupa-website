@@ -35,3 +35,13 @@ describe('Analítica fits a phone', () => {
     expect(min).toBeLessThanOrEqual(PHONE_CARD_INNER)
   })
 })
+
+// At 320 px "Ver analítica" broke onto two lines beside PUBLICAR on Mis propiedades.
+describe('Mis propiedades — the Analítica link stays on one line', () => {
+  it('never wraps', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync(`${process.cwd()}/src/app/features/listings/pages/ListingsPage.tsx`, 'utf8')
+    const line = src.split('\n').find((l) => l.includes('Ver analítica')) ?? ''
+    expect(line).toContain('whitespace-nowrap')
+  })
+})
