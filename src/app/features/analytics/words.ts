@@ -37,14 +37,12 @@ export function thinThings(section: string, district?: string | null): string {
       return 'personas con ubicación'
     case 'contactRatePeerVistas':
       return district ? `vistas en propiedades parecidas en ${district}` : 'vistas en propiedades parecidas'
-    case 'owners':
-      return district ? `dueños distintos con propiedades parecidas en ${district}` : 'dueños distintos con propiedades parecidas'
     case 'zone':
     case 'compare':
     case 'contactRatePeers':
       return district ? `propiedades parecidas en ${district}` : 'propiedades parecidas'
     case 'daysToClose':
-      return 'ventas o alquileres parecidos'
+      return 'cierres parecidos'
     case 'demand':
       return 'búsquedas'
     default:
@@ -55,7 +53,11 @@ export function thinThings(section: string, district?: string | null): string {
 /** The "Necesitamos más datos" sentence for a section that has no numbers. */
 export function moreDataText(section: string, thin: Thin, district?: string | null): string {
   if (thin.status === 'needs-area') return 'Agrega los m² de tu propiedad para compararla con la zona.'
-  if (thin.status === 'needs-price') return 'No podemos comparar este precio con la zona: usa soles o dólares.'
+  if (thin.status === 'needs-price') return 'No podemos comparar este precio con la zona.'
+  // How many other owners there are is not ours to tell (break-it web #13).
+  if (thin.status === 'too-few-owners') {
+    return `Necesitamos más datos: las propiedades parecidas${district ? ` en ${district}` : ''} son de muy pocos dueños para compararlas.`
+  }
   if (thin.status === 'not-recorded') {
     const what = NOT_RECORDED[section] ?? 'esto'
     return thin.since
@@ -65,8 +67,7 @@ export function moreDataText(section: string, thin: Thin, district?: string | nu
   const kind =
     thin.status === 'too-few-peers' ? 'contactRatePeers'
       : thin.status === 'too-few-peer-vistas' ? 'contactRatePeerVistas'
-        : thin.status === 'too-few-owners' ? 'owners'
-          : section
+        : section
   const things = thinThings(kind, district)
   const n = thin.n ?? 0
   const min = thin.min ?? 0
@@ -80,9 +81,8 @@ function singular(things: string): string {
     .replace(/^vistas/, 'vista')
     .replace(/^personas con ubicación/, 'persona con ubicación')
     .replace(/^propiedades parecidas/, 'propiedad parecida')
-    .replace(/^ventas o alquileres parecidos/, 'venta o alquiler parecido')
+    .replace(/^cierres parecidos/, 'cierre parecido')
     .replace(/^búsquedas/, 'búsqueda')
-    .replace(/^dueños distintos/, 'dueño distinto')
 }
 
 /** A card's change against the period before: '▲ 24%', '▼ 12%', 'igual', or null (nothing to compare). */

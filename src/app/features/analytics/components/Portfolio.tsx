@@ -13,7 +13,7 @@ function Spark({ values, warn }: { values: number[]; warn: boolean }) {
     .join(' ')
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-28" aria-hidden="true">
-      <path d={d} fill="none" stroke={warn ? '#E0632E' : '#3A6A55'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" style={{ stroke: warn ? 'var(--color-primary-hover)' : 'var(--color-secondary)' }} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   )
 }

@@ -15,7 +15,7 @@ vi.mock('@/app/components/shell/pageMetaContext', () => ({ useSetPageMeta: () =>
 
 const hooks = vi.hoisted(() => ({
   owner: { status: 'loading' } as unknown,
-  listing: { data: null, loading: false } as unknown,
+  listing: { data: null, loading: false, missing: false } as unknown,
   listingCalls: [] as Array<string | null>,
 }))
 vi.mock('../useOwnerAnalytics', () => ({
@@ -73,7 +73,7 @@ const renderPage = () => render(<MemoryRouter><AnalyticsPage /></MemoryRouter>)
 describe('Analítica page (ADR-058)', () => {
   beforeEach(() => {
     hooks.owner = { status: 'ready', data: pageData(), refreshing: false }
-    hooks.listing = { data: listingData(), loading: false }
+    hooks.listing = { data: listingData(), loading: false, missing: false }
     hooks.listingCalls = []
   })
 
@@ -94,7 +94,7 @@ describe('Analítica page (ADR-058)', () => {
     expect(within(screen.getByTestId('analytics-zone')).getByRole('note').textContent)
       .toBe('Necesitamos más datos: hay 2 propiedades parecidas en Castilla y hacen falta al menos 5.')
     expect(within(screen.getByTestId('analytics-compare')).getAllByRole('note')[0]?.textContent)
-      .toBe('Necesitamos más datos: hay 2 dueños distintos con propiedades parecidas en Castilla y hacen falta al menos 3.')
+      .toBe('Necesitamos más datos: las propiedades parecidas en Castilla son de muy pocos dueños para compararlas.')
     expect(within(screen.getByTestId('analytics-demand')).getByRole('note').textContent)
       .toBe('Necesitamos más datos. Todavía no registramos las búsquedas en el mapa.')
   })
@@ -143,6 +143,52 @@ describe('Analítica page (ADR-058)', () => {
   it('Tu cartera: facts with la/lo, never a verdict', () => {
     renderPage()
     expect(within(screen.getByTestId('analytics-portfolio')).getAllByText('Nadie la abrió en 7 días').length).toBeGreaterThan(0)
+  })
+
+  it('more vistas than apariciones (shared links) never reads as a rate over 100% (break-it web #4)', () => {
+    const data = pageData()
+    data.periods['30'] = thinBlock({ totals: { shown: 2, seen: 10, contacts: 0, saved: 0, whatsapp: null } })
+    hooks.owner = { status: 'ready', data, refreshing: false }
+    renderPage()
+    expect(screen.queryByText(/500%/)).toBeNull()
+    expect(screen.getByText('la mayoría llega por un enlace')).toBeTruthy()
+    expect(screen.getByText('Más veces de las que se mostró: muchas llegan por un enlace')).toBeTruthy()
+  })
+
+  it('a listing whose record is not built yet says so — no endless spinner (break-it web #3)', () => {
+    renderPage()
+    hooks.listing = { data: null, loading: false, missing: true }
+    fireEvent.change(screen.getByLabelText('Propiedad'), { target: { value: 'L2' } })
+    expect(screen.getByText('Todavía estamos preparando los números de esta propiedad. Vuelve en unos minutos.')).toBeTruthy()
+  })
+
+  it('picking a listing narrows Tu cartera to it (break-it web #8)', () => {
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Propiedad'), { target: { value: 'L1' } })
+    const portfolio = screen.getByTestId('analytics-portfolio')
+    expect(within(portfolio).queryAllByText('Casa L2')).toHaveLength(0)
+  })
+
+  it('says when the numbers were built (break-it web #7)', () => {
+    const data = pageData()
+    data.builtAt = new Date('2026-11-20T09:05:00Z') // 4:05 a. m. Lima
+    hooks.owner = { status: 'ready', data, refreshing: false }
+    renderPage()
+    expect(screen.getByText(/actualizado el 20 nov a las 4:05 a\. m\./)).toBeTruthy()
+  })
+
+  it('an older record missing sections does not crash the page (break-it web #9)', () => {
+    const data = pageData()
+    const old = thinBlock() as unknown as Record<string, unknown>
+    delete old.heat
+    delete old.marks
+    delete old.sources
+    data.periods['30'] = old as unknown as Block
+    data.listings = data.listings.map((l) => ({ ...l, saves: undefined as unknown as number, seen: undefined as unknown as number[] }))
+    hooks.owner = { status: 'ready', data, refreshing: false }
+    renderPage()
+    expect(screen.getByTestId('analytics-heat')).toBeTruthy()
+    expect(within(screen.getByTestId('analytics-cards')).queryByText('NaN')).toBeNull()
   })
 
   it('an owner with no listings is invited to publish', () => {

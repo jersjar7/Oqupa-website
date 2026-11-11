@@ -6,10 +6,10 @@ import shapes from '../data/piura-districts.json'
 const CAPTION =
   'Personas que vieron tus propiedades, por distrito. Nunca la ubicación exacta: solo el distrito, y las zonas con menos de 3 personas no se muestran.'
 
-// Light → dark green. The server never sends a place with fewer than 3 people.
-const RAMP = ['#D8E5DE', '#A9C7B8', '#78A48F', '#4F826B', '#2C5242']
+// Light → dark green (CSS tokens). The server never sends a place with fewer than 3 people.
+const RAMP = [1, 2, 3, 4, 5].map((k) => `var(--color-map-${k})`)
 const CUTS = [3, 6, 11, 21, 41]
-const EMPTY = '#F1ECE4'
+const EMPTY = 'var(--color-map-empty)'
 const shade = (n: number) => (n < 3 ? EMPTY : RAMP[CUTS.filter((c) => n >= c).length - 1] ?? EMPTY)
 
 const DISTRICTS = shapes.districts as Record<string, { name: string; d: string }>
@@ -22,7 +22,8 @@ function codesForNames(names: Array<string | null>): Set<string> {
 }
 
 /** Dónde están quienes miran — Piura by district, plus people outside Piura by city. */
-export default function PlacesMap({ places, listingDistricts }: { places: Places; listingDistricts: Array<string | null> }) {
+export default function PlacesMap({ places: given, listingDistricts }: { places: Places | undefined; listingDistricts: Array<string | null> }) {
+  const places: Places = given ?? { status: 'not-recorded' }
   if (places.status !== 'ok') {
     return (
       <Section title="Dónde están quienes miran" subtitle={CAPTION} testId="analytics-places">
@@ -58,8 +59,7 @@ export default function PlacesMap({ places, listingDistricts }: { places: Places
                 <path
                   key={code}
                   d={d}
-                  fill={shade(n)}
-                  stroke={mine.has(code) ? '#F47843' : '#FFFFFF'}
+                  style={{ fill: shade(n), stroke: mine.has(code) ? 'var(--color-primary)' : 'var(--color-white, #fff)' }}
                   strokeWidth={mine.has(code) ? 2.2 : 0.7}
                   strokeLinejoin="round"
                 >

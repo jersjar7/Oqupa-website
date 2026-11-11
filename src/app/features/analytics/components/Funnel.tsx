@@ -33,13 +33,17 @@ export default function Funnel({ totals, propertyType, many }: {
                 <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
                   <div
                     className={`h-full rounded-full ${COLORS[i]}`}
-                    style={{ width: `${s.value > 0 ? Math.max(Math.sqrt(s.value / top) * 100, 3) : 0}%` }}
+                    style={{ width: `${s.value > 0 ? Math.min(100, Math.max(Math.sqrt(s.value / top) * 100, 3)) : 0}%` }}
                   />
                 </div>
                 <p className="mt-1 text-xs text-text-tertiary">
                   {i === 0
                     ? 'Cada vez que tu tarjeta estuvo 1 segundo en pantalla'
-                    : s.ofPrevious === null ? '—' : `${s.ofPrevious}% de ${s.key === 'whatsapp' ? 'quienes pidieron tu número' : s.key === 'seen' ? 'las veces que se mostró' : `las veces que ${word.toLowerCase()} abrieron`}`}
+                    : s.ofPrevious === null
+                      ? '—'
+                      : s.key === 'seen' && s.ofPrevious > 100
+                        ? 'Más veces de las que se mostró: muchas llegan por un enlace'
+                        : `${s.ofPrevious}% de ${s.key === 'whatsapp' ? 'quienes pidieron tu número' : s.key === 'seen' ? `las veces que se ${many ? 'mostraron' : 'mostró'}` : `las veces que ${word.toLowerCase()} abrieron`}`}
                 </p>
               </>
             )}

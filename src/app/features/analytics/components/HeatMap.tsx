@@ -3,11 +3,12 @@ import { bestTimeText, DAY_SHORT, moreDataText, slotText } from '../words'
 import Section, { MoreData } from './Section'
 
 /** Cuándo miran tus propiedades — 7 days × 12 two-hour slots, Lima time. */
-export default function HeatMap({ heat }: { heat: Heat }) {
-  if (heat.status !== 'ok') {
+export default function HeatMap({ heat: given }: { heat: Heat | undefined }) {
+  const heat: Heat = given ?? { status: 'too-few', n: 0, min: 20 }
+  if (heat.status !== 'ok' || !Array.isArray(heat.cells) || heat.cells.length !== 84) {
     return (
       <Section title="Cuándo miran tus propiedades" testId="analytics-heat">
-        <MoreData text={moreDataText('heat', heat)} />
+        <MoreData text={moreDataText('heat', heat.status === 'ok' ? { status: 'too-few', n: heat.n, min: 20 } : heat)} />
       </Section>
     )
   }
@@ -30,7 +31,7 @@ export default function HeatMap({ heat }: { heat: Heat }) {
                     key={s}
                     title={`${DAY_SHORT[d]} ${slotText(s)}: ${n} ${n === 1 ? 'vista' : 'vistas'}`}
                     className="h-7 rounded-md"
-                    style={{ background: n ? `rgba(58, 106, 85, ${(0.12 + (n / max) * 0.85).toFixed(2)})` : 'var(--color-surface-muted)' }}
+                    style={{ background: n ? `color-mix(in srgb, var(--color-secondary) ${Math.round(12 + (n / max) * 85)}%, transparent)` : 'var(--color-surface-muted)' }}
                   >
                     <span className="sr-only">{n}</span>
                   </td>

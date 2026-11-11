@@ -75,7 +75,7 @@ export function VersusSimilar({
       {compare.status === 'ok' ? (
         <>
           <p className="font-serif text-[22px] font-normal leading-snug text-text-primary sm:text-[26px]">
-            {opened} más veces que a <span className="text-primary-hover">{compare.tenths} de cada 10</span>{' '}
+            {opened} más veces que a <span className="text-secondary">{compare.tenths} de cada 10</span>{' '}
             {TYPE_PLURAL[type] ?? 'propiedades'} en {compare.district}
           </p>
           <div className="mt-3 grid grid-cols-10 gap-1.5" aria-hidden="true">

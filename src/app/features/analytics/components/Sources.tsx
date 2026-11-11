@@ -5,7 +5,8 @@ import Section, { MoreData } from './Section'
 const VIA_ORDER = ['direct', 'whatsapp', 'facebook', 'google', 'other']
 
 /** Desde dónde llegan — by arrival once it is recorded; App vs Web until then. */
-export default function Sources({ sources }: { sources: SourcesData }) {
+export default function Sources({ sources: given }: { sources: SourcesData | undefined }) {
+  const sources: SourcesData = given ?? { status: 'too-few', n: 0, min: 10 }
   if (sources.status !== 'ok') {
     return (
       <Section title="Desde dónde llegan" testId="analytics-sources">

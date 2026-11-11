@@ -49,8 +49,13 @@ export default function Cards({
   const t = block.totals
   const it = many ? 'Las' : pronoun(propertyType) === 'lo' ? 'Lo' : 'La'
   const p = block.previous
-  const rate = openRate(t)
-  const prevRate = p ? openRate(p) : null
+  // Vistas are not a subset of apariciones — a shared link opens a listing nobody
+  // saw in a list — so more than 100% means "mostly arrives by link", not a rate (break-it web #4).
+  const rawRate = openRate(t)
+  const byLink = rawRate !== null && rawRate > 100
+  const rate = byLink ? null : rawRate
+  const prevRaw = p ? openRate(p) : null
+  const prevRate = prevRaw !== null && prevRaw <= 100 ? prevRaw : null
   const rateChange = rate !== null && prevRate !== null
     ? (() => {
         const pts = Math.round((rate - prevRate) * 10) / 10
@@ -73,7 +78,7 @@ export default function Cards({
     { label: `${it} abrieron`, value: fmt(t.seen), change: changeText(t.seen, p?.seen), note: 'veces', dot: 'var(--color-primary)' },
     { label: 'Pidieron tu número', value: fmt(t.contacts), change: changeText(t.contacts, p?.contacts), note: t.contacts === 1 ? 'persona' : 'personas', dot: 'var(--color-accent)' },
     { label: 'Guardados', value: fmt(saves), change: null, note: 'en total, hoy', dot: 'var(--color-secondary)' },
-    { label: `${it} abren`, value: rate === null ? '—' : `${rate}%`, change: rateChange, note: `de quienes ${it.toLowerCase()} ven`, dot: 'var(--color-primary)' },
+    { label: `${it} abren`, value: rate === null ? '—' : `${rate}%`, change: rateChange, note: byLink ? 'la mayoría llega por un enlace' : `de quienes ${it.toLowerCase()} ven`, dot: 'var(--color-primary)' },
     { label: 'Días publicado', value: daysPublished === null ? '—' : fmt(daysPublished), change: null, note: daysNote, dot: 'var(--color-accent)' },
   ]
 

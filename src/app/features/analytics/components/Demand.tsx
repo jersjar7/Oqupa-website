@@ -3,7 +3,8 @@ import { fmt, moreDataText } from '../words'
 import Section, { MoreData } from './Section'
 
 /** Qué buscan en tu zona — the most-searched price range and searchers per listing, by district. */
-export default function Demand({ demand, side }: { demand: DemandData; side: 'venta' | 'alquiler' }) {
+export default function Demand({ demand: given, side }: { demand: DemandData | undefined; side: 'venta' | 'alquiler' }) {
+  const demand: DemandData = given ?? { status: 'not-recorded' }
   const title = 'Qué buscan en tu zona'
   const subtitle = 'Personas buscando por cada propiedad publicada — donde hay más demanda que oferta, tu propiedad destaca más.'
   if (demand.status !== 'ok') {

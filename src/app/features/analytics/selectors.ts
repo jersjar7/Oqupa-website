@@ -22,7 +22,8 @@ export interface TrendPoint {
 }
 
 /** The series' days inside the block, one point each. Days the series does not have are left out, never invented. */
-export function trendSeries(series: Series, block: Pick<Block, 'from' | 'to'>): TrendPoint[] {
+export function trendSeries(series: Series | undefined, block: Pick<Block, 'from' | 'to'>): TrendPoint[] {
+  if (!series?.start || !Array.isArray(series.seen)) return []
   const days = daysBetween(series.start, block.to)
   const out: TrendPoint[] = []
   days.forEach((day, k) => {
@@ -33,11 +34,13 @@ export function trendSeries(series: Series, block: Pick<Block, 'from' | 'to'>): 
 }
 
 /** The listing's sparkline values for the block's days (same days as the page series). */
-export function sparkFor(listing: OwnerListing, series: Series, block: Pick<Block, 'from' | 'to'>): number[] {
+export function sparkFor(listing: OwnerListing, series: Series | undefined, block: Pick<Block, 'from' | 'to'>): number[] {
+  if (!series?.start) return []
   const days = daysBetween(series.start, block.to)
   const out: number[] = []
   days.forEach((day, k) => {
-    if (day >= block.from && k < listing.seen.length) out.push(listing.seen[k] ?? 0)
+    const seen = listing.seen ?? []
+    if (day >= block.from && k < seen.length) out.push(seen[k] ?? 0)
   })
   return out
 }

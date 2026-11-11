@@ -62,8 +62,8 @@ function DashboardShellInner() {
   // standard fix for allowing them to shrink below their intrinsic size so
   // `overflow-y-auto` kicks in instead of the outer document scrolling.
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-1 flex bg-background min-h-0">
+    <div className="h-screen flex flex-col overflow-hidden print:h-auto print:overflow-visible">
+      <div className="flex-1 flex bg-background min-h-0 print:block">
         <Sidebar
           caps={effective}
           userName={userName}

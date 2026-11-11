@@ -6,59 +6,89 @@ import type { ListingAnalytics, OwnerAnalytics } from './types'
 
 export type AnalyticsState =
   | { status: 'loading' }
-  | { status: 'none' } // no listings: nothing was built for this person
+  | { status: 'none' } // the server says this person has no listing it shows
   | { status: 'error' }
   | { status: 'ready'; data: OwnerAnalytics; refreshing: boolean }
 
-/** Lima's calendar day now, 'YYYY-MM-DD'. */
-export const limaToday = (now = new Date()) => now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+/** A page built more than this long ago means the nightly build missed it: ask for a rebuild. */
+const STALE_AFTER_MS = 30 * 60 * 60 * 1000
+/** How long to wait for a just-built page to arrive before saying something went wrong. */
+const ARRIVAL_WAIT_MS = 20_000
+
+const millisOf = (v: OwnerAnalytics['builtAt']): number | null => {
+  if (!v) return null
+  if (v instanceof Date) return v.getTime()
+  return typeof v.toDate === 'function' ? v.toDate().getTime() : null
+}
+
+type RefreshAnswer = { rebuilt: boolean; reason?: string | null }
 
 /**
- * The owner's own ownerAnalytics/{uid} (ADR-058), live. When it is missing or
- * was built before today (Lima), asks the server once to rebuild it — the
- * server allows that at most every 10 minutes, so a reload cannot hammer it.
+ * The owner's own ownerAnalytics/{uid} (ADR-058), live. When it is missing, or
+ * older than a day and a few hours (the nightly build missed it), asks the
+ * server once to rebuild it. Only the server's "no-listings" answer means "you
+ * have nothing to show"; anything else that leaves no page is an error, never
+ * the invitation to publish (break-it web #2).
  */
 export function useOwnerAnalytics(uid: string | null | undefined): AnalyticsState {
   const [state, setState] = useState<AnalyticsState>({ status: 'loading' })
   const asked = useRef(false)
+  const hasPage = useRef(false)
 
   useEffect(() => {
     if (!uid) return
     asked.current = false
+    hasPage.current = false
+    let waitTimer: ReturnType<typeof setTimeout> | null = null
+
     const refresh = () => {
       if (asked.current) return
       asked.current = true
       setState((s) => (s.status === 'ready' ? { ...s, refreshing: true } : s))
-      httpsCallable(getFunctions(undefined, 'southamerica-east1'), 'refreshOwnerAnalytics')({})
-        .catch(() => undefined)
-        .finally(() => setState((s) => {
-          if (s.status === 'ready') return { ...s, refreshing: false }
-          // Rebuilt and still nothing: this person has no listings to show.
-          return s.status === 'loading' ? { status: 'none' } : s
-        }))
+      httpsCallable<unknown, RefreshAnswer>(getFunctions(undefined, 'southamerica-east1'), 'refreshOwnerAnalytics')({})
+        .then(({ data }) => {
+          if (hasPage.current) return
+          if (data?.reason === 'no-listings') setState({ status: 'none' })
+          else if (data?.rebuilt) {
+            // The page is written; its snapshot may arrive a moment after this answer.
+            waitTimer = setTimeout(() => { if (!hasPage.current) setState({ status: 'error' }) }, ARRIVAL_WAIT_MS)
+          } else setState({ status: 'error' })
+        })
+        .catch(() => { if (!hasPage.current) setState({ status: 'error' }) })
+        .finally(() => setState((s) => (s.status === 'ready' ? { ...s, refreshing: false } : s)))
     }
+
     const unsub = onSnapshot(
       doc(db, 'ownerAnalytics', uid),
       (snap) => {
         if (!snap.exists()) {
+          hasPage.current = false
           refresh()
-          if (asked.current) setState((s) => (s.status === 'ready' ? { status: 'none' } : s))
           return
         }
+        hasPage.current = true
         const data = snap.data() as OwnerAnalytics
         setState((s) => ({ status: 'ready', data, refreshing: s.status === 'ready' ? s.refreshing : false }))
-        if (data.today !== limaToday()) refresh()
+        const built = millisOf(data.builtAt)
+        if (built === null || Date.now() - built > STALE_AFTER_MS) refresh()
       },
-      () => setState({ status: 'error' }),
+      () => { if (!hasPage.current) setState({ status: 'error' }) },
     )
-    return unsub
+    return () => {
+      unsub()
+      if (waitTimer) clearTimeout(waitTimer)
+    }
   }, [uid])
 
   return state
 }
 
-/** One listing's numbers (ownerListingAnalytics/{id}), live; null while loading or when there are none. */
-export function useListingAnalytics(listingId: string | null): { data: ListingAnalytics | null; loading: boolean } {
+/**
+ * One listing's numbers (ownerListingAnalytics/{id}), live. `missing` = the
+ * server has no record for it yet (or it cannot be read) — the page says so
+ * instead of spinning (break-it web #3).
+ */
+export function useListingAnalytics(listingId: string | null): { data: ListingAnalytics | null; loading: boolean; missing: boolean } {
   const [state, setState] = useState<{ id: string | null; data: ListingAnalytics | null; loading: boolean }>({ id: null, data: null, loading: false })
   useEffect(() => {
     if (!listingId) return
@@ -69,6 +99,7 @@ export function useListingAnalytics(listingId: string | null): { data: ListingAn
       () => setState({ id: listingId, data: null, loading: false }),
     )
   }, [listingId])
-  if (!listingId) return { data: null, loading: false }
-  return state.id === listingId ? { data: state.data, loading: state.loading } : { data: null, loading: true }
+  if (!listingId) return { data: null, loading: false, missing: false }
+  if (state.id !== listingId || state.loading) return { data: null, loading: true, missing: false }
+  return { data: state.data, loading: false, missing: !state.data }
 }

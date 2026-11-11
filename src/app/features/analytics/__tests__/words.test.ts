@@ -20,7 +20,9 @@ describe('Analítica words (ADR-058)', () => {
       expect(moreDataText('zone', { status: 'too-few', n: 1, min: 5 }, 'Castilla'))
         .toBe('Necesitamos más datos: hay 1 propiedad parecida en Castilla y hacen falta al menos 5.')
       expect(moreDataText('daysToClose', { status: 'too-few', n: 0, min: 10 }))
-        .toBe('Necesitamos más datos: hay 0 ventas o alquileres parecidos y hacen falta al menos 10.')
+        .toBe('Necesitamos más datos: hay 0 cierres parecidos y hacen falta al menos 10.')
+      expect(moreDataText('compare', { status: 'too-few-owners', n: 1, min: 3 }, 'Castilla'))
+        .toBe('Necesitamos más datos: las propiedades parecidas en Castilla son de muy pocos dueños para compararlas.')
     })
     it('a contact rate without enough peers names the peers, not the vistas', () => {
       expect(moreDataText('contactRate', { status: 'too-few-peers', n: 2, min: 5 }, 'Piura'))
