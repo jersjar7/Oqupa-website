@@ -510,13 +510,34 @@ export const firestoreService = {
   // apps use. Guests count too; the server decides what counts. App Check is
   // attached when the browser has it, and is not required. Callers swallow
   // failures (lib/listingCounts.ts retries once).
-  async recordListingCounts(events: Array<{ listingId: string; kind: 'shown' | 'seen' }>): Promise<void> {
+  async recordListingCounts(events: Array<{ listingId: string; kind: 'shown' | 'seen' | 'whatsapp'; via?: string }>): Promise<void> {
     if (events.length === 0) return
+    // ADR-058: the browser's place only when it already has location permission;
+    // the server turns it into a district and drops it.
+    const { browserPlace } = await import('@/lib/browserPlace')
+    // Only for someone not signed in: a place is never recorded next to an account (ADR-058).
+    let signedIn = true
+    try {
+      const firebase = await import('@/lib/firebase')
+      // Wait until the saved sign-in is restored, or a returning person reads as a guest (web 4 #6).
+      await firebase.auth?.authStateReady?.()
+      signedIn = Boolean(firebase.auth?.currentUser)
+    } catch {
+      signedIn = true // unknown: send no place
+    }
+    const place = !signedIn && events.some((e) => e.kind === 'seen') ? await browserPlace() : null
     const callable = httpsCallable<
-      { deviceId: string; platform: 'web'; events: Array<{ listingId: string; kind: 'shown' | 'seen' }> },
+      { deviceId: string; platform: 'web'; events: typeof events; place?: { lat: number; lng: number } },
       { counted: { shown: number; seen: number } }
     >(functions, 'recordListingCounts')
-    await callable({ deviceId: getOrCreateClientId(), platform: 'web', events })
+    await callable({ deviceId: getOrCreateClientId(), platform: 'web', events, ...(place ? { place } : {}) })
+  },
+
+  // ADR-058 R6: one map search — the side, the price filter in soles, the districts on screen.
+  async recordMapSearch(search: { side: 'venta' | 'alquiler'; priceMin: number | null; priceMax: number | null; points: Array<{ lat: number; lng: number }> }): Promise<void> {
+    if (search.points.length === 0) return
+    const callable = httpsCallable(functions, 'recordListingCounts')
+    await callable({ deviceId: getOrCreateClientId(), platform: 'web', events: [], search })
   },
 
   // ADR-051: an owner's lifetime Apariciones, per listing, in one query by

@@ -9,10 +9,13 @@ import { displayPhone, telHref } from '../contactReveal'
 export default function RevealedContact({
   phone,
   whatsappUrl = null,
+  onWhatsApp,
 }: {
   phone: string
   /** Phone: WhatsApp is offered here as the main button (review 2026-11-02). */
   whatsappUrl?: string | null
+  /** ADR-058: told when the person opens WhatsApp. */
+  onWhatsApp?: () => void
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function RevealedContact({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="WhatsApp"
+          onClick={onWhatsApp}
           className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#25D366] font-sans text-sm font-bold uppercase tracking-[1px] text-white hover:bg-[#1DA851]"
         >
           <MessageCircle className="h-5 w-5" aria-hidden="true" />

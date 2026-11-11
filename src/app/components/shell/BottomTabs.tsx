@@ -16,7 +16,7 @@ export default function BottomTabs({ caps }: { caps: Capabilities }) {
   return (
     <nav
       aria-label="Navegación móvil"
-      className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-white grid z-40"
+      className="md:hidden fixed bottom-0 inset-x-0 border-t border-border bg-white grid z-40 print:hidden"
       // The tabs sit above the iPhone's home line; the bar's white runs under it.
       style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >

@@ -127,3 +127,26 @@ describe('createListingCountQueue', () => {
     expect(send).not.toHaveBeenCalled()
   })
 })
+
+describe('ADR-058: arrival and WhatsApp taps', () => {
+  it('a vista carries how the person arrived; a tap is sent once a day per listing', async () => {
+    const sent: unknown[] = []
+    let t = Date.parse('2026-11-05T15:00:00Z')
+    const q = createListingCountQueue({ send: async (e) => { sent.push(...e) }, now: () => t })
+    q.add('L1', 'seen', 'whatsapp')
+    q.add('L1', 'whatsapp')
+    q.add('L1', 'whatsapp')
+    q.add('L2', 'shown', 'facebook') // via only travels on a vista
+    await q.flush()
+    expect(sent).toEqual([
+      { listingId: 'L1', kind: 'seen', via: 'whatsapp' },
+      { listingId: 'L1', kind: 'whatsapp' },
+      { listingId: 'L2', kind: 'shown' },
+    ])
+    t += 24 * 60 * 60 * 1000
+    q.add('L1', 'whatsapp')
+    await q.flush()
+    expect(sent).toHaveLength(4)
+  })
+})
+

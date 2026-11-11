@@ -8,6 +8,8 @@ import { useProperty } from '@/hooks/useProperty'
 import { useGallery } from '@/hooks/useGallery'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useCountSeenWhileOpen } from '@/hooks/useListingCounts'
+import { listingCounts } from '@/lib/listingCounts'
+import { arrivalVia } from '@/lib/arrival'
 import { useListingsApariciones } from '@/hooks/useListingApariciones'
 import { useAuthStore } from '@/stores/authStore'
 import { setReturnUrl } from '@/lib/utils'
@@ -348,6 +350,9 @@ export default function PropertyPage() {
   }, [id, listing, property?.location?.distrito])
 
   // ADR-051: open for 2 seconds is a Vista, through the one server counter.
+  // ADR-058: arrived from inside Oqupa, or — on the visit's first page — from where the visit came.
+  const via = useMemo(() => arrivalVia(pathname, (window.history.state?.idx ?? 0) === 0), [pathname])
+  useEffect(() => { if (id) listingCounts.arrivedVia(id, via) }, [id, via])
   useCountSeenWhileOpen(id, listing?.ownerId)
 
   // Back from the pipeline with the intent to contact: open WhatsApp now,
@@ -498,6 +503,8 @@ export default function PropertyPage() {
         setRevealedWhatsAppUrl(waUrl)
         return
       }
+      // ADR-058 R3: WhatsApp opened after the gate (the server checks the contact).
+      if (listingIdForContact) listingCounts.add(listingIdForContact, 'whatsapp')
       if (auto) {
         // Returning from the pipeline: no user gesture, so a new tab would be
         // blocked by the browser — go there directly instead.
@@ -733,7 +740,7 @@ export default function PropertyPage() {
                   <span className="font-medium text-text-primary">Consejo:</span> cuéntale cuándo te gustaría visitarla.
                 </p>
               </div>
-              {revealedPhone && <RevealedContact phone={revealedPhone} whatsappUrl={revealedWhatsAppUrl} />}
+              {revealedPhone && <RevealedContact phone={revealedPhone} whatsappUrl={revealedWhatsAppUrl} onWhatsApp={() => { if (id) listingCounts.add(id, 'whatsapp') }} />}
               </div>
             )}
 

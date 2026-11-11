@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useExploreListings } from '@/hooks/useExploreListings'
 import { useMapFilters } from '@/hooks/useMapFilters'
+import { useMapSearchReport } from '@/hooks/useMapSearchReport'
+import { firestoreService } from '@/services/firestoreService'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import { useExploreInteraction } from '@/hooks/useExploreInteraction'
@@ -86,6 +88,8 @@ export default function ExplorePage() {
     refetch,
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds, penPerUsd)
+  // ADR-058: what people look for, by district, for owners' "Qué buscan en tu zona".
+  useMapSearchReport(filters, mapBounds, penPerUsd, (s) => firestoreService.recordMapSearch(s))
   // filter_applied / search_no_results (metrics plan A12a). Counts every
   // matching listing, not just those in view, as the app does — so it waits
   // until the whole catalogue for this operation has loaded.

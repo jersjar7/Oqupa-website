@@ -98,12 +98,19 @@ export default function ListingsPage() {
             counts={{ propias: propiasCount, asignadas: asignadasCount }}
           />
         ) : <div />}
-        <Link to="/app/listings/new" className="sm:ml-auto self-end sm:self-auto">
-          <Button>
-            <Plus className="h-5 w-5" />
-            Publicar
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2 self-end sm:ml-auto sm:self-auto">
+          {propiasCount > 0 && (
+            <Link to="/app/analitica">
+              <Button variant="text" className="h-12 px-3">Ver analítica</Button>
+            </Link>
+          )}
+          <Link to="/app/listings/new">
+            <Button>
+              <Plus className="h-5 w-5" />
+              Publicar
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Educational subtitle — 1 line, changes with active tab */}
