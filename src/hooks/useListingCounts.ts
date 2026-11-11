@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { Via } from '@/lib/arrival'
 import { listingCounts } from '@/lib/listingCounts'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -72,15 +71,15 @@ export function useCountShownWhenVisible(listingId: string, ownerId: string | un
  * the listing's own page). Counts once it has stayed open 2 seconds. Waits
  * until the owner is known, so the owner is never counted.
  */
-export function useCountSeenWhileOpen(listingId: string | undefined, ownerId: string | undefined, via: Via = 'direct') {
+export function useCountSeenWhileOpen(listingId: string | undefined, ownerId: string | undefined) {
   const userId = useAuthStore((s) => s.user?.id)
   const isOwner = !!userId && userId === ownerId
 
   useEffect(() => {
     if (!listingId || !ownerId || isOwner) return
     const timer = setTimeout(() => {
-      if (tabVisible()) listingCounts.add(listingId, 'seen', via)
+      if (tabVisible()) listingCounts.add(listingId, 'seen')
     }, SEEN_AFTER_MS)
     return () => clearTimeout(timer)
-  }, [listingId, ownerId, isOwner, via])
+  }, [listingId, ownerId, isOwner])
 }

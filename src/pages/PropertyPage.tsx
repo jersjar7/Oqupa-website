@@ -352,7 +352,8 @@ export default function PropertyPage() {
   // ADR-051: open for 2 seconds is a Vista, through the one server counter.
   // ADR-058: arrived from inside Oqupa, or — on the visit's first page — from where the visit came.
   const via = useMemo(() => arrivalVia(pathname, (window.history.state?.idx ?? 0) === 0), [pathname])
-  useCountSeenWhileOpen(id, listing?.ownerId, via)
+  useEffect(() => { if (id) listingCounts.arrivedVia(id, via) }, [id, via])
+  useCountSeenWhileOpen(id, listing?.ownerId)
 
   // Back from the pipeline with the intent to contact: open WhatsApp now,
   // once, and drop the hash so a reload does not do it again.

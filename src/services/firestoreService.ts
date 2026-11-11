@@ -516,8 +516,14 @@ export const firestoreService = {
     // the server turns it into a district and drops it.
     const { browserPlace } = await import('@/lib/browserPlace')
     // Only for someone not signed in: a place is never recorded next to an account (ADR-058).
-    const { auth } = await import('@/lib/firebase')
-    const place = !auth.currentUser && events.some((e) => e.kind === 'seen') ? await browserPlace() : null
+    let signedIn = true
+    try {
+      const firebase = await import('@/lib/firebase')
+      signedIn = Boolean(firebase.auth?.currentUser)
+    } catch {
+      signedIn = true // unknown: send no place
+    }
+    const place = !signedIn && events.some((e) => e.kind === 'seen') ? await browserPlace() : null
     const callable = httpsCallable<
       { deviceId: string; platform: 'web'; events: typeof events; place?: { lat: number; lng: number } },
       { counted: { shown: number; seen: number } }

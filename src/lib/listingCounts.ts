@@ -85,12 +85,20 @@ export function createListingCountQueue({ send, now = Date.now, flushMs = 3000 }
       if (last !== undefined && t - last < SEEN_REPEAT_MS) return false
       seenAt.set(listingId, t)
     }
-    pending.push(via && kind === 'seen' ? { listingId, kind, via, attempts: 0 } : { listingId, kind, attempts: 0 })
+    // A vista says how the person arrived, when the listing page registered it.
+    const arrived = kind === 'seen' ? via ?? arrivals.get(listingId) : undefined
+    pending.push(arrived ? { listingId, kind, via: arrived, attempts: 0 } : { listingId, kind, attempts: 0 })
     schedule()
     return true
   }
 
-  return { add, flush }
+  const arrivals = new Map<string, Via>()
+  /** The listing page tells the queue how this person arrived at it (ADR-058 R1). */
+  function arrivedVia(listingId: string, how: Via) {
+    arrivals.set(listingId, how)
+  }
+
+  return { add, flush, arrivedVia }
 }
 
 /** The page-wide queue, sending through the server counter. */
@@ -101,7 +109,8 @@ function sharedQueue() {
     shared = createListingCountQueue({
       send: async (events) => {
         const { firestoreService } = await import('@/services/firestoreService')
-        await firestoreService.recordListingCounts(events)
+        // A vista with no registered arrival was opened inside Oqupa (the map card, a list).
+        await firestoreService.recordListingCounts(events.map((e) => (e.kind === 'seen' && !e.via ? { ...e, via: 'direct' as const } : e)))
       },
     })
     if (typeof document !== 'undefined') {
@@ -117,4 +126,5 @@ function sharedQueue() {
 export const listingCounts = {
   add: (listingId: string, kind: CountKind, via?: Via) => sharedQueue().add(listingId, kind, via),
   flush: () => sharedQueue().flush(),
+  arrivedVia: (listingId: string, how: Via) => sharedQueue().arrivedVia(listingId, how),
 }
