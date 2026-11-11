@@ -23,5 +23,7 @@ describe('names are never cut on a phone', () => {
     const src = read('Demand.tsx')
     expect(src).toMatch(/col-span-2 sm:col-span-1 sm:truncate/)
     expect(src).not.toMatch(/<span className="truncate">\{r\.district\}/)
+    // A district with no listing keeps its bar on a phone: its words take their own line.
+    expect(src).toMatch(/perListing === null \? 'col-span-2 sm:col-span-1 text-left sm:text-right'/)
   })
 })

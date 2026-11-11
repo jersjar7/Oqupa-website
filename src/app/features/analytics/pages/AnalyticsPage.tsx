@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
           />
 
           <div className="grid gap-5 lg:grid-cols-3 print:block print:space-y-5">
-            <div className="lg:col-span-2">
+            <div className="min-w-0 lg:col-span-2">
               <Trend
                 points={trendSeries(series, block)}
                 marks={block.marks}
@@ -248,7 +248,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
-            <div className="lg:col-span-2"><HeatMap heat={block.heat} /></div>
+            <div className="min-w-0 lg:col-span-2"><HeatMap heat={block.heat} /></div>
             <Sources sources={block.sources} />
           </div>
 

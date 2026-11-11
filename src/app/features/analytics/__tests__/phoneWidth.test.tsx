@@ -8,12 +8,22 @@ import { render } from '@testing-library/react'
 import Section from '../components/Section'
 import HeatMap from '../components/HeatMap'
 
-const PHONE_CARD_INNER = 390 - 32 - 40
+// The smallest phone we support: 320 px (many Android phones in Peru are 360).
+const PHONE_CARD_INNER = 320 - 32 - 40
 
 describe('Analítica fits a phone', () => {
   it('a card can shrink to its column (min-width 0)', () => {
     const { container } = render(<Section title="X">y</Section>)
     expect(container.querySelector('section')!.className.split(/\s+/)).toContain('min-w-0')
+  })
+
+  it('the wide-card wrappers in the page grid can shrink too (break-it #1)', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const page = readFileSync(join(__dirname, '../pages/AnalyticsPage.tsx'), 'utf8')
+    const wrappers = page.match(/<div className="[^"]*lg:col-span-2[^"]*"/g) ?? []
+    expect(wrappers.length).toBeGreaterThan(0)
+    for (const w of wrappers) expect(w).toContain('min-w-0')
   })
 
   it('the time grid asks for no more than a phone card holds', () => {

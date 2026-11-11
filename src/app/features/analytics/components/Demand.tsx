@@ -35,7 +35,7 @@ export default function Demand({ demand: given, side }: { demand: DemandData | u
             <span className="h-2.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
               <span className={`block h-full rounded-full ${r.perListing === null ? 'bg-primary' : 'bg-secondary'}`} style={{ width: `${r.perListing === null ? 100 : (r.perListing / max) * 100}%` }} />
             </span>
-            <span className="text-right font-bold">
+            <span className={`font-bold ${r.perListing === null ? 'col-span-2 sm:col-span-1 text-left sm:text-right' : 'text-right'}`}>
               {r.perListing === null ? `${fmt(r.searches)} búsquedas · ninguna propiedad` : fmt(r.perListing)}
             </span>
           </li>
