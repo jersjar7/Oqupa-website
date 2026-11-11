@@ -36,7 +36,12 @@ export function captureArrival(
   // Once per tab: coming back from a sign-in page is not a new arrival (web 4 #4).
   try {
     const kept = session?.getItem('oqupa_arrival_v1')
-    if (kept) {
+    let refHost = ''
+    try { refHost = doc.referrer ? new URL(doc.referrer).hostname : '' } catch { refHost = '' }
+    // Reused only coming back from our own pages or a sign-in page; a new visit
+    // from elsewhere in the same tab is a new arrival (web 5 #2).
+    const back = !refHost || OWN_HOSTS.test(refHost.replace(/^www\./, '')) || /accounts\.google\.com|appleid\.apple\.com|firebaseapp\.com$/.test(refHost)
+    if (kept && back) {
       const parsed = JSON.parse(kept) as { path: string; via: Via }
       landingPath = parsed.path
       landingVia = parsed.via

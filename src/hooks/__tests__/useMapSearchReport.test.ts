@@ -10,10 +10,11 @@ const castilla = { south: -5.21, west: -80.625, north: -5.19, east: -80.615 }
 const wide = { south: -6.5, west: -81.4, north: -4.0, east: -79.2 }
 
 describe('searchFrom (ADR-058 R6)', () => {
-  it('the side, the price in soles and the districts in view', () => {
+  it('the side, the price in soles and a 3×3 grid of the view (the server finds the districts)', () => {
     const s = searchFrom(filters(), castilla, 3.44)
     expect(s?.side).toBe('alquiler')
-    expect(s?.districts).toContain('PE200104')
+    expect(s?.points).toHaveLength(9)
+    expect(s?.points.every((p) => p.lat <= castilla.north && p.lat >= castilla.south)).toBe(true)
     expect(s?.priceMin).toBe(800)
   })
 
@@ -22,10 +23,9 @@ describe('searchFrom (ADR-058 R6)', () => {
       .toMatchObject({ side: 'venta', priceMin: 344000, priceMax: null })
   })
 
-  it('a wide look, no bounds yet, or a view outside Piura is not a search', () => {
+  it('a view wider than about 20 km, or no bounds yet, is not a search', () => {
     expect(searchFrom(filters(), wide, 3.44)).toBeNull()
     expect(searchFrom(filters(), null, 3.44)).toBeNull()
-    expect(searchFrom(filters(), { south: -12.1, west: -77.1, north: -12.0, east: -77.0 }, 3.44)).toBeNull()
   })
 })
 

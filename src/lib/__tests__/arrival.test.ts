@@ -57,4 +57,12 @@ describe('arrival (ADR-058 R1)', () => {
     captureArrival({ location: { pathname: '/property/L1', search: '', href: 'https://oqupa.com/property/L1' } as Location }, { referrer: 'https://accounts.google.com/' }, session)
     expect(arrivalVia('/property/L1', true)).toBe('whatsapp')
   })
+
+  it('a new visit from elsewhere in the same tab is a new arrival (web 5 #2)', () => {
+    const store = new Map<string, string>()
+    const session = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v) } }
+    captureArrival({ location: { pathname: '/property/A', search: '?utm_source=whatsapp', href: 'https://oqupa.com/property/A?utm_source=whatsapp' } as Location }, { referrer: '' }, session)
+    captureArrival({ location: { pathname: '/property/C', search: '', href: 'https://oqupa.com/property/C' } as Location }, { referrer: 'https://www.google.com/' }, session)
+    expect(arrivalVia('/property/C', true)).toBe('google')
+  })
 })

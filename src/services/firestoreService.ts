@@ -534,8 +534,8 @@ export const firestoreService = {
   },
 
   // ADR-058 R6: one map search — the side, the price filter in soles, the districts on screen.
-  async recordMapSearch(search: { side: 'venta' | 'alquiler'; priceMin: number | null; priceMax: number | null; districts: string[] }): Promise<void> {
-    if (search.districts.length === 0) return
+  async recordMapSearch(search: { side: 'venta' | 'alquiler'; priceMin: number | null; priceMax: number | null; points: Array<{ lat: number; lng: number }> }): Promise<void> {
+    if (search.points.length === 0) return
     const callable = httpsCallable(functions, 'recordListingCounts')
     await callable({ deviceId: getOrCreateClientId(), platform: 'web', events: [], search })
   },
