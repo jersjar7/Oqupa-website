@@ -152,7 +152,7 @@ describe('Analítica page (ADR-058)', () => {
     renderPage()
     expect(screen.queryByText(/500%/)).toBeNull()
     expect(screen.getByText('la mayoría llega por un enlace')).toBeTruthy()
-    expect(screen.getByText('Más veces de las que se mostró: muchas llegan por un enlace')).toBeTruthy()
+    expect(screen.getByText('Más veces de las que se mostraron: muchas llegan por un enlace')).toBeTruthy()
   })
 
   it('a listing whose record is not built yet says so — no endless spinner (break-it web #3)', () => {
@@ -189,6 +189,24 @@ describe('Analítica page (ADR-058)', () => {
     renderPage()
     expect(screen.getByTestId('analytics-heat')).toBeTruthy()
     expect(within(screen.getByTestId('analytics-cards')).queryByText('NaN')).toBeNull()
+  })
+
+  it('totals missing a field and a page missing its listings do not crash (break-it web 2 #1)', () => {
+    const data = pageData()
+    data.periods['30'] = thinBlock({ totals: { shown: 5, seen: 2, contacts: 0 } as unknown as Block['totals'] })
+    hooks.owner = { status: 'ready', data, refreshing: false }
+    renderPage()
+    expect(screen.getByTestId('analytics-funnel')).toBeTruthy()
+  })
+
+  it('listings with the same name can be told apart in the picker (break-it web 2 #2)', () => {
+    const data = pageData()
+    data.listings = [listing('L1', { name: 'Departamento en Castilla', sub: 'Venta · 3 hab. · 95 m²' }), listing('L2', { name: 'Departamento en Castilla', sub: 'Venta · 2 hab. · 70 m²' }), listing('L3', { name: 'Departamento en Castilla', sub: 'Venta · 2 hab. · 70 m²' })]
+    hooks.owner = { status: 'ready', data, refreshing: false }
+    renderPage()
+    const options = [...(screen.getByLabelText('Propiedad') as HTMLSelectElement).options].map((o) => o.textContent)
+    expect(new Set(options).size).toBe(options.length)
+    expect(options).toContain('Departamento en Castilla · Venta · 3 hab. · 95 m²')
   })
 
   it('an owner with no listings is invited to publish', () => {

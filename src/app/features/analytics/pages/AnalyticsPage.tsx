@@ -4,8 +4,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useSetPageMeta } from '@/app/components/shell/pageMetaContext'
 import Spinner from '@/app/components/ui/Spinner'
 import { useListingAnalytics, useOwnerAnalytics } from '../useOwnerAnalytics'
-import { focusListingId, medianDays, portfolioRows, trendSeries } from '../selectors'
-import type { Block, OwnerAnalytics, PeriodKey } from '../types'
+import { focusListingId, medianDays, normalizeBlock, portfolioRows, trendSeries } from '../selectors'
+import type { OwnerAnalytics, PeriodKey } from '../types'
 import { shortDay } from '../words'
 import Cards from '../components/Cards'
 import Trend from '../components/Trend'
@@ -25,6 +25,7 @@ const PERIODS: Array<{ key: PeriodKey; label: string }> = [
 ]
 
 const NOT_READY = 'Todavía estamos preparando los números de esta propiedad. Vuelve en unos minutos.'
+const NOT_READY_ALL = 'Todavía estamos preparando tus números. Vuelve en unos minutos.'
 
 /** "11 nov a las 4:05 a. m." in Lima time, from the page's build time. */
 function builtText(builtAt: OwnerAnalytics['builtAt']): string | null {
@@ -36,7 +37,24 @@ function builtText(builtAt: OwnerAnalytics['builtAt']): string | null {
   return `${day} a las ${time}`
 }
 
-const isBlock = (b: unknown): b is Block => Boolean(b && typeof b === 'object' && 'totals' in (b as object))
+/**
+ * Names people can tell apart: an agent with three "Departamento en Castilla"
+ * gets their facts line, and a number if even that repeats (break-it web 2 #2).
+ */
+function uniqueNames(listings: OwnerAnalytics['listings']): Record<string, string> {
+  const count = (xs: string[]) => xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())
+  const byName = count(listings.map((l) => l.name))
+  const withSub = listings.map((l) => ((byName.get(l.name) ?? 0) > 1 && l.sub ? `${l.name} · ${l.sub}` : l.name))
+  const bySub = count(withSub)
+  const seen = new Map<string, number>()
+  return Object.fromEntries(listings.map((l, k) => {
+    const base = withSub[k] ?? l.name
+    if ((bySub.get(base) ?? 0) < 2) return [l.id, base]
+    const n = (seen.get(base) ?? 0) + 1
+    seen.set(base, n)
+    return [l.id, `${base} (${n})`]
+  }))
+}
 
 /**
  * Analítica for owners (ADR-058). Every section of the design is here; a
@@ -55,17 +73,15 @@ export default function AnalyticsPage() {
   const many = !data || scope === 'all' || !data.listings.some((l) => l.id === scope)
   const focusListing = data?.listings.find((l) => l.id === focusId)
 
+  const listingNames = useMemo(() => uniqueNames(data?.listings ?? []), [data])
+
   useSetPageMeta({
     title: 'Analítica',
     subtitle: data
-      ? `${many ? (data.listings.length === 1 ? 'Tu propiedad' : `Tus ${data.listings.length} propiedades`) : focusListing?.name ?? ''} · últimos ${period} días`
+      ? `${many ? (data.listings.length === 1 ? 'Tu propiedad' : `Tus ${data.listings.length} propiedades`) : (focusId ? listingNames[focusId] : '') ?? ''} · últimos ${period} días`
       : undefined,
   })
 
-  const listingNames = useMemo(
-    () => Object.fromEntries((data?.listings ?? []).map((l) => [l.id, l.name])),
-    [data],
-  )
 
   if (state.status === 'loading') {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>
@@ -93,13 +109,14 @@ export default function AnalyticsPage() {
   }
 
   const pageBlock = data.periods?.[period]
-  const listingBlock = isBlock(focus.data?.periods?.[period]) ? focus.data!.periods[period] : undefined
-  const block = many ? (isBlock(pageBlock) ? pageBlock : undefined) : listingBlock
+  const listingBlock = normalizeBlock(focus.data?.periods?.[period])
+  const block = many ? normalizeBlock(pageBlock) : listingBlock
   const series = many ? data.series : focus.data?.series
   const listingWaiting = !many && focus.loading
   const listingMissing = !many && !focus.loading && !listingBlock
-  const rows = isBlock(pageBlock)
-    ? portfolioRows(data, period, pageBlock).filter((r) => many || r.listing.id === focusId)
+  const normalPage = normalizeBlock(pageBlock)
+  const rows = normalPage
+    ? portfolioRows(data, period, normalPage).filter((r) => many || r.listing.id === focusId)
     : []
   const saves = many ? data.listings.reduce((s, l) => s + (l.saves ?? 0), 0) : (focusListing?.saves ?? 0)
   const zoneDays = !many && listingBlock?.daysToClose?.status === 'ok' ? listingBlock.daysToClose.median : null
@@ -152,7 +169,7 @@ export default function AnalyticsPage() {
             className="h-11 max-w-[16rem] truncate rounded-full border border-border bg-white px-4 text-sm text-text-primary"
           >
             <option value="all">Todas tus propiedades</option>
-            {data.listings.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            {data.listings.map((l) => <option key={l.id} value={l.id}>{listingNames[l.id] ?? l.name}</option>)}
           </select>
           <div role="group" aria-label="Periodo" className="inline-flex rounded-full border border-border bg-white p-1">
             {PERIODS.map((p) => (
@@ -179,7 +196,7 @@ export default function AnalyticsPage() {
 
       {/* The report's own heading when printed */}
       <div className="hidden print:block">
-        <p className="font-serif text-[28px]">Analítica — {many ? 'todas tus propiedades' : focusListing?.name}</p>
+        <p className="font-serif text-[28px]">Analítica — {many ? 'todas tus propiedades' : (focusId ? listingNames[focusId] : '')}</p>
         <p className="text-sm">
           Datos de Oqupa · {block ? `del ${shortDay(block.from)} al ${shortDay(block.to)}` : ''}
           {' · '}reporte del {shortDay(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }))}
@@ -189,7 +206,7 @@ export default function AnalyticsPage() {
       {listingWaiting ? (
         <div className="flex min-h-[30vh] items-center justify-center"><Spinner /></div>
       ) : listingMissing || !block ? (
-        <Section title={focusListing?.name ?? 'Analítica'}><MoreData text={NOT_READY} /></Section>
+        <Section title={many ? 'Analítica' : (focusId ? listingNames[focusId] ?? 'Analítica' : 'Analítica')}><MoreData text={many ? NOT_READY_ALL : NOT_READY} /></Section>
       ) : (
         <>
           <Cards
@@ -223,13 +240,15 @@ export default function AnalyticsPage() {
 
           {many && focusListing && (
             <p className="text-sm text-text-secondary">
-              Las comparaciones de abajo son de <strong className="font-medium text-text-primary">{focusListing.name}</strong>, la que más abrieron en 30 días.
+              Las comparaciones de abajo son de <strong className="font-medium text-text-primary">{listingNames[focusListing.id] ?? focusListing.name}</strong>, la que más abrieron en 30 días.
               Elige otra arriba para verla.
             </p>
           )}
           {comparisons}
 
-          <Demand demand={listingBlock?.demand} side={side} />
+          {focus.loading
+            ? <Section title="Qué buscan en tu zona" testId="analytics-demand"><div className="flex justify-center py-6"><Spinner /></div></Section>
+            : <Demand demand={listingBlock?.demand} side={side} />}
 
           <Portfolio rows={rows} days={Number(period)} />
 

@@ -3,6 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { db } from '@/lib/firebase'
 import type { ListingAnalytics, OwnerAnalytics } from './types'
+import { normalizeOwner } from './selectors'
 
 export type AnalyticsState =
   | { status: 'loading' }
@@ -62,12 +63,18 @@ export function useOwnerAnalytics(uid: string | null | undefined): AnalyticsStat
       doc(db, 'ownerAnalytics', uid),
       (snap) => {
         if (!snap.exists()) {
+          // A page that existed and is gone (the nightly removed it): ask once more,
+          // whatever happened before, so the answer decides what to show (break-it web 2 #3).
+          if (hasPage.current) {
+            asked.current = false
+            setState({ status: 'loading' })
+          }
           hasPage.current = false
           refresh()
           return
         }
         hasPage.current = true
-        const data = snap.data() as OwnerAnalytics
+        const data = normalizeOwner(snap.data() as OwnerAnalytics)
         setState((s) => ({ status: 'ready', data, refreshing: s.status === 'ready' ? s.refreshing : false }))
         const built = millisOf(data.builtAt)
         if (built === null || Date.now() - built > STALE_AFTER_MS) refresh()

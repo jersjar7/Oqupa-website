@@ -31,7 +31,10 @@ export default function HeatMap({ heat: given }: { heat: Heat | undefined }) {
                     key={s}
                     title={`${DAY_SHORT[d]} ${slotText(s)}: ${n} ${n === 1 ? 'vista' : 'vistas'}`}
                     className="h-7 rounded-md"
-                    style={{ background: n ? `color-mix(in srgb, var(--color-secondary) ${Math.round(12 + (n / max) * 85)}%, transparent)` : 'var(--color-surface-muted)' }}
+                    style={n
+                      // Plain opacity, not color-mix(): older iPhones (iOS < 16.2) draw no colour with it (break-it web 2 #7).
+                      ? { background: 'var(--color-secondary)', opacity: Number((0.12 + (n / max) * 0.85).toFixed(2)) }
+                      : { background: 'var(--color-surface-muted)' }}
                   >
                     <span className="sr-only">{n}</span>
                   </td>

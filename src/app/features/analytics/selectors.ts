@@ -3,6 +3,31 @@
 
 import type { Block, OwnerAnalytics, OwnerListing, PeriodKey, Series } from './types'
 
+const TOTAL_KEYS = ['shown', 'seen', 'contacts', 'saved'] as const
+
+/** Fills what an older or partial record lacks, so no section reads undefined (break-it web 2 #1). */
+export function normalizeTotals<T extends Partial<Block['totals']>>(t: T | undefined | null): Block['totals'] {
+  const out = { shown: 0, seen: 0, contacts: 0, saved: 0, whatsapp: null } as Block['totals']
+  for (const k of TOTAL_KEYS) out[k] = Number(t?.[k]) || 0
+  out.whatsapp = t?.whatsapp === null || t?.whatsapp === undefined ? null : Number(t.whatsapp) || 0
+  return out
+}
+
+export function normalizeBlock(b: unknown): Block | undefined {
+  if (!b || typeof b !== 'object' || !('totals' in b)) return undefined
+  const block = b as Block
+  return { ...block, totals: normalizeTotals(block.totals), previous: block.previous ? normalizeTotals(block.previous) : null }
+}
+
+export function normalizeOwner(d: OwnerAnalytics): OwnerAnalytics {
+  return {
+    ...d,
+    listings: Array.isArray(d.listings) ? d.listings : [],
+    periods: (d.periods ?? {}) as OwnerAnalytics['periods'],
+    countingSince: d.countingSince ?? {},
+  }
+}
+
 /** Every Lima day from `from` to `to`, inclusive. */
 export function daysBetween(from: string, to: string): string[] {
   const out: string[] = []

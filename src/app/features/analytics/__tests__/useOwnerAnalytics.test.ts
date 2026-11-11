@@ -65,4 +65,14 @@ describe('useOwnerAnalytics (ADR-058)', () => {
     act(() => fb.snapshot!(page(new Date(Date.now() - 31 * 3600e3))))
     expect(fb.callable).toHaveBeenCalledTimes(1)
   })
+
+  it('a page removed while open asks the server again, whatever was asked before (break-it web 2 #3)', async () => {
+    fb.callable.mockResolvedValue({ data: { rebuilt: false, reason: 'no-listings' } })
+    const { result } = renderHook(() => useOwnerAnalytics('u1'))
+    act(() => fb.snapshot!(page(new Date(Date.now() - 31 * 3600e3)))) // stale: asks once
+    await waitFor(() => expect(fb.callable).toHaveBeenCalledTimes(1))
+    act(() => fb.snapshot!(missing)) // removed by the nightly build
+    await waitFor(() => expect(result.current.status).toBe('none'))
+    expect(fb.callable).toHaveBeenCalledTimes(2)
+  })
 })

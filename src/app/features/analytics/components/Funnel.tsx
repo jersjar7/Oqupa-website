@@ -42,7 +42,7 @@ export default function Funnel({ totals, propertyType, many }: {
                     : s.ofPrevious === null
                       ? '—'
                       : s.key === 'seen' && s.ofPrevious > 100
-                        ? 'Más veces de las que se mostró: muchas llegan por un enlace'
+                        ? `Más veces de las que se ${many ? 'mostraron' : 'mostró'}: muchas llegan por un enlace`
                         : `${s.ofPrevious}% de ${s.key === 'whatsapp' ? 'quienes pidieron tu número' : s.key === 'seen' ? `las veces que se ${many ? 'mostraron' : 'mostró'}` : `las veces que ${word.toLowerCase()} abrieron`}`}
                 </p>
               </>
