@@ -10,10 +10,10 @@ const castilla = { south: -5.21, west: -80.625, north: -5.19, east: -80.615 }
 const wide = { south: -6.5, west: -81.4, north: -4.0, east: -79.2 }
 
 describe('searchFrom (ADR-058 R6)', () => {
-  it('the side, the price in soles and a 3×3 grid of the view (the server finds the districts)', () => {
+  it('the side, the price in soles and a 4×4 grid of the view (the server finds the districts)', () => {
     const s = searchFrom(filters(), castilla, 3.44)
     expect(s?.side).toBe('alquiler')
-    expect(s?.points).toHaveLength(9)
+    expect(s?.points).toHaveLength(16)
     expect(s?.points.every((p) => p.lat <= castilla.north && p.lat >= castilla.south)).toBe(true)
     expect(s?.priceMin).toBe(800)
   })

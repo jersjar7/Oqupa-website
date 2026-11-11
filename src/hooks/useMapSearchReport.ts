@@ -24,7 +24,7 @@ export interface MapSearch {
   side: 'venta' | 'alquiler'
   priceMin: number | null
   priceMax: number | null
-  /** A 3×3 grid of the screen; the server finds the districts under them (round 9 #2). */
+  /** A 4×4 grid of the screen; the server finds the districts under them (round 9 #2). */
   points: Array<{ lat: number; lng: number }>
 }
 
@@ -37,8 +37,8 @@ export function searchFrom(filters: Filters, bounds: ViewBounds | null, penPerUs
   if (!side || !bounds) return null
   if (bounds.north - bounds.south > MAX_SPAN_DEGREES || bounds.east - bounds.west > MAX_SPAN_DEGREES) return null
   const points: MapSearch['points'] = []
-  for (const fy of [0.15, 0.5, 0.85]) {
-    for (const fx of [0.15, 0.5, 0.85]) {
+  for (const fy of [0.125, 0.375, 0.625, 0.875]) {
+    for (const fx of [0.125, 0.375, 0.625, 0.875]) {
       points.push({
         lat: Math.round((bounds.south + (bounds.north - bounds.south) * fy) * 1000) / 1000,
         lng: Math.round((bounds.west + (bounds.east - bounds.west) * fx) * 1000) / 1000,
@@ -82,8 +82,8 @@ export function useMapSearchReport(
       const t = now()
       const last = readLast()
       if (last !== null && t - last < GAP_MS) return
-      writeLast(t)
-      sendRef.current(search).catch(() => undefined)
+      // The gap starts only once a search has left (web 6 #3).
+      sendRef.current(search).then(() => writeLast(t)).catch(() => undefined)
     }, SETTLE_MS)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
