@@ -7,7 +7,8 @@ const CAPTION =
   'Personas que vieron tus propiedades, por distrito. Nunca la ubicación exacta: solo el distrito, y las zonas con menos de 3 personas no se muestran.'
 
 // Light → dark green (CSS tokens). The server never sends a place with fewer than 3 people.
-const RAMP = [1, 2, 3, 4, 5].map((k) => `var(--color-map-${k})`)
+// Written out in full: Tailwind keeps a theme colour only when it finds its name in the source.
+const RAMP = ['var(--color-map-1)', 'var(--color-map-2)', 'var(--color-map-3)', 'var(--color-map-4)', 'var(--color-map-5)']
 const CUTS = [3, 6, 11, 21, 41]
 const EMPTY = 'var(--color-map-empty)'
 const shade = (n: number) => (n < 3 ? EMPTY : RAMP[CUTS.filter((c) => n >= c).length - 1] ?? EMPTY)

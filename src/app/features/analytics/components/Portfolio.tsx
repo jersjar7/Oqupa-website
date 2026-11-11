@@ -61,7 +61,7 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
                       <Thumb photoKey={r.listing.photoKey} />
                       <span className="min-w-0">
                         <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
-                        <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>
+                        {!(names[r.listing.id] ?? '').includes(r.listing.sub) && <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>}
                       </span>
                     </Link>
                   </td>
@@ -89,7 +89,7 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
                 <Thumb photoKey={r.listing.photoKey} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
-                  <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>
+                  {!(names[r.listing.id] ?? '').includes(r.listing.sub) && <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>}
                 </span>
                 <Spark values={r.spark} warn={note.tone === 'warn'} />
               </Link>
