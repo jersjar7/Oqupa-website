@@ -25,3 +25,13 @@ describe('Tendencia change marks', () => {
     expect(screen.getByText(/6 oct: bajaste el precio/)).toBeTruthy()
   })
 })
+
+describe('more than six changes', () => {
+  it('names the newest six and counts the older ones', () => {
+    const list = Array.from({ length: 8 }, (_, i) => ({ day: `2026-10-${String(3 * i + 1).padStart(2, '0')}`, kind: 'price-down' as const, listingId: 'L1' }))
+    render(<Trend points={points} marks={{ ...marks, list }} many={false} propertyType="casa" listingNames={{ L1: 'Casa en Piura' }} />)
+    expect(screen.getByText(/22 oct: bajaste el precio/)).toBeTruthy()
+    expect(screen.queryByText(/^1 oct: bajaste el precio/)).toBeNull()
+    expect(screen.getByText('y 2 cambios anteriores')).toBeTruthy()
+  })
+})

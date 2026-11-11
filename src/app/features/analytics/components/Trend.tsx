@@ -90,13 +90,13 @@ export default function Trend({
       {/* Lines only on the chart (words there overlapped on phones); this list names each one. */}
       {markList.length > 0 && (
         <ul className="mt-3 space-y-1 text-xs text-text-secondary">
-          {markList.slice(0, LISTED_MARKS).map((m) => (
+          {markList.slice(-LISTED_MARKS).map((m) => (
             <li key={`${m.day}-${m.kind}`}>
               {shortDay(m.day)}: {(MARK_WORDS[m.kind] ?? '').toLowerCase()}
               {many ? ` — ${m.ids.map((id) => listingNames[id] ?? 'una propiedad').join(', ')}` : ''}
             </li>
           ))}
-          {markList.length > LISTED_MARKS && <li>y {markList.length - LISTED_MARKS} cambios más</li>}
+          {markList.length > LISTED_MARKS && <li>y {markList.length - LISTED_MARKS} cambios anteriores</li>}
         </ul>
       )}
       {!marks?.photosSince && (
