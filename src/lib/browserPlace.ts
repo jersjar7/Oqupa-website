@@ -21,7 +21,7 @@ export async function browserPlace(nav: Nav | undefined = typeof navigator !== '
           nav.geolocation.getCurrentPosition(
             (p) => resolve({ lat: Math.round(p.coords.latitude * 1000) / 1000, lng: Math.round(p.coords.longitude * 1000) / 1000 }),
             () => resolve(null),
-            { maximumAge: KEEP_MS, timeout: 3000, enableHighAccuracy: false },
+            { maximumAge: KEEP_MS, timeout: 1500, enableHighAccuracy: false },
           )
         })
       }

@@ -1,24 +1,60 @@
-import { describe, it, expect } from 'vitest'
-import { searchFrom } from '../useMapSearchReport'
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { renderHook } from '@testing-library/react'
+import { resetMapSearchReport, searchFrom, useMapSearchReport } from '../useMapSearchReport'
 
-const item = (distrito: string) => ({ property: { location: { distrito } } })
 const filters = (over = {}) => ({ operationType: 'alquiler', priceMin: 800, priceMax: 1200, priceCurrency: 'PEN' as const, ...over })
+// A small box around Castilla's centre.
+const castilla = { south: -5.21, west: -80.625, north: -5.19, east: -80.615 }
+// Most of the departamento.
+const wide = { south: -6.5, west: -81.4, north: -4.0, east: -79.2 }
 
 describe('searchFrom (ADR-058 R6)', () => {
-  it('the side, the price in soles and the districts on screen, each once', () => {
-    expect(searchFrom(filters(), [item('Castilla'), item('CASTILLA '), item('26 de Octubre')], 3.44))
-      .toEqual({ side: 'alquiler', priceMin: 800, priceMax: 1200, districts: ['PE200104', 'PE200115'] })
+  it('the side, the price in soles and the districts in view', () => {
+    const s = searchFrom(filters(), castilla, 3.44)
+    expect(s?.side).toBe('alquiler')
+    expect(s?.districts).toContain('PE200104')
+    expect(s?.priceMin).toBe(800)
   })
 
   it('dollars become soles', () => {
-    expect(searchFrom(filters({ operationType: 'venta', priceMin: 100000, priceMax: null, priceCurrency: 'USD' }), [item('Piura')], 3.44))
-      .toEqual({ side: 'venta', priceMin: 344000, priceMax: null, districts: ['PE200101'] })
+    expect(searchFrom(filters({ operationType: 'venta', priceMin: 100000, priceMax: null, priceCurrency: 'USD' }), castilla, 3.44))
+      .toMatchObject({ side: 'venta', priceMin: 344000, priceMax: null })
   })
 
-  it('a wide look over more than 6 districts, an empty map or an unknown district is not a search', () => {
-    const seven = ['Piura', 'Castilla', 'Catacaos', 'Sullana', 'Paita', 'Sechura', 'Tambogrande'].map(item)
-    expect(searchFrom(filters(), seven, 3.44)).toBeNull()
-    expect(searchFrom(filters(), [], 3.44)).toBeNull()
-    expect(searchFrom(filters(), [item('Chato')], 3.44)).toBeNull()
+  it('a wide look, no bounds yet, or a view outside Piura is not a search', () => {
+    expect(searchFrom(filters(), wide, 3.44)).toBeNull()
+    expect(searchFrom(filters(), null, 3.44)).toBeNull()
+    expect(searchFrom(filters(), { south: -12.1, west: -77.1, north: -12.0, east: -77.0 }, 3.44)).toBeNull()
+  })
+})
+
+describe('useMapSearchReport', () => {
+  beforeEach(() => { vi.useFakeTimers(); resetMapSearchReport() })
+  afterEach(() => vi.useRealTimers())
+
+  it('sends once the map settles, then nothing more for 10 minutes on this device (web 4 #3)', () => {
+    let t = 0
+    const send = vi.fn(async () => undefined)
+    const { rerender } = renderHook(({ min }) => useMapSearchReport(filters({ priceMin: min }), castilla, 3.44, send, () => t), { initialProps: { min: 800 } })
+    vi.advanceTimersByTime(2600)
+    expect(send).toHaveBeenCalledTimes(1)
+    t = 5 * 60 * 1000
+    rerender({ min: 900 })
+    vi.advanceTimersByTime(2600)
+    expect(send).toHaveBeenCalledTimes(1)
+    t = 11 * 60 * 1000
+    rerender({ min: 1000 })
+    vi.advanceTimersByTime(2600)
+    expect(send).toHaveBeenCalledTimes(2)
+  })
+
+  it('a map that keeps moving sends nothing until it stops', () => {
+    const send = vi.fn(async () => undefined)
+    const { rerender } = renderHook(({ min }) => useMapSearchReport(filters({ priceMin: min }), castilla, 3.44, send, () => 0), { initialProps: { min: 800 } })
+    vi.advanceTimersByTime(1000)
+    rerender({ min: 900 })
+    vi.advanceTimersByTime(1000)
+    expect(send).not.toHaveBeenCalled()
   })
 })

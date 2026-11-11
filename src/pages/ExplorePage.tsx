@@ -89,7 +89,7 @@ export default function ExplorePage() {
   } = useExploreListings(filters.operationType)
   const { filtered, visible, total } = useMapFilters(items, filters, mapBounds, penPerUsd)
   // ADR-058: what people look for, by district, for owners' "Qué buscan en tu zona".
-  useMapSearchReport(filters, visible, penPerUsd, (s) => firestoreService.recordMapSearch(s))
+  useMapSearchReport(filters, mapBounds, penPerUsd, (s) => firestoreService.recordMapSearch(s))
   // filter_applied / search_no_results (metrics plan A12a). Counts every
   // matching listing, not just those in view, as the app does — so it waits
   // until the whole catalogue for this operation has loaded.

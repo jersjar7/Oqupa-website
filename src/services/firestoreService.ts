@@ -519,6 +519,8 @@ export const firestoreService = {
     let signedIn = true
     try {
       const firebase = await import('@/lib/firebase')
+      // Wait until the saved sign-in is restored, or a returning person reads as a guest (web 4 #6).
+      await firebase.auth?.authStateReady?.()
       signedIn = Boolean(firebase.auth?.currentUser)
     } catch {
       signedIn = true // unknown: send no place

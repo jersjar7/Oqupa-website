@@ -87,6 +87,8 @@ export function createListingCountQueue({ send, now = Date.now, flushMs = 3000 }
     }
     // A vista says how the person arrived, when the listing page registered it.
     const arrived = kind === 'seen' ? via ?? arrivals.get(listingId) : undefined
+    // The landing arrival describes one vista; a later one from the map is "direct".
+    if (kind === 'seen') arrivals.delete(listingId)
     pending.push(arrived ? { listingId, kind, via: arrived, attempts: 0 } : { listingId, kind, attempts: 0 })
     schedule()
     return true

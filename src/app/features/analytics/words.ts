@@ -142,6 +142,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
   facebook: 'Facebook',
   google: 'Google',
+  share: 'Enlace compartido',
   other: 'Otros',
   app: 'App',
   web: 'Web',

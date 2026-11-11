@@ -2,7 +2,7 @@ import type { Sources as SourcesData } from '../types'
 import { moreDataText, SOURCE_LABELS } from '../words'
 import Section, { MoreData } from './Section'
 
-const VIA_ORDER = ['direct', 'whatsapp', 'facebook', 'google', 'other']
+const VIA_ORDER = ['direct', 'whatsapp', 'facebook', 'google', 'share', 'other']
 
 /** Desde dónde llegan — by arrival once it is recorded; App vs Web until then. */
 export default function Sources({ sources: given }: { sources: SourcesData | undefined }) {
