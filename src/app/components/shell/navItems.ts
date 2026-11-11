@@ -5,6 +5,7 @@
 import {
   Home, Briefcase, CreditCard, User, Compass, FileBadge, ClipboardList, BarChart3, Heart,
   KanbanSquare,
+  LineChart,
   CalendarDays,
   type LucideIcon,
 } from 'lucide-react'
@@ -25,6 +26,7 @@ export type NavGroup = {
 const ITEMS = {
   dashboard:          { id: 'dashboard',          label: 'Mi panel',      to: '/app',                          icon: Home } as NavItem,
   misAnuncios:        { id: 'misAnuncios',        label: 'Mis propiedades', to: '/app/listings',               icon: Briefcase } as NavItem,
+  analitica:          { id: 'analitica',          label: 'Analítica',     to: '/app/analitica',                icon: LineChart } as NavItem,
   misListas:          { id: 'misListas',          label: 'Guardados',     to: '/app/lists',                    icon: Heart } as NavItem,
   pagos:              { id: 'pagos',              label: 'Pagos',         to: '/app/payments',                 icon: CreditCard } as NavItem,
   miPerfil:           { id: 'miPerfil',           label: 'Mi perfil',     to: '/app/profile',                  icon: User } as NavItem,
@@ -53,7 +55,7 @@ function internalItems(caps: Capabilities): NavItem[] {
  * Single-role users get a flat list (no section headers); dual-role users get grouped.
  */
 export function getNavGroups(caps: Capabilities): NavGroup[] {
-  const { dashboard, misAnuncios, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
+  const { dashboard, misAnuncios, analitica, misListas, pagos, miPerfil, oportunidades, miRegistroAgente, aplicaciones } = ITEMS
 
   // "Ing. de Software" (the internal dev board) and "Números" (internal metrics) are
   // both allowlist-gated staff tools and are placed identically: inside the
@@ -63,18 +65,18 @@ export function getNavGroups(caps: Capabilities): NavGroup[] {
 
   if (caps.isAdmin && caps.isRealtor) {
     return [
-      { label: 'Principal', items: [dashboard, misAnuncios, misListas, pagos, miPerfil] },
+      { label: 'Principal', items: [dashboard, misAnuncios, analitica, misListas, pagos, miPerfil] },
       { label: 'Agente',    items: [oportunidades, miRegistroAgente] },
       { label: 'Admin',     items: [aplicaciones, ...internal] },
     ]
   }
   if (caps.isRealtor) {
-    return [{ items: [dashboard, oportunidades, misAnuncios, misListas, pagos, miRegistroAgente, miPerfil, ...internal] }]
+    return [{ items: [dashboard, oportunidades, misAnuncios, analitica, misListas, pagos, miRegistroAgente, miPerfil, ...internal] }]
   }
   if (caps.isAdmin) {
-    return [{ items: [dashboard, aplicaciones, misAnuncios, misListas, pagos, miPerfil, ...internal] }]
+    return [{ items: [dashboard, aplicaciones, misAnuncios, analitica, misListas, pagos, miPerfil, ...internal] }]
   }
-  return [{ items: [dashboard, misAnuncios, misListas, pagos, miPerfil, ...internal] }]
+  return [{ items: [dashboard, misAnuncios, analitica, misListas, pagos, miPerfil, ...internal] }]
 }
 
 /**

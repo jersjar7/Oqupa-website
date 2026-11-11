@@ -25,7 +25,7 @@ export default function Topbar({ title, subtitle, caps, actions, accessArea }: P
   const { viewAs, setViewAs } = useViewAs()
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-cream/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-border bg-cream/90 backdrop-blur-md print:hidden">
       {caps.isAdmin && viewAs !== 'self' && (
         <div
           role="status"

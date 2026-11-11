@@ -29,7 +29,7 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
   return (
     <aside
       aria-label="Navegación principal"
-      className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-border bg-white"
+      className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-border bg-white print:!hidden"
     >
       <div className="px-5 py-4 border-b border-border">
         <Link to="/" className="inline-flex items-center">
