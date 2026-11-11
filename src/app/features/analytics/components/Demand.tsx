@@ -30,8 +30,8 @@ export default function Demand({ demand: given, side }: { demand: DemandData | u
     >
       <ul className="space-y-2">
         {rows.map((r) => (
-          <li key={r.district} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm">
-            <span className="truncate">{r.district}</span>
+          <li key={r.district} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,10rem)_1fr_auto]">
+            <span className="col-span-2 sm:col-span-1 sm:truncate">{r.district}</span>
             <span className="h-2.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
               <span className={`block h-full rounded-full ${r.perListing === null ? 'bg-primary' : 'bg-secondary'}`} style={{ width: `${r.perListing === null ? 100 : (r.perListing / max) * 100}%` }} />
             </span>

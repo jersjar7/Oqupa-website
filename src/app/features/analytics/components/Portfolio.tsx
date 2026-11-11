@@ -88,17 +88,19 @@ export default function Portfolio({ rows, days, names = {} }: { rows: PortfolioR
               <Link to={`/property/${r.listing.id}`} className="flex items-center gap-3">
                 <Thumb photoKey={r.listing.photoKey} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
+                  <span className="line-clamp-2 break-words font-bold text-text-primary">{names[r.listing.id] ?? r.listing.name}</span>
                   {!(names[r.listing.id] ?? '').includes(r.listing.sub) && <span className="block truncate text-xs text-text-secondary">{r.listing.sub}</span>}
                 </span>
-                <Spark values={r.spark} warn={note.tone === 'warn'} />
               </Link>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <div><dt className="text-[11px] uppercase tracking-wide text-text-secondary">Se mostró</dt><dd className="font-bold">{fmt(r.shown)}</dd></div>
                 <div><dt className="text-[11px] uppercase tracking-wide text-text-secondary">La abrieron</dt><dd className="font-bold">{fmt(r.seen)}</dd></div>
                 <div><dt className="text-[11px] uppercase tracking-wide text-text-secondary">Contactos</dt><dd className="font-bold">{fmt(r.contacts)}</dd></div>
               </dl>
-              <span className={`mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${TONE[note.tone]}`}>{note.text}</span>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${TONE[note.tone]}`}>{note.text}</span>
+                <Spark values={r.spark} warn={note.tone === 'warn'} />
+              </div>
             </li>
           )
         })}
