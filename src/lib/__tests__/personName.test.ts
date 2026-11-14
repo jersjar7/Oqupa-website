@@ -43,6 +43,8 @@ const SHARED_CASES: Array<[string, string]> = [
   ['juan PÉREZ', 'Juan Pérez'],
   ['Ana-LU torres', 'Ana-LU Torres'],
   ['qA pérez', 'Qa Pérez'],
+  ['DEL Castillo ana', 'Del Castillo Ana'],
+  ['LA Torre juan', 'La Torre Juan'],
   ['Already Fine', 'Already Fine'],
   ['', ''],
   ['   ', ''],

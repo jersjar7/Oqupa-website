@@ -69,7 +69,8 @@ export function normalizePersonName(raw: string | null | undefined): string {
     // III", "Inmobiliaria SAC"); longer ones are converted ("juan PÉREZ").
     const typedParts = typed.split('-')
     let word = typedParts
-      .map((part) => (isAllCaps(part) && (wholeNameInCapitals || letterCount(part) > 3)
+      // A joining word is never kept in capitals ("DEL Castillo" → "Del Castillo").
+      .map((part) => (isAllCaps(part) && (wholeNameInCapitals || letterCount(part) > 3 || PARTICLES.has(part.toLowerCase()))
         ? part.toLowerCase()
         : part))
       .join('-')
