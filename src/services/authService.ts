@@ -26,6 +26,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   type UserCredential,
+  type User,
+  updateProfile,
 } from 'firebase/auth'
 import {
   doc,
@@ -41,6 +43,7 @@ import { signupAttribution, type SignupDoor } from '@/lib/attribution'
 import { createProfileIfAbsent } from '@/lib/profileRepair'
 import { releaseCollidedPhone } from '@/lib/phoneRelease'
 import { clearPendingEmailChange } from '@/lib/emailChange'
+import { normalizePersonName } from '@/lib/personName'
 import { getDraftAccount, setDraftAccount, useListingFormStore } from '@/stores/listingFormStore'
 import { noteDeliberateSignOut, noteSignedInAccount } from '@/lib/returnPath'
 
@@ -51,6 +54,20 @@ import { noteDeliberateSignOut, noteSignedInAccount } from '@/lib/returnPath'
  * link must never cost someone their account (A12b hostile review). Any other
  * failure propagates unchanged.
  */
+/**
+ * ADR-060: the Firebase sign-in profile carries a copy of the name, filled by
+ * Google or Apple as the provider holds it ("pedro guerrero"). It follows the
+ * saved, capitalized name. Best effort — never fails a sign-in or a save.
+ */
+async function syncAuthDisplayName(user: User, saved: string) {
+  if (!saved || user.displayName === saved) return
+  try {
+    await updateProfile(user, { displayName: saved })
+  } catch {
+    // The account record is the name that counts; the server copies it on.
+  }
+}
+
 async function createUserDocument(uid: string, data: Record<string, unknown>) {
   try {
     await setDoc(doc(db, 'users', uid), data)
@@ -287,11 +304,16 @@ export const authService = {
     return user
   },
 
-  async updateUserName(uid: string, name: string) {
+  /** Saves the name capitalized (ADR-060) and returns it as saved. */
+  async updateUserName(uid: string, name: string): Promise<string> {
+    const saved = normalizePersonName(name)
     await updateDoc(doc(db, 'users', uid), {
-      name,
+      name: saved,
       updatedAt: serverTimestamp(),
     })
+    const current = auth.currentUser
+    if (current && current.uid === uid) await syncAuthDisplayName(current, saved)
+    return saved
   },
 
   async updateUserContactInfo(
@@ -449,7 +471,8 @@ export const authService = {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
-        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
+        // Saved capitalized (ADR-060).
+        ...(normalizePersonName(user.displayName) ? { name: normalizePersonName(user.displayName) } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -462,6 +485,7 @@ export const authService = {
         // Where this account came from — write-once in the rules (A12b).
         ...newAccountAttribution(credential, 'email'),
       })
+      await syncAuthDisplayName(user, normalizePersonName(user.displayName))
     }
 
     localStorage.removeItem('oqupa_signInEmail')
@@ -486,7 +510,8 @@ export const authService = {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
-        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
+        // Saved capitalized (ADR-060).
+        ...(normalizePersonName(user.displayName) ? { name: normalizePersonName(user.displayName) } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -499,6 +524,7 @@ export const authService = {
         // Where this account came from — write-once in the rules (A12b).
         ...newAccountAttribution(credential, 'apple'),
       })
+      await syncAuthDisplayName(user, normalizePersonName(user.displayName))
     }
     AnalyticsLogger.loginCompleted('apple')
     return user
@@ -522,7 +548,8 @@ export const authService = {
         email: user.email,
         // The provider already knows the name — the pipeline then skips the
         // name step, as the approved path says (hostile review, 2026-08-26).
-        ...(user.displayName?.trim() ? { name: user.displayName.trim() } : {}),
+        // Saved capitalized (ADR-060).
+        ...(normalizePersonName(user.displayName) ? { name: normalizePersonName(user.displayName) } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -535,6 +562,7 @@ export const authService = {
         // Where this account came from — write-once in the rules (A12b).
         ...newAccountAttribution(credential, 'google'),
       })
+      await syncAuthDisplayName(user, normalizePersonName(user.displayName))
     }
     AnalyticsLogger.loginCompleted('google')
     return user

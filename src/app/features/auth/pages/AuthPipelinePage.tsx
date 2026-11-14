@@ -421,6 +421,8 @@ function NameStep({
         <Input
           label="Nombre completo"
           autoComplete="name"
+          autoCapitalize="words"
+          autoCorrect="off"
           autoFocus
           placeholder="Ej: Juan Pérez"
           error={errors.name?.message}
