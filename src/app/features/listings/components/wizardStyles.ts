@@ -12,10 +12,13 @@ export function choiceClass(on: boolean): string {
 }
 
 /**
- * A choice that reads like an Oqupa button and like the app's choice buttons:
- * Gotham Bold, upper case, tracked 1 px (ADR-038) — the currency buttons on
- * Precio ("S/ SOLES", "US$ DÓLARES").
+ * A choice that reads like an Oqupa button and like the app's choice buttons
+ * (OqupaChoiceButtons): a pill, Gotham Bold, upper case, tracked 1 px
+ * (ADR-038) — VENTA / ALQUILER, SÍ / NO, S/ SOLES / US$ DÓLARES. The
+ * accessible name stays in normal case; only the look is upper case.
  */
 export function choiceButtonClass(on: boolean): string {
-  return `${choiceClass(on).replace('font-medium', 'font-sans font-bold uppercase tracking-[1px]')}`
+  return choiceClass(on)
+    .replace('rounded-xl', 'rounded-full')
+    .replace('font-medium', 'font-sans font-bold uppercase tracking-[1px]')
 }

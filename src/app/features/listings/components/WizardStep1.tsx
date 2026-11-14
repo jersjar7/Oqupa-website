@@ -16,7 +16,7 @@ import {
 } from '@/types/enums'
 import WizardNav from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass, choiceClass } from './wizardStyles'
 
 /** The three answers to "¿Vendes o alquilas?" (D2): the plazo is part of the answer. */
 type Deal = 'venta' | 'mes' | 'noche'
@@ -107,7 +107,7 @@ export default function WizardStep1() {
               type="button"
               aria-pressed={deal === d}
               onClick={() => chooseDeal(d)}
-              className={choiceClass(deal === d)}
+              className={choiceButtonClass(deal === d)}
             >
               {label}
             </button>
