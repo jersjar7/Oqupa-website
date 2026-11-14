@@ -5,7 +5,9 @@
 // same list of examples in all three test suites:
 //  - trim, and collapse runs of whitespace to one space;
 //  - a word (or hyphen part) written entirely in capitals (2+ letters) is
-//    lowercased first;
+//    lowercased first — when the WHOLE name is in capitals, or the word has 4+
+//    letters; inside a normal name a capital word of 2-3 letters stays as
+//    typed ("Claude QA", "Luis III") — founder, 2026-11-13;
 //  - de, del, la, las, los, y, e, da, di, van, von stay lowercase unless they
 //    are the first word (an initial keeps its period: "Juan E. Pérez");
 //  - every other word gets a capital first letter, and a capital after a
@@ -18,20 +20,32 @@
 const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'di', 'van', 'von'])
 const BOUNDARIES = "-'’"
 
-function isAllCaps(word: string): boolean {
+function letterCount(word: string): number {
   let letters = 0
   for (const c of word) {
     if (c.toUpperCase() !== c.toLowerCase()) letters++
   }
-  return letters >= 2 && word === word.toUpperCase()
+  return letters
+}
+
+function isAllCaps(word: string): boolean {
+  return letterCount(word) >= 2 && word === word.toUpperCase()
 }
 
 function capitalizeAtBoundaries(word: string): string {
   let out = ''
   let atStart = true
   for (const c of word) {
-    out += atStart ? c.toUpperCase() : c
-    atStart = BOUNDARIES.includes(c)
+    if (BOUNDARIES.includes(c)) {
+      out += c
+      atStart = true
+    } else if (c.toUpperCase() !== c.toLowerCase()) {
+      // The first LETTER after the start or a boundary, even past a leading period.
+      out += atStart ? c.toUpperCase() : c
+      atStart = false
+    } else {
+      out += c
+    }
   }
   return out
 }
@@ -40,20 +54,38 @@ function capitalizeAtBoundaries(word: string): string {
 export function normalizePersonName(raw: string | null | undefined): string {
   if (typeof raw !== 'string') return ''
   const words = raw.trim().split(/\s+/u).filter(Boolean)
+  // The whole name in capitals: every part of two or more letters is in
+  // capitals, and there is at least one (single letters are initials and count
+  // neither way: "A E" is not a name in capitals, "EO a" is).
+  const longParts = words
+    .flatMap((w) => w.split(/[-'’]/u))
+    .filter((part) => letterCount(part) >= 2)
+  const wholeNameInCapitals = longParts.length > 0 && longParts.every(isAllCaps)
   const out: string[] = []
   for (const typed of words) {
     // Capitals are judged per hyphen part, so "josé-MARÍA" is fixed too.
-    let word = typed.split('-').map((part) => (isAllCaps(part) ? part.toLowerCase() : part)).join('-')
+    // Founder 2026-11-13, "Keep short capitals": inside a name that also has
+    // normal words, a capital part of 2-3 letters stays ("Claude QA", "Luis
+    // III", "Inmobiliaria SAC"); longer ones are converted ("juan PÉREZ").
+    const typedParts = typed.split('-')
+    let word = typedParts
+      .map((part) => (isAllCaps(part) && (wholeNameInCapitals || letterCount(part) > 3)
+        ? part.toLowerCase()
+        : part))
+      .join('-')
     const lower = word.toLowerCase()
     if (out.length > 0 && PARTICLES.has(lower)) {
       out.push(lower)
       continue
     }
     word = capitalizeAtBoundaries(word)
-    // "jOSÉ" (caps lock) capitalizes to "JOSÉ": treat it as capitals.
+    // "jOSÉ" (caps lock) capitalizes to "JOSÉ": a part that capitalizing
+    // turned into capitals (it was not typed that way) is fixed.
     word = word
       .split('-')
-      .map((part) => (isAllCaps(part) ? capitalizeAtBoundaries(part.toLowerCase()) : part))
+      .map((part, i) => (isAllCaps(part) && !isAllCaps(typedParts[i] ?? '')
+        ? capitalizeAtBoundaries(part.toLowerCase())
+        : part))
       .join('-')
     out.push(word)
   }
