@@ -32,6 +32,8 @@ const SHARED_CASES: Array<[string, string]> = [
   ['María Del Carmen Y José', 'María del Carmen y José'],
   ['Pablo E Isabel', 'Pablo e Isabel'],
   ['PABLO E ISABEL', 'Pablo e Isabel'],
+  ['josé-MARÍA', 'José-María'],
+  ['JOSÉ-maría', 'José-María'],
   ['Already Fine', 'Already Fine'],
   ['', ''],
   ['   ', ''],

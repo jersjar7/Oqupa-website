@@ -4,7 +4,8 @@
 // and the Cloud Functions (oqupa functions/lib/person-name.js), checked by the
 // same list of examples in all three test suites:
 //  - trim, and collapse runs of whitespace to one space;
-//  - a word written entirely in capitals (2+ letters) is lowercased first;
+//  - a word (or hyphen part) written entirely in capitals (2+ letters) is
+//    lowercased first;
 //  - de, del, la, las, los, y, e, da, di, van, von stay lowercase unless they
 //    are the first word (an initial keeps its period: "Juan E. Pérez");
 //  - every other word gets a capital first letter, and a capital after a
@@ -41,7 +42,8 @@ export function normalizePersonName(raw: string | null | undefined): string {
   const words = raw.trim().split(/\s+/u).filter(Boolean)
   const out: string[] = []
   for (const typed of words) {
-    let word = isAllCaps(typed) ? typed.toLowerCase() : typed
+    // Capitals are judged per hyphen part, so "josé-MARÍA" is fixed too.
+    let word = typed.split('-').map((part) => (isAllCaps(part) ? part.toLowerCase() : part)).join('-')
     const lower = word.toLowerCase()
     if (out.length > 0 && PARTICLES.has(lower)) {
       out.push(lower)
@@ -49,7 +51,10 @@ export function normalizePersonName(raw: string | null | undefined): string {
     }
     word = capitalizeAtBoundaries(word)
     // "jOSÉ" (caps lock) capitalizes to "JOSÉ": treat it as capitals.
-    if (isAllCaps(word)) word = capitalizeAtBoundaries(word.toLowerCase())
+    word = word
+      .split('-')
+      .map((part) => (isAllCaps(part) ? capitalizeAtBoundaries(part.toLowerCase()) : part))
+      .join('-')
     out.push(word)
   }
   return out.join(' ')
