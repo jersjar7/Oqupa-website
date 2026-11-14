@@ -6,8 +6,7 @@
 //  - trim, and collapse runs of whitespace to one space;
 //  - a word written entirely in capitals (2+ letters) is lowercased first;
 //  - de, del, la, las, los, y, e, da, di, van, von stay lowercase unless they
-//    are the first word — except a capital "E" or "Y" in a name not written
-//    in capitals, which is an initial ("Juan E Pérez");
+//    are the first word (an initial keeps its period: "Juan E. Pérez");
 //  - every other word gets a capital first letter, and a capital after a
 //    hyphen or an apostrophe; the rest of the word is never lowercased
 //    ("McDonald" stays) — unless capitalizing leaves the word in capitals
@@ -39,21 +38,13 @@ function capitalizeAtBoundaries(word: string): string {
 /** The name as it should be saved. Blank or missing input becomes ''. */
 export function normalizePersonName(raw: string | null | undefined): string {
   if (typeof raw !== 'string') return ''
-  const trimmed = raw.trim()
-  const words = trimmed.split(/\s+/u).filter(Boolean)
-  // Written in capitals: no lowercase letter, and at least one run of two or
-  // more capitals ("A E" or "J'S" are initials, not a name in capitals).
-  const wholeNameInCapitals = trimmed === trimmed.toUpperCase() &&
-    words.some((w) => w.split(/[-'’]/u).some(isAllCaps))
+  const words = raw.trim().split(/\s+/u).filter(Boolean)
   const out: string[] = []
   for (const typed of words) {
     let word = isAllCaps(typed) ? typed.toLowerCase() : typed
     const lower = word.toLowerCase()
     if (out.length > 0 && PARTICLES.has(lower)) {
-      // A capital "E" or "Y" in a name not written in capitals is an initial
-      // ("Juan E Pérez"), not the word "e"/"y".
-      const isInitial = lower.length === 1 && typed !== lower && !wholeNameInCapitals
-      out.push(isInitial ? typed : lower)
+      out.push(lower)
       continue
     }
     word = capitalizeAtBoundaries(word)
