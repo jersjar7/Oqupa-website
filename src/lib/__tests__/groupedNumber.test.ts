@@ -232,3 +232,21 @@ describe('review: a third decimal digit never makes a number 1000 times bigger u
     expect(type(b, '1500.000').text).toBe('1,500.00')
   })
 })
+
+// Hostile review, round 2.
+describe('review 2', () => {
+  it('a third decimal after thousands of the OTHER kind is refused', () => {
+    expect(type(empty, '1,234.567').text).toBe('1,234.56')
+    expect(type(empty, '1,500.555').text).toBe('1,500.55')
+    expect(type(empty, '1.500,555').text).toBe('1,500.55')
+    expect(type(paste(empty, '1,500'), '.555').text).toBe('1,500.55')
+    expect(type(empty, '1.500.250').text).toBe('1,500,250')
+  })
+  it('pasting over a selection that holds a comma keeps every digit', () => {
+    expect(paste({ text: '1,500', start: 0, end: 5 }, '1500').text).toBe('1,500')
+    expect(paste({ text: '25,000', start: 0, end: 4 }, '250').text).toBe('25,000')
+  })
+  it('forward delete on the first leftover zero keeps the caret at 0', () => {
+    expect(shown(forwardDelete(at('000000', 0)))).toBe('|00000')
+  })
+})

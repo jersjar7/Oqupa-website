@@ -47,6 +47,10 @@ export type DeleteHint = 'backward' | 'forward' | null
  */
 export interface GroupingMemory {
   typedWhole: string | null
+  /** The separator that made typedWhole thousands; "1,234.567" mixes kinds and is refused. */
+  typedSeparator?: string | null
+  /** The separator typed for the decimals now pending. */
+  pendingSeparator?: string | null
 }
 
 /** Text this box itself produces (or plain digits). */
@@ -89,6 +93,9 @@ function readWhole(next: BoxEdit, memory: GroupingMemory): BoxEdit {
     typeof split === 'object' && split.decimals === '' && /[.,]/.test(next.text)
       ? split.whole.replace(/^0+(?=\d)/, '')
       : null
+  const seps = next.text.match(/[.,]/g) ?? []
+  memory.typedSeparator = memory.typedWhole === null || seps.length === 0 ? null : seps[0]!
+  memory.pendingSeparator = seps.length === 0 ? null : seps[seps.length - 1]!
   const shown = formatLocaleNumberText(next.text)
   if (shown === null || shown === next.text) return next
   if (next.caret >= next.text.length) return { text: shown, caret: shown.length }
@@ -119,7 +126,8 @@ function compose(prev: BoxState, left: string, inserted: string, right: string, 
       const couldBeThousands =
         caret === plain.length &&
         !wholeDigits.startsWith('0') &&
-        (wholeDigits.length <= 3 || wholeDigits === memory.typedWhole)
+        (wholeDigits.length <= 3 ||
+          (wholeDigits === memory.typedWhole && memory.pendingSeparator === memory.typedSeparator))
       if (!couldBeThousands) return refuse
       plain = plain.replace('.', '')
       caret--
@@ -139,7 +147,10 @@ function compose(prev: BoxState, left: string, inserted: string, right: string, 
     caret -= Math.min(caret, zeros)
   }
   if (whole.length > MAX_TYPED_WHOLE_DIGITS) return refuse
-  if (madeThousands) memory.typedWhole = whole
+  if (madeThousands) {
+    memory.typedWhole = whole
+    memory.typedSeparator = memory.pendingSeparator ?? null
+  }
   else if (whole !== memory.typedWhole) memory.typedWhole = null
   const grouped = whole.length > 1 && whole.startsWith('0') ? whole : group(whole)
   const text = grouped + rest
@@ -164,7 +175,9 @@ export function groupedAsTyped(
 
   const maxP = Math.min(oldText.length, newText.length)
   let p = 0
-  while (p < maxP && oldText[p] === newText[p]) p++
+  // Never past the caret: in "000000" a delete at the front is at the front,
+  // not wherever the repeated digits stop matching.
+  while (p < maxP && p < next.caret && oldText[p] === newText[p]) p++
   let s = 0
   while (s < maxP - p && oldText[oldText.length - 1 - s] === newText[newText.length - 1 - s]) s++
   const removed = oldText.slice(p, oldText.length - s)
@@ -172,14 +185,17 @@ export function groupedAsTyped(
   let left = oldText.slice(0, p)
   let right = oldText.slice(oldText.length - s)
 
-  if (inserted === '' && removed === ',') {
+  if (inserted === '' && removed === ',' && prev.start === prev.end) {
     const forward = hint === 'forward' || (hint === null && prev.start === prev.end && prev.start === p)
     if (forward) right = right.replace(/\d/, '')
     else left = left.slice(0, -1)
     return compose(prev, left, '', right, memory)
   }
   if (/^\d*$/.test(inserted)) return compose(prev, left, inserted, right, memory)
-  if (inserted === '.' || inserted === ',') return compose(prev, left, '.', right, memory)
+  if (inserted === '.' || inserted === ',') {
+    memory.pendingSeparator = inserted
+    return compose(prev, left, '.', right, memory)
+  }
   return readWhole(next, memory)
 }
 
