@@ -177,7 +177,10 @@ export function groupedAsTyped(
   let p = 0
   // Never past the caret: in "000000" a delete at the front is at the front,
   // not wherever the repeated digits stop matching.
-  while (p < maxP && p < next.caret && oldText[p] === newText[p]) p++
+  // Nor past where the old selection started: "5,|000" + 0 is typed at the
+  // comma, not after the first matching 0.
+  const startCap = Math.min(next.caret, prev.start)
+  while (p < maxP && p < startCap && oldText[p] === newText[p]) p++
   let s = 0
   while (s < maxP - p && oldText[oldText.length - 1 - s] === newText[newText.length - 1 - s]) s++
   const removed = oldText.slice(p, oldText.length - s)

@@ -250,3 +250,19 @@ describe('review 2', () => {
     expect(shown(forwardDelete(at('000000', 0)))).toBe('|00000')
   })
 })
+
+// Hostile review, round 3.
+describe('review 3: a digit typed before the same digit', () => {
+  it('"5,|000" then 0 then 5 is 505,000', () => {
+    let b = type(at('5,000', 2), '0')
+    expect(shown(b)).toBe('50|,000')
+    b = type(b, '5')
+    expect(shown(b)).toBe('505|,000')
+  })
+  it('"1,000,|000" + 0 keeps the caret after it', () => {
+    expect(shown(type(at('1,000,000', 6), '0'))).toBe('10,000|,000')
+  })
+  it('"100.0|5" + 5 is a third decimal in the middle: refused', () => {
+    expect(shown(type(at('100.05', 5), '5'))).toBe('100.0|5')
+  })
+})
