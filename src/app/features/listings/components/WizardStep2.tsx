@@ -6,6 +6,7 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { Input } from '@/app/components/ui'
 import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
 import { parseLocaleNumber } from '@/lib/localeNumber'
+import { formatLocaleNumberText, formatSavedNumber, useGroupedNumberBox } from '@/lib/groupedNumber'
 import { bedroomsLabel } from '@/lib/roomCounts'
 import { editAwareResolver } from '../editLimits'
 import WizardNav from './WizardNav'
@@ -58,6 +59,13 @@ export default function WizardStep2() {
       propertyAmenities: data.propertyAmenities ?? [],
       hasPrivateBathroom: data.hasPrivateBathroom ?? false,
     },
+  })
+
+  // The area shows thousands with commas as it is typed, like the price
+  // (ADR-061); react-hook-form reads the grouped text through readArea.
+  const areaField = register('totalAreaInSquareMeters', { setValueAs: readArea })
+  const area = useGroupedNumberBox(formatSavedNumber(data.totalAreaInSquareMeters), (_text, e) => {
+    void areaField.onChange(e)
   })
 
   const description = watch('description') ?? ''
@@ -141,7 +149,18 @@ export default function WizardStep2() {
             placeholder="Ej: 120"
             hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
             error={errors.totalAreaInSquareMeters?.message}
-            {...register('totalAreaInSquareMeters', { setValueAs: readArea })}
+            name={areaField.name}
+            ref={areaField.ref}
+            {...area.inputProps}
+            onBlur={(e) => {
+              const shown = formatLocaleNumberText(area.text)
+              if (shown !== null && shown !== area.text) {
+                e.currentTarget.value = shown
+                area.setText(shown)
+                void areaField.onChange(e)
+              }
+              void areaField.onBlur(e)
+            }}
           />
         </div>
         <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-white px-4">
