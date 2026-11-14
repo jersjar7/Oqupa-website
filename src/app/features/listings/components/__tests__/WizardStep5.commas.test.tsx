@@ -3,7 +3,7 @@
 // commas while the person types, key by key, with the caret where they expect
 // it (founder, 2026-11-13: "Commas as they type for consistency").
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -144,6 +144,18 @@ describe('Área (Detalles)', () => {
     for (const ch of '120,5') key(el, ch)
     expect(el.value).toBe('120.5')
     expect(useListingFormStore.getState().data.totalAreaInSquareMeters).toBe(120.5)
+  })
+
+  it('review: a saved area with three decimals opens and saves as shown (120.12)', async () => {
+    useListingFormStore.getState().updateData({ totalAreaInSquareMeters: 120.123 })
+    render(<WizardStep2 />)
+    expect(areaBox().value).toBe('120.12')
+    fireEvent.change(screen.getByLabelText(/descripción/i), {
+      target: { value: 'Casa amplia y luminosa cerca del parque central' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    // The number kept is the one on screen, as the app saves it.
+    await waitFor(() => expect(useListingFormStore.getState().data.totalAreaInSquareMeters).toBe(120.12))
   })
 
   it('a saved area opens as "1,250"', () => {

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { groupedAsTyped, formatLocaleNumberText, type BoxState } from '../groupedNumber'
+import { groupedAsTyped as rawGroupedAsTyped, formatLocaleNumberText, type BoxState, type BoxEdit, type DeleteHint, type GroupingMemory } from '../groupedNumber'
+import { beforeEach } from 'vitest'
+
+// One box's memory, as the hook keeps it; a new box for every test.
+let memory: GroupingMemory = { typedWhole: null }
+beforeEach(() => { memory = { typedWhole: null } })
+const groupedAsTyped = (prev: BoxState, next: BoxEdit, hint: DeleteHint = null) => rawGroupedAsTyped(prev, next, hint, memory)
 import { parseLocaleNumber } from '../localeNumber'
 
 // ADR-061 — the price and area boxes show thousands with commas WHILE the
@@ -181,5 +187,48 @@ describe('formatLocaleNumberText (a saved number, or leaving the box)', () => {
     expect(formatLocaleNumberText('1.500')).toBe('1,500')
     expect(formatLocaleNumberText('1.5.0')).toBeNull()
     expect(formatLocaleNumberText('')).toBeNull()
+  })
+})
+
+// Hostile review, 2026-11-13.
+describe('review: changing the first digit', () => {
+  it('deleting the 1 of 1,000,000 keeps the zeros, so 2 can go in', () => {
+    let b = backspace(at('1,000,000', 1))
+    expect(shown(b)).toBe('|000000')
+    b = type(b, '2')
+    expect(shown(b)).toBe('2|,000,000')
+  })
+  it('1,050: delete the 1, type 2', () => {
+    expect(type(backspace(at('1,050', 1)), '2').text).toBe('2,050')
+  })
+  it('leading zeros typed on purpose still go', () => {
+    expect(type(empty, '007').text).toBe('7')
+  })
+})
+
+describe('review: a third decimal digit never makes a number 1000 times bigger unless the shared rule reads it so', () => {
+  it('after a long whole part it is refused', () => {
+    expect(type(empty, '1500.555').text).toBe('1,500.55')
+    expect(type(empty, '1234.567').text).toBe('1,234.56')
+  })
+  it('after a 0 it is refused', () => {
+    expect(type(empty, '0.500').text).toBe('0.50')
+    expect(type(empty, '0,500').text).toBe('0.50')
+  })
+  it('typed into the middle of the decimals it is refused', () => {
+    expect(shown(type(at('12.34', 3), '5'))).toBe('12.|34')
+  })
+  it('thousands typed by hand with separators all the way still work', () => {
+    expect(type(empty, '1.500.000').text).toBe('1,500,000')
+    expect(type(empty, '1,500,000').text).toBe('1,500,000')
+    expect(type(empty, '12.345.678').text).toBe('12,345,678')
+  })
+  it('a pasted "1.500" then ".000" typed is 1,500,000', () => {
+    expect(type(paste(empty, '1.500'), '.000').text).toBe('1,500,000')
+  })
+  it('the memory goes when the digits change', () => {
+    let b = type(empty, '1.500')
+    for (let i = 0; i < 5; i++) b = backspace(b)
+    expect(type(b, '1500.000').text).toBe('1,500.00')
   })
 })

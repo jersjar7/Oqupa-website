@@ -46,7 +46,11 @@ export default function WizardStep2() {
     defaultValues: {
       propertyType: data.propertyType,
       description: data.description,
-      totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
+      // Two decimals, as the box shows it (and as the app saves it): an old
+      // 120.123 opens as "120.12" and an untouched save keeps 120.12.
+      totalAreaInSquareMeters: kept(data.totalAreaInSquareMeters) === null
+        ? undefined
+        : Math.round(data.totalAreaInSquareMeters! * 100) / 100,
       // − / + start from a sensible count instead of an empty box (D4).
       // An older listing's count is shown as it is — even below today's
       // minimum, even missing — so an edit that leaves it alone does not
