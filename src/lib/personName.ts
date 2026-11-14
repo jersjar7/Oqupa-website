@@ -1,0 +1,65 @@
+// ADR-060 (Jerson, 2026-11-13: "Fix names"): how a person's name is saved.
+//
+// One rule, written identically in the app (oqupa lib/utils/person_name.dart)
+// and the Cloud Functions (oqupa functions/lib/person-name.js), checked by the
+// same list of examples in all three test suites:
+//  - trim, and collapse runs of whitespace to one space;
+//  - a word written entirely in capitals (2+ letters) is lowercased first;
+//  - de, del, la, las, los, y, e, da, di, van, von stay lowercase unless they
+//    are the first word — except a capital "E" or "Y" in a name not written
+//    in capitals, which is an initial ("Juan E Pérez");
+//  - every other word gets a capital first letter, and a capital after a
+//    hyphen or an apostrophe; the rest of the word is never lowercased
+//    ("McDonald" stays) — unless capitalizing leaves the word in capitals
+//    ("jOSÉ", caps lock on), which is then treated as capitals;
+//  - accents and ñ are kept ("ñahui" → "Ñahui").
+// Applying it twice changes nothing.
+
+const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'di', 'van', 'von'])
+const BOUNDARIES = "-'’"
+
+function isAllCaps(word: string): boolean {
+  let letters = 0
+  for (const c of word) {
+    if (c.toUpperCase() !== c.toLowerCase()) letters++
+  }
+  return letters >= 2 && word === word.toUpperCase()
+}
+
+function capitalizeAtBoundaries(word: string): string {
+  let out = ''
+  let atStart = true
+  for (const c of word) {
+    out += atStart ? c.toUpperCase() : c
+    atStart = BOUNDARIES.includes(c)
+  }
+  return out
+}
+
+/** The name as it should be saved. Blank or missing input becomes ''. */
+export function normalizePersonName(raw: string | null | undefined): string {
+  if (typeof raw !== 'string') return ''
+  const trimmed = raw.trim()
+  const words = trimmed.split(/\s+/u).filter(Boolean)
+  // Written in capitals: no lowercase letter, and at least one run of two or
+  // more capitals ("A E" or "J'S" are initials, not a name in capitals).
+  const wholeNameInCapitals = trimmed === trimmed.toUpperCase() &&
+    words.some((w) => w.split(/[-'’]/u).some(isAllCaps))
+  const out: string[] = []
+  for (const typed of words) {
+    let word = isAllCaps(typed) ? typed.toLowerCase() : typed
+    const lower = word.toLowerCase()
+    if (out.length > 0 && PARTICLES.has(lower)) {
+      // A capital "E" or "Y" in a name not written in capitals is an initial
+      // ("Juan E Pérez"), not the word "e"/"y".
+      const isInitial = lower.length === 1 && typed !== lower && !wholeNameInCapitals
+      out.push(isInitial ? typed : lower)
+      continue
+    }
+    word = capitalizeAtBoundaries(word)
+    // "jOSÉ" (caps lock) capitalizes to "JOSÉ": treat it as capitals.
+    if (isAllCaps(word)) word = capitalizeAtBoundaries(word.toLowerCase())
+    out.push(word)
+  }
+  return out.join(' ')
+}
