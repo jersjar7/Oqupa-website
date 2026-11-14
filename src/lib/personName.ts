@@ -4,21 +4,23 @@
 // and the Cloud Functions (oqupa functions/lib/person-name.js), checked by the
 // same list of examples in all three test suites:
 //  - trim, and collapse runs of whitespace to one space;
-//  - SAC, SRL, EIRL, II, III, IV are always written in capitals;
+//  - SAC, SRL, EIRL, SA, SAA, SCRL, II, III, IV are always written in capitals
+//    ("S.A.C." keeps its periods);
 //  - a word (or hyphen part) written entirely in capitals is lowercased first —
 //    except, inside a name that also has normal words, one of 1-2 letters,
 //    which stays as typed ("Claude QA") — Jerson, 2026-11-14;
 //  - de, del, la, las, los, y, e, da, di, van, von stay lowercase unless they
 //    are the first word (an initial keeps its period: "Juan E. Pérez");
 //  - every other word gets a capital first letter, and a capital after a
-//    hyphen or an apostrophe; the rest of the word is never lowercased
+//    hyphen, an apostrophe or a period ("j.c." → "J.C."); the rest of the word is never lowercased
 //    ("McDonald" stays) — unless capitalizing leaves the word in capitals
 //    ("jOSÉ", caps lock on), which is then treated as capitals;
 //  - accents and ñ are kept ("ñahui" → "Ñahui").
 // Applying it twice changes nothing.
 
 const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'di', 'van', 'von'])
-const BOUNDARIES = "-'’"
+// A period is a boundary too, so initials read "J.C." (hostile review 2026-11-14).
+const BOUNDARIES = "-'’."
 
 function letterCount(word: string): number {
   let letters = 0
@@ -33,7 +35,7 @@ function isAllCaps(word: string): boolean {
 }
 
 /** Always written in capitals, whatever the case typed (periods ignored: "S.A.C."). */
-const KEPT_IN_CAPITALS = new Set(['sac', 'srl', 'eirl', 'ii', 'iii', 'iv'])
+const KEPT_IN_CAPITALS = new Set(['sac', 'srl', 'eirl', 'sa', 'saa', 'scrl', 'ii', 'iii', 'iv'])
 
 function isKeptInCapitals(part: string): boolean {
   return KEPT_IN_CAPITALS.has(part.replace(/\./g, '').toLowerCase())
@@ -65,7 +67,7 @@ export function normalizePersonName(raw: string | null | undefined): string {
   // capitals, and there is at least one (single letters and SAC/III… count
   // neither way: "A E" is not a name in capitals, "EO a" is).
   const longParts = words
-    .flatMap((w) => w.split(/[-'’]/u))
+    .flatMap((w) => w.split(/[-'’.]/u))
     .filter((part) => letterCount(part) >= 2 && !isKeptInCapitals(part))
   const wholeNameInCapitals = longParts.length > 0 && longParts.every(isAllCaps)
   const out: string[] = []
@@ -100,6 +102,20 @@ export function normalizePersonName(raw: string | null | undefined): string {
         ? capitalizeAtBoundaries(part.toLowerCase())
         : part))
       .join('-')
+    // The same for each piece between boundaries ("lL'…" → "Ll'…"), so a
+    // result never looks typed in capitals when it was not.
+    const typedPieces = typed.split(/[-'’.]/u)
+    let k = 0
+    word = word
+      .split(/([-'’.])/u)
+      .map((seg) => {
+        if (/^[-'’.]$/u.test(seg)) return seg
+        const t = typedPieces[k++] ?? ''
+        return isAllCaps(seg) && !isAllCaps(t) && !isKeptInCapitals(seg)
+          ? capitalizeAtBoundaries(seg.toLowerCase())
+          : seg
+      })
+      .join('')
     out.push(word)
   }
   return out.join(' ')
