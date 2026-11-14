@@ -43,6 +43,17 @@ describe('WizardStep5 — Precio', () => {
     expect(savedDraft().amount).toBe(250000)
   })
 
+  // Brand (ADR-038), founder 2026-11-13: the currency buttons read like every
+  // Oqupa button and like the app — Gotham Bold, upper case, tracked 1 px.
+  it('the currency buttons are Gotham Bold upper case, tracked, as in the app', () => {
+    renderStep()
+    for (const name of [/S\/ Soles/i, /US\$ Dólares/i]) {
+      const cls = screen.getByRole('button', { name }).className.split(/\s+/)
+      expect(cls).toEqual(expect.arrayContaining(['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]']))
+      expect(cls).not.toContain('font-medium')
+    }
+  })
+
   it('the currency is kept in the draft too', () => {
     renderStep()
     fireEvent.click(screen.getByRole('button', { name: /US\$/ }))
@@ -60,13 +71,14 @@ describe('WizardStep5 — Precio', () => {
     expect(priceBox().value).toBe('1,500')
   })
 
-  it('while typing, the box shows exactly what was typed (reformatting threw the cursor to the end)', () => {
+  // Replaced by ADR-061 (founder, 2026-11-13: "Commas as they type"): the
+  // box now groups thousands while typing — the cursor problem this test
+  // guarded is checked key by key in WizardStep5.commas.test.tsx. Same number.
+  it('while typing, the box shows the thousands and keeps the number', () => {
     renderStep()
     fireEvent.change(priceBox(), { target: { value: '15000' } })
-    expect(priceBox().value).toBe('15000')
-    fireEvent.change(priceBox(), { target: { value: '150900' } })
-    expect(priceBox().value).toBe('150900')
-    expect(useListingFormStore.getState().data.amount).toBe(150900)
+    expect(priceBox().value).toBe('15,000')
+    expect(useListingFormStore.getState().data.amount).toBe(15000)
   })
 
   it('leaving the box shows the thousands', () => {

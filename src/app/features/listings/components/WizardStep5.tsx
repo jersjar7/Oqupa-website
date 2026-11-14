@@ -21,9 +21,10 @@ import { Input, FillingButton } from '@/app/components/ui'
 import type { FillStatus } from '@/app/components/ui/FillingButton'
 import WizardNav, { WIZARD_BUTTON } from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass } from './wizardStyles'
 import type { Currency } from '@/types/enums'
 import { parseLocaleNumber } from '@/lib/localeNumber'
+import { formatLocaleNumberText, formatSavedNumber, useGroupedNumberBox } from '@/lib/groupedNumber'
 import { AnalyticsLogger } from '@/lib/analytics'
 import { publishRealProgress } from '@/lib/fillProgress'
 import type { Listing } from '@/types/listing'
@@ -42,14 +43,9 @@ export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Pued
 
 /** The price box says S/ and US$ (ADR-043 D9). */
 const CURRENCY_WORDS: Record<Currency, string> = { PEN: 'S/', USD: 'US$' }
-/** The currency buttons say the word too (Jerson, 2026-11-02). */
+/** The currency buttons say the word too (Jerson, 2026-11-02), in upper case like the app (2026-11-13). */
 const CURRENCY_BUTTONS: Record<Currency, string> = { PEN: 'S/ Soles', USD: 'US$ Dólares' }
 
-/** The price as shown once the person leaves the box: "250,000", "1,500.5". */
-function formatAmount(amount: number | null | undefined): string {
-  if (amount == null || !Number.isFinite(amount)) return ''
-  return amount.toLocaleString('en-US', { maximumFractionDigits: 2 })
-}
 
 export default function WizardStep5() {
   const navigate = useNavigate()
@@ -108,7 +104,6 @@ export default function WizardStep5() {
     handleSubmit,
     watch,
     setValue,
-    getValues,
     formState: { errors },
   } = useForm<Step4Data>({
     resolver: editAwareResolver(zodResolver(step4Schema)),
@@ -122,10 +117,12 @@ export default function WizardStep5() {
   })
 
   const currency = watch('currency')
-  // The box shows exactly what is typed. Reformatting it on every keystroke
-  // ("S/. 15,000") threw the cursor to the end; the thousands are shown when
-  // the person leaves the box.
-  const [priceText, setPriceText] = useState(() => formatAmount(data.amount))
+  // The box shows thousands with commas as the person types, the caret
+  // staying after the digit just typed (ADR-061 — founder, 2026-11-13:
+  // "Commas as they type for consistency"), as the app does.
+  const price = useGroupedNumberBox(formatSavedNumber(data.amount), (text) => {
+    setValue('amount', parseLocaleNumber(text) as number, { shouldValidate: true })
+  })
 
   // The price, currency and agent choice go into the draft as they change, so
   // a refresh in this tab, ATRÁS or the back button keep them.
@@ -534,7 +531,7 @@ export default function WizardStep5() {
               type="button"
               aria-pressed={currency === cur}
               onClick={() => setValue('currency', cur)}
-              className={choiceClass(currency === cur)}
+              className={choiceButtonClass(currency === cur)}
             >
               {CURRENCY_BUTTONS[cur]}
             </button>
@@ -552,14 +549,12 @@ export default function WizardStep5() {
               aria-label={`Precio en ${CURRENCY_WORDS[currency]}`}
               placeholder={`Ej: ${isAlquiler ? (isShortTerm ? '120' : '1,500') : '250,000'}`}
               error={errors.amount?.message}
-              value={priceText}
-              onChange={(e) => {
-                setPriceText(e.target.value)
-                setValue('amount', parseLocaleNumber(e.target.value) as number, { shouldValidate: true })
-              }}
+              {...price.inputProps}
               onBlur={() => {
-                const n = getValues('amount')
-                if (typeof n === 'number' && Number.isFinite(n)) setPriceText(formatAmount(n))
+                // A paste the box kept as it was ("1.500,50" then edited)
+                // shows with commas once the person leaves it.
+                const shown = formatLocaleNumberText(price.text)
+                if (shown !== null && shown !== price.text) price.setText(shown)
               }}
             />
           </div>

@@ -85,6 +85,16 @@ describe('WizardStep2 — steppers (D4)', () => {
     expect(btn('No')).toBeTruthy()
   })
 
+  // Same SÍ / NO pills as the app (ADR-043 D7, 2026-11-13).
+  it('Cuarto: "Baño privado" Sí / No read like the app: upper case, bold, tracked pills', () => {
+    prepare('habitacion', { operationType: 'alquiler', rentalDurationType: 'longTerm' })
+    render(<WizardStep2 />)
+    for (const name of ['Sí', 'No']) {
+      const cls = btn(name).className.split(/\s+/)
+      expect(cls).toEqual(expect.arrayContaining(['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]', 'rounded-full']))
+    }
+  })
+
   it('Oficina: baños optional from 0 and kept when given (app parity)', async () => {
     prepare('oficina')
     render(<WizardStep2 />)

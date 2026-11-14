@@ -10,3 +10,15 @@ export function choiceClass(on: boolean): string {
     on ? 'border-secondary bg-secondary text-white' : 'border-border bg-white text-text-primary hover:border-secondary/40'
   }`
 }
+
+/**
+ * A choice that reads like an Oqupa button and like the app's choice buttons
+ * (OqupaChoiceButtons): a pill, Gotham Bold, upper case, tracked 1 px
+ * (ADR-038) — VENTA / ALQUILER, SÍ / NO, S/ SOLES / US$ DÓLARES. The
+ * accessible name stays in normal case; only the look is upper case.
+ */
+export function choiceButtonClass(on: boolean): string {
+  return choiceClass(on)
+    .replace('rounded-xl', 'rounded-full')
+    .replace('font-medium', 'font-sans font-bold uppercase tracking-[1px]')
+}

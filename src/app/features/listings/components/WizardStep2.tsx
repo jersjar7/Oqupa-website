@@ -6,13 +6,14 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 import { Input } from '@/app/components/ui'
 import { propertyTypeHasRooms, propertyTypeIsRoom, type PropertyType } from '@/types/enums'
 import { parseLocaleNumber } from '@/lib/localeNumber'
+import { formatLocaleNumberText, formatSavedNumber, useGroupedNumberBox } from '@/lib/groupedNumber'
 import { bedroomsLabel } from '@/lib/roomCounts'
 import { editAwareResolver } from '../editLimits'
 import WizardNav from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
 import WizardStepper from './WizardStepper'
 import WizardAmenities from './WizardAmenities'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass } from './wizardStyles'
 
 /** A finite number, or null — what the draft can keep of a half-typed box. */
 const kept = (n: number | null | undefined): number | null =>
@@ -45,7 +46,11 @@ export default function WizardStep2() {
     defaultValues: {
       propertyType: data.propertyType,
       description: data.description,
-      totalAreaInSquareMeters: data.totalAreaInSquareMeters ?? undefined,
+      // Two decimals, as the box shows it (and as the app saves it): an old
+      // 120.123 opens as "120.12" and an untouched save keeps 120.12.
+      totalAreaInSquareMeters: kept(data.totalAreaInSquareMeters) === null
+        ? undefined
+        : Math.round(data.totalAreaInSquareMeters! * 100) / 100,
       // − / + start from a sensible count instead of an empty box (D4).
       // An older listing's count is shown as it is — even below today's
       // minimum, even missing — so an edit that leaves it alone does not
@@ -58,6 +63,13 @@ export default function WizardStep2() {
       propertyAmenities: data.propertyAmenities ?? [],
       hasPrivateBathroom: data.hasPrivateBathroom ?? false,
     },
+  })
+
+  // The area shows thousands with commas as it is typed, like the price
+  // (ADR-061); react-hook-form reads the grouped text through readArea.
+  const areaField = register('totalAreaInSquareMeters', { setValueAs: readArea })
+  const area = useGroupedNumberBox(formatSavedNumber(data.totalAreaInSquareMeters), (_text, e) => {
+    void areaField.onChange(e)
   })
 
   const description = watch('description') ?? ''
@@ -141,7 +153,18 @@ export default function WizardStep2() {
             placeholder="Ej: 120"
             hint="Área construida de la propiedad. Si es terreno sin construir, ingresa el área total del lote."
             error={errors.totalAreaInSquareMeters?.message}
-            {...register('totalAreaInSquareMeters', { setValueAs: readArea })}
+            name={areaField.name}
+            ref={areaField.ref}
+            {...area.inputProps}
+            onBlur={(e) => {
+              const shown = formatLocaleNumberText(area.text)
+              if (shown !== null && shown !== area.text) {
+                e.currentTarget.value = shown
+                area.setText(shown)
+                void areaField.onChange(e)
+              }
+              void areaField.onBlur(e)
+            }}
           />
         </div>
         <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-white px-4">
@@ -182,7 +205,7 @@ export default function WizardStep2() {
                   type="button"
                   aria-pressed={hasPrivateBathroom === v}
                   onClick={() => setValue('hasPrivateBathroom', v)}
-                  className={choiceClass(hasPrivateBathroom === v)}
+                  className={choiceButtonClass(hasPrivateBathroom === v)}
                 >
                   {v ? 'Sí' : 'No'}
                 </button>
