@@ -21,7 +21,7 @@ import { Input, FillingButton } from '@/app/components/ui'
 import type { FillStatus } from '@/app/components/ui/FillingButton'
 import WizardNav, { WIZARD_BUTTON } from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass } from './wizardStyles'
 import type { Currency } from '@/types/enums'
 import { parseLocaleNumber } from '@/lib/localeNumber'
 import { formatLocaleNumberText, formatSavedNumber, useGroupedNumberBox } from '@/lib/groupedNumber'
@@ -43,7 +43,7 @@ export const ALREADY_PUBLISHED_NOTICE = 'Tu anuncio ya se había publicado. Pued
 
 /** The price box says S/ and US$ (ADR-043 D9). */
 const CURRENCY_WORDS: Record<Currency, string> = { PEN: 'S/', USD: 'US$' }
-/** The currency buttons say the word too (Jerson, 2026-11-02). */
+/** The currency buttons say the word too (Jerson, 2026-11-02), in upper case like the app (2026-11-13). */
 const CURRENCY_BUTTONS: Record<Currency, string> = { PEN: 'S/ Soles', USD: 'US$ Dólares' }
 
 
@@ -531,7 +531,7 @@ export default function WizardStep5() {
               type="button"
               aria-pressed={currency === cur}
               onClick={() => setValue('currency', cur)}
-              className={choiceClass(currency === cur)}
+              className={choiceButtonClass(currency === cur)}
             >
               {CURRENCY_BUTTONS[cur]}
             </button>

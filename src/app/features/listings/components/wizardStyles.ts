@@ -10,3 +10,12 @@ export function choiceClass(on: boolean): string {
     on ? 'border-secondary bg-secondary text-white' : 'border-border bg-white text-text-primary hover:border-secondary/40'
   }`
 }
+
+/**
+ * A choice that reads like an Oqupa button and like the app's choice buttons:
+ * Gotham Bold, upper case, tracked 1 px (ADR-038) — the currency buttons on
+ * Precio ("S/ SOLES", "US$ DÓLARES").
+ */
+export function choiceButtonClass(on: boolean): string {
+  return `${choiceClass(on).replace('font-medium', 'font-sans font-bold uppercase tracking-[1px]')}`
+}

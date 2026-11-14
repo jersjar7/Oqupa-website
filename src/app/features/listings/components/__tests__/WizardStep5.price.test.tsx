@@ -43,6 +43,17 @@ describe('WizardStep5 — Precio', () => {
     expect(savedDraft().amount).toBe(250000)
   })
 
+  // Brand (ADR-038), founder 2026-11-13: the currency buttons read like every
+  // Oqupa button and like the app — Gotham Bold, upper case, tracked 1 px.
+  it('the currency buttons are Gotham Bold upper case, tracked, as in the app', () => {
+    renderStep()
+    for (const name of [/S\/ Soles/i, /US\$ Dólares/i]) {
+      const cls = screen.getByRole('button', { name }).className.split(/\s+/)
+      expect(cls).toEqual(expect.arrayContaining(['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]']))
+      expect(cls).not.toContain('font-medium')
+    }
+  })
+
   it('the currency is kept in the draft too', () => {
     renderStep()
     fireEvent.click(screen.getByRole('button', { name: /US\$/ }))
