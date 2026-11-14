@@ -174,17 +174,23 @@ export function groupedAsTyped(
   if (!CANONICAL.test(oldText)) return readWhole(next, memory)
 
   const maxP = Math.min(oldText.length, newText.length)
-  let p = 0
+  const diffFrom = (cap: number) => {
+    let p = 0
+    while (p < maxP && p < cap && oldText[p] === newText[p]) p++
+    let s = 0
+    while (s < maxP - p && oldText[oldText.length - 1 - s] === newText[newText.length - 1 - s]) s++
+    return { p, removed: oldText.slice(p, oldText.length - s), inserted: newText.slice(p, newText.length - s), s }
+  }
+  const simple = (d: { removed: string; inserted: string }) =>
+    /^\d*$/.test(d.inserted) || d.inserted === '.' || d.inserted === ',' || (d.inserted === '' && d.removed === ',')
   // Never past the caret: in "000000" a delete at the front is at the front,
-  // not wherever the repeated digits stop matching.
-  // Nor past where the old selection started: "5,|000" + 0 is typed at the
-  // comma, not after the first matching 0.
-  const startCap = Math.min(next.caret, prev.start)
-  while (p < maxP && p < startCap && oldText[p] === newText[p]) p++
-  let s = 0
-  while (s < maxP - p && oldText[oldText.length - 1 - s] === newText[newText.length - 1 - s]) s++
-  const removed = oldText.slice(p, oldText.length - s)
-  const inserted = newText.slice(p, newText.length - s)
+  // not wherever the repeated digits stop matching. Nor past where the old
+  // selection started: "5,|000" + 0 is typed at the comma, not after the
+  // first matching 0 — unless that remembered start is stale and does not fit
+  // the edit, then the caret alone decides.
+  let d = diffFrom(Math.min(next.caret, prev.start))
+  if (!simple(d) && prev.start < next.caret) d = diffFrom(next.caret)
+  const { p, removed, inserted, s } = d
   let left = oldText.slice(0, p)
   let right = oldText.slice(oldText.length - s)
 
@@ -234,7 +240,11 @@ export function useGroupedNumberBox(
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     const el = e.currentTarget
     const sel = selection.current?.text === text ? selection.current : null
-    const prev: BoxState = { text, start: sel?.start ?? text.length, end: sel?.end ?? text.length }
+    const caret = el.selectionStart ?? el.value.length
+    // No caret remembered (autofill, a keyboard that sent no event first):
+    // for text that grew, it was where the new caret is, less what came in.
+    const guess = Math.max(0, Math.min(text.length, caret - Math.max(0, el.value.length - text.length)))
+    const prev: BoxState = { text, start: sel?.start ?? guess, end: sel?.end ?? guess }
     const r = groupedAsTyped(
       prev,
       { text: el.value, caret: el.selectionStart ?? el.value.length },

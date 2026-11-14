@@ -107,6 +107,16 @@ describe('Precio', () => {
     expect(useListingFormStore.getState().data.amount).toBe(1500.5)
   })
 
+  it('review 4: with no caret remembered, "5,|000" + 0 still lands where typed', () => {
+    useListingFormStore.getState().updateData({ amount: 5000 })
+    renderPrice()
+    const el = priceBox()
+    // No focus, select or keydown before the change (autofill, some keyboards).
+    fireEvent.change(el, { target: { value: '5,0000', selectionStart: 3, selectionEnd: 3 } })
+    expect(el.value).toBe('50,000')
+    expect(useListingFormStore.getState().data.amount).toBe(50000)
+  })
+
   it('a pasted "250.000" shows 250,000 and is 250000', () => {
     renderPrice()
     fireEvent.change(priceBox(), { target: { value: '250.000' } })

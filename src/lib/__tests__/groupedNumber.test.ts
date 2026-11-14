@@ -266,3 +266,12 @@ describe('review 3: a digit typed before the same digit', () => {
     expect(shown(type(at('100.05', 5), '5'))).toBe('100.0|5')
   })
 })
+
+// Hostile review, round 4.
+describe('review 4: a stale remembered caret', () => {
+  it('"1,|000" + 5 with the caret remembered at 0 still groups', () => {
+    const r = groupedAsTyped({ text: '1,000', start: 0, end: 0 }, { text: '1,5000', caret: 3 })
+    expect(r.text).toBe('15,000')
+    expect(r.caret).toBe(2)
+  })
+})
