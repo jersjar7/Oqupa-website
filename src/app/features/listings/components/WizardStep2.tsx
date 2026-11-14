@@ -13,7 +13,7 @@ import WizardNav from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
 import WizardStepper from './WizardStepper'
 import WizardAmenities from './WizardAmenities'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass } from './wizardStyles'
 
 /** A finite number, or null — what the draft can keep of a half-typed box. */
 const kept = (n: number | null | undefined): number | null =>
@@ -205,7 +205,7 @@ export default function WizardStep2() {
                   type="button"
                   aria-pressed={hasPrivateBathroom === v}
                   onClick={() => setValue('hasPrivateBathroom', v)}
-                  className={choiceClass(hasPrivateBathroom === v)}
+                  className={choiceButtonClass(hasPrivateBathroom === v)}
                 >
                   {v ? 'Sí' : 'No'}
                 </button>
