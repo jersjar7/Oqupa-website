@@ -11,7 +11,8 @@ import OfficialDistrictPicker from './OfficialDistrictPicker'
 import WizardNav from './WizardNav'
 import { focusFirstError } from '../useWizardPageChange'
 import WizardAddressSearch from './WizardAddressSearch'
-import { WIZARD_HEADING, choiceClass } from './wizardStyles'
+import { WIZARD_HEADING, choiceButtonClass } from './wizardStyles'
+import { WIZARD_BUTTON } from './WizardNav'
 import { DistrictResolver } from '@/lib/map/districtResolver'
 import { DepartamentoBorder } from '@/lib/map/departamentoBorder'
 import { findDistrict, type PeruDistrict } from '@/lib/map/peruGeography'
@@ -208,12 +209,21 @@ export default function WizardStep3() {
         {here ? (
           <div className="mt-3 rounded-xl border border-border bg-white p-4">
             <p className={WIZARD_HEADING}>¿Ubicación es correcta?</p>
+            {/* As the app's map: NO outlined, then SÍ filled (2026-11-13). */}
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={confirmHere} className={choiceClass(false)}>
-                Sí
-              </button>
-              <button type="button" onClick={() => setHere(null)} className={choiceClass(false)}>
+              <button
+                type="button"
+                onClick={() => setHere(null)}
+                className={`${WIZARD_BUTTON} border-[1.5px] border-secondary bg-white text-secondary hover:border-secondary-hover hover:text-secondary-hover`}
+              >
                 No
+              </button>
+              <button
+                type="button"
+                onClick={confirmHere}
+                className={`${WIZARD_BUTTON} bg-secondary text-white hover:bg-secondary-hover`}
+              >
+                Sí
               </button>
             </div>
           </div>
@@ -283,7 +293,7 @@ export default function WizardStep3() {
                   type="button"
                   aria-pressed={showExactLocation === v}
                   onClick={() => changeShowExactLocation(v)}
-                  className={choiceClass(showExactLocation === v)}
+                  className={choiceButtonClass(showExactLocation === v)}
                 >
                   {v ? 'Sí' : 'No'}
                 </button>

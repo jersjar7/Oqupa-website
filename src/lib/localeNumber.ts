@@ -20,13 +20,33 @@ export const MALFORMED_NUMBER: unique symbol = Symbol('malformed-number')
 export type ParsedNumber = number | undefined | typeof MALFORMED_NUMBER
 
 export function parseLocaleNumber(raw: string): ParsedNumber {
+  const split = splitLocaleNumber(raw)
+  if (split === undefined || split === MALFORMED_NUMBER) return split
+  if (Number.isNaN(split)) return NaN
+  const { whole, decimals } = split as LocaleNumberParts
+  return Number(decimals === '' ? whole : `${whole}.${decimals}`)
+}
+
+/** The digits of a number read by the rule above: whole part and decimals. */
+export interface LocaleNumberParts {
+  whole: string
+  decimals: string
+}
+
+/**
+ * The same reading as [parseLocaleNumber], keeping the digits as typed
+ * ("1.500,50" → whole "1500", decimals "50") so a box can show them back with
+ * commas without losing a trailing zero. `undefined` for an empty box, `NaN`
+ * for letters, MALFORMED_NUMBER for misplaced separators.
+ */
+export function splitLocaleNumber(raw: string): LocaleNumberParts | undefined | number | typeof MALFORMED_NUMBER {
   const text = raw.replace(/US\$|S\/\.?|\$/gi, '').replace(/\s+/g, '')
   if (text === '') return undefined
   if (!/^[\d.,]+$/.test(text) || !/\d/.test(text)) return NaN
 
   const parts = text.split(/[.,]/)
   const seps = text.replace(/\d/g, '')
-  if (seps === '') return Number(text)
+  if (seps === '') return { whole: text, decimals: '' }
   if (parts.some((p) => p === '')) return MALFORMED_NUMBER
 
   const last = parts[parts.length - 1]!
@@ -36,7 +56,7 @@ export function parseLocaleNumber(raw: string): ParsedNumber {
 
   // All separators are thousands: "1,500", "1.500.000".
   if (last.length === 3 && new Set(seps).size === 1 && grouped(parts)) {
-    return Number(parts.join(''))
+    return { whole: parts.join(''), decimals: '' }
   }
   // The last separator is the decimal point; any before it are thousands of
   // the OTHER kind: "120,5", "1,500.50", "1.500,50".
@@ -45,7 +65,7 @@ export function parseLocaleNumber(raw: string): ParsedNumber {
     const thousandSeps = seps.slice(0, -1)
     if (thousandSeps.includes(lastSep)) return MALFORMED_NUMBER
     if (integerParts.length > 1 && !grouped(integerParts)) return MALFORMED_NUMBER
-    return Number(`${integerParts.join('')}.${last}`)
+    return { whole: integerParts.join(''), decimals: last }
   }
   return MALFORMED_NUMBER
 }

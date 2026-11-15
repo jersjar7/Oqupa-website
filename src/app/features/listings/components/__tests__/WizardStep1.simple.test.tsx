@@ -16,6 +16,13 @@ import { useListingFormStore } from '@/stores/listingFormStore'
 
 const ENGLISH = /invalid|expected|received|undefined/i
 const btn = (name: string | RegExp) => screen.getByRole('button', { name })
+
+/** Reads like the app's choice buttons: Gotham Bold, upper case, tracked 1 px, a pill (ADR-038). */
+function expectAppButtonStyle(el: HTMLElement) {
+  const cls = el.className.split(/\s+/)
+  expect(cls).toEqual(expect.arrayContaining(['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]', 'rounded-full']))
+  expect(cls).not.toContain('font-medium')
+}
 const renderStep = () =>
   render(
     <MemoryRouter>
@@ -142,5 +149,12 @@ describe('WizardStep1 — ¿Vendes o alquilas? (D2, D3)', () => {
     renderStep()
     fireEvent.click(btn('Atrás'))
     expect(navigate).toHaveBeenCalled()
+  })
+
+  // Brand consistency with the app (2026-11-13): the app shows VENTA /
+  // ALQUILER POR MES / ALQUILER POR NOCHE as upper-case pill buttons.
+  it('the deal buttons read like the app: upper case, bold, tracked pills', () => {
+    render(<WizardStep1 />)
+    for (const name of ['Venta', 'Alquiler por mes', 'Alquiler por noche']) expectAppButtonStyle(btn(name))
   })
 })

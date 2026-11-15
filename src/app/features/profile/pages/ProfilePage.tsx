@@ -45,6 +45,7 @@ export default function ProfilePage() {
   const {
     register,
     handleSubmit,
+    setValue,
     setError: setFieldError,
     formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
@@ -89,7 +90,9 @@ export default function ProfilePage() {
     }
 
     try {
-      await authService.updateUserName(user.id, data.name.trim())
+      // Saved capitalized (ADR-060); the box shows it as saved.
+      const savedName = await authService.updateUserName(user.id, data.name.trim())
+      if (savedName) setValue('name', savedName)
 
       if (user.contactInfo) {
         await authService.updateUserContactInfo(user.id, {
@@ -239,6 +242,9 @@ export default function ProfilePage() {
 
               <Input
                 label="Nombre completo"
+                autoComplete="name"
+                autoCapitalize="words"
+                autoCorrect="off"
                 error={errors.name?.message}
                 {...register('name')}
               />

@@ -51,6 +51,13 @@ function refuseLocation() {
   })
 }
 const btn = (name: string | RegExp) => screen.getByRole('button', { name })
+
+/** Reads like the app's choice buttons: Gotham Bold, upper case, tracked 1 px, a pill (ADR-038). */
+function expectAppButtonStyle(el: HTMLElement) {
+  const cls = el.className.split(/\s+/)
+  expect(cls).toEqual(expect.arrayContaining(['font-sans', 'font-bold', 'uppercase', 'tracking-[1px]', 'rounded-full']))
+  expect(cls).not.toContain('font-medium')
+}
 const ASK = '¿Ubicación es correcta?'
 const TAP = 'Toca el mapa donde está tu propiedad o busca la dirección.'
 
@@ -209,5 +216,44 @@ describe('WizardStep3 — ¿Mostrar tu dirección exacta? (D7)', () => {
     fireEvent.click(btn('No'))
     expect(useListingFormStore.getState().data.showExactLocation).toBe(false)
     expect(screen.getByText('Se mostrará solo el distrito y una ubicación aproximada en el mapa')).toBeTruthy()
+  })
+
+  // Brand consistency with the app (2026-11-13): OqupaChoiceButtons.
+  it('Sí / No read like the app: upper case, bold, tracked pills', () => {
+    render(<WizardStep3 />)
+    expectAppButtonStyle(btn('Sí'))
+    expectAppButtonStyle(btn('No'))
+  })
+})
+
+describe('WizardStep3 — "¿Ubicación es correcta?" reads like the app', () => {
+  beforeEach(() => {
+    window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
+    Element.prototype.scrollIntoView = vi.fn()
+    localStorage.clear()
+    sessionStorage.clear()
+    useListingFormStore.getState().reset()
+    useListingFormStore.getState().updateData({ propertyType: 'casa', operationType: 'venta', role: 'owner' })
+    useListingFormStore.getState().setStep(3)
+    picker.props = null
+    border.inside = true
+    search.fn.mockReset()
+  })
+  afterEach(() => {
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined })
+  })
+
+  // Brand consistency with the app (2026-11-13): NO outlined, SÍ filled.
+  it('"¿Ubicación es correcta?" answers like the app: NO outlined then SÍ filled, upper-case pills', async () => {
+    allowLocation()
+    render(<WizardStep3 />)
+    await screen.findByText(ASK)
+    const no = btn('No')
+    const yes = btn('Sí')
+    expectAppButtonStyle(no)
+    expectAppButtonStyle(yes)
+    expect(no.compareDocumentPosition(yes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(yes.className).toMatch(/\bbg-secondary\b/)
+    expect(no.className).toMatch(/\bbg-white\b/)
   })
 })

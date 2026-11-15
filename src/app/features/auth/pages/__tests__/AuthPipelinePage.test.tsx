@@ -462,3 +462,17 @@ describe('AuthPipelinePage — the name step says the same line as the app', () 
     expect(screen.getByText('Tu nombre aparecerá en tus publicaciones.')).toBeDefined()
   })
 })
+
+// ADR-060: the phone keyboard offers a capital at each word, as the app's
+// does, and autocorrect does not rewrite names. (The save itself capitalizes —
+// authService.names.test.ts.)
+describe('AuthPipelinePage — the name box asks for capitals', () => {
+  it('autoCapitalize="words", autoCorrect="off"', () => {
+    mockAuthState.firebaseUser = { uid: 'u', email: 'e@x.com', emailVerified: true }
+    mockAuthState.user = null
+    renderPage()
+    const box = screen.getByLabelText(/nombre completo/i)
+    expect(box.getAttribute('autocapitalize')).toBe('words')
+    expect(box.getAttribute('autocorrect')).toBe('off')
+  })
+})
