@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import type { Capabilities } from './capabilities'
 import { getMobileNavItems } from './navItems'
+import BetaMark from '@/app/components/ui/BetaMark'
 
 /**
  * Mobile-only bottom tab bar. Shows a curated top-5 (getMobileNavItems
@@ -29,12 +30,15 @@ export default function BottomTabs({ caps }: { caps: Capabilities }) {
             key={item.id}
             to={item.to}
             aria-current={active ? 'page' : undefined}
+            aria-label={item.beta ? `${item.label} (beta)` : undefined}
             className={`flex flex-col items-center justify-center whitespace-nowrap px-0.5 py-2 text-[10px] ${
               active ? 'text-secondary font-medium' : 'text-text-secondary'
             }`}
           >
             <Icon className="h-5 w-5 mb-1" />
-            {item.label}
+            {item.beta
+              ? <span className="whitespace-nowrap">{item.label}<BetaMark size="sm" /></span>
+              : item.label}
           </Link>
         )
       })}

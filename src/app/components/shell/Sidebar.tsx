@@ -3,6 +3,7 @@ import { ChevronRight, LifeBuoy, LogOut } from 'lucide-react'
 import logo from '@/assets/images/Oqupa_FullLogo_multicolor.webp'
 import type { Capabilities } from './capabilities'
 import { getNavGroups } from './navItems'
+import BetaMark from '@/app/components/ui/BetaMark'
 
 type Props = {
   caps: Capabilities
@@ -54,6 +55,7 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
                     key={item.id}
                     to={item.to}
                     aria-current={active ? 'page' : undefined}
+                    aria-label={item.beta ? `${item.label} (beta)` : undefined}
                     className={[
                       'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40',
@@ -63,7 +65,7 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
                     ].join(' ')}
                   >
                     <Icon className={`h-4 w-4 ${active ? 'text-secondary' : 'text-text-secondary'}`} />
-                    <span className="flex-1 truncate">{item.label}</span>
+                    <span className="flex-1 truncate">{item.label}{item.beta && <BetaMark />}</span>
                     {active && <ChevronRight className="h-3 w-3 text-secondary" />}
                   </Link>
                 )
