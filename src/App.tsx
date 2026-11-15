@@ -13,6 +13,8 @@ import ExplorePage from '@/pages/ExplorePage'
 // only used by the team-internal /app/numbers dashboard tab. No reason to
 // ship it in the main bundle for every visitor.
 const MetricsPage = lazy(() => import('@/app/features/metrics/pages/MetricsPage'))
+// Owner Analítica (ADR-058): charts and the district map load only when opened.
+const AnalyticsPage = lazy(() => import('@/app/features/analytics/pages/AnalyticsPage'))
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 import AppLayout from '@/app/layouts/AppLayout'
 import DashboardShell from '@/app/components/shell/DashboardShell'
@@ -125,6 +127,18 @@ export default function App() {
             <Route path="listings/:id/edit" element={<VerifiedGuard><EditListingPage /><WizardBackButton forEdit /></VerifiedGuard>} />
             <Route path="listings/:id/agent-edit" element={<VerifiedGuard><AgentEditListingPage /></VerifiedGuard>} />
             <Route path="listings/:id/agents" element={<VerifiedGuard><InterestedAgentsPage /></VerifiedGuard>} />
+            <Route
+              path="analitica"
+              element={(
+                <Suspense fallback={(
+                  <div className="flex min-h-[60vh] items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  </div>
+                )}>
+                  <AnalyticsPage />
+                </Suspense>
+              )}
+            />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="payments" element={<PaymentHistoryPage />} />
             <Route path="lists" element={<AccountGuardadosPage />} />

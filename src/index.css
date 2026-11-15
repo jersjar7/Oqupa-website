@@ -43,6 +43,14 @@
   /* Pale Pacific Green: the empty part of a filling button (ADR-043). Brand
      green text on it is about 4.7:1. A fill, never a text colour. */
   --color-secondary-pale: #D7E3DC;
+  /* Owner Analítica map (ADR-058): five greens from pale to the deck's green,
+     darkest a step below it; and the grey-cream of a district not shown. */
+  --color-map-1: #D8E5DE;
+  --color-map-2: #A9C7B8;
+  --color-map-3: #78A48F;
+  --color-map-4: #4F826B;
+  --color-map-5: #2C5242;
+  --color-map-empty: #F1ECE4;
 
   /* Typography */
   --font-sans: 'Gotham', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

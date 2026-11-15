@@ -266,7 +266,7 @@ function Resumen({ data, range }: TabProps) {
         {/* Jerson 2026-11-09: Javier waited since May for a code Google kept refusing. */}
         <Section
           title="Personas a las que no les llegó el código SMS"
-          note={`Google no envió el código, el código fue rechazado, o tocaron «¿No te llegó?». Cada persona cuenta una vez por día; sin el equipo. ${data.since.phoneStepFailures ? `Registro desde el ${shortDay(data.since.phoneStepFailures)}.` : 'Sin registros todavía.'}`}
+          note={`Google no envió el código o tocaron «¿No te llegó?». Cada persona cuenta una vez por día; sin el equipo. ${data.since.phoneStepFailures ? `Registro desde el ${shortDay(data.since.phoneStepFailures)}.` : 'Sin registros todavía.'}`}
         >
           <Trend series={s.smsFailedPeople ?? {}} range={range} today={today} color={SUPPLY} />
         </Section>

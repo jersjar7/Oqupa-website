@@ -24,6 +24,7 @@ function defaultMetaForPath(pathname: string): { title: string; subtitle?: strin
   if (pathname === '/app/equipo')                       return { title: 'Ing. de Software', subtitle: 'Tareas del equipo y en qué trabaja cada quien.' }
   if (pathname === '/app/verify')                       return { title: 'Verificación',  subtitle: 'Completa la verificación de tu cuenta.' }
   if (pathname === '/app/lists')                        return { title: 'Guardados' }
+  if (pathname === '/app/analitica')                    return { title: 'Analítica' }
   return { title: 'Oqupa' }
 }
 
@@ -61,8 +62,8 @@ function DashboardShellInner() {
   // standard fix for allowing them to shrink below their intrinsic size so
   // `overflow-y-auto` kicks in instead of the outer document scrolling.
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-1 flex bg-background min-h-0">
+    <div className="h-screen flex flex-col overflow-hidden print:h-auto print:overflow-visible">
+      <div className="flex-1 flex bg-background min-h-0 print:block">
         <Sidebar
           caps={effective}
           userName={userName}
@@ -78,7 +79,7 @@ function DashboardShellInner() {
             caps={rawCaps}
           />
           <VerificationBanner />
-          <main className="flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+          <main className="flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0 print:overflow-visible print:pb-0">
             <Outlet />
           </main>
         </div>

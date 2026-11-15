@@ -11,6 +11,7 @@ import { initTikTokPixel } from '@/lib/tiktokPixel'
 import { applyAnalyticsAccount } from '@/lib/analyticsSuppression'
 import { auth } from '@/lib/firebase'
 import { captureAttribution } from '@/lib/attribution'
+import { captureArrival } from '@/lib/arrival'
 import { watchDraftOwner } from '@/stores/draftOwnerWatch'
 
 // Buffer recent client errors so the /reportar form can auto-attach them.
@@ -20,6 +21,8 @@ initErrorBuffer()
 // URL — the campaign tags live in the address bar and are gone once React
 // Router replaces it.
 captureAttribution()
+// ADR-058: how this visit arrived, for an owner's "Desde dónde llegan".
+captureArrival()
 // A different account signing in on this tab never inherits the publishing
 // draft (hostile review of the wizard fixes, #1).
 watchDraftOwner()

@@ -4,6 +4,30 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-14 — Analítica for owners (ADR-058)
+
+Jerson's yes: "Ship names, then Analítica" (2026-11-14). This release is `development` as it stood at `24f263a`
+(on staging since 2026-11-11); the names fix and price commas follow in the next release.
+
+### New Features
+- **Analítica** (menu → Analítica, `/app/analitica`): every listing's numbers in one page — shown/opened per day,
+  when people look, how they arrived, the price against similar listings, what people search for in the zone, where
+  viewers are (groups of 3+ only), a portfolio table and a PDF report. A section without enough data says
+  "Necesitamos más datos…". Numbers appear after the nightly build (04:00 Lima) or when the owner opens the page.
+
+### Technical
+- Listing pages and the map send the new recordings to the view counter: how the visitor arrived, WhatsApp taps,
+  map searches (points of the screen, turned into districts on the server and not kept) and, only for visitors not
+  signed in whose browser already allows location, a rounded point the server turns into a district and drops.
+- Phone layout: bottom tabs keep labels on one line; map district colours fixed.
+
+### Privacy
+- Privacy policy section 4 and the data list now say location is used to count viewers' districts (only with permission already given, only when not signed in, district only, shown in groups of 3+) and that map-search points become districts and are not kept. Jerson: "Policy approved" (2026-11-14).
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-09 — When the SMS code does not come (ADR-056)
 
 Jerson's yes: "Yes ship it" (2026-11-09).
