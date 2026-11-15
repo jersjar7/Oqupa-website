@@ -4,8 +4,9 @@
 // and the Cloud Functions (oqupa functions/lib/person-name.js), checked by the
 // same list of examples in all three test suites:
 //  - trim, and collapse runs of whitespace to one space;
-//  - SAC, SRL, EIRL, SA, SAA, SCRL, II, III, IV are always written in capitals
-//    ("S.A.C." keeps its periods);
+//  - II, III, IV are always capitals; the company forms SA, SAA, SAC, SRL,
+//    SCRL, EIRL only when typed in capitals or with periods, or as the last word
+//    of a name written in capitals (Saa, Sac and Sa are also surnames);
 //  - a word (or hyphen part) written entirely in capitals is lowercased first —
 //    except, inside a name that also has normal words, one of 1-2 letters,
 //    which stays as typed ("Claude QA") — Jerson, 2026-11-14;
@@ -34,11 +35,24 @@ function isAllCaps(word: string): boolean {
   return letterCount(word) >= 2 && word === word.toUpperCase()
 }
 
-/** Always written in capitals, whatever the case typed (periods ignored: "S.A.C."). */
-const KEPT_IN_CAPITALS = new Set(['sac', 'srl', 'eirl', 'sa', 'saa', 'scrl', 'ii', 'iii', 'iv'])
+/** Roman numerals: always capitals, whatever the case typed. */
+const ROMAN_NUMERALS = new Set(['ii', 'iii', 'iv'])
+/**
+ * Peruvian company forms. Saa, Sac and Sa are also real surnames, so these
+ * are capitals only when typed in capitals or with periods, or as the last
+ * word of a name written entirely in capitals (round-2 review 2026-11-14).
+ */
+const COMPANY_FORMS = new Set(['sa', 'saa', 'sac', 'srl', 'scrl', 'eirl'])
 
-function isKeptInCapitals(part: string): boolean {
-  return KEPT_IN_CAPITALS.has(part.replace(/\./g, '').toLowerCase())
+const bare = (part: string) => part.replace(/\./g, '').toLowerCase()
+const isRomanNumeral = (part: string) => ROMAN_NUMERALS.has(bare(part))
+const isCompanyForm = (part: string) => COMPANY_FORMS.has(bare(part))
+
+function companyFormKept(part: string, wholeNameInCapitals: boolean, lastOfName: boolean, firstWord: boolean): boolean {
+  if (!isCompanyForm(part)) return false
+  if (part.includes('.')) return true
+  if (letterCount(part) < 2 || part !== part.toUpperCase()) return false
+  return !wholeNameInCapitals || (lastOfName && !firstWord)
 }
 
 function capitalizeAtBoundaries(word: string): string {
@@ -68,10 +82,10 @@ export function normalizePersonName(raw: string | null | undefined): string {
   // neither way: "A E" is not a name in capitals, "EO a" is).
   const longParts = words
     .flatMap((w) => w.split(/[-'’.]/u))
-    .filter((part) => letterCount(part) >= 2 && !isKeptInCapitals(part))
+    .filter((part) => letterCount(part) >= 2 && !isRomanNumeral(part) && !isCompanyForm(part))
   const wholeNameInCapitals = longParts.length > 0 && longParts.every(isAllCaps)
   const out: string[] = []
-  for (const typed of words) {
+  words.forEach((typed, wi) => {
     // Capitals are judged per hyphen part, so "josé-MARÍA" is fixed too.
     // Jerson 2026-11-14, "Two letters plus list": SAC, SRL, EIRL, II, III, IV
     // are always capitals; inside a name with normal words, a capital part of
@@ -79,9 +93,12 @@ export function normalizePersonName(raw: string | null | undefined): string {
     // capital part is converted ("Rosa PAZ" → "Rosa Paz"). A joining word is
     // never kept in capitals ("DEL Castillo" → "Del Castillo").
     const typedParts = typed.split('-')
+    const kept = typedParts.map((part, i) => isRomanNumeral(part) ||
+      companyFormKept(part, wholeNameInCapitals,
+        wi === words.length - 1 && i === typedParts.length - 1, wi === 0))
     let word = typedParts
-      .map((part) => {
-        if (isKeptInCapitals(part)) return part.toUpperCase()
+      .map((part, i) => {
+        if (kept[i]) return part.toUpperCase()
         if (!isAllCaps(part)) return part
         const keepShort = !wholeNameInCapitals && letterCount(part) <= 2 &&
           !PARTICLES.has(part.toLowerCase())
@@ -91,14 +108,14 @@ export function normalizePersonName(raw: string | null | undefined): string {
     const lower = word.toLowerCase()
     if (out.length > 0 && PARTICLES.has(lower)) {
       out.push(lower)
-      continue
+      return
     }
     word = capitalizeAtBoundaries(word)
     // "jOSÉ" (caps lock) capitalizes to "JOSÉ": a part that capitalizing
     // turned into capitals (it was not typed that way) is fixed.
     word = word
       .split('-')
-      .map((part, i) => (isAllCaps(part) && !isAllCaps(typedParts[i] ?? '') && !isKeptInCapitals(part)
+      .map((part, i) => (isAllCaps(part) && !isAllCaps(typedParts[i] ?? '') && !kept[i]
         ? capitalizeAtBoundaries(part.toLowerCase())
         : part))
       .join('-')
@@ -111,12 +128,12 @@ export function normalizePersonName(raw: string | null | undefined): string {
       .map((seg) => {
         if (/^[-'’.]$/u.test(seg)) return seg
         const t = typedPieces[k++] ?? ''
-        return isAllCaps(seg) && !isAllCaps(t) && !isKeptInCapitals(seg)
+        return isAllCaps(seg) && !isAllCaps(t) && !isRomanNumeral(seg)
           ? capitalizeAtBoundaries(seg.toLowerCase())
           : seg
       })
       .join('')
     out.push(word)
-  }
+  })
   return out.join(' ')
 }

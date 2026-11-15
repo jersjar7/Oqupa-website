@@ -50,10 +50,10 @@ const SHARED_CASES: Array<[string, string]> = [
   ['ANA lópez', 'Ana López'],
   ['Rosa PAZ-ROJAS', 'Rosa Paz-Rojas'],
   ['Juan VIII', 'Juan Viii'],
-  ['Inmobiliaria sac', 'Inmobiliaria SAC'],
+  ['Inmobiliaria sac', 'Inmobiliaria Sac'], // changed with Jerson's yes, "Protect surnames" (2026-11-14)
   ['INMOBILIARIA SAC', 'Inmobiliaria SAC'],
   ['Inmobiliaria S.A.C.', 'Inmobiliaria S.A.C.'],
-  ['Constructora Srl', 'Constructora SRL'],
+  ['Constructora Srl', 'Constructora Srl'], // changed with Jerson's yes, "Protect surnames" (2026-11-14)
   ['Juan Pérez EIRL', 'Juan Pérez EIRL'],
   ['LUIS III', 'Luis III'],
   ['Pedro iv', 'Pedro IV'],
@@ -61,12 +61,22 @@ const SHARED_CASES: Array<[string, string]> = [
   ['JUAN J.C. PEREZ', 'Juan J.C. Perez'],
   ['j.c. perez', 'J.C. Perez'],
   ['Juan j.c. Pérez', 'Juan J.C. Pérez'],
-  ['Empresa sa', 'Empresa SA'],
+  ['Empresa sa', 'Empresa Sa'], // changed with Jerson's yes, "Protect surnames" (2026-11-14)
   ['EMPRESA S.A.A.', 'Empresa S.A.A.'],
-  ['Minera saa', 'Minera SAA'],
-  ['Transportes scrl', 'Transportes SCRL'],
+  ['Minera saa', 'Minera Saa'], // changed with Jerson's yes, "Protect surnames" (2026-11-14)
+  ['Transportes scrl', 'Transportes Scrl'], // changed with Jerson's yes, "Protect surnames" (2026-11-14)
   ['Inversiones S.C.R.L.', 'Inversiones S.C.R.L.'],
   ['McDONALD pérez', 'McDONALD Pérez'],
+  ['Juan Saa Pérez', 'Juan Saa Pérez'],
+  ['Rosa Sa', 'Rosa Sa'],
+  ['Juan Sac', 'Juan Sac'],
+  ['Ana-Saa', 'Ana-Saa'],
+  ['Ana-SAA', 'Ana-SAA'],
+  ['INVERSIONES SAC', 'Inversiones SAC'],
+  ['Inversiones SAC', 'Inversiones SAC'],
+  ['inversiones s.a.c.', 'Inversiones S.A.C.'],
+  ['INVERSIONES PIURA SAC', 'Inversiones Piura SAC'],
+  ['JUAN SAA PEREZ', 'Juan Saa Perez'],
   ['Already Fine', 'Already Fine'],
   ['', ''],
   ['   ', ''],
