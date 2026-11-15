@@ -4,6 +4,20 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-15 — Analítica marked as beta
+
+Jerson's yes: "Ship beta" (2026-11-15), wording approved the same day; decided in the 2026-11-14 weekly meeting.
+
+### UX Improvements
+- A small green **BETA** beside Analítica in the menu.
+- A notice at the top of Analítica: Oqupa wants to give the best real-estate tools in Piura; the numbers grow more
+  useful as Oqupa grows; Analítica is in beta; feedback to admin@oqupa.com. Owners can close it (remembered on that
+  browser). Not in the PDF report.
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-15 — Names with capitals (ADR-060) and price commas (ADR-061)
 
 Jerson's yes: "Ship names" (2026-11-15). This release is `development` as it stands (on staging since 2026-11-14).

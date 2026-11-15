@@ -17,6 +17,7 @@ import { VersusSimilar, ZonePrice } from '../components/Zone'
 import Demand from '../components/Demand'
 import Portfolio from '../components/Portfolio'
 import Section, { MoreData } from '../components/Section'
+import BetaNotice from '../components/BetaNotice'
 
 const PERIODS: Array<{ key: PeriodKey; label: string }> = [
   { key: '7', label: '7 días' },
@@ -101,16 +102,28 @@ export default function AnalyticsPage() {
   if (state.status === 'loading') {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>
   }
+  // The beta notice heads the page whatever it is showing (Jerson 2026-11-14).
+  const noticeAbove = (
+    // No padding of its own, so nothing is left behind once the notice is closed.
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <BetaNotice className="mt-6" />
+    </div>
+  )
   if (state.status === 'error') {
     return (
+      <>
+      {noticeAbove}
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="font-serif text-[22px] text-text-primary">No pudimos abrir tu analítica.</p>
         <p className="mt-2 text-text-secondary">Vuelve a intentarlo en unos minutos.</p>
       </div>
+      </>
     )
   }
   if (state.status === 'none' || !data || data.listings.length === 0) {
     return (
+      <>
+      {noticeAbove}
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="font-serif text-[22px] text-text-primary">Cuando publiques una propiedad, aquí verás cómo le va.</p>
         <Link
@@ -120,6 +133,7 @@ export default function AnalyticsPage() {
           Publicar
         </Link>
       </div>
+      </>
     )
   }
 
@@ -167,6 +181,8 @@ export default function AnalyticsPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:px-0">
+      <BetaNotice />
+
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-text-secondary" aria-live="polite">
