@@ -108,9 +108,10 @@ export default function PrivacyPage() {
               propiedades que publicas.
             </li>
             <li>
-              <strong>Ubicación:</strong> utilizada únicamente para centrar el
-              mapa cuando el usuario selecciona la ubicación de una propiedad. No
-              rastreamos la ubicación de forma continua ni en segundo plano.
+              <strong>Ubicación:</strong> para centrar el mapa, elegir la
+              ubicación de una propiedad que publicas y contar en qué distrito
+              están quienes miran un anuncio (ver la sección 4). No rastreamos la
+              ubicación de forma continua ni en segundo plano.
             </li>
             <li>
               <strong>Identificador del dispositivo para notificaciones:</strong>{' '}
@@ -174,10 +175,18 @@ export default function PrivacyPage() {
             4. Uso de la Ubicación
           </h2>
           <p className="mt-3 text-text-secondary leading-relaxed">
-            Oqupa solicita acceso a tu ubicación{' '}
-            <strong>únicamente</strong> cuando seleccionas la ubicación de una
-            propiedad en el mapa. Tu ubicación no se rastrea de forma continua,
-            no se utiliza con fines analíticos y no se comparte con terceros.
+            Oqupa usa tu ubicación para centrar el mapa donde estás y para
+            elegir la ubicación de una propiedad que publicas. También cuenta en
+            qué distrito están quienes miran un anuncio, para mostrarle al dueño,
+            por ejemplo, que lo miraron personas de Castilla: solo si ya diste
+            permiso de ubicación (nunca te lo pedimos para esto), solo si no has
+            iniciado sesión, y solo guardamos el distrito, nunca tu ubicación
+            exacta. Al dueño solo le mostramos un distrito si lo miraron 3
+            personas o más. Cuando buscas en el mapa, recibimos los puntos de la
+            zona que estás viendo, los convertimos en distritos para saber qué
+            zonas se buscan más, y no guardamos esos puntos. Tu ubicación no se
+            rastrea de forma continua ni en segundo plano, y no se comparte con
+            terceros.
           </p>
         </section>
 
