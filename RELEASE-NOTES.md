@@ -4,6 +4,26 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-15 — Names with capitals (ADR-060) and price commas (ADR-061)
+
+Jerson's yes: "Ship names" (2026-11-15). This release is `development` as it stands (on staging since 2026-11-14).
+
+### UX Improvements
+- **Names are saved with capitals** (ADR-060) at sign-up (email, Google, Apple), in the sign-up name step and in Mi
+  perfil: "pedro guerrero" becomes "Pedro Guerrero", "MARÍA DE LOS ÁNGELES" becomes "María de los Ángeles". Jerson's rules: **"Two letters plus list"** (II, III, IV always in capitals; a capital word of 1–2 letters
+  inside a normal name stays as typed) and **"Protect surnames"** (SA, SAC, SRL, EIRL… stay in capitals only when
+  typed that way or with periods, so "Juan Saa Pérez" is left alone). The name boxes ask the phone keyboard for a capital
+  at each word and no longer autocorrect names. Existing names are not corrected by this release.
+- **Price and m² boxes show commas as you type** (ADR-061) in Publicar: 250000 shows as "250,000" while typing, and
+  the cursor stays where the person typed. What a number means is unchanged.
+
+### Technical
+- The temporary staging diagnostic log on the server is removed (with the server release the same day).
+
+reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-14 — Analítica for owners (ADR-058)
 
 Jerson's yes: "Ship names, then Analítica" (2026-11-14). This release is `development` as it stood at `24f263a`
