@@ -94,3 +94,32 @@ describe('BETA beside Analítica — the phone bottom tabs', () => {
     expect(within(nav).getAllByText('BETA')).toHaveLength(1)
   })
 })
+
+// Jerson, 2026-11-15: the raised BETA was cut off in the computer menu — it sat inside the label's
+// `truncate` span (overflow hidden), which clipped its top. No ancestor inside the link may clip it.
+function clippingAncestor(el: HTMLElement, stopAt: HTMLElement) {
+  for (let p = el.parentElement; p && p !== stopAt.parentElement; p = p.parentElement) {
+    if (/\b(truncate|overflow-hidden|overflow-clip|line-clamp-\d)\b/.test(p.className)) return p
+  }
+  return null
+}
+
+describe('BETA is never clipped', () => {
+  it('the computer menu: no clipping wrapper around BETA', () => {
+    render(<MemoryRouter><Sidebar caps={owner} userName="Ana" roleLabel="Usuario" onLogout={() => {}} /></MemoryRouter>)
+    const link = screen.getByRole('link', { name: 'Analítica (beta)' })
+    expect(clippingAncestor(betaIn(link)!, link)).toBeNull()
+  })
+
+  it('the phone bar: no clipping wrapper around BETA', () => {
+    render(<MemoryRouter><BottomTabs caps={owner} /></MemoryRouter>)
+    const link = screen.getByRole('link', { name: 'Analítica (beta)' })
+    expect(clippingAncestor(betaIn(link)!, link)).toBeNull()
+  })
+
+  it('BETA is raised by position, not by text baseline (which overflows the line box)', () => {
+    render(<MemoryRouter><Sidebar caps={owner} userName="Ana" roleLabel="Usuario" onLogout={() => {}} /></MemoryRouter>)
+    const sup = betaIn(screen.getByRole('link', { name: 'Analítica (beta)' }))!
+    expect(sup.className).not.toMatch(/\balign-super\b/)
+  })
+})

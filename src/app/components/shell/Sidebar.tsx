@@ -65,7 +65,7 @@ export default function Sidebar({ caps, userName, roleLabel, onLogout }: Props) 
                     ].join(' ')}
                   >
                     <Icon className={`h-4 w-4 ${active ? 'text-secondary' : 'text-text-secondary'}`} />
-                    <span className="flex-1 truncate">{item.label}{item.beta && <BetaMark />}</span>
+                    <span className="flex flex-1 min-w-0 items-baseline"><span className="truncate">{item.label}</span>{item.beta && <BetaMark />}</span>
                     {active && <ChevronRight className="h-3 w-3 text-secondary" />}
                   </Link>
                 )
