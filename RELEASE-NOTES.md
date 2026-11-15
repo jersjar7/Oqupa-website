@@ -21,6 +21,9 @@ Jerson's yes: "Ship names, then Analítica" (2026-11-14). This release is `devel
   signed in whose browser already allows location, a rounded point the server turns into a district and drops.
 - Phone layout: bottom tabs keep labels on one line; map district colours fixed.
 
+### Privacy
+- Privacy policy section 4 and the data list now say location is used to count viewers' districts (only with permission already given, only when not signed in, district only, shown in groups of 3+) and that map-search points become districts and are not kept. Jerson: "Policy approved" (2026-11-14).
+
 reCAPTCHA / App Check: unchanged.
 
 ---
