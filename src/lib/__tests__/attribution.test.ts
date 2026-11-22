@@ -130,6 +130,54 @@ describe('attribution', () => {
     expect(attributionForListing()).toMatchObject({ firstSource: 'google' })
   })
 
+  // ── Instagram is its own source, not Facebook (2026-11-22) ─────────────
+
+  it.each([
+    'https://www.instagram.com/oqupa/',
+    'https://instagram.com/',
+    'https://l.instagram.com/?u=https%3A%2F%2Foqupa.com%2F',
+    'https://m.instagram.com/',
+    'https://ig.me/oqupa',
+  ])('infers instagram from %s', (referrer) => {
+    expect(__testing.inferSource(referrer)).toBe('instagram')
+  })
+
+  it.each([
+    'https://www.facebook.com/oqupa',
+    'https://l.facebook.com/l.php?u=https%3A%2F%2Foqupa.com',
+    'https://lm.facebook.com/l.php?u=https%3A%2F%2Foqupa.com',
+    'https://m.facebook.com/',
+    'https://fb.com/oqupa',
+    'https://web.fb.com/',
+    'https://fb.me/oqupa',
+  ])('keeps facebook for %s', (referrer) => {
+    expect(__testing.inferSource(referrer)).toBe('facebook')
+  })
+
+  it('does not treat a look-alike host as instagram', () => {
+    expect(__testing.inferSource('https://instagram.com.evil.example/')).not.toBe('instagram')
+    expect(__testing.inferSource('https://notinstagram.com/')).not.toBe('instagram')
+  })
+
+  it('an Instagram referrer with no UTM saves firstSource instagram', () => {
+    visit('https://oqupa.com/', 'https://l.instagram.com/?u=https%3A%2F%2Foqupa.com%2F')
+    expect(attributionForListing()).toMatchObject({ firstSource: 'instagram', lastSource: 'instagram' })
+  })
+
+  it('an explicit utm_source wins over an Instagram referrer, as written', () => {
+    visit('https://oqupa.com/?utm_source=facebook&utm_medium=paid_social', 'https://l.instagram.com/')
+    expect(attributionForListing()).toMatchObject({ firstSource: 'facebook', firstMedium: 'paid_social' })
+  })
+
+  it('keeps utm_source=instagram exactly as given', () => {
+    visit('https://oqupa.com/?utm_source=instagram&utm_medium=paid_social&utm_campaign=oq-own-251201_reel-test_v1')
+    expect(attributionForListing()).toMatchObject({
+      firstSource: 'instagram',
+      firstMedium: 'paid_social',
+      firstCampaign: 'oq-own-251201_reel-test_v1',
+    })
+  })
+
   it('infers tiktok from a tiktok.com referrer', () => {
     visit('https://oqupa.com/', 'https://www.tiktok.com/@oqupa')
     expect(attributionForListing()).toMatchObject({ firstSource: 'tiktok' })
