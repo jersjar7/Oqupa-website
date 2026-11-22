@@ -4,6 +4,19 @@ All notable changes to the Oqupa website are documented here. Each entry corresp
 
 ---
 
+## 2026-11-22 — Ad attribution on listings (B1–B3)
+
+Jerson's yes: "Website production release: APPROVED" (2026-11-22). This release is `development` at 5be2835 (on staging since 2026-11-22, CI run 45077806205).
+
+### Analytics
+- Every new website listing also saves `platform: 'web'` (beside the existing `createdFrom: 'web'`).
+- `listing_created` (Firebase/GA4 only) also sends `publisher_role`, `property_type` and `district`. Meta `ListingPublished` and TikTok still receive only `operation_type`.
+- A visit from Instagram without campaign tags is saved with source `instagram` (was `facebook`). Facebook links stay `facebook`; explicit `utm_source` is untouched; older records are not rewritten.
+
+No visible changes. Contact gate, phone verification, sign-in and Firestore rules: unchanged. reCAPTCHA / App Check: unchanged.
+
+---
+
 ## 2026-11-15 — Analítica marked as beta
 
 Jerson's yes: "Ship beta" (2026-11-15), wording approved the same day; decided in the 2026-11-14 weekly meeting.

@@ -497,7 +497,13 @@ export default function WizardStep5() {
       // Saved. The draft goes now — not when some dialog closes — so a
       // refresh, a back button or a second tab cannot publish it again.
       markPublished(outcome.listingId)
-      if (!outcome.alreadyPublished) AnalyticsLogger.listingCreated(data.operationType)
+      if (!outcome.alreadyPublished) {
+        AnalyticsLogger.listingCreated(data.operationType, {
+          publisherRole: data.role,
+          propertyType: data.propertyType,
+          district: data.distrito,
+        })
+      }
       void invalidateListingQueries(queryClient, outcome.listingId)
       setPublishStatus('done')
     } catch (err) {

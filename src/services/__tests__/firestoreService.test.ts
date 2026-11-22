@@ -540,6 +540,7 @@ describe('firestoreService', () => {
         media: { propertyPhotoUrls: [] },
       })
       expect(setDocMock.mock.calls[0]![1].createdFrom).toBe('web')
+      expect(setDocMock.mock.calls[0]![1].platform).toBe('web')
     })
 
     it('calls setDoc with viewCount=0 and serverTimestamps', async () => {
