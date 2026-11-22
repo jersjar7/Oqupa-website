@@ -648,6 +648,9 @@ export const firestoreService = {
       tx.set(listingRef, {
         ...cleanedListing,
         createdFrom: 'web',
+        // The platform that published it, on every new listing (B2,
+        // 2026-11-22); the app writes 'android' / 'ios'.
+        platform: 'web',
         ...(draftHash ? { publishDraftHash: draftHash } : {}),
         viewCount: 0,
         createdAt: serverTimestamp(),
@@ -679,6 +682,8 @@ export const firestoreService = {
       // Which app created the listing (map plan step 1, ADR-031); the app
       // writes 'ios' / 'android'. Accepted by the rules on create.
       createdFrom: 'web',
+      // B2 (2026-11-22): the publishing platform, on every new listing.
+      platform: 'web',
       viewCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

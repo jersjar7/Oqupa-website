@@ -57,6 +57,8 @@ describe('firestoreService.publishPropertyAndListing', () => {
     await firestoreService.publishPropertyAndListing(ids, property, listing)
     const l = h.docs.get('listings/listing_1_aaaaaaa')!
     expect(l).toMatchObject({ createdFrom: 'web', viewCount: 0, createdAt: '__ts__', updatedAt: '__ts__' })
+    // B2 (2026-11-22): every new listing names the platform that published it.
+    expect(l.platform).toBe('web')
     expect('calle' in h.docs.get('properties/property_1_aaaaaaa')!).toBe(false)
   })
 

@@ -146,6 +146,41 @@ describe('AnalyticsLogger', () => {
         operation_type: 'venta',
       })
     })
+
+    // B3 (Jerson 2026-11-22): who published, what and where — Firebase only.
+    it('adds publisher_role, property_type and district to GA', () => {
+      AnalyticsLogger.listingCreated('venta', {
+        publisherRole: 'realtor',
+        propertyType: 'departamento',
+        district: 'Veintiséis de Octubre',
+      })
+      expect(logEventMock).toHaveBeenCalledWith(expect.anything(), 'listing_created', {
+        operation_type: 'venta',
+        publisher_role: 'realtor',
+        property_type: 'departamento',
+        district: 'Veintiséis de Octubre',
+      })
+    })
+
+    it('sends the district as stored, cut to 100 characters, and leaves blanks out', () => {
+      AnalyticsLogger.listingCreated('venta', { publisherRole: 'owner', propertyType: 'casa', district: 'castilla' })
+      expect(logEventMock).toHaveBeenLastCalledWith(expect.anything(), 'listing_created',
+        expect.objectContaining({ district: 'castilla' }))
+      AnalyticsLogger.listingCreated('venta', { publisherRole: 'owner', propertyType: 'casa', district: 'x'.repeat(150) })
+      expect(logEventMock).toHaveBeenLastCalledWith(expect.anything(), 'listing_created',
+        expect.objectContaining({ district: 'x'.repeat(100) }))
+      AnalyticsLogger.listingCreated('venta', { publisherRole: 'owner', propertyType: 'casa', district: '  ' })
+      const last = logEventMock.mock.calls[logEventMock.mock.calls.length - 1]![2] as Record<string, unknown>
+      expect(last).not.toHaveProperty('district')
+    })
+
+    it('Meta and TikTok still receive only the operation type', () => {
+      AnalyticsLogger.listingCreated('alquiler', {
+        publisherRole: 'owner', propertyType: 'casa', district: 'Piura',
+      })
+      expect(trackMetaCustomMock).toHaveBeenCalledWith('ListingPublished', { operation_type: 'alquiler' })
+      expect(trackTikTokMock).toHaveBeenCalledWith('ListingPublished', { operation_type: 'alquiler' })
+    })
   })
 
   describe('loginCompleted', () => {

@@ -111,8 +111,11 @@ vi.mock('browser-image-compression', () => ({
 }))
 vi.mock('@/lib/blurhash', () => ({ generateBlurHash: async () => 'HASH' }))
 vi.mock('@/components/ShareFormatModal', () => ({ default: () => null }))
+const listingCreatedMock = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/analytics', () => ({
-  AnalyticsLogger: new Proxy({}, { get: () => () => {} }),
+  AnalyticsLogger: new Proxy({}, {
+    get: (_t, name) => (name === 'listingCreated' ? listingCreatedMock : () => {}),
+  }),
 }))
 const toastMock = vi.hoisted(() => {
   const fn = vi.fn() as ReturnType<typeof vi.fn> & { success: unknown; error: unknown }
@@ -245,6 +248,47 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+})
+
+// B2 + B3 (Jerson 2026-11-22): every new listing says which platform
+// published it and carries where the publisher came from; listing_created
+// names the role, the property type and the district (Firebase only).
+describe('WizardStep5 — what a new listing records about its publishing', () => {
+  const written = () => [...net.docs.entries()].find(([p]) => p.startsWith('listings/'))![1]
+
+  it('the listing says it was published on the web', async () => {
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    expect(written().platform).toBe('web')
+  })
+
+  it('the listing carries the campaign the publisher arrived from', async () => {
+    localStorage.setItem('oqupa_attribution_v1', JSON.stringify({
+      first: { source: 'instagram', medium: 'paid_social', campaign: 'oq-own-251201_reel-test_v1', content: null, term: null, clickId: null, referrer: null, landingPath: '/', at: new Date().toISOString() },
+      last: { source: 'instagram', medium: 'paid_social', campaign: 'oq-own-251201_reel-test_v1', content: null, term: null, clickId: null, referrer: null, landingPath: '/', at: new Date().toISOString() },
+    }))
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(ids('listings').size).toBe(1), { timeout: 3000 })
+    expect(written().attribution).toMatchObject({
+      firstSource: 'instagram', firstMedium: 'paid_social', firstCampaign: 'oq-own-251201_reel-test_v1',
+      lastSource: 'instagram',
+    })
+  })
+
+  it('listing_created names the publisher role, the property type and the district', async () => {
+    listingCreatedMock.mockClear()
+    useListingFormStore.getState().updateData({ role: 'relative', distrito: 'Veintiséis de Octubre' })
+    renderStep()
+    fireEvent.click(publishButton())
+    await waitFor(() => expect(listingCreatedMock).toHaveBeenCalledTimes(1), { timeout: 3000 })
+    expect(listingCreatedMock).toHaveBeenCalledWith('venta', {
+      publisherRole: 'relative',
+      propertyType: 'terreno',
+      district: 'Veintiséis de Octubre',
+    })
+  })
 })
 
 describe('WizardStep5 — publishing never duplicates (ADR-043)', () => {
