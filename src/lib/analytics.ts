@@ -270,6 +270,13 @@ function filterSetParams(filters: FilterSetParams): Record<string, ParamValue> {
  *
  * Nothing here carries a name, an email, a phone number or a street address.
  */
+/** Firebase-only details of a new listing (B3). */
+export interface ListingCreatedExtras {
+  publisherRole?: string | null
+  propertyType?: string | null
+  district?: string | null
+}
+
 export const AnalyticsLogger = {
   pageView: (pageName: string) =>
     sendFirebaseEvent('page_view', { page_title: pageName }),
@@ -304,8 +311,20 @@ export const AnalyticsLogger = {
     })
   },
 
-  listingCreated: (operationType: string) => {
-    sendFirebaseEvent('listing_created', { operation_type: operationType })
+  /**
+   * A new listing was published. `extras` — who published it (the listing
+   * role: owner / realtor / relative), the property type and the district as
+   * stored (cut to GA4's 100 characters) — go to Firebase only (B3, Jerson
+   * 2026-11-22). Meta and TikTok keep receiving the operation type alone. The
+   * app sends the same parameter names.
+   */
+  listingCreated: (operationType: string, extras: ListingCreatedExtras = {}) => {
+    logFirebaseEvent('listing_created', {
+      operation_type: operationType,
+      publisher_role: extras.publisherRole,
+      property_type: extras.propertyType,
+      district: extras.district?.trim() || null,
+    })
     // The conversion that actually matters. Meta has no standard event for
     // "someone listed their house", so this is a custom one — custom events can
     // still be optimised towards, and an honest name beats forcing it into

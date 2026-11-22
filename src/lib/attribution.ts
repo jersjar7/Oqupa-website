@@ -79,13 +79,23 @@ function readParam(params: URLSearchParams, name: string): string | null {
  * Infer a channel when the link carries no campaign tags — most real traffic.
  * A referrer is not a campaign, but "came from Facebook" is far better than
  * "unknown" when the whole point is telling recruited visits from organic ones.
+ *
+ * Records saved before 2026-11-22 carry 'facebook' for Instagram referrers
+ * too; they are left as they were (no migration).
  */
 function inferSource(referrer: string): string | null {
   if (!referrer) return null
   try {
     const host = new URL(referrer).hostname.replace(/^www\./, '')
     if (host === window.location.hostname) return null // internal navigation
-    if (/facebook|fb\.com|instagram|l\.facebook/.test(host)) return 'facebook'
+    // Instagram before Facebook: they are separate channels with separate
+    // audiences, and lumping them together hid which one an organic visit came
+    // from (Jerson, 2026-11-22). instagram.com and any subdomain — the
+    // l.instagram.com link shim and the in-app browser both send one of these —
+    // plus Instagram's ig.me short links. Explicit utm_source is never touched;
+    // this only runs when the link carries no campaign tags.
+    if (/(^|\.)instagram\.com$|^ig\.me$/.test(host)) return 'instagram'
+    if (/facebook|fb\.com|fb\.me|l\.facebook/.test(host)) return 'facebook'
     if (/google\./.test(host)) return 'google'
     if (/tiktok/.test(host)) return 'tiktok'
     if (/whatsapp|wa\.me/.test(host)) return 'whatsapp'

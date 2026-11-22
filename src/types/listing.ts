@@ -60,6 +60,8 @@ export interface Listing {
 
   /** Which app created the listing (map plan step 1). Absent on older listings. */
   createdFrom?: 'ios' | 'android' | 'web'
+  /** The platform that published the listing (B2, 2026-11-22). */
+  platform?: 'ios' | 'android' | 'web'
 
   // Location privacy fields
   showExactLocation: boolean
